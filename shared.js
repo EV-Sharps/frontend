@@ -5,7 +5,7 @@ let MOBILE = window.innerWidth <= 600;
 let ACCESS_TOKEN = "";
 let API_BASE = "http://localhost:5000";
 let UPDATED = {};
-
+let TEST;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }

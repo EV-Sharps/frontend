@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Hot</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<style>
+	body {
+		margin: 0; padding: 0;
+		font-size: 18px;
+		height: 100vh;
+	}
+	#header #donate {
+		position: relative;
+	}
+	#left-body {
+		width: 100%;
+	}
+	#graph-container {
+		display: flex;
+		flex-wrap: wrap;
+		width: 90%;
+		overflow: auto;
+		justify-content: space-evenly;
+	}
+	.graph {
+		margin-right: 5px;
+		margin-bottom: 20px;
+	}
+	#right-body {
+		display: flex;
+		justify-content: normal;
+	}
+	#sub-header {
+		gap: 10px;
+	}
+	#all {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		width: 100%; height: 100%;
+	}
+	#all h2 {
+		text-align: center;
+		margin-top: 1rem;
+	}
+	.team-cell {
+		padding: 0;
+	}
+	#table, #updated-container {
+		
+	}
+	#hrtable {
+		width: max-content;
+		margin-top: 0.5rem;
+		max-height: 80%;
+	}
+	#scatter {
+		width: 100%;
+		margin-top: 1rem;
+	}
+	#yby {
+		display: none;
+	}
+	.homer {
+		color: white;
+		background: rgb(56, 142, 60);
+	}
+	.player-cell .team-img {
+		margin-top: -2px;
+	}
+	@media (max-width: 600px) {
+		#all {
+			justify-content: normal;
+		}
+		#all h2 {
+			margin-top: 0.75rem;
+		}
+		#table, #updated-container {
+			max-width: 320px;
+		}
+		#left-body {
+			width: 100%;
+		}
+		#sub-header {
+			width: auto;
+			flex-direction: row;
+		}
+		#header {
+			margin: 0.5rem 0;
+		}
+		#header #donate {
+			display: flex;
+		}
+		#header #donate {
+			position: relative;
+		}
+		#table-container {
+			height: initial;
+		}
+		.game-container {
+			min-width: auto;
+		}
+		.tabulator .tabulator-cell[tabulator-field=in] {
+			font-size: 12px;
+		}
+	}
+</style>
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<h1>Distance Trends (L12 BIP)</h1>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="sport-select">
+						<option value="feed">⚾ Feed</option>
+						<option value="dingers">⚾ Dingers</option>
+						<option value="bvp">⚾ BvP</option>
+						<option value="stats">⚾ Stats</option>
+						<option value="trends">⚾ Trends</option>
+						<option value="hot">⚾ Hot</option>
+						<option value="mlb">⚾ Props</option>
+						<option value="nhl">🏒 Props</option>
+						<option value="nba">🏀 NBA</option>
+						<option value="ncaab">🏀 NCAAB</option>
+					</select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div>
+					
+				</div>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="graph-container"></div>
+		</div>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		let SPORT = "hot";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let DEBUG = URLParams.get("debug");
+		let DATE = URLParams.get("date");
+		let CLOSE = URLParams.get("close");
+		let PLAYER = URLParams.get("player");
+		TEAM = URLParams.get("team");
+		let TABLE = null;
+		let HRTABLE = null;
+		let RES = null;
+		let HRROWS = [];
+		let ALMOST = [];
+		let YBY = {};
+
+		if (PLAYER) {
+			document.querySelector("#table").style["max-width"] = "520px";
+		}
+
+		document.querySelector("#sport-select").value = "hot";
+		document.querySelector("#sport-select").addEventListener("change", (event) => {
+			const sport = event.target.value;
+			if (["dingers", "feed", "leaders", "stats", "bvp", "hot"].includes(sport)) {
+				window.location.href = `./${sport}${HTML}`;
+			} else {
+				window.location.href = `./props${HTML}?sport=${sport}`;
+			}
+		});
+
+		function filterHR() {
+			if (TABLE.getFilters().length > 0) {
+				TABLE.clearFilter();
+			} else {
+				TABLE.setFilter([
+					{field:"result", type:"=", value: "Home Run"}
+				]);
+			}
+		}
+		async function fetchData(render=false) {
+			let url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/trends.json`;
+			fetch(url, {
+				headers: {
+					"Accept": "application/vnd.github.v3.raw"
+				}
+			}).then(
+				response => response.json()
+			).then(res => {
+				
+				const traces = [];
+				res = res["graphs"];
+				RES = res;
+				res = res.filter(r => r.game);
+
+				//plotMiniGraphs(res);
+				plotBigGraph(res);
+			}).catch(err => console.log(err));
+		}
+		fetchData(render=true);
+
+		function plotBigGraph(res) {
+			const traces = [];
+
+			let layout = {
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				legend: {
+					orientation: "h",
+					//y: 1.15,
+					//y: 0,
+					x: 0,
+					bgcolor: "rgba(0,0,0,0.1)"
+				},
+				margin: { l: 0, r: 0, t: MOBILE ? 70 : 45, b: 0 },
+				font: {
+					color: "#e8e6e3"
+				},
+				xaxis: {
+					showgrid: false,
+					showticklabels: false
+				},
+				yaxis: {
+					showgrid: false,
+					side: "left"
+				},
+				yaxis2: {
+					overlaying: "y",
+					showgrid: false,
+					side: "right"
+				},
+				title: {
+					text: "",
+					font: {
+						size: 14
+					}
+				},
+				hovermode: "x unified"
+			};
+
+			const lineStyles = [
+				{ color: "#ff9500", dash: "solid" },
+				{ color: "#0a84ff", dash: "solid" },
+				{ color: "#1db954", dash: "solid" },
+				{ color: "#ff3b30", dash: "solid" },
+				{ color: "#8e44ad", dash: "solid" },
+				{ color: "#ffcc00", dash: "dash" },
+				{ color: "#34caff", dash: "dot" },
+				{ color: "#5eff72", dash: "longdash" },
+				{ color: "#ff5e84", dash: "dashdot" },
+				{ color: "#c388ff", dash: "longdash" },
+				{ color: "#c388ff", dash: "longdash" }
+			];
+			res.slice(0, 20).forEach((row, idx) => {
+				traces.push({
+					x: Array.from({length: row.predictedY.length}, (_, i) => i+1),
+					y: row.predictedY,
+					mode: "lines",
+					name: `${row.player}-Dist`,
+					showlegend: false,
+					line: {
+						color: lineStyles[idx % 10].color,
+						dash: lineStyles[idx % 10].dash,
+					},
+				});
+			});
+
+			Plotly.newPlot("graph-container", traces, layout, {displayModeBar: false});
+		}
+
+		function plotMiniGraphs(res) {
+			const container = document.querySelector("#graph-container");
+			res.slice(0, 50).forEach((row, idx) => {
+				const graphDiv = document.createElement("div");
+				graphDiv.id = `graph-${idx}`;
+				graphDiv.className = "graph";
+				container.appendChild(graphDiv);
+
+				const scatter = {
+					x: Array.from({length: row.y.length}, (_, i) => i+1),
+					y: row.y,
+					mode: "markers", type: "scatter",
+					name: "Dist", marker: { color: "#ff9500"},
+					yaxis: "y2",
+				};
+				const evo_scatter = {
+					x: Array.from({length: row.evoY.length}, (_, i) => i+1),
+					y: row.evoY,
+					mode: "markers", type: "scatter",
+					name: "Evo", marker: { color: "#00c8ff"}
+				};
+				const trend = {
+					x: Array.from({length: row.predictedY.length}, (_, i) => i+1),
+					y: row.predictedY,
+					mode: "lines",
+					name: `Dist-Reg`,
+					showlegend: false,
+					line: { color: "#ff9500", dash: "dash" },
+					yaxis: "y2",
+				};
+				const evoTrend = {
+					x: Array.from({length: row.evoPredictedY.length}, (_, i) => i+1),
+					y: row.evoPredictedY,
+					mode: "lines",
+					name: `Evo-Reg`,
+					showlegend: false,
+					line: { color: "#00c8ff", dash: "dash" }
+				};
+				let t = `${title(row.player)}`;
+				if (row.evBook) {
+					t += ` (+${row.ou} ${row.evBook.toUpperCase()})`;
+				}
+				let layout = {
+					plot_bgcolor: '#181a1b',
+					paper_bgcolor: "#181a1b",
+					legend: {
+						orientation: "h",
+						//y: 1.15,
+						y: 0,
+						x: 0,
+						bgcolor: "rgba(0,0,0,0.1)"
+					},
+					height: 200, width: MOBILE ? 300 : 250,
+					margin: { l: 0, r: 0, t: MOBILE ? 70 : 45, b: 0 },
+					font: {
+						color: "#e8e6e3"
+					},
+					xaxis: {
+						showgrid: false,
+						showticklabels: false
+					},
+					yaxis: {
+						showgrid: false,
+						side: "left"
+					},
+					yaxis2: {
+						overlaying: "y",
+						showgrid: false,
+						side: "right"
+					},
+					title: {
+						text: t,
+						font: {
+							size: 14
+						}
+					},
+					hovermode: "x unified"
+				};
+				Plotly.newPlot(graphDiv.id, [scatter, evo_scatter, trend, evoTrend], layout, {displayModeBar: false});
+			});
+		}
+
+		function filterGame() {
+			
+		}
+	</script>
+</body>
+</html>

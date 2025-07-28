@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Leaders</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="shared.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<style>
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+
+		@media (max-width: 600px) {
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="sport-select">
+						<option value="feed">⚾ Feed</option>
+						<option value="dingers">⚾ Dingers</option>
+						<option value="mlb">⚾ Props</option>
+						<option value="stats">⚾ Stats</option>
+						<option value="nhl">🏒 NHL</option>
+						<option value="nba">🏀 NBA</option>
+						<option value="ncaab">🏀 NCAAB</option>
+					</select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+			</div>
+			<div id="table"></div>
+		</div>
+	</div>
+	<script type="text/javascript">
+		let TABLE = null;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let SPORT = "leaders";
+		let LEADERS = URLParams.get("leaders");
+		let MOBILE = window.innerWidth <= 600;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		if (SPORT) {
+			document.querySelector("#sport-select").value = SPORT;
+		}
+
+		document.querySelector("#sport-select").addEventListener("change", (event) => {
+			const sport = event.target.value;
+			if (["dingers", "feed", "leaders", "stats"].includes(sport)) {
+				window.location.href = `./${sport}${HTML}`;
+			} else {
+				window.location.href = `./props${HTML}?sport=${sport}`;
+			}
+		});
+
+		document.querySelector("#prop-select").addEventListener("change", function(event) {
+			const prop = event.target.value;
+			if (prop == "all") {
+				TABLE.clearFilter();
+			} else {
+				TABLE.setFilter([
+					{field:"prop", type:"=", value: prop.toLowerCase()}
+				]);
+			}
+			TABLE.getRows("active")[0].getElement().click();
+		});
+
+		document.querySelector("#player-props-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const prop = event.target.value;
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == prop && d.player == rowData.player && d.under == false;
+			});
+			rowClick(rows[0]);
+		});
+
+		document.querySelector("#player-lines-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == rowData.prop && d.player == rowData.player && d.under == false && d.playerHandicap == event.target.value;
+			});
+			rowClick(rows[0]);
+		});
+
+		document.querySelector("#player-ou-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == rowData.prop && d.player == rowData.player && d.under == (event.target.value == "under") && d.playerHandicap == rowData.playerHandicap;
+			});
+			rowClick(rows[0]);
+		});
+
+		if (SPORT == "mlb") {
+			const yearSelect = document.querySelector("#player-year-select");
+			yearSelect.value = YEAR;
+			yearSelect.style.display = "flex";
+			yearSelect.addEventListener("change", function(event) {
+				const data = TABLE.getSelectedRows()[0].getData();
+				let logs = data.totalSplits.split(",");
+				let dtSplits = data.dtSplits.split(",");
+
+				if (event.target.value == YEAR) {
+					logs = data.totalSplits.split(",");
+					dtSplits = data.dtSplits.split(",");
+					plotMap(data, dtSplits, logs);
+				} else {
+					getYearLogs(data, event.target.value);
+				}
+			});
+		}
+
+		function getYearLogs(data, year) {
+			const player = data.player;
+			if (player in HISTORICAL) {
+				plotMap(data, HISTORICAL[player][year].date, HISTORICAL[player][year][data.prop]);
+			} else {
+				const url = `https://api.github.com/repos/dailyev/props/contents/static/splits/${SPORT}_historical/${data.team}.json`;
+				fetch(url, {
+					headers: { "Accept": "application/vnd.github.v3.raw" }
+				}).then(response => response.json()).then(yearData => {
+					HISTORICAL = yearData;
+					plotMap(data, yearData[player][year].date, yearData[player][year][data.prop]);
+				}).catch(err => console.log(err));
+			}
+		}
+
+		document.querySelector("#player-venue-select").addEventListener("change", function(event) {
+			const data = TABLE.getSelectedRows()[0].getData();
+			const venue = event.target.value.toLowerCase();
+			let dtSplits = data.dtSplits.split(",");
+			let logs = data.totalSplits.split(",");
+			let awayHome = data.awayHomeSplits.split(",");
+			let year = document.querySelector("#player-year-select").value;
+
+			if (year != "2025") {
+				dtSplits = HISTORICAL[player][year].date;
+				logs = HISTORICAL[player][year][data.prop];
+				awayHome = HISTORICAL[player][year].awayHome;
+			}
+
+			let newX = [], newY = [];
+			if (venue == "away") {
+				const awaySplits = dtSplits.map((date, idx) => {
+					if (awayHome[idx] == "A") {
+						return { date, total: logs[idx] };
+					}
+					return null;
+				}).filter(item => item != null);
+				newX = awaySplits.map(r => r.date);
+				newY = awaySplits.map(r => r.total);
+			} else if (venue == "home") {
+				const homeSplits = dtSplits.map((date, idx) => {
+					if (awayHome[idx] == "H") {
+						return { date, total: logs[idx] };
+					}
+					return null;
+				}).filter(item => item != null);
+				newX = homeSplits.map(r => r.date);
+				newY = homeSplits.map(r => r.total);
+			} else {
+				newX = dtSplits;
+				newY = logs;
+			}
+
+			plotMap(data, newX, newY);
+			//Plotly.update("log-chart", { x: [newX], y: [newY] }, {}, [0]);
+		});
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchData();
+
+		function fetchData() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/stats.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				if (PROP) {
+					data = data.filter(r => r.prop == PROP);
+				}
+				renderTable(data);
+				setTimeout(function() {
+					if (PROP) {
+						TABLE.setHeaderFilterValue("prop", PROP.toUpperCase());
+					}
+
+					if (LEADERS == "300-ft") {
+						TABLE.setSort([{"column": "300-ft", "dir": "desc"}]);
+						TABLE.showColumn("300-ft");
+					}
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function showPlayerInfo(row) {
+			//const lastYear = SPORT == "mlb";
+			const lastYear = false;
+			const cutoff = 0;
+			const data = row.getData();
+			const playerRows = TABLE.getRows()
+				.filter(r => r.getData().player == data.player)
+				.map(r => r.getData());
+			const props = Array.from(new Set(playerRows.map(r => r.prop)));
+
+			let playerRowsLines = playerRows.filter(r => r.prop == data.prop);
+			const playerLines = Array.from(new Set(playerRowsLines.map(r => r.playerHandicap || r.handicap)));
+			
+			const playerRowsOUs = playerRows.filter(r => r.prop == data.prop && r.playerHandicap == data.playerHandicap);
+			//console.log(playerRowsOUs)
+			const playerOUs = new Set(playerRowsOUs.map(r => r.under));
+			let dtSplits = lastYear ? data.dtSplits : data.dtSplits;
+			dtSplits = dtSplits.split(",").slice(cutoff);
+			dtSplits = dtSplits.map(dt => {
+				const d = new Date(dt+" 10:00");
+				return d.toLocaleDateString("en-US", {
+					month: "short", day: "numeric", year: "2-digit"
+				}).replace(", ", " '");
+			});
+
+			document.querySelector("#left-body").style.width = MOBILE ? "100%" : "50%";
+			document.querySelector("#right-body").style.display = "flex";
+			let player = title(data.player);
+			if (!player) {
+				player = data.team.toUpperCase(); 
+			}
+			document.querySelector("#player-header h2").innerHTML = `
+				<img src="logos/${SPORT}/${data.teamId || data.team}.png" width=32 height=32 style="vertical-align: middle;" alt="${data.team}" />
+				${player}
+			`;
+
+			let dec = data.line / 100;
+			if (data.line < 0) {
+				dec = 100 / data.line;
+			}
+			const kelly = parseFloat(data.ev) / Math.abs(dec) / 4;
+			let evStr = data.ev;
+			if (parseFloat(data.ev) > 0) {
+				evStr = "+"+evStr;
+			}
+			document.querySelector("#player-ev").innerHTML = `
+				<strong>EV:</strong> ${evStr}% | 
+				<strong>FV:</strong> ${addPlus(data.fairVal)} |
+				<strong><sup>&frac14;</sup> Kelly:</strong> ${kelly.toFixed(2)}u
+			`;
+
+			// Props Nav
+			let propsSelect = document.querySelector("#player-props-select");
+			propsSelect.innerHTML = "";
+			props.sort((a, b) => a - b);
+			props.forEach(p => {
+				const el = document.createElement("option");
+				el.value = p;
+				el.innerText = p.toUpperCase();
+				if (p == data.prop) {
+					el.selected = true;
+				}
+				propsSelect.appendChild(el);
+			});
+
+			// OU Nav
+			const playerOU = document.querySelector("#player-ou-select");
+			playerOU.innerHTML = "";
+			const overBtn = document.createElement("option");
+			overBtn.value = "over";
+			overBtn.innerText = "Over";
+			const underBtn = document.createElement("option");
+			underBtn.value = "under";
+			underBtn.innerText = "Under";
+			let ouBtn = null;
+			if (data.under) {
+				underBtn.selected = true;
+				ouBtn = overBtn;
+			} else {
+				overBtn.selected = true;
+				ouBtn = underBtn;
+			}
+			if (playerOUs.has(false)) {
+				playerOU.appendChild(overBtn);
+			}
+			if (playerOUs.has(true)) {
+				playerOU.appendChild(underBtn);
+			}
+
+
+			// Lines Nav
+			const lineSelect = document.querySelector("#player-lines-select");
+			lineSelect.innerHTML = "";
+			playerRowsLines = playerRowsLines.filter(r => r.under == data.under);
+
+			playerRowsLines.sort((a,b) => (a.playerHandicap || a.handicap) - (b.playerHandicap || b.handicap));
+			playerRowsLines.forEach(p => {
+				const line = p.playerHandicap || p.handicap;
+				const el = document.createElement("option");
+				if (line == (data.playerHandicap || data.handicap)) {
+					el.selected = true;
+				}
+				el.setAttribute("data-display", line);
+				//el.innerText = `${line} (${p.ev})`;
+				el.innerText = `${line}`;
+				el.value = line;
+				lineSelect.appendChild(el);
+			});
+
+			// Reset Venue Select
+			document.querySelector("#player-venue-select").value = "A+H";
+			
+			// Year Dropdown
+			const yearSelect = document.querySelector("#player-year-select");
+			yearSelect.value = YEAR;
+			yearSelect.innerHTML = ``;
+			if (data.playerYears) {
+				for (year of data.playerYears) {
+					const el = document.createElement("option");
+					el.value = year;
+					el.innerText = year;
+					yearSelect.appendChild(el);
+				}
+			}
+
+			// Odds Display
+			const playerOdds = document.querySelector("#player-odds");
+			playerOdds.innerHTML = "";
+			const books = ["fd", "dk", "mgm", "365", "pn", "kambi", "cz", "espn"];
+			for (book of books) {
+				if (!data.bookOdds[book]) {
+					continue;
+				}
+				let odds = data.bookOdds[book];
+				const div = document.createElement("div");
+				if (parseFloat(data.ev) > 0 && data.book == book) {
+					div.classList.add("active");
+				}
+				if (odds.includes("/")) {
+					odds = `<mfrac>
+						<mn>${odds.split("/")[0]}</mn>
+						<mn>${odds.split("/")[1]}</mn>
+					</mfrac>`;
+				} else {
+					odds = `<mn>${odds}</mn>`;
+				}
+				div.innerHTML = `
+					<img class='book-img' src='logos/${book.replace("kambi", "br")}.png' />
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						${odds}
+					</math>
+					`;
+				playerOdds.appendChild(div);
+			}
+
+			// Pitcher
+			if (SPORT == "mlb") {
+				const pitcher = document.querySelector("#player-pitcher");
+				pitcher.innerHTML = `
+					<h4>vs ${data.pitcher}: </h4>
+					${data.bvp}
+				`;
+				const weather = document.querySelector("#player-weather");
+				weather.innerHTML = "Weather: "+getWindHTML(data);
+			}
+
+			// Plotly
+			const logs = lastYear ? data.logsLYR.split(",") : data.totalSplits.split(",");
+			const awaySplits = dtSplits.map((date, idx) => {
+				if (data.awayHomeSplits.split(",")[idx] == "A") {
+					return { date, total: logs[idx] };
+				}
+				return null;
+			}).filter(item => item != null);
+			const homeSplits = dtSplits.map((date, idx) => {
+				if (data.awayHomeSplits.split(",")[idx] == "H") {
+					return { date, total: logs[idx] };
+				}
+				return null;
+			}).filter(item => item != null);
+			const colors = logs.map(value => {
+				let cond = parseFloat(value) > parseFloat(data.playerHandicap || data.handicap);
+				if (data.under) {
+					cond = parseFloat(value) < parseFloat(data.playerHandicap || data.handicap);
+				}
+				return cond ? "rgb(56, 142, 60)" : "rgb(211, 47, 47)";
+			});
+			const tableData = {
+				x: dtSplits,
+				y: logs.map(v => v != "0" ? v : 0.25),
+				type: "bar",
+				text: logs,
+				textposition: "inside",
+				marker: {
+					color: colors
+				}
+			};
+			const layout = {
+				title: "Game Logs",
+				autosize: true,
+				showlegend: false,
+				responsive: true,
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				font: {
+					color: "#e8e6e3"
+				},
+				width: '100%',
+				dragmode: 'pan',
+				margin: { l: 0, r: 0, t: 20, b: 20 },
+				xaxis: {
+					title: "Dates",
+					showgrid: false,
+					type: "category",
+					//tickmode: "array",
+					//tickvals: [dtSplits[0],dtSplits.at(-1)],
+					//ticktext: [dtSplits[0],dtSplits.at(-1)],
+					//range: [-0.5, parseFloat(dtSplits.length)+0.5],
+					rangeslider: {
+						visible: true
+					},
+					range: [dtSplits.length-15.6,dtSplits.length-0.5]
+				},
+				yaxis: {
+					showgrid: false,
+					tickmode: "linear",
+					dtick: 1,
+					fixedrange: true,
+					showticklabels: false,
+					title: {
+						text: data.prop.toUpperCase()
+					}
+				},
+				shapes: [
+					{
+						type: "line",
+						//x0: dtSplits[0], x1: dtSplits.at(-1),
+						x0: -0.25, x1: dtSplits.length,
+						y0: data.playerHandicap || data.handicap, y1: data.playerHandicap || data.handicap,
+						line: {
+							color: "#5A5A5A",
+							dash: "dash"
+						}
+					}
+				]
+			};
+
+			//Plotly.d3.json()
+			Plotly.newPlot("log-chart", [tableData], layout, { responsive: true});
+			setTimeout(() => {
+				Plotly.Plots.resize("log-chart")
+			}, 100);
+		}
+
+		function renderTable(data) {
+			data = data.filter(r => 
+				!["fgs", "3-way", "1p_spread", "spread"].includes(r.prop)
+			);
+			
+			data.sort((a,b) => {
+				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
+			});
+			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
+			if (idx != -1) {
+				//data.splice(idx, 0, {prop: "separator", ev: ""});
+			}
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			const select = document.querySelector("#prop-select");
+			select.innerHTML = `
+				<option value="all" selected>All Props</option>
+			`;
+			props.map(prop => {
+				const el = document.createElement("option");
+				el.value = prop;
+				el.innerText = prop;
+				select.appendChild(el);
+			});
+			let books = [...new Set(data.map(row => row.book.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "hitRate", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 110 : 140,
+						formatterParams:{ sport: SPORT, noProp: true },
+						hozAlign: "left",
+						responsive: 0
+					},
+					{title: "#", field: "order",  width: MOBILE ? 20 : 40, sorter: "number"},
+					{title: "BA", field: "ba",  width: 45, sorter: "number", formatter: avgFormatter},
+					{title: "Opp – Pitcher", field: "opp", formatter: oppFormatter, hozAlign: "left"},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
+					{title: "🏟<br>Rank", field: "stadiumRank", formatter: rankingFormatter, width: 50},
+					//{title: "Pitcher", field: "pitcher", formatter: titleFormatter, hozAlign: "left"},
+					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 70},
+					{
+						title: "Game Logs",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
+					{title: "SZN", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
+					//{title: "L10", field: "hitRateL10",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 1},
+					{title: "LYR", field: "hitRateLYR",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2, visible: false},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					{title: "300ft", field: "300-ft", visible: true},
+					{title: "100mph", field: "100-evo", visible: false},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		function rowClick(row) {
+			if (SPORT.includes("futures")) {
+				return;
+			}
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			const cols = ["bookOdds.fd", "bookOdds.dk", "bookOdds.mgm", "bookOdds.365", "bookOdds.pn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.espn"];
+			if (MOBILE) {
+				cols.push("kelly");
+			}
+			if (sel.length > 0 && sel[0] == row && !MOBILE) {
+				cols.forEach(col => TABLE.showColumn(col));
+				document.querySelector("#right-body").style.display = "none";
+				document.querySelector("#table").style["max-width"] = "1400px";
+				document.querySelector("#left-body").style.width = "100%";
+			} else {
+				cols.forEach(col => TABLE.hideColumn(col));
+				document.querySelector("#table").style["max-width"] = "720px";
+				showPlayerInfo(row);
+				TABLE.scrollToRow(row, "center");
+				row.select();
+			}
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+	</script>
+</body>
+</html>

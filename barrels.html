@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Barrels</title>
+
+	<script type="text/javascript" src="test.js"></script>
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+			padding-top: 0;
+		}
+		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+			padding-top: 2px;
+		}
+		#table, #table-container {
+			width: max-content;
+		}
+		#chart {
+			max-height: 400px;
+		}
+		#left-body {
+			height: 100%;
+		}
+		#right-body {
+			justify-content: center;
+		}
+		#player-controls {
+			display: none;
+			justify-content: space;
+		}
+		.switch {
+			background-color: #007BFF; /* Nice blue color */
+			color: #fff; /* White text */
+			border: none; /* Remove border */
+			border-radius: 5px; /* Rounded corners */
+			padding: 5px 10px; /* Adjust padding for a smaller size */
+			font-size: 12px; /* Smaller font size */
+			cursor: pointer; /* Pointer cursor */
+			transition: background-color 0.3s ease; /* Smooth hover effect */
+		}
+		@media (max-width: 600px) {
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				display: none;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="header">
+		<div id="title">
+			<h1>+EV Dingers</h1>
+		</div>
+		<div id="sub-header">
+			<div class="dropdown">
+				<select id="page-select"></select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<button onclick="filterDue()">Due</button>
+			<button id="percentiles-btn" onclick="viewPercentiles()">Percentiles</button>
+			<button onclick="filterToday()">Today</button>
+		</div>
+	</div>
+	<div id="content">
+		<div id="left-body" class="body">
+			<div id="header">
+				<div id="header-container">
+					<h1>+EV Dingers</h1>
+				</div>
+				
+			</div>
+			<div id="table-container">
+				<div id="updated-container">
+					<div id="donate">
+						<div>Tip</div>
+						<div>
+							<a href="https://cash.app/$intersectinglines" target="_blank">
+								<img src="logos/cashapp.png" alt="cashapp" />
+							</a>
+							<a href="https://buymeacoffee.com/interlines" target="_blank">
+								<img src="logos/coffee.png" alt="coffee" />
+							</a>
+						</div>
+					</div>
+					<div id="updated"></div>
+				</div>
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+		</div>
+		<div id="right-body" class="body">
+			<div class="dropdown">
+				<select id="btwn-select">
+					<option value="pa">PA Btwn</option>
+					<option value="feed">Feed</option>
+				</select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<div id="chart"></div>
+		</div>
+	</div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "barrels";
+		let TABLE = null;
+		let FEED = null;
+		let HISTORICAL = {};
+		let RES = null;
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let PLAYERS = URLParams.get("players");
+		TEAM = URLParams.get("team");
+		let TODAY = URLParams.get("today");
+		let MARK = URLParams.get("mark");
+		let ALL = URLParams.get("all") != undefined;
+		let BOOK = URLParams.get("book");
+		let SPORT = URLParams.get("sport");
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let PRETTY = URLParams.get("pretty");
+		let DUE = URLParams.get("due");
+		let L3 = URLParams.get("L3");
+		let TOGGLE_PERCENTILE = URLParams.get("percentiles") != undefined;
+		let BVP = URLParams.get("bvp");
+		let IS_PITCHER = false;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		if (!SPORT) {
+			SPORT = "mlb";
+		}
+
+		if (TOGGLE_PERCENTILE) {
+			document.querySelector("#percentiles-btn").innerText = "Raw Values";
+		}
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+		}
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		if (TEST) {
+			RES = TEST;
+			fetchData(TEST);
+		} else {
+			fetchUpdated();
+			fetchData();
+		}
+
+		document.querySelector("#btwn-select").value = "pa";
+		document.querySelector("#btwn-select").addEventListener("change", function(event) {
+			if (event.target.value == "g") {
+				plotHRGap(showGames=true);
+			} else if (event.target.value == "feed") {
+				renderFeed();
+			} else {
+				plotHRGap();
+			}
+		});
+
+		function fetchData() {
+			let s = SPORT;
+			renderTable([]);
+			let url = `http://localhost:5000`;
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app`;
+			}
+			fetch(url+"/api/barrels", {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(response => response.json()).then(data => {
+				data = data.data;
+				if (TEAM) {
+					let teams = TEAM.split(",");
+					data = data.filter(r => teams.includes(r.team));
+				}
+				RES = data;
+				renderTable(data);
+				setTimeout(() => {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+					if (DUE != undefined) {
+						filterDue();
+					}
+				}, 100);
+			}).catch(err => console.log(err));
+		}
+
+		function fetchData2() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/static/baseballreference/barrels.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				if (TEAM) {
+					let teams = TEAM.split(",");
+					data = data.filter(r => teams.includes(r.team));
+				}
+				RES = data;
+				renderTable(data);
+				setTimeout(() => {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+					if (DUE != undefined) {
+						filterDue();
+					}
+				}, 100);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			if (!ALL) {
+				data = data.filter(r => parseInt(r.bip) >= 20);
+				data = data.filter(r => parseInt(r.barrel_ct) >= 3);
+			}
+
+			if (PLAYERS) {
+				PLAYERS = PLAYERS.split(",").map(r => r.replaceAll("-", " "));
+				data = data.filter(r => PLAYERS.includes(r.player));
+			}
+
+			/*
+			let filtered = data.filter(r => r.book != "");
+			if (filtered.length != 0) {
+				data = filtered;
+			}
+			*/
+			//data = data.filter(r => r.book != "");
+
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "hide",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					//{column: "barrel_ct", dir: "desc"},
+					{column: "game_trends.barrel_ct.5G", dir: "desc"},
+					{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					{title: "Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, responsive: 0},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 100 : undefined,
+						formatterParams: {
+							sport: SPORT,
+							noProp: true
+						},
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					//{title: "BIP", field: "bip", width: 55, sorter: "number"},
+					{title: "Last Homer", columns: [
+						//{title: "Gms", field: "homerLogs.g.streak", width: 40, formatter: gapFormatter},
+						//{title: "Avg", field: "homerLogs.gamesBtwnAvg", width: 40},
+						//{title: "Med", field: "homerLogs.gamesBtwnMed", width: 40},
+						//{title: "Z", field: "homerLogs.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40},
+						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+						{title: "SD", field: "homerLogs.pa.sd", width: 40},
+					]},
+					{title: "Barrels", columns: [
+						//{title: "Test", field: "brlCntTest", width: 45, sorter: "number"},
+						{title: "Total", field: "barrel_ct", width: 45, sorter: "number", formatter: percentileFormatter},
+						{title: "L5", field: "game_trends.barrel_ct.5G", width: 40, sorter: "number", formatter: percentileFormatter},
+						{title: "L5", field: "game_trends.barrel_ct.5GPercentile", visible: false},
+						{title: "L3", field: "game_trends.barrel_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter},
+						{title: "Rate", field: "barrels_per_bip", width: 55, sorter: "number", formatter: percentileFormatter},
+						{title: "L5", field: "game_trends.barrels_per_bip.5G", width: 40, sorter: "number", formatter: percentileFormatter},
+					]},
+					{title: "Hard Hit", columns: [
+						{title: "Total", field: "hard_hit_ct", width: 55, sorter: "number", formatter: percentileFormatter},
+						{title: "L5", field: "game_trends.hard_hit_ct.5G", width: 40, sorter: "number", formatter: percentileFormatter},
+						{title: "L3", field: "game_trends.hard_hit_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter},
+						{title: "Rate", field: "hard_hit_percent", width: 55, sorter: "number", formatter: percentileFormatter},
+						{title: "L5", field: "game_trends.hard_hit_percent.5G", width: 40, sorter: "number", formatter: percentileFormatter},
+						//
+						{title: "", field: "game_trends.barrel_ct.3G", visible: false},
+						{title: "", field: "game_trends.hard_hit_ct.5GPercentile", visible: false},
+						{title: "", field: "game_trends.hard_hit_ct.3GPercentile", visible: false},
+					]},
+					{title: "Close Calls", columns: [
+						{title: "Total", field: "homerLogs.close", width: 45, sorter: "number"},
+						{title: "L7", field: "homerLogs.close7", width: 45, sorter: "number"},
+						{title: "L3", field: "homerLogs.close3", width: 45, sorter: "number"},
+					]},
+					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 55, sorter: "number", formatter: percentileFormatter},
+					{title: "Exit Velocity", columns: [
+						{title: "Total", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "L5", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number"},
+					]},
+					{title: "Launch<br>Angle", field: "launch_angle_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
+					{title: "Distance", columns: [
+						{title: "HR Avg", field: "distance_hr_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
+						{title: "Avg", field: "distance_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
+					]},
+					{title: "Close Calls", columns: [
+						{title: "Tot", field: "homerLogs.closest_ct", width: 40, visible: MOBILE ? false : false},
+						{title: "Last", field: "homerLogs.lastClosest", width: 40, visible: MOBILE ? false : false},
+					]},
+					{title: "BPP", columns: [
+						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
+						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
+					]},
+					{title: "", field: "barrel_ctPercentile", visible: false}
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		function filterDue() {
+			if (TABLE.getFilters().length == 0) {
+				TABLE.setFilter([
+					{field:"homerLogs.pa.z_median", type:">", value: -0.3},
+					{field:"game", type:"!=", value: ""},
+					//{field:"game_trends.hard_hit_ct.5GPercentile", type:">=", value: 75},
+					{field:"barrel_ctPercentile", type:">=", value: 50},
+					{field:"game_trends.barrel_ct.5G", type:">", value: 0},
+				]);
+				TABLE.setSort([
+					{column: "homerLogs.pa.z_median", dir: "desc"},
+					//{column: "game_trends.barrel_ct.3G", dir: "desc"},
+				]);
+			} else {
+				TABLE.setFilter();
+				TABLE.setSort([
+					{column: "barrel_ct", dir: "desc"}
+				]);
+			}
+		}
+
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#left-body");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				right.style.display = "none";
+				left.style.width = "100%";
+				table.style.width = "100%";
+				setTimeout(() => {
+					table.style.width = "max-content";
+					tableContainer.style.width = "max-content";
+				}, 40);
+			} else {
+				row.select();
+				left.style.width = MOBILE ? "100%" : "50%";
+				right.style.display = "flex";
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+				document.querySelector("#btwn-select").value = "pa";
+				plotHRGap();
+			}
+		}
+
+		function filterToday() {
+			TABLE.setFilter([{field:"game", type:"!=", value: ""}]);
+		}
+
+		function filterToday2() {
+			let url = new URL(window.location.href);
+			if (TODAY) {
+				url.searchParams.delete("today");
+			} else {
+				url.searchParams.set("today", "");
+			}
+			window.location.href = `./barrels${HTML}${url.search}`;
+		}
+
+		function viewPercentiles() {
+			if (TOGGLE_PERCENTILE) {
+				window.location.href = `./barrels${HTML}`;
+			} else {
+				window.location.href = `./barrels${HTML}?percentiles=`;
+			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.5G", "hard_hit_ct", "game_trends.hard_hit_ct.5G"];
+				if (L3 != undefined) {
+					arr.push("game_trends.barrel_ct.3G");
+					arr.push("game_trends.hard_hit_ct.3G");
+				}
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				}
+			});
+		}
+	</script>
+	<script src="auth.js"></script>
+</body>
+</html>

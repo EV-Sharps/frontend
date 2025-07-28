@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Preview</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+			padding-top: 0;
+		}
+		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+			padding-top: 2px;
+		}
+		#table, #table-container {
+			width: auto;
+		}
+		#left-body {
+			height: 100%;
+		}
+		@media (max-width: 600px) {
+			h1 {
+				display: initial;
+			}
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				position: inherit;
+				justify-content: space-around;
+				align-items: baseline;
+			}
+			.disclaimer {
+				position: initial;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+				<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+			</div>
+			<div id="table"></div>
+			<div id="watermark">
+				<img src="logos/logo.png">
+			</div>
+		</div>
+	</div>
+	<div id="right-body" class="body">
+	</div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "preview";
+		let RES = null;
+		let TABLE = null;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let DATE = URLParams.get("date");
+		let MARK = URLParams.get("mark");
+		let TODAY = getToday();
+		let SPORT = "mlb";
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let BVP = URLParams.get("bvp");
+		let PRETTY = URLParams.get("pretty");
+		//let LAST = URLParams.get("last") != undefined;
+		let LAST = false;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+		}
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchData();
+		//fetchUpdated();
+		//initDatepicker("2025-05-11");
+
+		function fetchData() {
+			let s = SPORT;
+			let url = `http://localhost:5000`;
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app`;
+			}
+			renderTable([]);
+			fetch(url+`/api/preview?sport=${s}`, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				data = data.data;
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "hr_pa", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				//groupBy: "game",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: "HR/PA", field: "hr_pa", width: 45 },
+					{title: "HRs", field: "home_run", width: 45 },
+					{title: "PA", field: "pa", width: 45 },
+					{title: "ERA", field: "p_era", width: 45, formatter: eraFormatter, visible: false },
+					{title: "xBA", field: "xba", width: 45, formatter: baFormatter, visible: false },
+					{title: "xwOBA", field: "xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+					{title: "Fly%", field: "flyballs_percent", width: 45, formatter: summaryFormatter, visible: true },
+					{title: "SwSp%", field: "sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: true },
+					{title: "EVelo", field: "exit_velocity_avg", width: 45, formatter: summaryFormatter },
+					{title: "HH%", field: "hard_hit_percent", width: 45, formatter: summaryFormatter },
+					{title: "BRL%", field: "barrel_batted_rate", width: 45, formatter: summaryFormatter },
+				]
+			});
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+	</script>
+	<script src="auth.js"></script>
+</body>
+</html>

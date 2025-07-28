@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ BvP</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+			padding-top: 0;
+		}
+		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+			padding-top: 2px;
+		}
+		#table, #table-container {
+			width: auto;
+		}
+		#left-body {
+			height: 100%;
+		}
+		@media (max-width: 600px) {
+			h1 {
+				display: initial;
+			}
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				position: inherit;
+				justify-content: space-around;
+				align-items: baseline;
+			}
+			.disclaimer {
+				position: initial;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+				<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div id="date-dropdown" class="dropdown">
+					<input type="text" id="date" />
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<button onclick="groupByGame();">Game Filter</button>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+			</div>
+			<div id="table"></div>
+			<div id="watermark">
+				<img src="logos/logo.png">
+			</div>
+		</div>
+	</div>
+	<div id="right-body" class="body">
+		<div id="player-tables">
+			<div id="player-header">
+				<h2></h2>
+				<div class="player-dropdowns" style="gap: 5px;">
+					<div class="dropdown">
+						<select id="player-year-select" style=""></select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+					<div class="dropdown">
+						<select id="player-venue-select" style="">
+							<option selected>A+H</option>
+							<option>Away</option>
+							<option>Home</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+				</div>
+				<div id="player-controls">
+					<div class="player-dropdowns">
+						<div class="dropdown">
+							<select id="player-ou-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+						<div class="dropdown" style="margin: 0 0.5rem;">
+							<select id="player-lines-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+						<div class="dropdown">
+							<select id="player-props-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="player-row">
+				<div id="player-ev"></div>
+				<div id="player-odds"></div>
+			</div>
+			<div class="player-row">
+				<div id="player-pitcher"></div>
+				<div id="player-weather"></div>
+			</div>
+			<div id="player-opp"></div>
+			<div id="player-table">
+				<div id="log-chart"></div>
+			</div>
+		</div>
+	</div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "bvp";
+		let RES = null;
+		let TABLE = null;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let BOOK = URLParams.get("book");
+		let DATE = URLParams.get("date");
+		let TODAY = getToday();
+		let SPORT = URLParams.get("sport");
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let BVP = URLParams.get("bvp");
+		let PRETTY = URLParams.get("pretty");
+		//let LAST = URLParams.get("last") != undefined;
+		let LAST = false;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		if (!SPORT) {
+			SPORT = "mlb";
+		}
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		function initDatepicker(dt) {
+			flatpickr("#date", {
+				altInput: true,
+			    altFormat: "F j, Y",
+			    dateFormat: "Y-m-d",
+			    minDate: "today",
+			    maxDate: new Date().fp_incr(1),
+			    //defaultDate: DATE || new Date()
+			    minDate: dt,
+			    maxDate: dt,
+			    defaultDate: dt,
+			});
+		}
+
+		fetchData();
+		//fetchUpdated();
+		//initDatepicker("2025-05-11");
+
+		function fetchData() {
+			let s = SPORT;
+			let url = `http://localhost:5000`;
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app`;
+			}
+			renderTable([]);
+			fetch(url+`/api/bvp`, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(response => response.json()).then(data => {
+				data = data.data;
+				initDatepicker(data.date);
+				data = data.res;
+				data = data.filter(r => r.game != "");
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					TABLE.redraw();
+					if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
+						printReddit_();
+						print_2();
+					}
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function fetchData2() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/stats_bvp.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				initDatepicker(data.date);
+				data = data.res;
+				data = data.filter(r => r.game != "");
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					TABLE.redraw();
+					if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
+						printReddit_();
+						print_2();
+					}
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{"column": "bvpAvg", "dir": "desc"},
+					{"column": "bvpH", "dir": "desc"},
+					{"column": "bvpHR", "dir": "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
+					{title: "Book", field: "daily.book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, formatterParams:{book:BOOK}, responsive: 0},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{title: "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {lastName: LAST}, hozAlign: "left", width: MOBILE || LAST ? 100 : 150},
+
+					//{title: "Pitcher Summary", field: "pitcherSummary"},
+					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
+					{title: "Vs Team '25", field: "bvt", hozAlign: "left", width: 75},
+					{title: "@ 🏟 2025", field: "bvs", hozAlign: "left", width: 80, visible: true},
+					{title: "BPP HR Factors", columns: [
+						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
+						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
+					]},
+					{title: "Last Homer (Due)", columns: [
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40},
+						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+					]},
+					{title: "Batter Summary", columns: [
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: true },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter },
+					]},
+					{title: "Pitcher Summary", columns: [
+						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: true },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: true },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter },
+					]},
+					{title: "Rankings", columns: [
+						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50},
+						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50},
+					]},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					
+					// hidden
+					{title: "", field: "bvpHR", sorter: "number", visible: false},
+					{title: "", field: "bvpH", sorter: "number", visible: false},
+					{title: "", field: "bvpAvg", sorter: "number", visible: false},
+					{title: "", field: "prop", visible: false},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		function rowClick(row) {
+			if (SPORT.includes("futures")) {
+				return;
+			}
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			const cols = ["bookOdds.fd", "bookOdds.dk", "bookOdds.mgm", "bookOdds.365", "bookOdds.pn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.espn"];
+			if (MOBILE) {
+				cols.push("kelly");
+			}
+			if (sel.length > 0 && sel[0] == row && !MOBILE) {
+				cols.forEach(col => TABLE.showColumn(col));
+				document.querySelector("#right-body").style.display = "none";
+				document.querySelector("#table").style["max-width"] = "1400px";
+				document.querySelector("#left-body").style.width = "100%";
+			} else {
+				cols.forEach(col => TABLE.hideColumn(col));
+				document.querySelector("#table").style["max-width"] = "720px";
+				showPlayerInfo(row);
+				TABLE.scrollToRow(row, "center");
+				row.select();
+			}
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+
+		function hoverPitcher() {
+			const cells = document.querySelectorAll(".opp-cell");
+			const rows = TABLE.getRows();
+			for (cell of cells) {
+				const label = cell.getAttribute("aria-label");
+				cell.addEventListener("mousemove", function(event) {
+					const el = document.querySelector("#tooltip");
+					el.style.left = event.pageX + 10 + "px";
+					el.style.top = event.pageY + 10 + "px";
+					el.style.display = "block";
+					el.innerText = label;
+				});
+
+				cell.addEventListener("mouseleave", function() {
+					document.querySelector("#tooltip").style.display = "none";
+				})
+			}
+		}
+
+		function nickname(team, player) {
+			let last = player.split(" ")[1];
+			if (player == "enrique hernandez") {
+				return "K. Hernandez";
+			} else if (player == "michael a taylor") {
+				return "M. Taylor";
+			} else if (player == "max muncy" || last == "contreras") {
+				return `${title(last)} (${team.toUpperCase()})`;
+			} else if (last == "de") {
+				last = "DLC";
+			}
+			if (["hernandez", "taylor", "garcia", "DLC"].includes(last)) {
+				return player.split(" ")[0].toUpperCase().at(0)+". "+title(last);
+			}
+			return player.split(" ")[0].toUpperCase().at(0)+". "+title(last);
+			return title(last);
+		}
+
+		function print_2() {
+			const rows = TABLE.getRows("active").map(r => r.getData()).filter(r => !r.bvp.includes("0 HR"));
+			let out = {};
+			for (row of rows) {
+				let tot = row.bvp.split(" HR")[0].split(" ");
+				tot = tot[tot.length - 1];
+				if (!tot) {
+					continue;
+				}
+				if (!out[tot]) {
+					out[tot] = [];
+				}
+				//out[tot].push(nickname(row.team, row.player));
+				out[tot].push(`${row.team.toUpperCase()} ${title(row.player.split(" ").at(-1))}`);
+			}
+			let o ="";
+			let dt = new Date();
+			dt.setDate(dt.getDate() + 1);
+			let formattedDt = dt.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+			const day = dt.getDate();
+			const suffix = ["th", "st", "nd", "rd"][(day % 10 > 3 || [11,12,13].includes(day)) ? 0 : day % 10];
+			o = `${formattedDt}${suffix} BvP (Batter vs Starting Pitcher History)\n\nevdingers.com/bvp\n\n`;
+			let keys = Object.keys(out).sort().reverse();
+			for (hr of keys) {
+				let emoji = "🔥".repeat(parseInt(hr));
+				if (out[hr]) {
+					o += `${hr} HR ${emoji}: ${out[hr].join(", ")}\n`;
+				}
+				o += "\n";
+			}
+			console.log(o);
+		}
+
+		function print_() {
+			const rows = TABLE.getRows("active").map(r => r.getData());
+			let out = {};
+			let oppPitchers = {};
+			let gameLines = {};
+			let teamLines = {};
+			for (row of rows) {
+				gameLines[row.game] = {...row.gameLines};
+				teamLines[row.team] = {...row.gameLines};
+				oppPitchers[row.opp] = {...row.pitcherData};
+				oppPitchers[row.opp]["player"] = title(row.pitcher.split(" ").at(-1));
+				let tot = row.bvp.split(" HR")[0].split(" ");
+				tot = tot[tot.length - 1];
+				if (!tot) {
+					//continue;
+				}
+				let key = row.startSortable.toString().padStart(4, "0")+" "+row.start+" "+row.game;
+				if (!out[key]) {
+					out[key] = {};
+					out[key][row.opp] = [];
+					out[key][row.team] = [];
+				}
+
+				if (row.bvp) {
+					if (row.bvp.includes("HR") && !row.bvp.includes("0 HR")) {
+						let p = title(row.player.split(" ").at(-1));
+						if (p == "Lowe" && row.team == "tb") {
+							p = `${row.player.toUpperCase().at(0)} Lowe`;
+						}
+						out[key][row.team].push(`**${p}** (${row.bvp})`);
+					} else {
+						let b = row.bvp;
+						if (b.split("-")[0] == "0") {
+							b = row.bvp.replace(", 0 HR", "");
+							//b = `${b}, ${row.bvpStats.so} Ks`;
+						} else {
+							b = row.bvp;
+						}
+						let p = title(row.player.split(" ").at(-1));
+						if (p == "Lowe" && row.team == "tb") {
+							p = `${row.player.toUpperCase().at(0)} Lowe`;
+						}
+						out[key][row.team].push(`${p} (${b})`);
+					}
+				}
+			}
+			let o = "";
+			let dt = new Date();
+			dt.setDate(dt.getDate() + 1);
+			let formattedDt = dt.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+			const day = dt.getDate();
+			const suffix = ["th", "st", "nd", "rd"][(day % 10 > 3 || [11,12,13].includes(day)) ? 0 : day % 10];
+			o = `${formattedDt}${suffix} BvP (batter vs starting pitcher)\n\nhttps://dailyev.github.io/bvp\n\n`;
+			o += "[Cash App](https://cash.app/$intersectinglines) | [Coffee](https://buymeacoffee.com/interlines) tips if you appreciate the work put in\n\n";
+			let keys = Object.keys(out).sort();
+			//console.log(keys)
+			for (game of keys) {
+				let [sortable,t,pm,a,sep,h] = game.split(" ");
+				let oppA = "";
+				let oppAData = oppPitchers[a];
+				if (oppPitchers[a] && oppPitchers[a]["player_id"] != undefined) {
+					oppA = `[${oppPitchers[a]["player"]}](https://baseballsavant.mlb.com/savant-player/${oppPitchers[a]["player_id"]})`;
+				} else if (oppPitchers[a]) {
+					oppA = oppPitchers[a]["player"];
+				}
+				let oppH = "";
+				let oppHData = oppPitchers[h];
+				if (oppPitchers[h] && oppPitchers[h]["player_id"] != undefined) {
+					oppH = `[${oppPitchers[h]["player"]}](https://baseballsavant.mlb.com/savant-player/${oppPitchers[h]["player_id"]})`;
+				} else if (oppPitchers[h]) {
+					oppH = oppPitchers[h]["player"];
+				}
+				
+				let gameLine = gameLines[`${a} ${sep} ${h}`];
+				o += `###${a.toUpperCase()} (${oppA}) @ ${h.toUpperCase()} (${oppH}) (${t} ${pm})\n\n`;
+				let awayArr = out[game][a].filter(r => r.includes("HR") && !r.includes("0 HR"));
+				if (awayArr.length < 5) {
+					awayArr.push(...out[game][a].slice(awayArr.length, 5));
+				}
+				let homeArr = out[game][h].filter(r => r.includes("HR") && !r.includes("0 HR"));
+				if (homeArr.length < 5) {
+					homeArr.push(...out[game][h].slice(homeArr.length, 5));
+				}
+				
+				let spread = gameLine.spread;
+				let total = gameLine.total;
+				let awayLine = teamLines[a];
+				let homeLine = teamLines[h];
+				let [awayTotal, homeTotal] = ["", ""];
+				if (gameLine.total) {
+					awayTotal = `o${awayLine.tt} (${awayLine.ttOU})`;
+					homeTotal = `o${homeLine.tt} (${homeLine.ttOU})`;
+					o += `- ${a.toUpperCase()} o${awayLine.tt} (${awayLine.ttOU}) @ ${h.toUpperCase()} o${homeLine.tt} (${homeLine.ttOU})\n`;
+				}
+
+				/*
+				
+				LAA SP: 9 HRs, 3.81% HR/PA, 9.9% BRL, 26.3% Flyball, 7.4% Meatball, 14.8% K
+
+				
+				LAA Batters|bvp|xSLG|xBA|HH%|BRL%
+				Jorge Soler|
+				*/
+
+				if (!oppHData || oppHData.barrel_batted_rate == undefined) {
+					o += `- ${h.toUpperCase()} ${oppH}\n`;
+				} else {
+					hrPA = (oppHData.home_run * 100 / oppHData.pa).toFixed(2);
+					o += `- ${h.toUpperCase()} SP: ${oppHData.home_run} HRs, ${hrPA}% HR/PA, ${oppHData.barrel_batted_rate}% BRL, ${oppHData.flyballs_percent}% Flyball, ${oppHData.meatball_percent}% Meatball, ${oppHData.k_percent}% K\n`;
+				}
+				if (awayArr.length == 0) {
+					o += `- ${a.toUpperCase()}: n/a\n`;
+				} else {
+					o += `- ${a.toUpperCase()} batters: ${awayArr.join(", ")}\n`;
+				}
+
+				if (!oppAData || oppAData.barrel_batted_rate == undefined) {
+					o += `- ${a.toUpperCase()} ${oppA}\n`;
+				} else {
+					hrPA = (oppAData.home_run * 100 / oppAData.pa).toFixed(2);
+					o += `- ${a.toUpperCase()} SP: ${oppAData.home_run} HRs, ${hrPA}% HR/PA, ${oppAData.barrel_batted_rate}% BRL, ${oppAData.flyballs_percent}% Flyball, ${oppAData.meatball_percent}% Meatball, ${oppAData.k_percent}% K\n`;
+				}
+				if (homeArr.length == 0) {
+					o += `- ${h.toUpperCase()}: n/a\n`;
+				} else {
+					o += `- ${h.toUpperCase()} batters: ${homeArr.join(", ")}\n`;
+				}
+				o += "\n";
+			}
+			console.log(o);
+		}
+
+		function printReddit_() {
+			const rows = TABLE.getRows("active").map(r => r.getData());
+			let out = {};
+			let oppPitchers = {};
+			let gameLines = {};
+			let teamLines = {};
+			let playerSavant = {};
+			let gameBpp = {};
+			for (row of rows) {
+				gameLines[row.game] = {...row.gameLines};
+				teamLines[row.team] = {...row.gameLines};
+				oppPitchers[row.opp] = {...row.pitcherData};
+				oppPitchers[row.opp]["player"] = title(row.pitcher.split(" ").at(-1));
+				let tot = row.bvp.split(" HR")[0].split(" ");
+				tot = tot[tot.length - 1];
+				if (!tot) {
+					//continue;
+				}
+				let key = row.startSortable.toString().padStart(4, "0")+" "+row.start+" "+row.game;
+				if (!out[key]) {
+					out[key] = {};
+					out[key][row.opp] = [];
+					out[key][row.team] = [];
+				}
+
+				if (!playerSavant[row.team]) {
+					playerSavant[row.team] = {};
+				}
+				playerSavant[row.team][row.player] = {...row.savant};
+
+				if (key.includes("Suspended")) {
+					continue;
+				}
+				out[key][row.team].push(row);
+				gameBpp[key] = row.bpp;
+			}
+
+			console.log(gameBpp);
+			let o = "";
+			let dt = new Date();
+			dt.setDate(dt.getDate() + 1);
+			let formattedDt = dt.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+			const day = dt.getDate();
+			const suffix = ["th", "st", "nd", "rd"][(day % 10 > 3 || [11,12,13].includes(day)) ? 0 : day % 10];
+			o = `${formattedDt}${suffix} BvP (batter vs starting pitcher)\n\nhttps://dailyev.github.io/bvp\n\n`;
+			o += "[Cash App](https://cash.app/$intersectinglines) | [Coffee](https://buymeacoffee.com/interlines) tips if you appreciate the work put in\n\n";
+			let keys = Object.keys(out).sort();
+			//console.log(keys)
+			for (game of keys) {
+				if (game.includes("Suspended")) {
+					continue;
+				}
+				let key = game;
+				let [sortable,t,pm,a,sep,h] = game.split(" ");
+				let oppA = "";
+				let oppAData = oppPitchers[a];
+				if (oppPitchers[a] && oppPitchers[a]["player_id"] != undefined) {
+					oppA = `[${oppPitchers[a]["player"]}](https://baseballsavant.mlb.com/savant-player/${oppPitchers[a]["player_id"]})`;
+				} else if (oppPitchers[a]) {
+					oppA = oppPitchers[a]["player"];
+				}
+				let oppH = "";
+				let oppHData = oppPitchers[h];
+				if (oppPitchers[h] && oppPitchers[h]["player_id"] != undefined) {
+					oppH = `[${oppPitchers[h]["player"]}](https://baseballsavant.mlb.com/savant-player/${oppPitchers[h]["player_id"]})`;
+				} else if (oppPitchers[h]) {
+					oppH = oppPitchers[h]["player"];
+				}
+				
+				let gameLine = gameLines[`${a} ${sep} ${h}`];
+				o += `###${a.toUpperCase()} (${oppA}) @ ${h.toUpperCase()} (${oppH}) (${t} ${pm})\n\n`;
+
+				o += `> ${gameBpp[key]} BPP HR Factor\n\n`;
+
+				let awayArr = out[game][a];
+				let homeArr = out[game][h];
+				let spread = gameLine.spread;
+				let total = gameLine.total;
+				let awayLine = teamLines[a];
+				let homeLine = teamLines[h];
+				let [awayTotal, homeTotal] = ["", ""];
+				if (gameLine.total) {
+					awayTotal = `o${awayLine.tt} (${awayLine.ttOU})`;
+					homeTotal = `o${homeLine.tt} (${homeLine.ttOU})`;
+					o += `> ${a.toUpperCase()} o${awayLine.tt} (${awayLine.ttOU}) @ ${h.toUpperCase()} o${homeLine.tt} (${homeLine.ttOU})\n`;
+				}
+
+				/*
+				
+				LAA SP: 9 HRs, 3.81% HR/PA, 9.9% BRL, 26.3% Flyball, 7.4% Meatball, 14.8% K
+
+				
+				LAA Batters|bvp|xSLG|xBA|HH%|BRL%
+				Jorge Soler|
+				*/
+
+				if (!oppAData || oppAData.barrel_batted_rate == undefined) {
+					o += `- ${a.toUpperCase()} ${oppA}\n`;
+				} else {
+					hrPA = (oppAData.home_run * 100 / oppAData.pa).toFixed(2);
+					o += `\n> ${a.toUpperCase()} SP: ${oppAData.home_run} HRs, ${hrPA}% HR/PA, ${oppAData.barrel_batted_rate}% BRL, ${oppAData.flyballs_percent}% Flyball, ${oppAData.meatball_percent}% Meatball, ${oppAData.k_percent}% K\n`;
+				}
+
+
+				if (!oppHData || oppHData.barrel_batted_rate == undefined) {
+					o += `- ${h.toUpperCase()} ${oppH}\n`;
+				} else {
+					hrPA = (oppHData.home_run * 100 / oppHData.pa).toFixed(2);
+					o += `\n> ${h.toUpperCase()} SP: ${oppHData.home_run} HRs, ${hrPA}% HR/PA, ${oppHData.barrel_batted_rate}% BRL, ${oppHData.flyballs_percent}% Flyball, ${oppHData.meatball_percent}% Meatball, ${oppHData.k_percent}% K\n`;
+				}
+
+				let o2 = `\n${a.toUpperCase()}|BvP|xSLG|BRL|${h.toUpperCase()}|BvP|xSLG|BRL\n`;
+				o2 += ":--|:--|:--|:--|:--|:--|:--|:--\n";
+
+				let i = 0;
+				awayArr = awayArr.filter(r => r.savant && r.savant.est_slg).sort((a,b) => b.savant.est_slg - a.savant.est_slg);
+				homeArr = homeArr.filter(r => r.savant && r.savant.est_slg).sort((a,b) => b.savant.est_slg - a.savant.est_slg);
+				for (i = 0; i < Math.max(awayArr.length, homeArr.length); ++i) {
+					let row = awayArr[i];
+					let row2 = homeArr[i];
+
+					if (!row) {
+						o2 += "|||||";
+					} else {
+						let p = title(row.player).split(" ").at(-1);
+						if (p == "Lowe" && row.team == "tb") {
+							p = `${row.player.toUpperCase().at(0)} Lowe`;
+						} else if (p == "Hernandez" && row.team == "lad") {
+							p = `${row.player.toUpperCase().at(0)} Hernandez`;
+						}
+						o2 += `${p}|${row.bvp || "-"}|${row.savant.est_slg.toFixed(3).slice(1).replace(/^0/, ".")}|${row.savant.barrels_per_bip}%|`;
+					}
+					if (!row2) {
+						o2 += "||||\n";
+					} else {
+						let p = title(row2.player).split(" ").at(-1);
+						if (p == "Lowe" && row2.team == "tb") {
+							p = `${row2.player.toUpperCase().at(0)} Lowe`;
+						} else if (p == "Hernandez" && row2.team == "lad") {
+							p = `${row2.player.toUpperCase().at(0)} Hernandez`;
+						}
+						o2 += `${p}|${row2.bvp || "-"}|${row2.savant.est_slg.toFixed(3).slice(1).replace(/^0/, ".")}|${row2.savant.barrels_per_bip}%\n`;
+					}
+				}
+				o += o2;
+				o += "\n";
+			}
+			console.log(o);
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(col => col.hide());
+			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(col => TABLE.showColumn(col));
+		}
+	</script>
+	<script src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Daily Dingers</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">	
+</head>
+<style>
+	#table-container {
+		padding-top: 1rem;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+</style>
+<body>
+	<nav>
+		<a href="/" onclick="event.preventDefault(); route('/');">Home</a>
+		<a href="/daily-dingers" onclick="event.preventDefault(); route('/daily-dingers');">Daily Dingers</a>
+	</nav>
+	<div>
+		Dingers
+	</div>
+	<div id="table-container">
+		<div id="table"></div>
+	</div>
+	<script type="text/javascript">
+		const url = "https://api.github.com/repos/dailyev/props/contents/static/dailyev/evArr.json";
+		fetch(url, {
+			headers: {
+				"Accept": "application/vnd.github.v3.raw"
+			}
+		})
+			.then(response => response.json())
+			.then(data => renderTable(data))
+			.catch(err => console.log(err));
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				data: data,
+				initialSort: [
+					{column: "ev", dir: "desc"},
+				],
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{title: "EV", field: "ev", hozAlign: "center", width: 60, sorter: "number"},
+					{title: "Book", field: "book", hozAlign: "center", width: 60},
+					{title: "Player", field: "player", headerFilter: "input"},
+					{title: "FD", field: "bookOdds.fd", hozAlign: "center", width: 85, sorter: "number"},
+					{title: "Bet365", field: "bookOdds.365", hozAlign: "center", width: 85, sorter: "number"},
+					{title: "DK", field: "bookOdds.dk", hozAlign: "center", width: 85, sorter: "number"},
+					{title: "MGM", field: "bookOdds.mgm", hozAlign: "center", width: 85, sorter: "number"},
+					{title: "CZ", field: "bookOdds.cz", hozAlign: "center", width: 85, sorter: "number"},
+					{title: "Kambi", field: "bookOdds.kambi", hozAlign: "center", width: 85, sorter: "number"},
+				]
+			});
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Stats</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+			padding-top: 0;
+		}
+		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+			padding-top: 2px;
+		}
+		#table, #table-container {
+			
+		}
+		#left-body {
+			height: 100%;
+		}
+		#left-body {
+			padding: 0;
+		}
+		#player-controls {
+			display: none;
+			justify-content: space;
+		}
+		.switch {
+			background-color: #007BFF; /* Nice blue color */
+			color: #fff; /* White text */
+			border: none; /* Remove border */
+			border-radius: 5px; /* Rounded corners */
+			padding: 5px 10px; /* Adjust padding for a smaller size */
+			font-size: 12px; /* Smaller font size */
+			cursor: pointer; /* Pointer cursor */
+			transition: background-color 0.3s ease; /* Smooth hover effect */
+		}
+		@media (max-width: 600px) {
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				display: none;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div>
+					<div id="prop-dropdown" class="dropdown">
+						<!-- <button onclick="toggleFilterProp()">All Props</button> -->
+						<select id="prop-select">
+							<option value="hr">HR</option>
+							<option value="h+r+rbi">H+R+RBI</option>
+							<option value="h">Hit</option>
+							<option value="tb">TB</option>
+							<!-- <option value="sb">SB</option> -->
+							<option value="k">K</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+				</div>
+				<button onclick="groupByGameStats();">Game Filter</button>
+				<!-- <button onclick="toggleSummary();">Batter Summary</button> -->
+				<!-- <button onclick="filterConfirmed();">Confirmed Filter</button> -->
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+				<div id="updated">Updated: </div>
+			</div>
+			<div id="table"></div>
+		</div>
+	</div>
+	<div id="right-body" class="body">
+		<div id="player-tables">
+			<div id="player-header">
+				<h2></h2>
+				<div class="player-dropdowns" style="gap: 5px;">
+					<div class="dropdown">
+						<select id="player-graph-select" style="">
+							<option value="logs">Logs</option>
+							<option value="dist-evo">Dist & Evo</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+					<div class="dropdown">
+						<select id="player-year-select" style=""></select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+					<div class="dropdown">
+						<select id="player-venue-select" style="">
+							<option selected>A+H</option>
+							<option>Away</option>
+							<option>Home</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+				</div>
+				<div id="player-controls">
+					<div class="player-dropdowns">
+						<div class="dropdown">
+							<select id="player-ou-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+						<div class="dropdown" style="margin: 0 0.5rem;">
+							<select id="player-lines-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+						<div class="dropdown">
+							<select id="player-props-select"></select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="player-row">
+				<div id="player-ev"></div>
+				<div id="player-odds"></div>
+			</div>
+			<div class="player-row">
+				<div id="player-pitcher"></div>
+				<div id="player-weather"></div>
+			</div>
+			<div id="player-opp"></div>
+			<div id="player-table">
+				<div id="log-chart"></div>
+			</div>
+		</div>
+	</div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "stats";
+		let TABLE = null;
+		let HISTORICAL = {};
+		let RES = null;
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let BOOK = URLParams.get("book");
+		let SPORT = URLParams.get("sport");
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let BVP = URLParams.get("bvp");
+		let CUTOFF = URLParams.get("cutoff") || 10;
+		let IS_PITCHER = false;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		if (!SPORT) {
+			SPORT = "mlb";
+		}
+
+		if (["k"].includes(PROP)) {
+			IS_PITCHER = true;
+		}
+
+		if (!PROP) {
+			window.location.href = `./stats${HTML}?prop=hr`;
+		}
+		if (PROP) {
+			PROP = PROP.replaceAll("-", "+");
+			if (PROP == "k") {
+				document.querySelector("#table").style.width = "auto";
+				document.querySelector("#updated-container").style.maxWidth = "1130px";
+			}
+		}
+
+		if (LEADERS) {
+			document.querySelector("h1").innerText = "Distance Leaders";
+		}
+
+		document.querySelector("#prop-select").addEventListener("change", function(event) {
+			const prop = event.target.value;
+			window.location.href = `./stats${HTML}?prop=${prop.replaceAll("+","-")}`;
+			//TABLE.getRows("active")[0].getElement().click();
+		});
+
+		document.querySelector("#player-props-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const prop = event.target.value;
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == prop && d.player == rowData.player && d.under == false;
+			});
+			rowClick(rows[0]);
+		});
+
+		document.querySelector("#player-lines-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == rowData.prop && d.player == rowData.player && d.under == false && d.playerHandicap == event.target.value;
+			});
+			rowClick(rows[0]);
+		});
+
+		document.querySelector("#player-ou-select").addEventListener("change", function(event) {
+			const rowData = TABLE.getSelectedRows()[0].getData();
+			const rows = TABLE.getRows().filter(function(r) {
+				const d = r.getData();
+				return d.prop == rowData.prop && d.player == rowData.player && d.under == (event.target.value == "under") && d.playerHandicap == rowData.playerHandicap;
+			});
+			rowClick(rows[0]);
+		});
+
+		if (SPORT == "mlb") {
+			const yearSelect = document.querySelector("#player-year-select");
+			yearSelect.value = YEAR;
+			yearSelect.style.display = "flex";
+			yearSelect.addEventListener("change", function(event) {
+				const data = TABLE.getSelectedRows()[0].getData();
+				let logs = data.logs;
+				let dtSplits = data.dtSplits;
+
+				if (event.target.value == YEAR) {
+					logs = data.logs;
+					dtSplits = data.dtSplits;
+					plotMap(data, dtSplits, logs);
+				} else {
+					getYearLogs(data, event.target.value);
+				}
+			});
+		}
+
+		function getYearLogs(data, year) {
+			const player = data.player;
+			if (player in HISTORICAL) {
+				plotMap(data, HISTORICAL[player][year].date, HISTORICAL[player][year][data.prop]);
+			} else {
+				const url = `https://api.github.com/repos/dailyev/props/contents/static/splits/${SPORT}_historical/${data.team}.json`;
+				fetch(url, {
+					headers: { "Accept": "application/vnd.github.v3.raw" }
+				}).then(response => response.json()).then(yearData => {
+					HISTORICAL = yearData;
+					plotMap(data, yearData[player][year].date, yearData[player][year][data.prop]);
+				}).catch(err => console.log(err));
+			}
+		}
+
+		document.querySelector("#player-graph-select").addEventListener("change", function(event) {
+			const data = TABLE.getSelectedRows()[0].getData();
+			const graph = event.target.value;
+			if (graph == "dist-evo") {
+				plotDistEvo();
+			} else {
+				plotLogs();
+			}
+		});
+
+		document.querySelector("#player-venue-select").addEventListener("change", function(event) {
+			const data = TABLE.getSelectedRows()[0].getData();
+			const player = data.player;
+			const venue = event.target.value.toLowerCase();
+			let dtSplits = data.dtSplits;
+			let logs = data.logs;
+			let awayHome = data.awayHomeSplits;
+			let year = document.querySelector("#player-year-select").value;
+
+			if (year != "2025") {
+				dtSplits = HISTORICAL[player][year].date;
+				logs = HISTORICAL[player][year][data.prop];
+				awayHome = HISTORICAL[player][year].awayHome;
+			}
+
+			let newX = [], newY = [];
+			if (venue == "away") {
+				const awaySplits = dtSplits.map((date, idx) => {
+					if (awayHome[idx] == "A") {
+						return { date, total: logs[idx] };
+					}
+					return null;
+				}).filter(item => item != null);
+				newX = awaySplits.map(r => r.date);
+				newY = awaySplits.map(r => r.total);
+			} else if (venue == "home") {
+				const homeSplits = dtSplits.map((date, idx) => {
+					if (awayHome[idx] == "H") {
+						return { date, total: logs[idx] };
+					}
+					return null;
+				}).filter(item => item != null);
+				newX = homeSplits.map(r => r.date);
+				newY = homeSplits.map(r => r.total);
+			} else {
+				newX = dtSplits;
+				newY = logs;
+			}
+
+			plotMap(data, newX, newY);
+			//Plotly.update("log-chart", { x: [newX], y: [newY] }, {}, [0]);
+		});
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchUpdated();
+		fetchData();
+
+		function fetchData() {
+			let s = SPORT;
+			renderTable([]);
+			let url = `http://localhost:5000`;
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app`;
+			}
+			fetch(url+`/api/stats?prop=${PROP}&sport=${SPORT}`, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(response => response.json()).then(data => {
+				data = data.data;
+				if (LEADERS) {
+					data = data.filter(r => r.feed.evo.length > 20);
+				}
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					if (PROP) {
+						document.querySelector("#prop-select").value = PROP;
+						if (PROP != "hr") {
+							TABLE.setSort([
+								{column: "hitRate", dir: "desc"},
+								{column: "hitRateL10", dir: "desc"},
+								{column: "startSortable", dir: "asc"},
+							])
+						}
+					}
+					hideCols();
+					TABLE.redraw();
+
+					hoverPitcher()
+					filterConfirmed()
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function fetchData2() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/stats_${PROP}.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				/*
+				if (PROP) {
+					data = data.filter(r => r.prop == PROP);
+				}
+				*/
+				if (LEADERS) {
+					data = data.filter(r => r.feed.evo.length > 20);
+				}
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					if (PROP) {
+						document.querySelector("#prop-select").value = PROP;
+						if (PROP != "hr") {
+							TABLE.setSort([
+								{column: "hitRate", dir: "desc"},
+								{column: "hitRateL10", dir: "desc"},
+								{column: "startSortable", dir: "asc"},
+							])
+						}
+					}
+					hideCols();
+					TABLE.redraw();
+
+					hoverPitcher()
+					filterConfirmed()
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function hideCols() {
+			if (SPORT == "mlb") {
+				["hitRateLYR"].forEach(col => TABLE.showColumn(col));
+			}
+			if (IS_PITCHER) {
+				["pitcherData.k_percent", "pitcherData.whiff_percent"].map(x => TABLE.showColumn(x));
+				["pitcherData.p_era", "order", "weather", "bvp", "stadiumRank"].map(x => TABLE.hideColumn(x));
+				for (col of TABLE.getColumns()) {
+					if (col.getField().includes("savant")) {
+						col.hide();
+					}
+					if (col.getField().includes("z")) {
+						col.show();
+					}
+				}
+			}
+			if (PROP == "hr") {
+				["savant.est_ba", "savant.est_woba", "savant.sweet_spot_percent", "pitcherData.flyballs_percent", "pitcherData.p_era", "pitcherData.xwoba", "pitcherData.xba", "daily.line"].map(x => TABLE.hideColumn(x));
+				["savant.hard_hit_percent", "pitcherData.hard_hit_percent"].map(x => TABLE.showColumn(x));
+			} else if (["h", "h+r+rbi"].includes(PROP)) {
+				["savant.exit_velocity_avg", "pitcherData.exit_velocity_avg"].map(x => TABLE.hideColumn(x));
+				["pitcherData.xba", "pitcherData.xwoba"].map(x => TABLE.showColumn(x));
+			}
+
+			if (PROP == "k") {
+				["bpp", "playerFactor"].map(x => TABLE.hideColumn(x));
+			}
+		}
+
+		function showPlayerInfo(row) {
+			//const lastYear = SPORT == "mlb";
+			const lastYear = false;
+			const cutoff = 0;
+			const data = row.getData();
+			const playerRows = TABLE.getRows()
+				.filter(r => r.getData().player == data.player)
+				.map(r => r.getData());
+			const props = Array.from(new Set(playerRows.map(r => r.prop)));
+
+			let playerRowsLines = playerRows.filter(r => r.prop == data.prop);
+			const playerLines = Array.from(new Set(playerRowsLines.map(r => r.playerHandicap || r.handicap)));
+			
+			const playerRowsOUs = playerRows.filter(r => r.prop == data.prop && r.playerHandicap == data.playerHandicap);
+			//console.log(playerRowsOUs)
+			const playerOUs = new Set(playerRowsOUs.map(r => r.under));
+			let dtSplits = lastYear ? data.dtSplits : data.dtSplits;
+			dtSplits = dtSplits.slice(cutoff);
+			dtSplits = dtSplits.map(dt => {
+				const d = new Date(dt+" 10:00");
+				return d.toLocaleDateString("en-US", {
+					month: "short", day: "numeric", year: "2-digit"
+				}).replace(", ", " '");
+			});
+
+			document.querySelector("#left-body").style.width = MOBILE ? "100%" : "50%";
+			document.querySelector("#right-body").style.display = "flex";
+			let player = title(data.player);
+			if (!player) {
+				player = data.team.toUpperCase(); 
+			}
+			document.querySelector("#player-header h2").innerHTML = `
+				<img src="logos/${SPORT}/${data.teamId || data.team}.png" width=32 height=32 style="vertical-align: middle;" alt="${data.team}" />
+				${player}
+			`;
+
+			// Props Nav
+			let propsSelect = document.querySelector("#player-props-select");
+			propsSelect.innerHTML = "";
+			props.sort((a, b) => a - b);
+			props.forEach(p => {
+				const el = document.createElement("option");
+				el.value = p;
+				el.innerText = p.toUpperCase();
+				if (p == data.prop) {
+					el.selected = true;
+				}
+				propsSelect.appendChild(el);
+			});
+
+			// OU Nav
+			const playerOU = document.querySelector("#player-ou-select");
+			playerOU.innerHTML = "";
+			const overBtn = document.createElement("option");
+			overBtn.value = "over";
+			overBtn.innerText = "Over";
+			const underBtn = document.createElement("option");
+			underBtn.value = "under";
+			underBtn.innerText = "Under";
+			let ouBtn = null;
+			if (data.under) {
+				underBtn.selected = true;
+				ouBtn = overBtn;
+			} else {
+				overBtn.selected = true;
+				ouBtn = underBtn;
+			}
+			if (playerOUs.has(false)) {
+				playerOU.appendChild(overBtn);
+			}
+			if (playerOUs.has(true)) {
+				playerOU.appendChild(underBtn);
+			}
+
+
+			// Lines Nav
+			const lineSelect = document.querySelector("#player-lines-select");
+			lineSelect.innerHTML = "";
+			playerRowsLines = playerRowsLines.filter(r => r.under == data.under);
+
+			playerRowsLines.sort((a,b) => (a.playerHandicap || a.handicap) - (b.playerHandicap || b.handicap));
+			playerRowsLines.forEach(p => {
+				const line = p.playerHandicap || p.handicap;
+				const el = document.createElement("option");
+				if (line == (data.playerHandicap || data.handicap)) {
+					el.selected = true;
+				}
+				el.setAttribute("data-display", line);
+				//el.innerText = `${line} (${p.ev})`;
+				el.innerText = `${line}`;
+				el.value = line;
+				lineSelect.appendChild(el);
+			});
+
+			// Reset graph to logs
+			document.querySelector("#player-graph-select").value = "logs";
+
+			// Reset Venue Select
+			document.querySelector("#player-venue-select").value = "A+H";
+			
+			// Year Dropdown
+			const yearSelect = document.querySelector("#player-year-select");
+			yearSelect.value = YEAR;
+			yearSelect.innerHTML = ``;
+			if (data.playerYears) {
+				for (year of data.playerYears) {
+					const el = document.createElement("option");
+					el.value = year;
+					el.innerText = year;
+					yearSelect.appendChild(el);
+				}
+			}
+
+			// Odds Display
+			const playerOdds = document.querySelector("#player-odds");
+			playerOdds.innerHTML = "";
+			const books = ["fd", "dk", "mgm", "365", "pn", "kambi", "cz", "espn"];
+			for (book of books) {
+				if (!data.daily.bookOdds || !data.daily.bookOdds[book]) {
+					continue;
+				}
+				let odds = data.daily.bookOdds[book];
+				const div = document.createElement("div");
+				if (parseFloat(data.daily.ev) > 0 && data.daily.book == book) {
+					div.classList.add("active");
+				}
+				if (odds.includes("/")) {
+					odds = `<mfrac>
+						<mn>${odds.split("/")[0]}</mn>
+						<mn>${odds.split("/")[1]}</mn>
+					</mfrac>`;
+				} else {
+					odds = `<mn>${odds}</mn>`;
+				}
+				div.innerHTML = `
+					<img class='book-img' src='logos/${book.replace("kambi", "br")}.png' />
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						${odds}
+					</math>
+					`;
+				playerOdds.appendChild(div);
+			}
+
+			// Pitcher
+			if (SPORT == "mlb") {
+				const pitcher = document.querySelector("#player-pitcher");
+				if (!data.game) {
+					pitcher.innerHTML = `No Game`;
+				} else {
+					pitcher.innerHTML = `
+						<span>
+							${data.game.split(" @ ")[0] != data.opp ? "@" : "v"}
+						</span>
+						${getTeamImg(SPORT, data.opp)}
+						${title(data.pitcher)}:
+						${data.bvp}
+					`;
+				}
+				const weather = document.querySelector("#player-weather");
+				weather.innerHTML = "Weather: "+getWindHTML(data);
+			}
+
+			plotLogs();
+		}
+
+		function plotLogs() {
+			// Plotly
+			document.querySelector("#player-venue-select").value = "A+H";
+			document.querySelector("#player-year-select").value = YEAR;
+			const data = TABLE.getSelectedRows()[0].getData();
+			const logs = data.logs;
+			const dtSplits = data.dtSplits;
+			const awaySplits = dtSplits.map((date, idx) => {
+				if (data.awayHomeSplits[idx] == "A") {
+					return { date, total: logs[idx] };
+				}
+				return null;
+			}).filter(item => item != null);
+			const homeSplits = dtSplits.map((date, idx) => {
+				if (data.awayHomeSplits[idx] == "H") {
+					return { date, total: logs[idx] };
+				}
+				return null;
+			}).filter(item => item != null);
+			const colors = logs.map(value => {
+				let cond = parseFloat(value) > parseFloat(data.line);
+				if (data.under) {
+					cond = parseFloat(value) < parseFloat(data.line);
+				}
+				return cond ? "rgb(56, 142, 60)" : "rgb(211, 47, 47)";
+			});
+			let tableData = {
+				x: dtSplits,
+				y: logs.map(v => v != "0" ? v : 0.25),
+				type: "bar",
+				text: logs,
+				textposition: "inside",
+				marker: {
+					color: colors
+				}
+			};
+			let layout = {
+				title: "Game Logs",
+				autosize: true,
+				showlegend: false,
+				responsive: true,
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				font: {
+					color: "#e8e6e3"
+				},
+				width: '100%',
+				dragmode: 'pan',
+				margin: { l: 0, r: 0, t: 20, b: 20 },
+				xaxis: {
+					title: "Dates",
+					showgrid: false,
+					type: "category",
+					//tickmode: "array",
+					//tickvals: [dtSplits[0],dtSplits.at(-1)],
+					//ticktext: [dtSplits[0],dtSplits.at(-1)],
+					//range: [-0.5, parseFloat(dtSplits.length)+0.5],
+					rangeslider: {
+						visible: true
+					},
+					range: [dtSplits.length-15.6,dtSplits.length-0.5]
+				},
+				yaxis: {
+					showgrid: false,
+					tickmode: "linear",
+					dtick: 1,
+					fixedrange: true,
+					showticklabels: false,
+					title: {
+						text: data.prop.toUpperCase()
+					}
+				},
+				shapes: [
+					{
+						type: "line",
+						//x0: dtSplits[0], x1: dtSplits.at(-1),
+						x0: -0.25, x1: dtSplits.length,
+						y0: data.line, y1: data.line,
+						line: {
+							color: "#5A5A5A",
+							dash: "dash"
+						}
+					}
+				]
+			};
+
+			//Plotly.d3.json()
+			Plotly.newPlot("log-chart", [tableData], layout, { responsive: true, displayModeBar: false});
+			setTimeout(() => {
+				Plotly.Plots.resize("log-chart")
+			}, 100);
+		}
+
+		function plotDistEvo() {
+			let x = [];
+			let xIdx = [];
+			let y = [];
+			document.querySelector("#player-venue-select").value = "A+H";
+			document.querySelector("#player-year-select").value = YEAR;
+			const data = TABLE.getSelectedRows()[0].getData();
+			for ([i, val] of data.feed.evo.entries()) {
+				if (parseInt(val || "0") > 50) {
+					x.push(data.feed.keys[i]);
+					xIdx.push(i);
+					y.push(val);
+				}
+			}
+
+			const evoTrend = {
+				x: x,
+				y: linearRegression(xIdx, y).predictedY,
+				name: "evo-reg",
+				mode: "lines",
+				line: {
+					color: "#00c8ff"
+				}
+			};
+			const evoTrendCutoff = {
+				x: x.slice(-CUTOFF),
+				y: linearRegression(x.slice(-CUTOFF).map((_,i) => i), y.slice(-CUTOFF)).predictedY,
+				name: `evo-reg-L${CUTOFF}`,
+				mode: "lines",
+				line: {
+					color: "#00c8ff",
+					dash: "dash"
+				}
+			};
+			const trace = {
+				x: x,
+				y: y,
+				mode: "markers",
+				type: "scatter",
+				name: "Evo",
+				marker: {
+					color: "#00c8ff"
+				}
+			};
+
+			x = [];
+			xIdx = [];
+			y = [];
+			for ([i, val] of data.feed.dist.entries()) {
+				if (parseInt(val || "0") > 50) {
+					x.push(data.feed.keys[i]);
+					xIdx.push(i);
+					y.push(val);
+				}
+			}
+			const trace2 = {
+				x: x,
+				y: y,
+				//y: data.feed.evo,
+				mode: "markers",
+				type: "scatter",
+				yaxis: "y2",
+				name: "Dist",
+				marker: {
+					color: "#ff9500"
+				}
+			};
+			console.log(y)
+			const distTrend = {
+				x: x,
+				y: linearRegression(xIdx, y).predictedY,
+				//y: movingAverage(y, 5),
+				name: "dist-reg",
+				mode: "lines",
+				yaxis: "y2",
+				line: {
+					color: "#ff9500"
+				}
+			};
+			const distTrendCutoff = {
+				x: x.slice(-CUTOFF),
+				y: linearRegression(x.slice(-CUTOFF).map((_,i) => i), y.slice(-CUTOFF)).predictedY,
+				name: `dist-reg-L${CUTOFF}`,
+				mode: "lines", yaxis: "y2",
+				line: {
+					color: "#ff9500",
+					dash: "dash"
+				}
+			};
+			layout = {
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				font: {
+					color: "#e8e6e3"
+				},
+				legend: {
+					orientation: "h",
+					//x: 0.5,
+					y: 1.05,
+					bgcolor: "rgba(0,0,0,0.1)"
+				},
+				margin: { l: 40, r: 0, t: 20, b: 50 },
+				yaxis: {
+					showgrid: false,
+					side: "left",
+					title: {
+						text: "Evo"
+					}
+				},
+				yaxis2: {
+					overlaying: "y",
+					side: "right",
+					title: {
+						text: "Dist"
+					}
+				}
+			};
+			Plotly.newPlot("log-chart", [trace, trace2, evoTrend, distTrend], layout, {displayModeBar: false});
+		}
+
+		function renderTable(data) {
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			/*
+			const select = document.querySelector("#prop-select");
+			select.innerHTML = `
+				<option value="all" selected>All Props</option>
+			`;
+			props.map(prop => {
+				const el = document.createElement("option");
+				el.value = prop.toLowerCase();
+				el.innerText = prop;
+				select.appendChild(el);
+			});
+			*/
+			let books = [...new Set(data.map(row => row.book.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "hide",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "hitRate", dir: "desc"},
+					{column: "hitRateL10", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupBy: PROP == "hr" ? "" : "game",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()} (${data[0].start})</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{title: "#", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: MOBILE ? false : true},
+					{title: "Book", field: "daily.book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, formatterParams:{book:BOOK}, responsive: 0},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 100 : undefined,
+						formatterParams: {
+							sport: SPORT,
+							noProp: PROP == "hr" ? true : false
+						},
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{title: IS_PITCHER ? "Opp" : "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {prop: PROP}, hozAlign: "left", width: MOBILE ? 100 : (IS_PITCHER ? 80 : 140)},
+					//{title: "EV", field: "daily.ev",  width: MOBILE ? 40 : 40, sorter: "number", formatter: evFormatter},
+					
+					//{title: "xBA", field: "xba",  width: 45, sorter: "number", formatter: avgFormatter, visible: MOBILE ? false : true},
+					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 70},
+					{title: "BPP Factors", columns: [
+						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
+						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
+					]},
+					{title: "Adv Batter", columns: [
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: true },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: true },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: false },
+					]},
+					{title: "Adv Pitcher", columns: [
+						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: true },
+						// PITCHER K (whiff_percent, oz_swing_miss_percent, in_zone_swing_miss, z_swing_miss_percent, oz_contact_percent)
+						// swings and misses
+						{title: "K%", field: "pitcherData.k_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "Whiff%", field: "pitcherData.whiff_percent", width: 50, formatter: summaryFormatter, visible: false },
+						{title: "OZ_M%", headerTooltip: "Out-of-Zone Swing Miss %", field: "pitcherData.oz_swing_miss_percent", width: 50, formatter: summaryFormatter, visible: false },
+						//{title: "IZ_M%", headerTooltip: "In-Zone Swing Miss %", field: "pitcherData.in_zone_swing_miss", width: 50, formatter: summaryFormatter, visible: false },
+						{title: "Z Miss %", headerTooltip: "Zone Swing Miss %", field: "pitcherData.z_swing_miss_percent", width: 50, formatter: summaryFormatter, visible: false },
+						{title: "OZ Contact %", headerTooltip: "Out-of-Zone Contact %", field: "pitcherData.oz_contact_percent", width: 50, formatter: summaryFormatter, visible: false },
+
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: IS_PITCHER ? false : true },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter, visible: IS_PITCHER ? false : true },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: IS_PITCHER ? false : true },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: false },
+					]},
+					{title: "Team Rankings", columns: [
+						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50},
+						{title: "K/6", field: "oppRankPer6", width: 50, visible: IS_PITCHER ? true : false},
+						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50},
+					]},
+					{title: "PN Game Lines", columns: [
+						{title: "ML", field: "gameLines.ml",  width: 40, sorter: "number", formatter: plusMinusFormatter},
+						{title: "Total", field: "gameLines.total",  width: 40, sorter: "number"},
+						{title: "TT", field: "gameLines.tt",  width: 40, sorter: "number"},
+					]},
+					//{title: "Pitcher Summary", field: "pitcherSummary"},
+					
+					{
+						title: "L15 Game Logs",
+						field: IS_PITCHER ? "longLogs" : "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
+					{title: "SZN", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "L10", field: "hitRateL10",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "LYR", field: "hitRateLYR",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2, visible: false},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					//{title: "Start", field: "start", visible: SPORT == "mlb" ? true : false},
+					
+					// hidden
+					{title: "", field: "startSortable", sorter: "number", visible: false},
+					{title: "", field: "bvpHR", sorter: "number", visible: false},
+					{title: "", field: "bvpAvg", sorter: "number", visible: false},
+					{title: "", field: "prop", visible: false},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		let hiddenCols = [];
+		function rowClick(row) {
+			if (SPORT.includes("futures")) {
+				return;
+			}
+			if (PROP == "k") {
+				return;
+			}
+
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			const cols = ["logs", "weather", "opp", "bvp"];
+			if (sel.length > 0 && sel[0] == row) {
+				//cols.forEach(col => TABLE.showColumn(col));
+				document.querySelector("#right-body").style.display = "none";
+				//document.querySelector("#table").style["max-width"] = "1400px";
+				document.querySelector("#left-body").style.width = "100%";
+				if (MOBILE) {
+					document.querySelector("#table").style.height = "initial";
+				}
+			} else {
+				//cols.forEach(col => TABLE.hideColumn(col));
+				//document.querySelector("#table").style["max-width"] = "720px";
+				row.select();
+				showPlayerInfo(row);
+				TABLE.scrollToRow(row, "center");
+				if (MOBILE) {
+					document.querySelector("#table").style.height = "200px";
+				}
+			}
+		}
+
+		function groupByGameStats() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+				TABLE.setSort([
+					{column: "hitRate", dir: "desc"},
+					{column: "hitRateL10", dir: "desc"},
+					{column: "startSortable", dir: "asc"},
+				]);
+			} else {
+				TABLE.setGroupBy();
+				TABLE.setSort(TABLE.getSorters().filter(s => s.field != "startSortable"));
+			}
+		}
+
+		function toggleSummary() {
+
+		}
+
+		function filterConfirmed() {
+			//TABLE.setFilter("order", "!=", "-");
+			if (!IS_PITCHER) {
+				TABLE.setFilter("daily.book", "!=", undefined);
+				if (TABLE.getRows("active").length == 0) {
+					TABLE.setFilter("daily.book", "==", undefined);
+				}
+			}
+		}
+
+		function hoverPitcher() {
+			const cells = document.querySelectorAll(".opp-cell");
+			const rows = TABLE.getRows();
+			for (cell of cells) {
+				const label = cell.getAttribute("aria-label");
+				cell.addEventListener("mousemove", function(event) {
+					const el = document.querySelector("#tooltip");
+					el.style.left = event.pageX + 10 + "px";
+					el.style.top = event.pageY + 10 + "px";
+					el.style.display = "block";
+					el.innerText = label;
+				});
+
+				cell.addEventListener("mouseleave", function() {
+					document.querySelector("#tooltip").style.display = "none";
+				})
+			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(col => {
+				if (col.getField().includes("pitcherData") || col.getField().includes("savant")) {
+					col.hide()
+				}
+			});
+			//["oppRank", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
+			["order", "book", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
+		}
+	</script>
+	<script src="auth.js"></script>
+</body>
+</html>

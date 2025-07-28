@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ HR Trends</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<style>
+	body {
+		margin: 0; padding: 0;
+		font-size: 18px;
+		height: 100vh;
+	}
+	#header {
+	}
+	#header #donate {
+		position: relative;
+	}
+	#left-body {
+		width: 100%; height: 100%;
+	}
+	#table {
+	}
+	#right-body {
+		display: flex;
+		justify-content: normal;
+	}
+	#sub-header {
+		gap: 10px;
+	}
+	#all {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		width: 100%; height: 100%;
+	}
+	#all h2 {
+		text-align: center;
+		margin-top: 1rem;
+	}
+	.team-cell {
+		padding: 0;
+	}
+	#table-container, #table {
+		height: inherit;
+	}
+	#updated-container {
+		justify-content: center;
+		align-items: normal;
+	}
+	#hrtable {
+		width: max-content;
+		margin-top: 0.5rem;
+		max-height: 80%;
+	}
+	#scatter {
+		width: 100%;
+		margin-top: 1rem;
+	}
+	#yby {
+		display: none;
+	}
+	.homer {
+		color: white;
+		background: rgb(56, 142, 60);
+	}
+	.player-cell .team-img {
+		margin-top: -2px;
+	}
+	@media (max-width: 600px) {
+		h1 {
+			display: none;
+		}
+		#left-body {
+			height: 100%;
+		}
+		#table {
+		}
+		#all {
+			justify-content: normal;
+		}
+		#all h2 {
+			margin-top: 0.75rem;
+		}
+		#table, #updated-container {
+			
+		}
+		#left-body {
+			width: 100%;
+		}
+		#sub-header {
+			width: auto;
+			flex-direction: column;
+		}
+		#header {
+			margin: 0.5rem 0;
+		}
+		#header #donate {
+			display: flex;
+		}
+		#header #donate {
+			position: relative;
+		}
+		.game-container {
+			min-width: auto;
+		}
+		.tabulator .tabulator-cell[tabulator-field=in] {
+			font-size: 12px;
+		}
+	}
+</style>
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div class="dropdown">
+					<select id="graph-select">
+						<option value="3d">3-day HR/G Trend (Apr+May)</option>
+						<option value="5d">5-day HR/G Trend (Apr+May)</option>
+						<option value="reg">Regression HR/G (Apr+May)</option>
+						<option value="1d">daily HR/G (Apr+May)</option>
+						<option value="1d-hr">daily HR (Apr+May)</option>
+					</select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="table"></div>
+		</div>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "hr_trends";
+		let SPORT = "feed";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let DEBUG = URLParams.get("debug");
+		let DATE = URLParams.get("date");
+		let CLOSE = URLParams.get("close");
+		let PLAYER = URLParams.get("player");
+		TEAM = URLParams.get("team");
+		let TABLE = null;
+		let HRTABLE = null;
+		let RES = null;
+		let HRROWS = [];
+		let ALMOST = [];
+		let YBY = {};
+		let currentYear = new Date().getFullYear();
+
+		if (PLAYER) {
+			document.querySelector("#table").style["max-width"] = "520px";
+		}
+
+		function checkParams() {
+			setTimeout(function() {
+				const url = new URL(window.location.href);
+				const params = new URLSearchParams(url.search);
+				const result = params.get("result");
+				if (result) {
+					TABLE.setFilter([
+						{field:"result", type:"=", value: result}
+					]);
+				}
+			}, 100);
+		}
+
+		document.querySelector("#graph-select").value = "3d";
+		document.querySelector("#graph-select").addEventListener("change", (event) => {
+			const g = event.target.value;
+			if (g == "5d") {
+				plotGraph(RES, movingAvg=5);
+			} else if (g == "3d") {
+				plotGraph(RES, movingAvg=3);
+			} else if (g == "1d") {
+				plotGraph(RES, movingAvg=1);
+			} else if (g == "1d-hr") {
+				plotGraph(RES, movingAvg=1, graph="hr");
+			} else if (g == "reg") {
+				plotGraph(RES, movingAvg=3, graph="hr/g", regression=true);
+			}
+		});
+
+		function filterHR() {
+			if (TABLE.getFilters().length > 0) {
+				TABLE.clearFilter();
+			} else {
+				TABLE.setFilter([
+					{field:"result", type:"=", value: "Home Run"}
+				]);
+			}
+		}
+
+		function plotGraph(res, movingAvg=3, graph="hr/g", regression=false) {
+			const traces = [];
+			const annotations = [];
+			const lineStyles = [
+				{ color: "#ff9500", dash: "solid" },
+				{ color: "#0a84ff", dash: "solid" },
+				{ color: "#1db954", dash: "solid" },
+				{ color: "#ff3b30", dash: "solid" },
+				{ color: "#8e44ad", dash: "solid" },
+				{ color: "#ffcc00", dash: "dash" },
+				{ color: "#34caff", dash: "dot" },
+				{ color: "#5eff72", dash: "longdash" },
+				{ color: "#ff5e84", dash: "dashdot" },
+				{ color: "#c388ff", dash: "longdash" },
+				{ color: "#c388ff", dash: "longdash" }
+			];
+			let lineIdx = 0;
+			Object.keys(res).forEach((year, yearIdx) => {
+				if (!["2025", "2024", "2023", "2022", "2021"].includes(year)) {
+					//return;
+				}
+				if (["2015"].includes(year)) {
+					return;
+				}
+				let xVals = [];
+				let yVals = [];
+				let yValsMA = [];
+				Object.keys(res[year]).forEach(month => {
+					if (!["04", "05"].includes(month)) {
+						return;
+					}
+					const data = res[year][month];
+					xVals.push(...data.dt.map(r => new Date("2025-"+r+" 10:00").toLocaleDateString("en-US", {
+						month: "short", day: "numeric"
+					}).replace(", ", " '")));
+					yValsMA.push(...movingAverage(data[graph], movingAvg));
+					yVals.push(...data[graph]);
+				});
+
+				if (xVals.length == 0) {
+					return;
+				}
+				xVals = xVals.map(d => new Date(`${currentYear} ${d}`).toISOString().split("T")[0]);
+				//console.log(year, xVals, yVals);
+				const trace = {
+					x: xVals,
+					y: graph == "hr" ? yVals : movingAverage(yValsMA, movingAvg),
+					//text: data["dt"],
+					hovertemplate: `📅 Date: %{x} ${year} <br> 💥 ${graph}: %{y}`,
+					mode: "lines",
+					name: year,
+					line: {
+						color: lineStyles[lineIdx].color,
+						dash: lineStyles[lineIdx].dash,
+						width: year == currentYear.toString() ? 6 : 1,
+						opacity: year == currentYear.toString() ? 1 : 0.3
+					}
+				};
+				const regY = linearRegression(xVals.map((_, i) => i), yVals).predictedY;
+				const reg = {
+					x: xVals,
+					y: regY,
+					name: year+"-reg",
+					mode: "lines",
+					line: {
+						color: lineStyles[lineIdx].color,
+						dash: lineStyles[lineIdx].dash,
+						width: year == currentYear.toString() ? 6 : 1,
+						opacity: year == currentYear.toString() ? 1 : 0.3
+					}
+				};
+				let firstY = yValsMA[0];
+				let lastY = yValsMA[yValsMA.length - 1];
+				lineIdx += 1;
+				if (regression || year != currentYear) {
+					traces.push(reg);
+					firstY = regY[0];
+					lastY = regY[regY.length-1];
+				} else {
+					traces.push(reg);
+					traces.push(trace);
+				}
+				annotations.push({
+					//x: xVals[Math.floor(data.dt.length / 2)],
+					//y: yVals[Math.floor(yVals / 2)],
+					x: xVals[0],
+					y: firstY,
+					text: year,
+					showarrow: false,
+					yshift: -10
+				});
+				annotations.push({
+					x: xVals[xVals.length - 1],
+					y: lastY,
+					text: year,
+					showarrow: false,
+					
+					xshift: 20
+				});
+				/*
+				annotations.push({
+					x: xVals[Math.floor(xVals.length / 2)],
+					y: yVals[Math.floor(yVals.length / 2)],
+					text: year,
+					showarrow: false,
+					yshift: -10
+				});
+				*/
+			});
+			let layout = {
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				legend: {
+					orientation: "h",
+					//x: 0.5,
+					y: 1.05,
+					bgcolor: "rgba(0,0,0,0.1)"
+				},
+				title: {
+					text: `${movingAvg}-day ${graph} Trend (Apr + May)`
+				},
+				font: {
+					color: "#e8e6e3"
+				},
+				xaxis: {
+					showgrid: false,
+					type: "date",
+					tickformat: "%b %d"
+				},
+				yaxis: {
+					showgrid: false,
+				},
+				annotations: annotations,
+				hovermode: "x unified"
+			};
+			if (MOBILE) {
+				layout["margin"] = {
+					l: 30, r: 10, t: 0, b: 40
+				}
+			}
+			Plotly.newPlot("table", traces, layout);
+			setTimeout(() => {
+				Plotly.Plots.resize("table")
+			}, 100);
+		}
+
+		async function fetchFeed(render=false) {
+			let url = `https://api.github.com/repos/dailyev/props/contents/static/splits/mlb_feed/month_xy.json`;
+			fetch(url, {
+				headers: {
+					"Accept": "application/vnd.github.v3.raw"
+				}
+			}).then(
+				response => response.json()
+			).then(res => {
+				plotGraph(res);
+				RES = res;
+			}).catch(err => console.log(err));
+		}
+		fetchFeed(render=true);
+
+		function renderTable(data) {
+			let results = [...new Set(data.map(row => row.result))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				data: data,
+				layout: "fitDataFill",
+				initialSort: [
+					//{column: "pa", dir: "desc"},
+					{column: "dt", dir: "desc"},
+				],
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "", field: "img", formatter: teamFormatter, hozAlign: "center", width: 30},
+					{title: "", field: "dt", formatter: dtFormatter, hozAlign: "center", visible: PLAYER ? true : false},
+					{title: "", field: "in", formatter: inningFormatter, hozAlign: "center", width: 30, visible: PLAYER ? false : true},
+					{title: "Player", field: "player", headerFilter: "input",
+						formatter: playerFormatter,
+						formatterParams:{ sport: SPORT },
+						width: MOBILE ? 90 : 150
+					},
+					//{title: "PA", field: "pa", hozAlign: "center", sorter: "number"},
+					//{title: "In", field: "in", hozAlign: "center", sorter: "number"},
+					{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
+						headerFilterParams:{
+							values:["All", ...results]
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						}
+					},
+					{title: "EVelo", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "LA", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
+					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: 65},
+				],
+				rowFormatter: function(row) {
+					if (row.getData().result == "Home Run") {
+						row.getCells().map(r => r.getElement().classList.add("homer"));
+					}
+				}
+			});
+		}
+
+		function renderHRTable(data) {
+			HRTABLE = new Tabulator("#hrtable", {
+				tooltipsHeader: true,
+				data: data,
+				initialSort: [
+					{column: "dt", dir: "desc"},
+				],
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{title: "", field: "dt", formatter: dtFormatter, hozAlign: "center", visible: PLAYER ? true : false},
+					{title: "", field: "in", formatter: inningFormatter, hozAlign: "center", width: 30, visible: PLAYER ? false : true},
+					{title: "Player", field: "player", headerFilter: "input",
+						formatter: playerFormatter,
+						formatterParams:{ sport: SPORT },
+						width: 130
+					},
+					{title: "Result", field: "result", width: MOBILE ? 50 : 60, visible: false},
+					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
+					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
+					{title: "EVelo", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "LA", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "DT", field: "dt", visible: false},
+				]
+			});
+		}
+
+		function groupByGameFeed() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+	</script>
+</body>
+</html>

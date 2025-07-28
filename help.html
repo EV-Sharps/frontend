@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Help</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<style>
+	body {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		font-size: 1.5rem;
+	}
+	img {
+		width: 30px; height: 30px;
+	}
+	.book {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+	.book span {
+		margin-top: 0.25rem;
+	}
+	.glossary {
+	}
+	.glossary h3 {
+		margin-top: 0.5rem;
+		text-align: center;
+	}
+	.glossary span {
+		margin-bottom: 0.5rem;
+	}
+</style>
+<body>
+	<div class="glossary" style="display: flex; flex-direction: column;">
+		<h3>Glossary</h3>
+		<span><span style="font-weight: bold;">BvP</span>: Batter vs Pitcher</span>
+		<span><span style="font-weight: bold;">EV</span>: Expected Value</span>
+		<span style="margin-left: 1.5rem"><i>- A long-term strategy leveraging Sportsbook Odds to identify value plays</i></span>
+		<span><span style="font-weight: bold;">FV</span>: Fair Value</span>
+		<span style="margin-left: 1.5rem"><i>- True odds after removing the vig (the sportsbook's built-in edge or fee)</i></span>
+		<span><span style="font-weight: bold;">BPP</span>: <a>@BallParkPal</a> HR Factors</span>
+		<span><span style="font-weight: bold;">LA</span>: Launch Angle, <span style="font-weight: bold;">EVelo</span>: Exit Velocity</span>
+		<span><span style="font-weight: bold;">BRL</span>: Barrel</span>
+		<span style="margin-left: 1.5rem"><i>- Balls hit at an ideal EVelo and LA</i></span>
+		<span><span style="font-weight: bold;">HH</span>: Hard Hit</span>
+		<span style="margin-left: 1.5rem"><i>- Exit Velocity >= 95 mph</i></span>
+		<span></span>
+		<div style="display: flex;justify-content: center;">
+			<div style="display: flex; flex-direction: column;border: 2px solid;width: max-content;padding: 0.5rem;">
+				<div style="text-align: center;border-bottom: 1px solid;">Last Homer (Due)</div>
+				<span style="margin-top: 0.25rem;">PA: Plate Appearance</span>
+				<span>Med: Median</span>
+				<span>Z: Z-Score</span>
+				<span style="margin-left: 1.5rem"><i>- Measures how overdue a player is for a HR vs. career norms</i></span>
+			</div>
+		</div>
+	</div>
+	<div style="margin-top: 1rem;display: flex;width: 50%;justify-content: space-evenly;">
+		<div class="book">
+			<img src="logos/fd.png" alt="FD" />
+			<span>Fanduel</span>
+		</div>
+		<div class="book">
+			<img src="logos/dk.png" alt="DK" />
+			<span>Draftkings</span>
+		</div>
+		<div class="book">
+			<img src="logos/circa.png" alt="Circa" />
+			<span>Circa</span>
+		</div>
+		<div class="book">
+			<img src="logos/bet365.png" alt="B365" />
+			<span>Bet365</span>
+		</div>
+		<div class="book">
+			<img src="logos/espn.png" alt="espn" />
+			<span>ESPN Bet</span>
+		</div>
+		<div class="book">
+			<img src="logos/pn.png" alt="PN" />
+			<span>Pinnacle</span>
+		</div>
+		<div class="book">
+			<img src="logos/mgm.png" alt="MGM" />
+			<span>MGM</span>
+		</div>
+		<div class="book">
+			<img src="logos/cz.png" alt="cz" />
+			<span>Caesars</span>
+		</div>
+	</div>
+</body>
+</html>

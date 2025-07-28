@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Dingers</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<style type="text/css">
+	.game-img {
+		height: 18px; width: 18px;
+	}
+	.tabulator-cell {
+		height: 24px;
+	}
+	.player-cell .team-img {
+		margin-top: -2px;
+	}
+	#left-body {
+		padding: 0;
+	}
+	#updated {
+	}
+	.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+		padding-top: 0;
+	}
+	.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+		padding-top: 2px;
+	}
+	#refresh-select {
+		padding: 0 0.5rem;
+		height: 24px;
+	}
+	#right-body {
+		justify-content: center;
+	}
+	#chart {
+		max-height: 400px;
+		margin-top: 0.5rem;
+	}
+	@media (max-width: 1350px) {
+		#table-container {
+			justify-content: normal;
+		}
+		#table-container, #table {
+			width: 100%;
+		}
+	}
+	@media (max-width: 768px) {
+		#table {
+			height: 85%;
+		}
+		#header-container {
+			position: inherit;
+			justify-content: space-around;
+			align-items: baseline;
+		}
+		.disclaimer {
+			position: initial;
+		}
+		.game-container {
+			min-width: auto;
+		}
+	}
+</style>
+<body>
+	<div id="header">
+		<div id="title">
+			<h1>+EV Dingers</h1>
+		</div>
+		<div id="sub-header">
+			<div class="dropdown">
+				<select id="page-select"></select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<div class="dropdown">
+				<select id="promo-select">
+					<option value="" selected>All Books</option>
+					<option value="mgm-20">MGM 20% HR</option>
+					<option value="fd-30">FD 30%</option>
+					<option value="fd-50">FD 50%</option>
+					<option value="dk-15">DK 15%</option>
+					<option value="dk-34">DK 34% Big Papi</option>
+					<option value="dk-50">DK 50%</option>
+					<option value="espn-50">ESPN 50%</option>
+					<option value="cz-50">CZ 50%</option>
+					<option value="dk-200">DK +200</option>
+					<option value="dk-sweat">DK No Sweat</option>
+					<option value="mgm-sweat">MGM No Sweat</option>
+					<option value="espn-hr" hidden>ESPN HR</option>
+					<option value="dk-dinger" hidden>DK Dinger</option>
+					<option value="fd">FD</option>
+					<option value="dk">DK</option>
+					<option value="mgm">MGM</option>
+					<option value="espn">ESPN</option>
+					<option value="vs-365">vs Bet365</option>
+					<option value="vs-pn">vs Pinny</option>
+					<option value="vs-circa">vs Circa</option>
+					<option value="vs-sharp">vs Sharps</option>
+				</select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<button onclick="groupByGame();">Filter Game</button>
+		</div>
+	</div>
+	<div id="content">
+		<div id="left-body" class="body">
+			<div id="table-container">
+				<div id="updated-container">
+					<div id="donate">
+						<div>Tip</div>
+						<div>
+							<a href="https://cash.app/$intersectinglines" target="_blank">
+								<img src="logos/cashapp.png" alt="cashapp" />
+							</a>
+							<a href="https://buymeacoffee.com/interlines" target="_blank">
+								<img src="logos/coffee.png" alt="coffee" />
+							</a>
+						</div>
+					</div>
+					<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
+					<div id="updated">
+						<div class="dropdown">
+							<label>Refresh</label>
+							<select id="refresh-select">
+								<option value="off">Off</option>
+								<option value="auto">Auto</option>
+								<option value="reload">Reload</option>
+							</select>
+							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+						</div>
+					</div>
+				</div>
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+		</div>
+		<div id="right-body" class="body">
+			<div class="dropdown">
+				<select id="btwn-select">
+					<option value="pa">PA Btwn</option>
+					<option value="feed">Feed</option>
+				</select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<div id="chart"></div>
+		</div>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "dingers";
+		let TABLE, EV_COL, FV_COL, RES;
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let SPORT = "dingers";
+		let KAMBI = URLParams.get("kambi");
+		let MARK = URLParams.get("mark");
+		let BPP = URLParams.get("bpp") != undefined;
+		let PH = URLParams.get("ph") != undefined;
+		let SIMPLE = URLParams.get("simple");
+		let PLAYER = URLParams.get("player");
+		let REFRESH = URLParams.get("refresh") || "off";
+		let BOOK = URLParams.get("book");
+		let HISTORICAL = URLParams.get("historical");
+		let PRETTY = URLParams.get("pretty");
+		let GAME = URLParams.get("game");
+		let DATE = URLParams.get("date");
+
+		if (GAME) {
+			let [a,h] = GAME.split("-");
+			GAME = `${a} @ ${h}`;
+		}
+		const selectId = "#header";
+
+		const promoSelect = document.querySelector(selectId+" #promo-select");
+		if (BOOK) {
+			promoSelect.value = BOOK;
+			//document.querySelector("h1").innerText = `+EV ${BOOK.replace("-", " ").toUpperCase()} Dingers`;
+		} else {
+			promoSelect.value = "";
+		}
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+			if (PRETTY != undefined) {
+				document.querySelector("#watermark").style.width = "20%";
+			}
+		}
+
+		document.querySelector("#btwn-select").value = "pa";
+		document.querySelector("#btwn-select").addEventListener("change", function(event) {
+			if (event.target.value == "g") {
+				plotHRGap(showGames=true);
+			} else if (event.target.value == "feed") {
+				renderFeed();
+			} else {
+				plotHRGap();
+			}
+		});
+
+		let lastPromo = "";
+		promoSelect.addEventListener("change", (event) => {
+			const book = event.target.value;
+			let url = new URL(window.location.href);
+			//url.searchParams.set("book", book);
+			//window.location.href = `./dingers${HTML}${url.search}`;
+
+			BOOK = book;
+			const params = new URLSearchParams(window.location.search);
+			params.set("book", book);
+			let field = `ev`;
+			if (book) {
+				field = `${book}_ev`
+			}
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.updateData(TABLE.getData());
+			TABLE.setSort([
+				{column: "evMut", dir: "desc"}
+			]);
+			TABLE.redraw(true);
+		});
+
+		document.querySelector("#refresh-select").value = REFRESH;
+		document.querySelector("#refresh-select").addEventListener("change", (event) => {
+			const refresh = event.target.value;
+			let url = new URL(window.location.href);
+			url.searchParams.set("refresh", refresh);
+			window.location.href = `./dingers${HTML}${url.search}`;
+		});
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		//fetchUpdated(repo="lines");
+		renderTable([]);
+		fetchData();
+		let intervalId = 0;
+		let seconds = 5 * 60;
+		if (REFRESH == "auto") {
+			intervalId = setInterval(() => {
+				if (!MOBILE || document.hasFocus()) {
+					fetchData(render=false);
+				}
+			}, seconds * 1000);
+		} else if (REFRESH == "reload") {
+			setTimeout(() => {
+				if (!MOBILE || document.hasFocus()) {
+					window.location.href = window.location.href;
+				}
+			}, seconds * 1000);
+		} else {
+			setInterval(() => {
+				if (!MOBILE || document.hasFocus()) {
+					updateTimes();
+				}
+			}, seconds * 1000);
+		}
+
+		function parseData(data, render) {
+			UPDATED["dingers"] = data["updated"];
+			data = data["data"];
+			let OLD = RES;
+			RES = data;
+			if (render) {
+				renderTable(data);
+			} else {
+				TABLE.updateOrAddData(data);
+				updateHeaders();
+				TABLE.setSort(TABLE.getSorters());
+			}
+
+			setTimeout(function() {
+				if (PRETTY != undefined) {
+					pretty_();
+				}
+				if (GAME) {
+					TABLE.setFilter([
+						{field:"game", type:"=", value: GAME}
+					])
+				}
+				if (SIMPLE != undefined) {
+					["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
+				}
+			}, 200);
+		}
+
+		async function fetchData(render=true) {
+			let url = "http://localhost:5000/api/ev";
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app/api/ev`;
+			}
+			if (KAMBI != undefined) {
+				url += "?kambi=true";
+			}
+			fetch(url, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(res => res.json()).then(res => {
+				parseData(res.data, render);
+				setTimeout(function() {
+					updateTimes();
+				}, 500)
+			}).catch(err => console.log(err));
+		}
+
+		async function fetchData2(render=true) {
+			let url = `https://api.github.com/repos/dailyev/odds/contents/static/dingers/evArr${KAMBI != undefined ? "_kambi" : ""}.json`;
+			if (DATE) {
+				url = "https://api.github.com/repos/dailyev/odds/contents/static/dingers/odds_historical.json";
+			}
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				parseData(data, render);
+			}).catch(err => console.log(err));
+		}
+
+		function updateTimes() {
+			updateHeaders();
+		}
+
+		function updateHeaders() {
+			for (book in UPDATED["dingers"]) {
+				if (book == "dingers" || !UPDATED["dingers"][book]) {
+					continue;
+				}
+
+				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
+					continue;
+				}
+				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`;
+				/*
+				TABLE.updateColumnDefinition(`bookOdds.${book.replace("b365", "365")}`, {
+					title: `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`
+				})
+				*/
+			}
+		}
+
+		function hideCols() {
+			if (SPORT == "mlb" || SPORT.includes("futures")) {
+				const cols = ["totalSplits", "totalOver", "total10Over"];
+				if (PROP == "hr") {
+					cols.push("prop");
+				}
+				cols.forEach(col => TABLE.hideColumn(col));
+			}
+
+			if (SPORT == "mlbfutures") {
+				TABLE.showColumn("bookOdds.bv");
+			}
+		}
+
+		function renderTable(data) {
+			data.sort((a,b) => {
+				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
+			});
+			let first = [...data];
+			first.sort((a,b) => {
+				return parseInt(a.startSortable) - parseInt(b.startSortable);
+			});
+			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
+			if (idx != -1) {
+				//data.splice(idx, 0, {prop: "separator", ev: ""});
+			}
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    		placeholder:"Data Loading...",
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "evMut", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()} (${data[0].start})</span>`;
+				},
+				groupToggleElement: "header",
+				groupBy: "",
+				groupStartOpen: function (value) {
+					return value == first[0].game;
+				},
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{
+						title: "Expected<br>Value",
+						field: "evMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}ev`] || "";
+						},
+						formatter: evMutFormatter,
+						responsive: 0
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairValMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}fairVal`] || "";
+						},
+						responsive: 0
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 90 : 140,
+						formatterParams:{
+							sport: SPORT
+						},
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						formatter: evBookFormatter,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter},
+					{title: "Diff", field: "bppDiff", visible: BPP ? true : false, width: 60, sorter: "number", formatter: percentFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
+					{title: "Circa", field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number"},
+					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
+					{title: "#", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
+					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 55},
+					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
+					{title: "Historical FD", columns: [
+						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.fd_avg", width: 45, sorter: "number", formatter: plusMinusFormatter, visible: HISTORICAL ? true : false},
+						{title: "SD", field: "analysis.fd_std_dev", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "Historical PN", columns: [
+						{title: "Med", field: "analysis.pn_median", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.pn_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "SD", field: "analysis.pn_std_dev", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "Historical Circa", columns: [
+						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "BPP", columns: [
+						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
+						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
+					]},
+					{title: "Batter Summary", columns: [
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : false },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+					]},
+					{title: "Pitcher Summary", columns: [
+						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : false },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+					]},
+					{title: "Rankings", columns: [
+						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					]},
+					{title: "Last Homer", columns: [
+						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+					]},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					{title: "Game", field: "game", visible: false},
+					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
+					{title: "FD Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? false : true},
+					//{title: "Last HR", field: "lastHR"},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#left-body");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				right.style.display = "none";
+				left.style.width = "100%";
+				table.style.width = "100%";
+				setTimeout(() => {
+					table.style.width = "100%";
+					tableContainer.style.width = "100%";
+				}, 40);
+			} else {
+				row.select();
+				left.style.width = MOBILE ? "100%" : "50%";
+				right.style.display = "flex";
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+				document.querySelector("#btwn-select").value = "pa";
+				plotHRGap();
+			}
+		}
+
+		function groupByTop() {
+			if (TABLE.options.groupBy === undefined || TABLE.options.groupBy == "game") {
+				TABLE.setGroupBy("game");
+				const groups = TABLE.getGroups();
+				groups.forEach(group => {
+					group.getRows().slice(3).forEach(row => {
+						row.getElement().style.display = "none";
+					});
+				});
+				TABLE.redraw();
+			} else {
+				TABLE.setGroupBy();
+				TABLE.getRows().forEach(r => r.getElement().style.display = "");
+			}
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setSort([
+					{column: "evMut", dir: "desc"},
+					{column: "startSortable", dir: "asc"},
+				]);
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy("");
+				TABLE.setSort([
+					{column: "evMut", dir: "desc"},
+				]);
+			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(c => c.hide());
+			[`evMut`, "fairValMut", "player", "bvp", "book", "weather", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+		}
+
+		window.addEventListener('popstate', (event) => {
+			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
+			BOOK = book;
+			TABLE.updateData(TABLE.getData());
+			TABLE.setSort([
+				{column: "evMut", dir: "desc"}
+			]);
+			TABLE.redraw(true);
+		});
+	</script>
+</body>
+</html>

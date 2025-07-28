@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Feed</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<style>
+	body {
+		margin: 0; padding: 0;
+		font-size: 18px;
+		height: 100vh;
+	}
+	#header #donate {
+		position: relative;
+	}
+	#left-body {
+		width: 50%;
+	}
+	#right-body {
+		display: flex;
+		justify-content: normal;
+	}
+	#sub-header {
+		gap: 10px;
+	}
+	#all {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		width: 100%; height: 100%;
+	}
+	#all h2 {
+		text-align: center;
+		margin-top: 1rem;
+	}
+	.team-cell {
+		padding: 0;
+	}
+	#table, #updated-container {
+		max-width: 515px;
+	}
+	#hrtable {
+		width: max-content;
+		margin-top: 0.5rem;
+		max-height: 80%;
+	}
+	#scatter {
+		width: 100%;
+		margin-top: 1rem;
+	}
+	#yby {
+		display: none;
+	}
+	.player-cell .team-img {
+		margin-top: -2px;
+	}
+	@media (max-width: 600px) {
+		h1 {
+			display: none;
+		}
+		#all {
+			justify-content: normal;
+		}
+		#all h2 {
+			margin-top: 0.75rem;
+		}
+		#table, #updated-container {
+			max-width: 320px;
+		}
+		#left-body {
+			width: 100%;
+		}
+		#sub-header {
+			width: auto;
+			flex-direction: row;
+		}
+		#header {
+			margin: 0.5rem 0;
+		}
+		#header #donate {
+			display: flex;
+		}
+		#header #donate {
+			position: relative;
+		}
+		#table-container {
+			height: initial;
+		}
+		.game-container {
+			min-width: auto;
+		}
+		.tabulator .tabulator-cell[tabulator-field=in] {
+			font-size: 12px;
+		}
+	}
+</style>
+<body>
+	<div id="header">
+		<div id="title">
+			<h1>+EV Dingers</h1>
+		</div>
+		<div id="sub-header">
+			<div class="dropdown">
+				<select id="page-select"></select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<div id="date-dropdown" class="dropdown">
+				<input type="text" id="date" />
+			</div>
+			<button onclick="groupByGame();">Filter Game</button>
+		</div>
+	</div>
+	<div id="content">
+		<div id="left-body" class="body">
+			<div id="table-container">
+				<div id="updated-container">
+					<div id="donate">
+						<div>Tip</div>
+						<div>
+							<a href="https://cash.app/$intersectinglines" target="_blank">
+								<img src="logos/cashapp.png" alt="cashapp" />
+							</a>
+							<a href="https://buymeacoffee.com/interlines" target="_blank">
+								<img src="logos/coffee.png" alt="coffee" />
+							</a>
+						</div>
+					</div>
+					<div id="updated">Updated: </div>
+				</div>
+				<div id="table"></div>
+			</div>
+		</div>
+		<div id="right-body" class="body">
+			<div id="all">
+				<h2></h2>
+				<div>
+					<div id="table-dropdown" class="dropdown">
+						<select id="table-select">
+							<option value="homers">Homers</option>
+							<option value="close">Close</option>
+							<option value="barrels">Barrels</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+				</div>
+				<div id="yby"></div>
+				<div id="hrtable"></div>
+				<div id="scatter"></div>
+			</div>
+		</div>
+	</div>
+	<script src="auth.js"></script>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "feed";
+		let SPORT = "feed";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let TODAY = getToday();
+		let DEBUG = URLParams.get("debug");
+		let DATE = URLParams.get("date");
+		let CLOSE = URLParams.get("close");
+		let PLAYER = URLParams.get("player");
+		let PRETTY = URLParams.get("pretty");
+		TEAM = URLParams.get("team");
+		let TABLE = null;
+		let HIST = null;
+		let HRTABLE = null;
+		let HRROWS = [];
+		let ALMOST = [];
+		let BARRELS = [];
+		let YBY = {};
+
+		flatpickr("#date", {
+			altInput: true,
+			altFormat: "F j, Y",
+			dateFormat: "Y-m-d",
+			minDate: "2025-03-27",
+			maxDate: new Date(),
+			defaultDate: DATE || new Date()
+		});
+
+		document.querySelector("#date").addEventListener("change", (event) => {
+			window.location.href = `./feed${HTML}?date=${event.target.value}`;
+		});
+
+		if (PLAYER) {
+			document.querySelector("#table").style["max-width"] = "520px";
+		}
+
+		if (PRETTY != undefined) {
+			document.querySelector("#left-body").style.display = "none";
+			document.querySelector("body").style.height = "100%";
+			setTimeout(() => {
+				document.querySelector("#hrtable").style["max-height"] = "100%";
+			}, 200);
+		}
+
+		const tableSelect = document.querySelector("#table-select");
+		tableSelect.value = "homers";
+		tableSelect.addEventListener("change", (event) => {
+			let result = event.target.value == "homers" ? "Home Run" : "";
+			let rows = [];
+			let sort = [];
+			if (result) {
+				rows = HRROWS;
+				sort = [{column: "dt", dir: "desc"}];
+			} else if (event.target.value == "barrels") {
+				rows = BARRELS;
+				sort = [
+					{column: "evo", dir: "desc"},
+					{column: "hr/park", dir: "desc"}
+				];
+			} else {
+				rows = ALMOST;
+				sort = [
+					{column: "dist", dir: "desc"},
+					{column: "hr/park", dir: "desc"}
+				];
+			}
+			renderHRTable(rows);
+			setTimeout(() => {
+				HRTABLE.setSort(sort);
+				if (result == "Home Run") {
+					HRTABLE.hideColumn("result");
+					if (!PLAYER) {
+						HRTABLE.showColumn("in");
+					}
+				} else {
+					HRTABLE.showColumn("result");
+					HRTABLE.hideColumn("in");
+				}
+			}, 200);
+		});
+
+		function filterHR() {
+			if (TABLE.getFilters().length > 0) {
+				TABLE.clearFilter();
+			} else {
+				TABLE.setFilter([
+					{field:"result", type:"=", value: "Home Run"}
+				]);
+			}
+		}
+		function updateYBY(res) {
+			var hrAB = {
+				x: [], y: [],
+				type: 'scatter'
+			};
+
+			for (row of res) {
+				hrAB.x.push(row.year);
+				hrAB.y.push(parseInt(row.hr) / parseInt(row.ab));
+				if (hrAB.x.length == 20) {
+					break;
+				}
+			}
+
+			const layout = {
+				title: {
+					text: "Year by Year HR/AB"
+				},
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				font: {
+					color: "#e8e6e3"
+				},
+				yaxis: {
+					title: { 
+						text: "HR/AB"
+					}
+				}
+			}
+			Plotly.newPlot("yby", [hrAB], layout);
+		}
+
+		function parseData(res, render=false) {
+			const data = [];
+				ALMOST = [];
+				BARRELS = [];
+				let oldHR = HRROWS;
+				HRROWS = [];
+				let allRow = null;
+
+				if (PLAYER) {
+					for (dt of Object.keys(res[PLAYER])) {
+						let row = res[PLAYER][dt];
+						let [y,m,d,p] = dt.split("-");
+						row["id"] = dt;
+						row["dt"] = `${y}-${m}-${d}`;
+						data.push(row);
+						if (row["result"] == "Home Run") {
+							HRROWS.push(row);
+						} else if (row["hr/park"] != "" && (row["hr/park"].split("/")[0] != "0")) {
+							ALMOST.push(row);
+						}
+
+						if (isBarrel(row)) {
+							BARRELS.push(row);
+						}
+					}
+					document.querySelector("#table-select option[value=homers]").innerText = `${HRROWS.length} HRs`;
+					document.querySelector("#table-select option[value=close]").innerText = `${ALMOST.length} Close Calls`;
+					document.querySelector("#table-select option[value=barrels]").innerText = `${BARRELS.length} Barrels`;
+				} else {
+					for (game of Object.keys(res)) {
+						if (game == "all") {
+							allRow = res;
+							if (res["all"]["liveGames"] == 0) {
+								clearInterval(intervalId);
+							}
+							continue;
+						}
+						for (row of res[game]) {
+							row["id"] = `${game}-${row["pa"]}`;
+							if (DATE && HIST) {
+								row["dt"] = HIST[game][row["pa"]];
+							}
+							data.push(row);
+							if (row["result"] == "Home Run") {
+								HRROWS.push(row);
+							} else if (row["hr/park"] != "" && (row["hr/park"].split("/")[0] != "0")) {
+								ALMOST.push(row);
+							}
+
+							if (isBarrel(row)) {
+								BARRELS.push(row);
+							}
+						}
+					}
+				}
+
+				if (allRow) {
+					updateAllInfo(allRow);
+				}
+
+				if (render) {
+					renderTable(data);
+					renderHRTable(HRROWS);
+				} else {
+					//TABLE.replaceData(data);
+					TABLE.updateOrAddData(data);
+					if (HRROWS.length != oldHR.length) {
+						HRTABLE.replaceData(HRROWS);
+					}
+					//TABLE.redraw();
+					//HRTABLE.redraw();
+				}
+
+				if (PLAYER) {
+					scatterPlot(data)
+				}
+		}
+
+		async function fetchFeed2(render=false) {
+			let today = new Date().toISOString().split('T')[0];
+			if (DATE) {
+				today = DATE;
+			}
+
+			let url = `http://localhost:5000/api/feed?date=${today}`;
+			if (!window.location.host.includes("localhost")) {
+				url = `https://api-production-3a3b.up.railway.app/api/feed?date=${today}`;
+			}
+			fetch(url, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(res => res.json()).then(res => {
+				// from static g
+				parseData(res, render);
+				
+				// When we go DB calls
+				//HRROWS = data.filter(r => r.result == "Home Run");
+			//	renderTable(data);
+				//renderHRTable(HRROWS);
+			}).catch(err => console.log(err));
+		}
+
+		async function fetchFeed(render=false) {
+			let url = "https://api.github.com/repos/dailyev/feed/contents/feed.json";
+
+			if (DATE && DATE != TODAY) {
+				url = `https://api.github.com/repos/dailyev/props/contents/static/splits/mlb_feed/${DATE}.json`;
+			} else if (PLAYER) {
+				url = `https://api.github.com/repos/dailyev/props/contents/static/splits/mlb_feed/${TEAM}.json`;
+			}
+
+			if (url.includes("/feed/")) {
+				fetch(url, {
+					headers: {
+						"Accept": "application/vnd.github.v3.raw"
+					}
+				}).then(
+					response => response.json()
+				).then(res => {
+					parseData(res, render);
+				}).catch(err => console.log(err));
+			} else {
+				url = `http://localhost:5000`;
+				if (!window.location.host.includes("localhost")) {
+					url = `https://api-production-3a3b.up.railway.app`;
+				}
+				fetch(url+"/api/feed?date="+DATE, {
+					headers: {
+						Authorization: `Bearer ${ACCESS_TOKEN}`
+					}
+				}).then(
+					response => response.json()
+				).then(res => {
+					parseData(res, render);
+				}).catch(err => console.log(err));
+			}
+		}
+		renderTable([]);
+		renderHRTable([]);
+		let intervalId = 0;
+		if (!DEBUG && !PLAYER && (!DATE || DATE == TODAY)) {
+			intervalId = setInterval(() => fetchFeed(), 30 * 1000);
+		} else if (DATE) {
+			fetchHistorical();
+		}
+
+		if (!DATE || DATE == TODAY) {
+			fetchFeed(render=true);
+		}
+
+		function fetchHistorical() {
+			const url = "https://api.github.com/repos/dailyev/feed/contents/feed_times_historical.json";
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(res => {
+				HIST = res[DATE];
+				fetchFeed(render=true);
+			}).catch(err => console.log(err));
+		}
+
+		function updateAllInfo(data) {
+			const h2 = document.querySelector("#all h2");
+			const allData = data["all"];
+			const hrPerAB = parseInt(allData.hr) / parseInt(allData.ab);
+			const hrPerG = parseInt(allData.hr) / (allData.liveGames || allData.totGames);
+			document.querySelector("#table-select option[value=homers]").innerText = `${HRROWS.length} HRs Today (${hrPerG.toFixed(2)} per Game)`;
+			document.querySelector("#table-select option[value=close]").innerText = `${ALMOST.length} Close Call HRs Today`;
+			document.querySelector("#table-select option[value=barrels]").innerText = `${BARRELS.length} Barrels Today`;
+			if (DATE && DATE != TODAY) {
+				document.querySelector("#updated").innerText = `Updated: ${timeAgo(DATE)}`;
+			} else {
+				document.querySelector("#updated").innerText = `Updated: ${timeAgo(allData.updated)}`;
+			}
+		}
+
+		function scatterPlot(data) {
+			let x = [];
+			let xIdx = [];
+			let y = [];
+			let i = 0;
+			data.sort((a, b) => {
+				let dateA = a.id.split("-").slice(0, 3).join("-");
+				let paA = a.id.split("-")[3];
+				let dateB = b.id.split("-").slice(0, 3).join("-");
+				let paB = parseInt(b.id.split("-")[3]);
+
+				return dateA.localeCompare(dateB) || paA - paB;
+			});
+			for (row of data) {
+				if (parseFloat(row.evo || "0") > 10) {
+					x.push(row["id"]);
+					xIdx.push(i);
+					y.push(row.evo);
+					i += 1;
+				}
+			}
+			const evoTrend = {
+				x: x,
+				y: linearRegression(xIdx, y).predictedY,
+				name: "evo-reg",
+				mode: "lines",
+				line: {
+					color: "#00c8ff"
+				}
+			};
+			let trendY = linearRegression(x.slice(-8).map((_, i) => i), y.slice(-8));
+			const evoTrendL8 = {
+				x: x.slice(-8), y: trendY.predictedY,
+				name: "evo-reg-L8", mode: "lines",
+				yaxis: "y",
+				line: {
+					color: "#00c8ff",
+					dash: "dash"
+				}
+			};
+			const trace = {
+				x: x,
+				y: y,
+				mode: "markers",
+				type: "scatter",
+				name: "Evo",
+				marker: {
+					color: "#00c8ff"
+				}
+			};
+
+			x = [];
+			xIdx = [];
+			y = [];
+			i = 0;
+			for (row of data) {
+				if (parseInt(row.dist || "0") > 10) {
+					x.push(row["id"]);
+					xIdx.push(i);
+					y.push(row.dist);
+					i += 1;
+				}
+			}
+			const trace2 = {
+				x: x,
+				y: y,
+				//y: data.feed.evo,
+				mode: "markers",
+				type: "scatter",
+				yaxis: "y2",
+				name: "Dist",
+				marker: {
+					color: "#ff9500"
+				}
+			};
+			const distTrend = {
+				x: x, y: linearRegression(xIdx, y).predictedY,
+				name: "dist-reg", mode: "lines",
+				yaxis: "y2",
+				line: {
+					color: "#ff9500"
+				}
+			};
+			trendY = linearRegression(x.slice(-8).map((_, i) => i), y.slice(-8));
+			const distTrendL8 = {
+				x: x.slice(-8), y: trendY.predictedY,
+				name: "dist-reg-L8", mode: "lines",
+				yaxis: "y2",
+				line: {
+					color: "#ff9500",
+					dash: "dash"
+				}
+			};
+			layout = {
+				plot_bgcolor: '#181a1b',
+				paper_bgcolor: "#181a1b",
+				legend: {
+					orientation: "h",
+					y: 1,
+					bgcolor: "rgba(0,0,0,0.1)"
+				},
+				font: {
+					color: "#e8e6e3"
+				},
+				margin: { l: 40, r: 40, t: 20, b: 10 },
+				xaxis: {
+					showgrid: false,
+					title: {
+						text: "PA"
+					}
+				},
+				yaxis: {
+					showgrid: false,
+					side: "left",
+					title: {
+						text: "Evo (mph)"
+					}
+				},
+				yaxis2: {
+					overlaying: "y",
+					showgrid: false,
+					side: "right",
+					title: {
+						text: "Dist (ft)"
+					}
+				}
+			};
+			Plotly.newPlot("scatter", [trace, trace2, evoTrend, evoTrendL8, distTrend, distTrendL8], layout);
+			setTimeout(() => {
+				Plotly.Plots.resize("scatter")
+			}, 100);
+		}
+
+		function renderTable(data) {
+			let results = [...new Set(data.map(row => row.result))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				data: data,
+				layout: "fitDataFill",
+				initialSort: [
+					//{column: "pa", dir: "desc"},
+					{column: "created_at", dir: "desc"},
+				],
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				columnDefaults: {
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "", field: "img", formatter: teamFormatter, hozAlign: "center", width: 30},
+					{title: "", field: "created_at", formatter: dtFormatter, hozAlign: "center", visible: PLAYER ? true : false},
+					{title: "", field: "in", formatter: inningFormatter, hozAlign: "center", width: 30, visible: PLAYER ? false : true},
+					{title: "Player", field: "player", headerFilter: "input",
+						formatter: playerFormatter,
+						formatterParams:{ sport: SPORT },
+						width: MOBILE ? 90 : 150
+					},
+					//{title: "PA", field: "pa", hozAlign: "center", sorter: "number"},
+					//{title: "In", field: "in", hozAlign: "center", sorter: "number"},
+					{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
+						headerFilterParams:{
+							values:["All", ...results]
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						}
+					},
+					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
+					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
+					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},
+					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: 65},
+				],
+				rowFormatter: function(row) {
+					if (row.getData().result == "Home Run") {
+						row.getCells().map(r => r.getElement().classList.add("homer"));
+					}
+				}
+			});
+		}
+
+		function renderHRTable(data) {
+			HRTABLE = new Tabulator("#hrtable", {
+				tooltipsHeader: true,
+				data: data,
+				initialSort: [
+					{column: "created_at", dir: "desc"},
+				],
+				columnDefaults: {
+					headerSortStartingDir: "desc"
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{title: "", field: "created_at", formatter: dtFormatter, hozAlign: "center", visible: PLAYER ? true : false},
+					{title: "", field: "in", formatter: inningFormatter, hozAlign: "center", width: 30, visible: PLAYER ? false : true},
+					{title: "Player", field: "player", headerFilter: "input",
+						formatter: playerFormatter,
+						formatterParams:{ sport: SPORT, fullName: true },
+						width: 130
+					},
+					{title: "Result", field: "result", width: MOBILE ? 50 : 60, visible: false},
+					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
+					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
+					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "DT", field: "dt", visible: false},
+				]
+			});
+		}
+
+		function groupByGameFeed() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+
+		recap()
+		function recap() {
+			document.querySelector("#hrtable").style["max-height"] = "";
+		}
+	</script>
+</body>
+</html>

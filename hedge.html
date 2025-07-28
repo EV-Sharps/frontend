@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hedge</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		@media (max-width: 600px) {
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				display: none;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+			</div>
+			<div id="table"></div>
+		</div>
+	</div>
+	<div id="right-body" class="body"></div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "hedge";
+		let TABLE = null;
+		let HISTORICAL = {};
+		let RES = null;
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let BOOK = URLParams.get("book");
+		let SPORT = URLParams.get("sport");
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let BVP = URLParams.get("bvp");
+		let CUTOFF = URLParams.get("cutoff") || 10;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchData();
+
+		function fetchData() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/hedge.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "hide",
+				autoResize: true,
+				data: data,
+				initialSort: [
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{title: "%", field: "conversion",  width: MOBILE ? 20 : 40, sorter: "number", formatter: percentFormatter},
+					{title: "Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, formatterParams:{book:BOOK}, responsive: 0},
+					{title: "Sport", field: "sport", width: 30, formatter: sportFormatter},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 130 : 180,
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{title: "Hedge", field: "hedgeLine",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: hedgeBookFormatter, responsive: 0},
+					{title: "Bet", field: "hedge", width: 60, formatter: hedgeFormatter},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		let hiddenCols = [];
+		function rowClick(row) {
+			if (SPORT.includes("futures")) {
+				return;
+			}
+			if (PROP == "k") {
+				return;
+			}
+
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			const cols = ["logs", "weather", "opp", "bvp"];
+			if (sel.length > 0 && sel[0] == row) {
+				//cols.forEach(col => TABLE.showColumn(col));
+				document.querySelector("#right-body").style.display = "none";
+				//document.querySelector("#table").style["max-width"] = "1400px";
+				document.querySelector("#left-body").style.width = "100%";
+				if (MOBILE) {
+					document.querySelector("#table").style.height = "initial";
+				}
+			} else {
+				//cols.forEach(col => TABLE.hideColumn(col));
+				//document.querySelector("#table").style["max-width"] = "720px";
+				row.select();
+				showPlayerInfo(row);
+				TABLE.scrollToRow(row, "center");
+				if (MOBILE) {
+					document.querySelector("#table").style.height = "200px";
+				}
+			}
+		}
+
+		function groupByGameStats() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+				TABLE.setSort([
+					{column: "hitRate", dir: "desc"},
+					{column: "hitRateL10", dir: "desc"},
+					{column: "startSortable", dir: "asc"},
+				]);
+			} else {
+				TABLE.setGroupBy();
+				TABLE.setSort(TABLE.getSorters().filter(s => s.field != "startSortable"));
+			}
+		}
+
+		function toggleSummary() {
+
+		}
+
+		function filterConfirmed() {
+			//TABLE.setFilter("order", "!=", "-");
+			if (!IS_PITCHER) {
+				TABLE.setFilter("daily.book", "!=", undefined);
+				if (TABLE.getRows("active").length == 0) {
+					TABLE.setFilter("daily.book", "==", undefined);
+				}
+			}
+		}
+
+		function hoverPitcher() {
+			const cells = document.querySelectorAll(".opp-cell");
+			const rows = TABLE.getRows();
+			for (cell of cells) {
+				const label = cell.getAttribute("aria-label");
+				cell.addEventListener("mousemove", function(event) {
+					const el = document.querySelector("#tooltip");
+					el.style.left = event.pageX + 10 + "px";
+					el.style.top = event.pageY + 10 + "px";
+					el.style.display = "block";
+					el.innerText = label;
+				});
+
+				cell.addEventListener("mouseleave", function() {
+					document.querySelector("#tooltip").style.display = "none";
+				})
+			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(col => {
+				if (col.getField().includes("pitcherData") || col.getField().includes("savant")) {
+					col.hide()
+				}
+			});
+			//["oppRank", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
+			["order", "book", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
+		}
+	</script>
+</body>
+</html>

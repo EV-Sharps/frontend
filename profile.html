@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>👤 Profile</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<style>
+	body {
+		margin: 0; padding: 0;
+		font-size: 18px;
+		height: 100vh;
+	}
+	@media (max-width: 600px) {
+	}
+</style>
+<body>
+	<div id="header">
+		<div id="title">
+			<h1>+EV Dingers</h1>
+		</div>
+		<div id="sub-header">
+			<div class="dropdown">
+				<select id="page-select"></select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+		</div>
+		<div id="auth-buttons">
+			<span id="username"></span>
+			<span id="status"></span>
+			<input id="email" type="text" placeholder="Email" >
+			<button id="login" onclick="login()">Login</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 👑</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</div>
+	<div id="profile-container">
+		<div class="profile-header">
+    	<div class="profile-badge">👑</div>
+    	<div id="profile-info">
+    		<p class="username"></p>
+    		<button class="upgrade-btn" onclick="changePage('pricing')">Upgrade / Manage</button>
+    	</div>
+    </div>
+		<div class="profile-subscription">
+	    <h3>Subscription Details</h3>
+	    <div class="sub-grid">
+	      <div>
+	        <span class="label">Plan:</span>
+	        <span class="value">VIP Tier</span>
+	      </div>
+	      <div>
+	        <span class="label">Next Renewal:</span>
+	        <span class="value">Aug 15, 2025</span>
+	      </div>
+	      <div>
+	        <span class="label">Payment Method:</span>
+	        <span class="value">•••• 4242</span>
+	      </div>
+	    </div>
+
+		  <!-- Quick Links -->
+		  <div class="profile-links">
+		    <h3>Account Actions</h3>
+		    <button class="link-btn">🔗 Connect Discord</button>
+		    <button class="link-btn">❌ Cancel Subscription</button>
+		    <button class="link-btn logout" onclick="logout()">🚪 Logout</button>
+		  </div>
+		</div>
+	</div>
+	<script src="auth.js"></script>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "profile";
+	</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Ranks</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<style>
+		h1 {
+			display: none;
+		}
+		#sub-header {
+			flex-direction: row;
+		}
+		#header-container {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.player-cell .team-img {
+			margin-top: -2px;
+		}
+		.opp-cell .team-img {
+			margin-top: -1px;
+		}
+		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
+			padding-top: 0;
+		}
+		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
+			padding-top: 2px;
+		}
+		#table, #table-container {
+			width: auto;
+		}
+		#player-tables, #player-header {
+			justify-content: center;
+		}
+		#player-odds-table {
+			width: max-content;
+		}
+		#left-body {
+			height: 100%;
+		}
+		#right-body {
+			width: 50%;
+		}
+		#player-controls {
+			display: none;
+			justify-content: space;
+		}
+		.switch {
+			background-color: #007BFF; /* Nice blue color */
+			color: #fff; /* White text */
+			border: none; /* Remove border */
+			border-radius: 5px; /* Rounded corners */
+			padding: 5px 10px; /* Adjust padding for a smaller size */
+			font-size: 12px; /* Smaller font size */
+			cursor: pointer; /* Pointer cursor */
+			transition: background-color 0.3s ease; /* Smooth hover effect */
+		}
+		@media (max-width: 600px) {
+			#sport-select {
+				min-width: 100px;
+			}
+			#header #donate {
+				position: relative;
+			}
+			#header-container {
+				display: none;
+			}
+			#sub-header {
+				margin: 0.5rem 0;
+			}
+			#table {
+				height: 95%;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="left-body" class="body">
+		<div id="header">
+			<div id="header-container">
+				<h1>+EV Dingers</h1>
+			</div>
+			<div id="sub-header">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div>
+					<div id="prop-dropdown" class="dropdown">
+						<!-- <button onclick="toggleFilterProp()">All Props</button> -->
+						<select id="prop-select">
+							<option value="h+r+rbi">H+R+RBI</option>
+							<option value="hr">HR</option>
+							<option value="h">Hit</option>
+							<option value="tb">TB</option>
+							<!-- <option value="sb">SB</option> -->
+							<option value="k">K</option>
+						</select>
+						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					</div>
+				</div>
+				<button onclick="groupByGameStats();">Game Filter</button>
+				<!-- <button onclick="toggleSummary();">Batter Summary</button> -->
+				<!-- <button onclick="filterConfirmed();">Confirmed Filter</button> -->
+			</div>
+		</div>
+		<div id="table-container">
+			<div id="updated-container">
+				<div id="donate">
+					<div>Tip</div>
+					<div>
+						<a href="https://cash.app/$intersectinglines" target="_blank">
+							<img src="logos/cashapp.png" alt="cashapp" />
+						</a>
+						<a href="https://buymeacoffee.com/interlines" target="_blank">
+							<img src="logos/coffee.png" alt="coffee" />
+						</a>
+					</div>
+				</div>
+				<div id="updated">Updated: </div>
+			</div>
+			<div id="table"></div>
+		</div>
+	</div>
+	<div id="right-body" class="body">
+		<div id="player-tables">
+			<div id="player-header">
+				<h2></h2>
+				
+			</div>
+			<div id="player-opp"></div>
+			<div style="display: flex; justify-content: center;">
+				<div id="player-odds-table">
+					
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="tooltip"></div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "ranks";
+		let TABLE = null;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let BOOK = URLParams.get("book");
+		let SPORT = URLParams.get("sport");
+		let IS_PITCHER = true;
+		let PROP = null;
+		let PLAYER = null;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		if (!SPORT) {
+			SPORT = "mlb";
+		}
+
+		document.querySelector("#prop-select").addEventListener("change", function(event) {
+			const prop = event.target.value;
+			window.location.href = `./stats${HTML}?prop=${prop.replaceAll("+","-")}`;
+			//TABLE.getRows("active")[0].getElement().click();
+		});
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchUpdated();
+		fetchData();
+
+		function fetchData() {
+			let s = SPORT;
+			const url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/fantasyRanks.json`;
+			fetch(url, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				renderTable(data);
+				setTimeout(function() {
+					hideCols();
+					TABLE.redraw();
+					TABLE.getRows("active")[0].getElement().click();
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function hideCols() {
+		}
+
+		function showPlayerInfo(row) {
+			const data = row.getData();
+			document.querySelector("#left-body").style.width = MOBILE ? "100%" : "50%";
+			document.querySelector("#right-body").style.display = "flex";
+
+			document.querySelector("#player-header h2").innerHTML = `
+				<img src="logos/${SPORT}/${data.teamId || data.team}.png" width=32 height=32 style="vertical-align: middle;" alt="${data.team}" />
+				${title(data.player)}
+			`;
+
+			let tableData = [];
+			for (line of Object.keys(data.lineOdds.k)) {
+				let j = { ...data };
+				j["line"] = parseFloat(line) - 0.5;
+				j["exact"] = (j["propLines"]["k"][line] * 100).toFixed(1);
+				for (oddData of data.lineOdds.k[line]) {
+					let o = oddData[0];
+					let b = oddData[1];
+					j[b] = o;
+				}
+				tableData.push(j);
+			}
+			renderOddsTable(tableData);
+		}
+
+		function renderOddsTable(data) {
+			new Tabulator("#player-odds-table", {
+				tooltipsHeader: true,
+				//layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "hide",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					//{column: "pts", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false
+				},
+				columns: [
+					{title: "Line", field: "line", width: 50},
+					{title: "Exact%", field: "exact", width: 50, formatter: percentFormatter},
+					{title: "FD", field: "fd"},
+					{title: "B365", field: "365"},
+					{title: "DK", field: "dk"},
+					{title: "ESPN", field: "espn"},
+					{title: "MGM", field: "mgm"},
+					{title: "CZ", field: "cz"},
+					{title: "PN", field: "pn"},
+					{title: "Circa", field: "circa"},
+				]
+			});
+		}
+
+		function renderTable(data) {
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "hide",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "pts", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				groupBy: "",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 100 : undefined,
+						formatterParams: {
+							sport: SPORT,
+							noProp: true
+						},
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{title: IS_PITCHER ? "Opp" : "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: IS_PITCHER}, hozAlign: "left", width: MOBILE ? 100 : (IS_PITCHER ? 80 : 140)},
+					//{title: "Points", field: "pts"},
+					{title: "Ks", field: "propPts.k"},
+					{title: "0", field: "propLines.k.0", formatter: impliedFormatter},
+					{title: "1", field: "propLines.k.1", formatter: impliedFormatter},
+					{title: "2", field: "propLines.k.2", formatter: impliedFormatter},
+					{title: "3", field: "propLines.k.3", formatter: impliedFormatter},
+					{title: "4", field: "propLines.k.4", formatter: impliedFormatter},
+					{title: "5", field: "propLines.k.5", formatter: impliedFormatter},
+					{title: "6", field: "propLines.k.6", formatter: impliedFormatter},
+					{title: "7", field: "propLines.k.7", formatter: impliedFormatter},
+					{title: "8", field: "propLines.k.8", formatter: impliedFormatter},
+					{title: "9", field: "propLines.k.9", formatter: impliedFormatter},
+					{title: "10", field: "propLines.k.10", formatter: impliedFormatter},
+
+
+					{title: "", field: "pts", visible: false},
+					{title: "", field: "prop", visible: false},
+
+				]
+			});
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+		}
+
+		let hiddenCols = [];
+		function rowClick(row) {
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				document.querySelector("#right-body").style.display = "none";
+				document.querySelector("#left-body").style.width = "100%";
+			} else {
+				row.select();
+				showPlayerInfo(row);
+				TABLE.scrollToRow(row, "center");
+			}
+		}
+
+		function groupByGameStats() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+
+		function filterConfirmed() {
+			//TABLE.setFilter("order", "!=", "-");
+			TABLE.setFilter("daily.book", "!=", undefined);
+			if (TABLE.getRows("active").length == 0) {
+				TABLE.setFilter("daily.book", "==", undefined);
+			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(col => {
+				if (col.getField().includes("pitcherData") || col.getField().includes("savant")) {
+					col.hide()
+				}
+			});
+			["oppRank", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
+		}
+	</script>
+</body>
+</html>

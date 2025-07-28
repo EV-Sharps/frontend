@@ -97,7 +97,7 @@
 <body>
 	<div id="header">
 		<div id="title">
-			<h1>+EV Dingers</h1>
+			<h1>+EV Sharps</h1>
 		</div>
 		<div id="sub-header">
 			<div class="dropdown">
@@ -113,7 +113,7 @@
 		<div id="left-body" class="body">
 			<div id="header">
 				<div id="header-container">
-					<h1>+EV Dingers</h1>
+					<h1>+EV Sharps</h1>
 				</div>
 				
 			</div>
@@ -302,7 +302,7 @@
 				initialSort: [
 					//{column: "barrel_ct", dir: "desc"},
 					{column: "game_trends.barrel_ct.5G", dir: "desc"},
-					{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
+					{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -406,8 +406,9 @@
 		function filterDue() {
 			if (TABLE.getFilters().length == 0) {
 				TABLE.setFilter([
-					{field:"homerLogs.pa.z_median", type:">", value: -0.3},
+					{field:"homerLogs.pa.z_median", type:">=", value: -0.1},
 					{field:"game", type:"!=", value: ""},
+					{field:"book", type:"!=", value: ""},
 					//{field:"game_trends.hard_hit_ct.5GPercentile", type:">=", value: 75},
 					{field:"barrel_ctPercentile", type:">=", value: 50},
 					{field:"game_trends.barrel_ct.5G", type:">", value: 0},
@@ -471,6 +472,23 @@
 			} else {
 				window.location.href = `./barrels${HTML}?percentiles=`;
 			}
+		}
+
+		function exitVelo() {
+			TABLE.setSort([
+				{column: "exit_velocity_avg", dir: "desc"}
+			]);
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "sweet_spot_percent", "barrel_ct", "hard_hit_ct", "exit_velocity_avg"];
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				}
+			});
+			const rows = TABLE.getData("active");
+			const tweet = rows.slice(0, 10).map((row, idx) => {
+				return `${idx+1}. ${title(row.player)} - ${row.exit_velocity_avg} mph`;
+			})
+			console.log(tweet.join("\n"));
 		}
 
 		function pretty_() {

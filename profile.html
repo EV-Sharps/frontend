@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>👤 Profile</title>
+	<title>Profile</title>
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<script type="text/javascript" src="flatpickr.min.js"></script>
@@ -19,11 +19,11 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
 
-  gtag('config', 'G-FX06BZ5MRL');
+	gtag('config', 'G-FX06BZ5MRL');
 </script>
 
 <style>
@@ -32,68 +32,206 @@
 		font-size: 18px;
 		height: 100vh;
 	}
+	#discord_username {
+		margin-bottom: 0.5rem;
+	}
+	.discord-error {
+	  background: #ffefef;
+	  color: #b30000;
+	  padding: 1rem;
+	  border: 1px solid #b30000;
+	  border-radius: 4px;
+	  margin-bottom: 1rem;
+	  font-size: 0.9rem;
+	  text-align: center;
+	}
+	.discord-error a {
+	  color: #b30000;
+	  font-weight: bold;
+	}
+	.discord-error button {
+	  background: #b30000;
+	  color: #fff;
+	  border: none;
+	  padding: 0.3rem 0.6rem;
+	  border-radius: 4px;
+	  cursor: pointer;
+	}
+	.discord-error button:hover {
+	  background: #ff4d4d;
+	}
+	.discord-success {
+	  background: #e6ffed;
+	  color: #14532d;
+	  padding: 1rem;
+	  border: 1px solid #1bb34b;
+	  border-radius: 4px;
+	  margin-bottom: 1rem;
+	  font-size: 0.9rem;
+	  text-align: center;
+	}
+	.discord-success strong {
+	  font-weight: 600;
+	}
+	
 	@media (max-width: 600px) {
 	}
 </style>
 <body>
 	<div id="header">
 		<div id="title">
-			<h1>+EV Dingers</h1>
+			<h1>+EV Sharps</h1>
 		</div>
-		<div id="sub-header">
+		<div id="center-dropdown">
 			<div class="dropdown">
 				<select id="page-select"></select>
 				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 			</div>
 		</div>
 		<div id="auth-buttons">
-			<span id="username"></span>
-			<span id="status"></span>
-			<input id="email" type="text" placeholder="Email" >
-			<button id="login" onclick="login()">Login</button>
+			<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+				<img src="/logos/discord.png" alt="Discord logo">
+				<span class="btn-text">Sign in with Discord</span>
+			</button>
+			<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+			  <div class="gsi-material-button-state"></div>
+			  <div class="gsi-material-button-content-wrapper">
+			    <div class="gsi-material-button-icon">
+			      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+			        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+			        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+			        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+			        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+			        <path fill="none" d="M0 0h48v48H0z"></path>
+			      </svg>
+			    </div>
+			    <span style="display: none;">Sign in with Google</span>
+			  </div>
+			</button>
+
+			<span id="username" class="username"></span>
+			<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
-			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 👑</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
 			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
 		</div>
 	</div>
-	<div id="profile-container">
+	<div class="profile-container">
 		<div class="profile-header">
-    	<div class="profile-badge">👑</div>
-    	<div id="profile-info">
-    		<p class="username"></p>
-    		<button class="upgrade-btn" onclick="changePage('pricing')">Upgrade / Manage</button>
-    	</div>
-    </div>
+			<div class="profile-badge"></div>
+			<div id="profile-info">
+				<h2 id="profile-username"></h2>
+				<button class="upgrade-btn" onclick="changePage('pricing')">Upgrade / Manage</button>
+			</div>
+		</div>
 		<div class="profile-subscription">
-	    <h3>Subscription Details</h3>
-	    <div class="sub-grid">
-	      <div>
-	        <span class="label">Plan:</span>
-	        <span class="value">VIP Tier</span>
-	      </div>
-	      <div>
-	        <span class="label">Next Renewal:</span>
-	        <span class="value">Aug 15, 2025</span>
-	      </div>
-	      <div>
-	        <span class="label">Payment Method:</span>
-	        <span class="value">•••• 4242</span>
-	      </div>
-	    </div>
-
-		  <!-- Quick Links -->
-		  <div class="profile-links">
-		    <h3>Account Actions</h3>
-		    <button class="link-btn">🔗 Connect Discord</button>
-		    <button class="link-btn">❌ Cancel Subscription</button>
-		    <button class="link-btn logout" onclick="logout()">🚪 Logout</button>
-		  </div>
+			<h3>Subscription Details</h3>
+			<div class="sub-grid">
+				<div>
+					<span class="label">Plan:</span>
+					<span id="profile-plan" class="value">loading...</span>
+				</div>
+				<div>
+					<span class="label">Next Renewal:</span>
+					<span id="next-renewal" class="value"></span>
+				</div>
+				<div>
+					<span class="label">Discord:</span>
+					<span class="value">
+						<span id="discord-username"></span>
+					</span>
+				</div>
+			</div>
+			<div id="discord-error"></div>
+			<!-- Quick Links -->
+			<div class="profile-links">
+				<h3>Account Actions</h3>
+				<button id="link-discord-btn" class="link-btn" onclick="connectDiscord()">
+					Connect Discord
+					<span class="spinner" style="display: none;"></span>
+				</button>
+				<button class="link-btn" onclick="cancelSubscription()">❌ Cancel Subscription</button>
+			</div>
 		</div>
 	</div>
-	<script src="auth.js"></script>
+	<footer class="site-footer">
+		<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+	</footer>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "profile";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let discordError = URLParams.get("discordError");
+		let discordSuccess = URLParams.get("discordSuccess");
+		SAVE_DISCORD = URLParams.get("saveDiscord");
+
+		const linkBtn = document.getElementById("link-discord-btn");
+		const spinner = linkBtn.querySelector('.spinner');
+		const btnText = linkBtn.querySelector('.btn-text');
+
+		linkBtn.addEventListener('click', () => {
+			spinner.style.display = 'inline-block';
+			btnText.textContent = 'Connecting…';
+			linkBtn.disabled = true;
+
+			window.location.href = `${API_BASE}/api/discord/login`;
+		});
+
+		if (discordSuccess != undefined) {
+			// Create a success message container
+		  const successMsg = document.createElement('div');
+		  successMsg.className = 'discord-success';
+		  successMsg.innerHTML = `
+		    ✅ <strong>Success!</strong> Your Discord account has been linked. 🎉<br>
+		    Enjoy your +EV channels and perks!
+		  `;
+		  // Insert it near the top of the profile container
+		  document.querySelector('.profile-container').prepend(successMsg);
+
+		  // Clean up the URL so the param isn't visible anymore
+			const newUrl = `${window.location.pathname}`;
+			history.replaceState({}, '', newUrl);
+		}
+
+		if (discordError === "not_in_guild") {
+			const msg = document.createElement('div');
+	    msg.className = 'discord-error';
+	    msg.innerHTML = `
+	      ⚠️ You’ve linked your Discord account, but you haven’t joined our server yet.<br>
+	      <a href="https://discord.gg/JQq3MHWj" target="_blank">👉 Join the Discord here 👈</a><br>
+	      After joining, click <button id="recheck-roles">Recheck Roles</button>.
+	    `;
+	    document.querySelector('.profile-container').prepend(msg);
+
+	    document.getElementById('recheck-roles').addEventListener('click', async () => {
+	      // Optional: hit an endpoint to retry role assignment
+	      await fetch('/api/discord/recheck', {
+	        method: 'POST',
+	        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+	      });
+	      alert("We'll re-check your roles shortly.");
+	    });
+	    // Clean up the URL so the param isn't visible anymore
+			const newUrl = `${window.location.pathname}`;
+			history.replaceState({}, '', newUrl);
+		}
+
+		async function connectDiscord() {
+			const { data: { session }, error } = await SB.auth.getSession();
+			window.location.href = `${API_BASE}/api/discord/login?user_id=${session.user.id}`;
+		}
+
+		async function cancelSubscription() {
+			const response = await fetch('/api/create-portal-session', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ customerId: "CURRENT_USER_CUSTOMER_ID" })
+		});
+		const data = await response.json();
+		window.location.href = data.url; // Stripe handles the rest
+			}
 	</script>
 </body>
 </html>

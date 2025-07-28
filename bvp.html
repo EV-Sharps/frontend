@@ -18,16 +18,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<style>
-		h1 {
-			display: none;
-		}
 		#sub-header {
 			flex-direction: row;
-		}
-		#header-container {
-			display: flex;
-			justify-content: space-around;
-			align-items: center;
 		}
 		.player-cell .team-img {
 			margin-top: -2px;
@@ -41,7 +33,7 @@
 		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
 			padding-top: 2px;
 		}
-		#table, #table-container {
+		#table {
 			width: auto;
 		}
 		#left-body {
@@ -56,11 +48,6 @@
 			}
 			#header #donate {
 				position: relative;
-			}
-			#header-container {
-				position: inherit;
-				justify-content: space-around;
-				align-items: baseline;
 			}
 			.disclaimer {
 				position: initial;
@@ -86,94 +73,93 @@
 </script>
 
 <body>
-	<div id="left-body" class="body">
-		<div id="header">
-			<div id="header-container">
-				<h1>+EV Dingers</h1>
-				<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
+	<header id="header">
+		<div id="title">
+			<h1>+EV Sharps</h1>
+		</div>
+		<div id="sub-header">
+			<div class="dropdown">
+				<select id="page-select"></select>
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 			</div>
-			<div id="sub-header">
-				<div class="dropdown">
-					<select id="page-select"></select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			<div id="date-dropdown" class="dropdown">
+				<input type="text" id="date" />
+				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			</div>
+			<button onclick="groupByGame();">Game Filter</button>
+		</div>
+		<div id="auth-buttons">
+			<span id="username"></span>
+			<span id="status"></span>
+			<input id="email" type="text" placeholder="Email" >
+			<button id="login" onclick="login()">Login</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 👑</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</header>
+	<main>
+		<div id="left-body" class="body">
+			<div id="table-container">
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
 				</div>
-				<div id="date-dropdown" class="dropdown">
-					<input type="text" id="date" />
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-				</div>
-				<button onclick="groupByGame();">Game Filter</button>
 			</div>
 		</div>
-		<div id="table-container">
-			<div id="updated-container">
-				<div id="donate">
-					<div>Tip</div>
-					<div>
-						<a href="https://cash.app/$intersectinglines" target="_blank">
-							<img src="logos/cashapp.png" alt="cashapp" />
-						</a>
-						<a href="https://buymeacoffee.com/interlines" target="_blank">
-							<img src="logos/coffee.png" alt="coffee" />
-						</a>
-					</div>
-				</div>
-			</div>
-			<div id="table"></div>
-			<div id="watermark">
-				<img src="logos/logo.png">
-			</div>
-		</div>
-	</div>
-	<div id="right-body" class="body">
-		<div id="player-tables">
-			<div id="player-header">
-				<h2></h2>
-				<div class="player-dropdowns" style="gap: 5px;">
-					<div class="dropdown">
-						<select id="player-year-select" style=""></select>
-						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-					</div>
-					<div class="dropdown">
-						<select id="player-venue-select" style="">
-							<option selected>A+H</option>
-							<option>Away</option>
-							<option>Home</option>
-						</select>
-						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-					</div>
-				</div>
-				<div id="player-controls">
-					<div class="player-dropdowns">
+		<div id="right-body" class="body">
+			<div id="player-tables">
+				<div id="player-header">
+					<h2></h2>
+					<div class="player-dropdowns" style="gap: 5px;">
 						<div class="dropdown">
-							<select id="player-ou-select"></select>
-							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-						</div>
-						<div class="dropdown" style="margin: 0 0.5rem;">
-							<select id="player-lines-select"></select>
+							<select id="player-year-select" style=""></select>
 							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 						</div>
 						<div class="dropdown">
-							<select id="player-props-select"></select>
+							<select id="player-venue-select" style="">
+								<option selected>A+H</option>
+								<option>Away</option>
+								<option>Home</option>
+							</select>
 							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 						</div>
 					</div>
+					<div id="player-controls">
+						<div class="player-dropdowns">
+							<div class="dropdown">
+								<select id="player-ou-select"></select>
+								<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+							</div>
+							<div class="dropdown" style="margin: 0 0.5rem;">
+								<select id="player-lines-select"></select>
+								<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+							</div>
+							<div class="dropdown">
+								<select id="player-props-select"></select>
+								<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="player-row">
+					<div id="player-ev"></div>
+					<div id="player-odds"></div>
+				</div>
+				<div class="player-row">
+					<div id="player-pitcher"></div>
+					<div id="player-weather"></div>
+				</div>
+				<div id="player-opp"></div>
+				<div id="player-table">
+					<div id="log-chart"></div>
 				</div>
 			</div>
-			<div class="player-row">
-				<div id="player-ev"></div>
-				<div id="player-odds"></div>
-			</div>
-			<div class="player-row">
-				<div id="player-pitcher"></div>
-				<div id="player-weather"></div>
-			</div>
-			<div id="player-opp"></div>
-			<div id="player-table">
-				<div id="log-chart"></div>
-			</div>
 		</div>
-	</div>
-	<div id="tooltip"></div>
+	</main>
+	<footer class="site-footer">
+		<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+	</footer>
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript">
 		PAGE = "bvp";
@@ -191,7 +177,9 @@
 		let LEADERS = URLParams.get("leaders");
 		let PLAYER = URLParams.get("player");
 		let BVP = URLParams.get("bvp");
+		let BVS = URLParams.get("bvs");
 		let PRETTY = URLParams.get("pretty");
+		let MARK = URLParams.get("mark");
 		//let LAST = URLParams.get("last") != undefined;
 		let LAST = false;
 		let YEAR = new Date();
@@ -211,6 +199,13 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+			if (PRETTY != undefined) {
+				document.querySelector("#watermark").style.width = "20%";
+			}
+		}
+
 		function initDatepicker(dt) {
 			flatpickr("#date", {
 				altInput: true,
@@ -225,18 +220,14 @@
 			});
 		}
 
-		fetchData();
+		//fetchData();
 		//fetchUpdated();
 		//initDatepicker("2025-05-11");
 
-		function fetchData() {
+		async function fetchBVPData() {
 			let s = SPORT;
-			let url = `http://localhost:5000`;
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app`;
-			}
 			renderTable([]);
-			fetch(url+`/api/bvp`, {
+			fetch(API_BASE+`/api/bvp`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -249,6 +240,9 @@
 				renderTable(data);
 				setTimeout(function() {
 					TABLE.redraw();
+					if (BVS != undefined) {
+						bvs();
+					}
 					if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 						printReddit_();
 						print_2();
@@ -334,16 +328,17 @@
 
 					//{title: "Pitcher Summary", field: "pitcherSummary"},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
-					{title: "Vs Team '25", field: "bvt", hozAlign: "left", width: 75},
-					{title: "@ 🏟 2025", field: "bvs", hozAlign: "left", width: 80, visible: true},
+					{title: "HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
+					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
+					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 80, visible: true, formatter: blurFormatter},
 					{title: "BPP HR Factors", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
 					]},
 					{title: "Last Homer (Due)", columns: [
-						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
-						{title: "Avg", field: "homerLogs.pa.avg", width: 40},
-						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
 						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
 					]},
 					{title: "Batter Summary", columns: [
@@ -371,6 +366,8 @@
 					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					
 					// hidden
+					{title: "", field: "bvsHRAB", sorter: "number", visible: false},
+					{title: "", field: "bvsHR", sorter: "number", visible: false},
 					{title: "", field: "bvpHR", sorter: "number", visible: false},
 					{title: "", field: "bvpH", sorter: "number", visible: false},
 					{title: "", field: "bvpAvg", sorter: "number", visible: false},
@@ -767,9 +764,16 @@
 			console.log(o);
 		}
 
+		function bvs() {
+			TABLE.setSort([
+				//{"column": "bvsH", "dir": "desc"},
+				{"column": "bvsHRAB", "dir": "desc"},
+			]);
+		}
+
 		function pretty_() {
 			TABLE.getColumns().map(col => col.hide());
-			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(col => TABLE.showColumn(col));
+			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "pitcherHR_PA", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(col => TABLE.showColumn(col));
 		}
 	</script>
 	<script src="auth.js"></script>

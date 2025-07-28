@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="style.css" rel="stylesheet">
+  <script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+  <script src="math.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/x-icon" href="logos/icon2.png">
+  <title>Terms & Disclaimer - +EV Sharps</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      line-height: 1.6;
+      color: #333;
+    }
+    #content {
+      margin: 2rem;
+      flex-direction: column;
+    }
+    h1, h2 {
+      color: #222;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      margin-top: 1.5rem;
+    }
+    p {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="title">
+      <h1>+EV Sharps</h1>
+    </div>
+    <div id="sub-header">
+      <div class="dropdown">
+        <select id="page-select"></select>
+        <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+      </div>
+    </div>
+    <div id="auth-buttons">
+      <span id="username"></span>
+      <span id="status"></span>
+      <input id="email" type="text" placeholder="Email" >
+      <button id="login" onclick="login()">Login</button>
+      <button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+      <button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 👑</button>
+      <button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div id="content">
+    <h1>Terms & Disclaimer</h1>
+
+    <p>Welcome to <strong>+EV Sharps</strong>. By using this site, you agree to the following terms and understand the disclaimers listed below. Please read carefully before using our services.</p>
+
+    <h2>Entertainment Purposes Only</h2>
+    <p>All content provided on <strong>+EV Sharps</strong>, including picks, statistics, projections, and recommendations, are intended for <strong>entertainment purposes only</strong>. We do not provide financial advice, investment guidance, or guaranteed results. Sports betting and fantasy sports involve risk, and past performance is not indicative of future results. Always gamble responsibly and within your means.</p>
+
+    <h2>Not Affiliated with Major League Baseball</h2>
+    <p><strong>+EV Sharps</strong> is an independent project. We are <strong>not affiliated, associated, authorized, endorsed by, or in any way officially connected with Major League Baseball (MLB), MLB Advanced Media, or any MLB team, player, or partner</strong>. All trademarks, team names, and player names mentioned on this site are the property of their respective owners and are used for descriptive purposes only.</p>
+
+    <h2>Age Restrictions and Compliance</h2>
+    <p>Sports betting is intended for adults who meet the legal gambling age requirements in their jurisdiction. It is your responsibility to ensure that you comply with all local, state, and federal laws regarding sports betting and online gaming. <strong>+EV Sharps</strong> does not promote or facilitate illegal betting activity.</p>
+
+    <h2>Limitation of Liability</h2>
+    <p>Under no circumstances shall <strong>+EV Sharps</strong>, its owners, contributors, or affiliates be liable for any direct, indirect, incidental, consequential, or punitive damages arising out of your access to or use of this site, including but not limited to any errors or omissions in content or loss or damage incurred as a result of using our picks or data.</p>
+
+    <h2>Changes to Terms</h2>
+    <p>We reserve the right to modify or update these Terms & Disclaimer at any time. Changes will be effective immediately upon posting on this page. It is your responsibility to review this page periodically for updates.</p>
+
+    <h2>Contact Us</h2>
+    <p>If you have questions or concerns about these terms, please contact us at <a href="mailto:evtuddys@gmail.com">evtuddys@gmail.com</a>.</p>
+  </div>
+  <script src="auth.js"></script>
+  <script type="text/javascript" src="shared.js"></script>
+  <script type="text/javascript">
+    PAGE = "disclaimer";
+  </script>
+</body>
+</html>

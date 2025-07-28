@@ -82,9 +82,9 @@
 	}
 </style>
 <body>
-	<div id="header">
+	<header id="header">
 		<div id="title">
-			<h1>+EV Dingers</h1>
+			<h1>+EV Sharps</h1>
 		</div>
 		<div id="sub-header">
 			<div class="dropdown">
@@ -98,7 +98,6 @@
 					<option value="fd-30">FD 30%</option>
 					<option value="fd-50">FD 50%</option>
 					<option value="dk-15">DK 15%</option>
-					<option value="dk-34">DK 34% Big Papi</option>
 					<option value="dk-50">DK 50%</option>
 					<option value="espn-50">ESPN 50%</option>
 					<option value="cz-50">CZ 50%</option>
@@ -119,34 +118,34 @@
 				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 			</div>
 			<button onclick="groupByGame();">Filter Game</button>
+			<div id="updated">
+				<div class="dropdown">
+					<label for="refresh-select">Refresh</label>
+					<select id="refresh-select">
+						<option value="off">Off</option>
+						<option value="auto">Auto</option>
+						<option value="reload">Reload</option>
+					</select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+			</div>
 		</div>
-	</div>
-	<div id="content">
+		<div id="auth-buttons">
+			<span id="username"></span>
+			<span id="status"></span>
+			<input id="email" type="text" placeholder="Email" >
+			<button id="login" onclick="login()">Login</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 👑</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</header>
+	<main>
 		<div id="left-body" class="body">
 			<div id="table-container">
-				<div id="updated-container">
-					<div id="donate">
-						<div>Tip</div>
-						<div>
-							<a href="https://cash.app/$intersectinglines" target="_blank">
-								<img src="logos/cashapp.png" alt="cashapp" />
-							</a>
-							<a href="https://buymeacoffee.com/interlines" target="_blank">
-								<img src="logos/coffee.png" alt="coffee" />
-							</a>
-						</div>
-					</div>
-					<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
-					<div id="updated">
-						<div class="dropdown">
-							<label>Refresh</label>
-							<select id="refresh-select">
-								<option value="off">Off</option>
-								<option value="auto">Auto</option>
-								<option value="reload">Reload</option>
-							</select>
-							<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-						</div>
+				<div id="updated-container" class="loggedOut">
+					<div>
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>faster live odds ⚡</strong>
 					</div>
 				</div>
 				<div id="table"></div>
@@ -165,7 +164,10 @@
 			</div>
 			<div id="chart"></div>
 		</div>
-	</div>
+	</main>
+	<footer class="site-footer">
+		<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+	</footer>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -185,6 +187,7 @@
 		let BOOK = URLParams.get("book");
 		let HISTORICAL = URLParams.get("historical");
 		let PRETTY = URLParams.get("pretty");
+		let IMP = URLParams.get("imp");
 		let GAME = URLParams.get("game");
 		let DATE = URLParams.get("date");
 
@@ -265,7 +268,7 @@
 		renderTable([]);
 		fetchData();
 		let intervalId = 0;
-		let seconds = 5 * 60;
+		let seconds = 60;
 		if (REFRESH == "auto") {
 			intervalId = setInterval(() => {
 				if (!MOBILE || document.hasFocus()) {
@@ -289,19 +292,31 @@
 		function parseData(data, render) {
 			UPDATED["dingers"] = data["updated"];
 			data = data["data"];
+
+			if (PLAYER) {
+				data = data.filter(r => PLAYER.split(",").includes(r.player))
+			}
 			let OLD = RES;
 			RES = data;
+
 			if (render) {
 				renderTable(data);
 			} else {
-				TABLE.updateOrAddData(data);
-				updateHeaders();
-				TABLE.setSort(TABLE.getSorters());
+				if (!TABLE.options.groupBy) {
+					TABLE.setData(TABLE.getData());
+				} else {
+					TABLE.updateOrAddData(data);
+					updateHeaders();
+					TABLE.setSort(TABLE.getSorters());
+				}
 			}
 
 			setTimeout(function() {
 				if (PRETTY != undefined) {
 					pretty_();
+				}
+				if (IMP != undefined) {
+					implied();
 				}
 				if (GAME) {
 					TABLE.setFilter([
@@ -315,14 +330,11 @@
 		}
 
 		async function fetchData(render=true) {
-			let url = "http://localhost:5000/api/ev";
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app/api/ev`;
-			}
+			let url = "/api/ev";
 			if (KAMBI != undefined) {
 				url += "?kambi=true";
 			}
-			fetch(url, {
+			fetch(API_BASE+url, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -384,6 +396,8 @@
 		}
 
 		function renderTable(data) {
+			//data = data.filter(r => r["vs-circa_ev"] != undefined)
+
 			data.sort((a,b) => {
 				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
 			});
@@ -400,6 +414,7 @@
 				tooltipsHeader: true,
     		placeholder:"Data Loading...",
 				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				placeholder: "Fetching Data",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
@@ -455,6 +470,18 @@
 						responsive: 0
 					},
 					{
+						title: "Implied",
+						field: "impliedMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: impliedFormatter,
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}implied`] || "";
+						},
+						responsive: 0
+					},
+					{
 						title: "Player",
 						field: "player",
 						headerFilter: "input",
@@ -490,7 +517,7 @@
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
 					{title: "#", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
-					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 55},
+					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentFormatter},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					{title: "Historical FD", columns: [
 						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
@@ -535,8 +562,8 @@
 					]},
 					{title: "Last Homer", columns: [
 						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
-						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
-						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
 						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
 					]},
 					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
@@ -608,6 +635,21 @@
 					{column: "evMut", dir: "desc"},
 				]);
 			}
+		}
+
+		function implied() {
+			TABLE.getColumns().map(c => c.hide());
+			["evMut", "fairValMut", "impliedMut", "pitcherHR_PA", "player", "bvp", "book", "weather", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+			TABLE.setSort([
+				{column: "impliedMut", dir: "desc"}
+			]);
+
+			const rows = TABLE.getData("active");
+			const tweet = rows.slice(0, 20).map((row, idx) => {
+				return `${idx+1}. ${title(row.player)} - ${row["impliedMut"]}%`;
+			})
+			console.log(tweet.join("\n"));
 		}
 
 		function pretty_() {

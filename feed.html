@@ -120,7 +120,7 @@
 <body>
 	<div id="header">
 		<div id="title">
-			<h1>+EV Dingers</h1>
+			<h1>+EV Sharps</h1>
 		</div>
 		<div id="sub-header">
 			<div class="dropdown">
@@ -336,9 +336,6 @@
 						}
 						for (row of res[game]) {
 							row["id"] = `${game}-${row["pa"]}`;
-							if (DATE && HIST) {
-								row["dt"] = HIST[game][row["pa"]];
-							}
 							data.push(row);
 							if (row["result"] == "Home Run") {
 								HRROWS.push(row);

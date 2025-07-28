@@ -13,8 +13,9 @@ body {
 	flex-direction: column;
 	font-family: system-ui, sans-serif;
 	width:100%;
+	min-height: 100vh;
+	height: auto;
 	margin: 0; padding: 0;
-	height: 100vh;
 	color: #e8e6e3;
 	/* Blue Gradient */
 	background: linear-gradient(160deg, #0d3b66 0%, #021526 100%);
@@ -362,7 +363,7 @@ footer {
 button {
 	background: #222;
   color: #fff;
-  padding: 0.4rem 0.8rem;
+  padding: 8px 10px;
   border-radius: 6px;
   border: none;
   font-weight: 500;
@@ -392,6 +393,7 @@ button {
 #title {
 }
 #page-select {
+	padding: 6px 10px;
 }
 #auth-buttons {
 	display: flex;
@@ -785,7 +787,7 @@ nav {
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 4px 15px rgba(0,0,0,0.4);
   border-radius: 4px;
-  padding: 0.3rem 1.2rem;
+  padding: 8px 10px;
   font-weight: 500;
   font-size: 0.9rem;
   appearance: none;               /* remove default arrow styling */
@@ -976,10 +978,21 @@ button#logout:hover {
 }
 
 @media (max-width: 600px) {
+	html {
+		font-size: 15px;
+	}
 	body {
 		flex-direction: column;
 	}
-
+	.tabulator {
+	  width: 100% !important;
+	}
+	h1, h2 {
+    font-size: 1.25rem;
+  }
+	.profile-container {
+    padding: 1rem;
+  }
 	#sub-header {
 		position: initial;
 		transform: initial;
@@ -993,9 +1006,30 @@ button#logout:hover {
 		display: flex;
 	}
 	#header {
-		justify-content: space-evenly;
-		padding: 0;
+		flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    gap: 0.5rem;
 	}
+	#auth-buttons {
+    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .dropdown select {
+    width: 100%;
+  }
+
+  #title h1 {
+    font-size: 1.25rem;
+  }
+  #center-dropdown {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin: 0.5rem 0;
+  }
 	#content {
 		flex-direction: column;
 		height: initial;

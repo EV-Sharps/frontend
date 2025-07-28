@@ -54,7 +54,7 @@ setTimeout(() => {
 	});
 
 	if (PAGE == "disclaimer") {
-		PAGE_DROPDOWN += `<option value="${PAGE}">${PAGE}</option>`;
+		PAGE_DROPDOWN += `<option value="${PAGE}">${title(PAGE)}</option>`;
 	}
 	select.innerHTML = PAGE_DROPDOWN;
 	if (PAGE == "props") {

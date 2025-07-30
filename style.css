@@ -21,6 +21,9 @@ body {
 header, footer {
 	flex-shrink: 0;
 }
+footer {
+	font-size: small;
+}
 main {
 	display: flex;
 	flex: 1 1 auto;
@@ -985,6 +988,9 @@ button#logout:hover {
 @media (max-width: 600px) {
 	footer {
 		padding: 0 1rem;
+	}
+	footer p {
+		margin: 0.5rem 0;
 	}
 	html {
 		font-size: 15px;

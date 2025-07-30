@@ -69,6 +69,7 @@ async function upsertProfile(session) {
 			el.innerText = t;
 		}
 	}
+	// maybe make logo separate and larger
 	if (document.getElementById("username")) {
 		document.getElementById("username").innerText = `${t} ${session.user.email}`;
 	}

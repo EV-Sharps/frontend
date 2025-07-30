@@ -23,19 +23,22 @@ function getToday() {
 let PAGE_DROPDOWN = `
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
-	<option value="dingers">🚀 MLB Dingers</option>
-	<option value="feed">📡 MLB Feed</option>
-	<option value="bvp">🆚 MLB BvP</option>
-	<option value="stats">📊 MLB Stats</option>
-	<option value="barrels">🏏 MLB Barrels</option>
-	<option value="trends">📈 MLB Trends</option>
-	<option value="mlb">🎯 MLB Props</option>
-	<option value="historical">📜 MLB Dingers (H)</option>
-	<option value="kambi">🚀 MLB Dingers (K)</option>
-	<option value="preview">🔍 MLB Preview</option>
-	<option value="nfl">🏈 NFL Props</option>
-	<option value="ranks">📋 NFL Fantasy Ranks</option>
-	<option value="futures">🔮 NFL Futures</option>
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾ MLB ⚾⚾</option>
+	<option value="dingers">🚀 Dingers</option>
+	<option value="feed">📡 Feed</option>
+	<option value="bvp">🆚 BvP</option>
+	<option value="stats">📊 Stats</option>
+	<option value="barrels">🏏 Barrels</option>
+	<option value="trends">📈 Trends</option>
+	<option value="mlb">🎯 Props</option>
+	<option value="historical">📜 Dingers (H)</option>
+	<option value="kambi">🚀 Dingers (K)</option>
+	<option value="preview">🔍 Preview</option>
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈 NFL 🏈🏈</option>
+	<option value="nfl">🎯 Props</option>
+	<option value="ranks">📋 Fantasy Ranks</option>
+	<option value="futures">🔮 Futures</option>
+	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<option value="golf">⛳ GOLF Props</option>
 	<option value="nhl">🏒 NHL Props</option>
 	<option value="nba">🏀 NBA Props</option>
@@ -239,6 +242,9 @@ const lastDiffFormatter = function(cell) {
 		return "0";
 	}
 	diff = diff.toFixed(1);
+	if (data.blurred && cell.getField() == "homerLogs.pa.z") {
+		return `<div class='blurred'>${diff}</div>`;
+	}
 	if (diff > 0) {
 		return `<div class="positive">+${diff}</div>`;
 	}
@@ -247,13 +253,16 @@ const lastDiffFormatter = function(cell) {
 
 const gapFormatter = function(cell) {
 	const data = cell.getRow().getData();
-
 	return `${cell.getValue()}`;
 }
 
 const percentileFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	let field = cell.getField();
+
+	if (data.blurred && !["barrels_per_bip", "hard_hit_percent"].includes(field)) {
+		return `<div class='blurred'>${cell.getValue()}</div>`;
+	}
 
 	if (!cell.getValue()) {
 		if (["game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G"].includes(field)) {

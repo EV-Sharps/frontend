@@ -4,9 +4,6 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>⚾ Barrels</title>
-
-	<script type="text/javascript" src="test.js"></script>
-
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
@@ -15,54 +12,11 @@
 	<script src="math.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
-		h1 {
-			display: none;
-		}
-		#sub-header {
-			flex-direction: row;
-		}
-		#header-container {
-			display: flex;
-			justify-content: space-around;
-			align-items: center;
-		}
-		.player-cell .team-img {
-			margin-top: -2px;
-		}
-		.opp-cell .team-img {
-			margin-top: -1px;
-		}
-		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
-			padding-top: 0;
-		}
-		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
-			padding-top: 2px;
-		}
-		#table, #table-container {
-			width: max-content;
-		}
 		#chart {
 			max-height: 400px;
 		}
-		#left-body {
-			height: 100%;
-		}
 		#right-body {
 			justify-content: center;
-		}
-		#player-controls {
-			display: none;
-			justify-content: space;
-		}
-		.switch {
-			background-color: #007BFF; /* Nice blue color */
-			color: #fff; /* White text */
-			border: none; /* Remove border */
-			border-radius: 5px; /* Rounded corners */
-			padding: 5px 10px; /* Adjust padding for a smaller size */
-			font-size: 12px; /* Smaller font size */
-			cursor: pointer; /* Pointer cursor */
-			transition: background-color 0.3s ease; /* Smooth hover effect */
 		}
 		@media (max-width: 600px) {
 			#sport-select {
@@ -95,62 +49,69 @@
 </script>
 
 <body>
-	<div id="header">
-		<div id="title">
-			<h1>+EV Sharps</h1>
-		</div>
-		<div id="sub-header">
-			<div class="dropdown">
-				<select id="page-select"></select>
-				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
 			</div>
-			<button onclick="filterDue()">Due</button>
-			<button id="percentiles-btn" onclick="viewPercentiles()">Percentiles</button>
-			<button onclick="filterToday()">Today</button>
-		</div>
-	</div>
-	<div id="content">
-		<div id="left-body" class="body">
-			<div id="header">
-				<div id="header-container">
-					<h1>+EV Sharps</h1>
+			<div id="center-dropdown">
+				<div class="dropdown">
+					<select id="page-select"></select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 				</div>
-				
 			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+				    <div class="gsi-material-button-icon">
+				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+				        <path fill="none" d="M0 0h48v48H0z"></path>
+				      </svg>
+				    </div>
+				    <span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="username"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
 			<div id="table-container">
-				<div id="updated-container">
-					<div id="donate">
-						<div>Tip</div>
-						<div>
-							<a href="https://cash.app/$intersectinglines" target="_blank">
-								<img src="logos/cashapp.png" alt="cashapp" />
-							</a>
-							<a href="https://buymeacoffee.com/interlines" target="_blank">
-								<img src="logos/coffee.png" alt="coffee" />
-							</a>
-						</div>
-					</div>
-					<div id="updated"></div>
-				</div>
 				<div id="table"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
 			</div>
-		</div>
-		<div id="right-body" class="body">
-			<div class="dropdown">
-				<select id="btwn-select">
-					<option value="pa">PA Btwn</option>
-					<option value="feed">Feed</option>
-				</select>
-				<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+			<div id="right-body" class="body">
+				<div class="dropdown">
+					<select id="btwn-select">
+						<option value="pa">PA Btwn</option>
+						<option value="feed">Feed</option>
+					</select>
+					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+				</div>
+				<div id="chart"></div>
 			</div>
-			<div id="chart"></div>
-		</div>
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
 	</div>
-	<div id="tooltip"></div>
 	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "barrels";
 		let TABLE = null;
@@ -172,6 +133,7 @@
 		let PLAYER = URLParams.get("player");
 		let PRETTY = URLParams.get("pretty");
 		let DUE = URLParams.get("due");
+		let HARD_HIT = URLParams.get("HH");
 		let L3 = URLParams.get("L3");
 		let TOGGLE_PERCENTILE = URLParams.get("percentiles") != undefined;
 		let BVP = URLParams.get("bvp");
@@ -189,6 +151,9 @@
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
+			if (PRETTY != undefined) {
+				document.querySelector("#watermark").style.width = "20%";
+			}
 		}
 
 		document.querySelectorAll("#donate img").forEach(btn => {
@@ -205,7 +170,7 @@
 			RES = TEST;
 			fetchData(TEST);
 		} else {
-			fetchUpdated();
+			//fetchUpdated();
 			fetchData();
 		}
 
@@ -223,11 +188,7 @@
 		function fetchData() {
 			let s = SPORT;
 			renderTable([]);
-			let url = `http://localhost:5000`;
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app`;
-			}
-			fetch(url+"/api/barrels", {
+			fetch(API_BASE+"/api/barrels", {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -246,28 +207,11 @@
 					if (DUE != undefined) {
 						filterDue();
 					}
-				}, 100);
-			}).catch(err => console.log(err));
-		}
-
-		function fetchData2() {
-			let s = SPORT;
-			const url = `https://api.github.com/repos/dailyev/props/contents/static/baseballreference/barrels.json`;
-			fetch(url, {
-				headers: { "Accept": "application/vnd.github.v3.raw" }
-			}).then(response => response.json()).then(data => {
-				if (TEAM) {
-					let teams = TEAM.split(",");
-					data = data.filter(r => teams.includes(r.team));
-				}
-				RES = data;
-				renderTable(data);
-				setTimeout(() => {
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (DUE != undefined) {
-						filterDue();
+					if (HARD_HIT != undefined) {
+						TABLE.setSort([
+							{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
+							{column: "game_trends.hard_hit_ct.3G", dir: "desc"},
+						])
 					}
 				}, 100);
 			}).catch(err => console.log(err));
@@ -301,8 +245,8 @@
 				data: data,
 				initialSort: [
 					//{column: "barrel_ct", dir: "desc"},
-					{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
-					{column: "game_trends.hard_hit_ct.3G", dir: "desc"},
+					{column: "game_trends.barrel_ct.5G", dir: "desc"},
+					{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -344,12 +288,12 @@
 						//{title: "Med", field: "homerLogs.gamesBtwnMed", width: 40},
 						//{title: "Z", field: "homerLogs.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
 
-						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: gapFormatter},
-						{title: "Avg", field: "homerLogs.pa.avg", width: 40},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
 						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
-						{title: "Med", field: "homerLogs.pa.med", width: 40},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
 						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
-						{title: "SD", field: "homerLogs.pa.sd", width: 40},
+						{title: "SD", field: "homerLogs.pa.sd", width: 40, formatter: blurFormatter},
 					]},
 					{title: "Barrels", columns: [
 						//{title: "Test", field: "brlCntTest", width: 45, sorter: "number"},
@@ -372,9 +316,9 @@
 						{title: "", field: "game_trends.hard_hit_ct.3GPercentile", visible: false},
 					]},
 					{title: "Close Calls", columns: [
-						{title: "Total", field: "homerLogs.close", width: 45, sorter: "number"},
-						{title: "L7", field: "homerLogs.close7", width: 45, sorter: "number"},
-						{title: "L3", field: "homerLogs.close3", width: 45, sorter: "number"},
+						{title: "Total", field: "homerLogs.close", width: 45, sorter: "number", formatter: blurFormatter},
+						{title: "L7", field: "homerLogs.close7", width: 45, sorter: "number", formatter: blurFormatter},
+						{title: "L3", field: "homerLogs.close3", width: 45, sorter: "number", formatter: blurFormatter},
 					]},
 					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 55, sorter: "number", formatter: percentileFormatter},
 					{title: "Exit Velocity", columns: [
@@ -428,7 +372,7 @@
 		function rowClick(row) {
 			const data = row.getData();
 			const right = document.querySelector("#right-body");
-			const left = document.querySelector("#left-body");
+			const left = document.querySelector("#table-container");
 			const table = document.querySelector("#table");
 			const tableContainer = document.querySelector("#table-container");
 			const sel = TABLE.getSelectedRows();
@@ -504,6 +448,5 @@
 			});
 		}
 	</script>
-	<script src="auth.js"></script>
 </body>
 </html>

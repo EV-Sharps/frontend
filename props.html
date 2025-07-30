@@ -321,18 +321,14 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		fetchUpdated();
+		//fetchUpdated();
 		fetchData();
 		//renderTable(TEST);
 
 		function fetchData() {
 			let s = SPORT;
-			let url = `http://localhost:5000`;
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app`;
-			}
 			renderTable([]);
-			fetch(url+`/api/props?sport=${s}`, {
+			fetch(API_BASE+`/api/props?sport=${s}`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -737,7 +733,7 @@
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
-					resizable: false,
+					//resizable: false,
 					headerSortStartingDir: "desc"
 				},
 				rowFormatter: function(row) {
@@ -758,8 +754,8 @@
 					},
 					{title: "Kelly", field: "kelly",  width: MOBILE ? 40 : 60, sorter: "number", formatter: kellyFormatter, visible: false},
 					{title: "FV", field: "fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter},
-					{title: "EV", field: "vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
-					{title: "FV", field: "vs-circa_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
+					{title: "Expected<br>Value", field: "vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
+					{title: "Fair<br>Value", field: "vs-circa_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "EV", field: "espn_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "FV", field: "espn_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "EV", field: "mgm-20_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},

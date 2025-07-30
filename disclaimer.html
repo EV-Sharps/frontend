@@ -16,7 +16,7 @@
     main {
       margin: 2rem;
       flex-direction: column;
-      overflow: auto;
+      overflow: visible;
     }
     h1 {
       font-size: 2rem;
@@ -27,6 +27,11 @@
     }
     p {
       margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) {
+      main {
+        overflow: auto;
+      }
     }
   </style>
 </head>

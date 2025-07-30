@@ -42,15 +42,16 @@ body::before {
 #table-container {
   flex: 1 1 auto;
   display: flex;
-  justify-content: center;   /* center horizontally */
-  align-items: center;       /* center vertically */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
 }
 #table {
 	height: 100%;
 	overflow: hidden;
 }
-#content, header, #header, footer, .profile-container {
+#content, main, header, #header, footer, .profile-container {
   position: relative;
   z-index: 1; /* ensure your content is above overlay */
   color: #fff;
@@ -414,6 +415,7 @@ button {
 }
 #auth-buttons {
 	display: flex;
+	display: none;
   align-items: center;
   gap: 10px; /* space between buttons */
   justify-content: flex-end; /* push to right side of header */
@@ -783,7 +785,7 @@ nav {
 	position: relative;
 	display: inline-block;
 }
-.dropdown select {
+.dropdown select, #date-dropdown input {
 	background-color: #1b1d1e;        /* transparent to blend with header */
   color: #f0f0f0;                 /* light text */
   border: 1px solid rgba(255,255,255,0.1);
@@ -995,12 +997,6 @@ button#logout:hover {
 	.profile-container {
     padding: 1rem;
   }
-	#sub-header {
-		position: initial;
-		transform: initial;
-		justify-content: center;
-	}
-
 	.body, #left-body {
 		width: 100%;
 	}
@@ -1031,6 +1027,10 @@ button#logout:hover {
     transform: none;
     width: 100%;
     margin: 0.5rem 0;
+    justify-content: space-evenly;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
   }
 	#content {
 		flex-direction: column;

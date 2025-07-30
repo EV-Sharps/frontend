@@ -1,4 +1,5 @@
 
+const ENABLE_AUTH = false;
 let SAVE_DISCORD;
 const SB = supabase.createClient(
 	'https://nkdhryqpiulrepmphwmt.supabase.co',
@@ -195,21 +196,30 @@ async function upgrade(tier) {
 }
 
 (async function handleSession() {
-	const { data: { session }, error } = await SB.auth.getSession();
-	if (session) {
-		if (session.access_token) {
-			ACCESS_TOKEN = session.access_token;
+	if (ENABLE_AUTH) {
+		const { data: { session }, error } = await SB.auth.getSession();
+		if (session) {
+			if (session.access_token) {
+				ACCESS_TOKEN = session.access_token;
+			}
+			Array.from(document.querySelectorAll(".loggedOut")).map(x => x.style.display = "none");
+			// make sure row exists in profile
+			await upsertProfile(session);
+		} else {
+			// No Session
+			Array.from(document.querySelectorAll(".loggedIn")).map(x => x.style.display = "none");
+			if (PAGE == "profile") {
+				//window.location = `/pricing${HTML}`;
+			}
 		}
-		Array.from(document.querySelectorAll(".loggedOut")).map(x => x.style.display = "none");
-		// make sure row exists in profile
-		await upsertProfile(session);
-	} else {
-		// No Session
+	}	else {
+		// TEST. No Auth
 		Array.from(document.querySelectorAll(".loggedIn")).map(x => x.style.display = "none");
-		if (PAGE == "profile") {
-			//window.location = `/pricing${HTML}`;
-		}
+		Array.from(document.querySelectorAll(".loggedOut")).map(x => x.style.display = "none");
+		document.querySelector("#pricing").style.display = "none";
 	}
+
+
 	if (PAGE == "bvp") {
 		fetchBVPData();
 	} else if (PAGE == "stats") {

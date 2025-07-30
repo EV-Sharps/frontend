@@ -70,8 +70,12 @@
 		margin-top: -2px;
 	}
 	@media (max-width: 600px) {
-		h1 {
-			display: none;
+		main {
+			flex-direction: column;
+			overflow: initial;
+		}
+		#page-select {
+			width: 100px;
 		}
 		#all {
 			justify-content: normal;
@@ -84,22 +88,6 @@
 		}
 		#left-body {
 			width: 100%;
-		}
-		#sub-header {
-			width: auto;
-			flex-direction: row;
-		}
-		#header {
-			margin: 0.5rem 0;
-		}
-		#header #donate {
-			display: flex;
-		}
-		#header #donate {
-			position: relative;
-		}
-		#table-container {
-			height: initial;
 		}
 		.game-container {
 			min-width: auto;
@@ -655,7 +643,7 @@
 							return rowValue === headerValue;
 						}
 					},
-					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
+					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true, formatter: summaryFormatter},
 					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},
 					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: 65},
@@ -694,7 +682,7 @@
 					{title: "Result", field: "result", width: MOBILE ? 50 : 60, visible: false},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
 					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
-					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true},
 					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
 					{title: "DT", field: "dt", visible: false},
 				]

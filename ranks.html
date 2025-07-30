@@ -18,61 +18,9 @@
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
-		h1 {
-			display: none;
-		}
-		#sub-header {
-			flex-direction: row;
-		}
-		#page-select {
-			min-width: 150px;
-		}
-		#header-container {
-			display: flex;
-			justify-content: space-around;
-			align-items: center;
-		}
-		.player-cell .team-img {
-			margin-top: -2px;
-		}
-		.opp-cell .team-img {
-			margin-top: -1px;
-		}
-		.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
-			padding-top: 0;
-		}
-		.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
-			padding-top: 2px;
-		}
-		#table, #table-container {
-			width: auto;
-		}
-		#left-body {
-			height: 100%;
-		}
 		@media (max-width: 600px) {
-			h1 {
-				display: initial;
-			}
-			#sport-select {
-				min-width: 100px;
-			}
-			#header #donate {
-				position: relative;
-			}
-			#header-container {
-				position: inherit;
-				justify-content: space-around;
-				align-items: baseline;
-			}
-			.disclaimer {
-				position: initial;
-			}
-			#sub-header {
-				margin: 0.5rem 0;
-			}
 			#table {
-				height: 95%;
+				flex: 1;
 			}
 		}
 	</style>
@@ -89,13 +37,12 @@
 </script>
 
 <body>
-	<div id="left-body" class="body">
-		<div id="header">
-			<div id="header-container">
+	<div id="app">
+		<header id="header">
+			<div id="title">
 				<h1>+EV Sharps</h1>
-				<span class="disclaimer"><i>Analysis only, bet responsibly.</i></span>
 			</div>
-			<div id="sub-header">
+			<div id="center-dropdown">
 				<div class="dropdown">
 					<select id="page-select"></select>
 					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
@@ -111,30 +58,21 @@
 					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 				</div>
 			</div>
-		</div>
-		<div id="table-container">
-			<div id="updated-container">
-				<div id="donate">
-					<div>Tip</div>
-					<div>
-						<a href="https://cash.app/$intersectinglines" target="_blank">
-							<img src="logos/cashapp.png" alt="cashapp" />
-						</a>
-						<a href="https://buymeacoffee.com/interlines" target="_blank">
-							<img src="logos/coffee.png" alt="coffee" />
-						</a>
-					</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
 				</div>
 			</div>
-			<div id="table"></div>
-			<div id="watermark">
-				<img src="logos/logo.png">
-			</div>
-		</div>
+			<div id="right-body" class="body">
+			</div>	
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
 	</div>
-	<div id="right-body" class="body">
-	</div>
-	<div id="tooltip"></div>
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript">
 		PAGE = "ranks";

@@ -20,9 +20,12 @@ function getToday() {
 	return `${Y}-${M}-${D}`;
 }
 
-let PAGE_DROPDOWN = `
-	<option value="profile">👤 Profile</option>
+/*
+<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
+	*/
+let PAGE_DROPDOWN = `
+
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾ MLB ⚾⚾</option>
 	<option value="dingers">🚀 Dingers</option>
 	<option value="feed">📡 Feed</option>
@@ -31,7 +34,7 @@ let PAGE_DROPDOWN = `
 	<option value="barrels">🏏 Barrels</option>
 	<option value="trends">📈 Trends</option>
 	<option value="mlb">🎯 Props</option>
-	<option value="historical">📜 Dingers (H)</option>
+	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">🚀 Dingers (K)</option>
 	<option value="preview">🔍 Preview</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈 NFL 🏈🏈</option>

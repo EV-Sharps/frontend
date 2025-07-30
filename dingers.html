@@ -65,14 +65,6 @@
 		}
 	}
 	@media (max-width: 768px) {
-		#table {
-			height: 85%;
-		}
-		#header-container {
-			position: inherit;
-			justify-content: space-around;
-			align-items: baseline;
-		}
 		.disclaimer {
 			position: initial;
 		}
@@ -200,6 +192,7 @@
 		let SIMPLE = URLParams.get("simple");
 		let PLAYER = URLParams.get("player");
 		let REFRESH = URLParams.get("refresh") || "off";
+		REFRESH = "auto";
 		let BOOK = URLParams.get("book");
 		let HISTORICAL = URLParams.get("historical");
 		let PRETTY = URLParams.get("pretty");

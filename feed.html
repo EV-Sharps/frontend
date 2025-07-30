@@ -70,9 +70,17 @@
 		margin-top: -2px;
 	}
 	@media (max-width: 600px) {
+		body, html {
+			overflow: auto;
+		}
+		#app {
+			height: auto;
+		}
 		main {
 			flex-direction: column;
-			overflow: initial;
+		}
+		#table {
+			max-height: 300px;
 		}
 		#page-select {
 			width: 100px;
@@ -84,7 +92,7 @@
 			margin-top: 0.75rem;
 		}
 		#table, #updated-container {
-			max-width: 320px;
+			max-width: 365px;
 		}
 		#left-body {
 			width: 100%;
@@ -683,7 +691,7 @@
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
 					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
 					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true},
-					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true},
+					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true},
 					{title: "DT", field: "dt", visible: false},
 				]
 			});

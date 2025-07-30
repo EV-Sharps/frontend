@@ -983,6 +983,9 @@ button#logout:hover {
 }
 
 @media (max-width: 600px) {
+	footer {
+		padding: 0 1rem;
+	}
 	html {
 		font-size: 15px;
 	}
@@ -1083,9 +1086,6 @@ button#logout:hover {
 	}
 	#player-tables, #player-header, #player-table, #player-header, #table,#table-container,#log-chart {
 		width: 100% !important;
-	}
-	#table {
-		height: 300px;
 	}
 	#player-odds {
 		width: 90%;

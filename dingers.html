@@ -80,11 +80,13 @@
 				<h1>+EV Sharps</h1>
 			</div>
 			<div id="center-dropdown">
-				<div class="dropdown">
+				<div class="select-wrapper">
 					<select id="page-select"></select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
-				<div class="dropdown">
+				<div class="select-wrapper">
 					<select id="promo-select">
 						<option value="" selected>All Books</option>
 						<option value="mgm-20">MGM 20% HR</option>
@@ -108,17 +110,21 @@
 						<option value="vs-circa">vs Circa</option>
 						<option value="vs-sharp">vs Sharps</option>
 					</select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
 				<button onclick="groupByGame();">Filter Game</button>
-				<div class="dropdown" style="display:none;">
+				<div class="select-wrapper" style="display:none;">
 					<label for="refresh-select">Refresh</label>
 					<select id="refresh-select">
 						<option value="off">Off</option>
 						<option value="auto">Auto</option>
 						<option value="reload">Reload</option>
 					</select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
 			</div>
 			<div id="auth-buttons">
@@ -151,7 +157,7 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div class="loggedOut">
+				<div class="loggedOut" style="display:none">
 					<div style="padding: 0.5rem;">
 						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>faster live odds ⚡</strong>
 					</div>

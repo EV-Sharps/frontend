@@ -18,6 +18,9 @@
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
+		#table {
+			width: auto;
+		}
 		@media (max-width: 600px) {
 			#table {
 				flex: 1;
@@ -43,24 +46,39 @@
 				<h1>+EV Sharps</h1>
 			</div>
 			<div id="center-dropdown">
-				<div class="dropdown">
+				<div id="page-select-wrapper" class="select-wrapper">
 					<select id="page-select"></select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
-				<div class="dropdown">
+				<div class="select-wrapper">
 					<select id="pos-select">
-						<option value="all">All</option>
+						<option value="all">All Pos</option>
 						<option value="qb">QB</option>
 						<option value="rb">RB</option>
 						<option value="wr">WR</option>
 						<option value="te">TE</option>
 					</select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<select id="scoring-select">
+						<option value="half">½ PPR</option>
+						<option value="full">1 PPR</option>
+						<option value="std">STD</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
 			</div>
 		</header>
 		<main>
 			<div id="table-container">
+				<div id="updated">Updated: </div>
 				<div id="table"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
@@ -117,11 +135,10 @@
 				TABLE.setFilter([
 					{field:"pos", type:"=", value: pos}
 				]);
-				if (pos != "QB") {
-					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.hideColumn(x))
-				}
-				if (pos == "WR") {
-
+				if (pos == "QB" || pos == "ALL") {
+					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.showColumn(x));
+				} else {
+					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.hideColumn(x));
 				}
 			}
 		});
@@ -131,8 +148,6 @@
 		});
 
 		fetchData();
-		//fetchUpdated();
-		//initDatepicker("2025-05-11");
 
 		function fetchData() {
 			let s = SPORT;
@@ -140,7 +155,8 @@
 			fetch(API_BASE+`/api/ranks`, {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
-				data = data.data;
+				document.querySelector("#updated").innerText = "Updated: "+timeAgo(data.data.updated);
+				data = data.data.data;
 				RES = data;
 				renderTable(data);
 				setTimeout(function() {
@@ -197,8 +213,9 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
-					{title: "FPros<br>ECR", field: "ecr.rank_ecr", width: 55, formatter: ecrFormatter, sorter: "number" },
-					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number" },
+					{title: "FPros<br>ECR", field: "ecr.rank_ecr", width: 55, formatter: ecrFormatter, sorter: "number", headerSortStartingDir: "asc" },
+					{title: "FPros<br>ECR", field: "ecr.rank_ecr", width: 55, formatter: ecrFormatter, sorter: "number", headerSortStartingDir: "asc" },
+					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
 
 					{title: "Passing", columns: [
 						{title: "Yards", field: "both.pass_yd", width: 60 },

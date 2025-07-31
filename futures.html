@@ -12,6 +12,7 @@
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="math.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon3.png">
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -23,7 +24,11 @@
 
 	gtag('config', 'G-FX06BZ5MRL');
 </script>
-
+<style>
+	#table {
+		width: auto;
+	}
+</style>
 <body>
 	<div id="app">
 		<header id="header">
@@ -75,6 +80,9 @@
 				</div>
 			</div>
 		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
 	</div>
 	<footer class="site-footer">
 		<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
@@ -125,36 +133,17 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		if (TEST) {
-			RES = TEST;
-			fetchData(TEST);
-		} else {
-			fetchUpdated();
-			fetchData();
-		}
-
-		document.querySelector("#btwn-select").value = "pa";
-		document.querySelector("#btwn-select").addEventListener("change", function(event) {
-			if (event.target.value == "g") {
-				plotHRGap(showGames=true);
-			} else if (event.target.value == "feed") {
-				renderFeed();
-			} else {
-				plotHRGap();
-			}
-		});
+		fetchData();
 
 		function fetchData() {
 			let s = SPORT;
-			let url = `http://localhost:5000`;
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app`;
-			}
 			renderTable([]);
-			fetch(url+"/api/futures?sport="+s, {
+			fetch(API_BASE+"/api/futures?sport="+s, {
 				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
 			}).then(response => response.json()).then(data => {
-				data = data.data;
+
+				document.querySelector("#updated").innerText = `Updated: ${timeAgo(data.data.updated)}`;
+				data = data.data.data;
 				RES = data;
 				renderTable(data);
 				setTimeout(() => {
@@ -169,9 +158,6 @@
 					}
 					if (PRETTY != undefined) {
 						pretty_();
-					}
-					if (DUE != undefined) {
-						filterDue();
 					}
 				}, 100);
 			}).catch(err => console.log(err));

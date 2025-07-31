@@ -26,7 +26,7 @@ function getToday() {
 	*/
 let PAGE_DROPDOWN = `
 
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾ MLB ⚾⚾</option>
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">🚀 Dingers</option>
 	<option value="feed">📡 Feed</option>
 	<option value="bvp">🆚 BvP</option>
@@ -37,7 +37,7 @@ let PAGE_DROPDOWN = `
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">🚀 Dingers (K)</option>
 	<option value="preview">🔍 Preview</option>
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈 NFL 🏈🏈</option>
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="nfl">🎯 Props</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
 	<option value="futures">🔮 Futures</option>
@@ -1280,7 +1280,24 @@ function plotHRGap(showGames = false) {
 
 const ecrFormatter = function(cell) {
 	const data = cell.getRow().getData();
-	return data.ecr.pos_rank;
+	const field = cell.getField();
+	if (field == "ecr.rank_ecr") {
+		return data.ecr.pos_rank;	
+	}
+	return data.pos_rank;
+}
+
+const diffFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	let val = cell.getValue();
+	let cls = "";
+	if (parseInt(val) > 0) {
+		cls = "positive";
+		val = `+${val}`;
+	} else if (parseInt(val) < 0) {
+		cls = "negative";
+	}
+	return `<div class="${cls}">${val}</div>`;
 }
 
 function fetchUpdated(repo="props", render=true) {

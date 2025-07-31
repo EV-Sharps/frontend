@@ -216,7 +216,9 @@ async function upgrade(tier) {
 		// TEST. No Auth
 		Array.from(document.querySelectorAll(".loggedIn")).map(x => x.style.display = "none");
 		Array.from(document.querySelectorAll(".loggedOut")).map(x => x.style.display = "none");
-		document.querySelector("#pricing").style.display = "none";
+		if (document.querySelector("#pricing")) {
+			document.querySelector("#pricing").style.display = "none";
+		}
 	}
 
 

@@ -65,7 +65,7 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<select id="scoring-select">
+					<select id="format-select">
 						<option value="half">½ PPR</option>
 						<option value="full">1 PPR</option>
 						<option value="std">STD</option>
@@ -78,6 +78,7 @@
 		</header>
 		<main>
 			<div id="table-container">
+				<div>Average between FPros, Circa, FD, DK, ESPN, MGM, CZ</div>
 				<div id="updated">Updated: </div>
 				<div id="table"></div>
 				<div id="watermark">
@@ -109,6 +110,8 @@
 		let PLAYER = URLParams.get("player");
 		let BVP = URLParams.get("bvp");
 		let PRETTY = URLParams.get("pretty");
+		let FORMAT = URLParams.get("format") || "half";
+		let POS = URLParams.get("pos") || "all";
 		//let LAST = URLParams.get("last") != undefined;
 		let LAST = false;
 		let YEAR = new Date();
@@ -127,6 +130,16 @@
 		document.querySelector("#pos-select").value = "all";
 		document.querySelector("#pos-select").addEventListener("change", (event) => {
 			let pos = event.target.value.toUpperCase();
+
+			const params = new URLSearchParams(window.location.search);
+			params.set("pos", pos);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			POS = pos.toLowerCase();
+			selectPosition(pos);
+		});
+
+		function selectPosition(pos) {
 			if (pos == "ALL") {
 				TABLE.setFilter();
 				return;
@@ -141,6 +154,23 @@
 					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.hideColumn(x));
 				}
 			}
+		}
+
+		document.querySelector("#format-select").value = FORMAT;
+		document.querySelector("#format-select").addEventListener("change", (event) => {
+			let format = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("format", format);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+
+			TABLE.hideColumn(`${FORMAT}_pts`);
+			TABLE.showColumn(`${format}_pts`);
+			FORMAT = format;
+			TABLE.setData(TABLE.getData());
+			TABLE.setSort([
+				{"column": `${format}_pts`, "dir": "desc"}
+			]);
 		});
 
 		window.addEventListener("resize", () => {
@@ -163,6 +193,9 @@
 					if (PRETTY != undefined) {
 						pretty_();
 					}
+					if (POS) {
+						selectPosition(POS);
+					}
 				}, 200);
 			}).catch(err => console.log(err));
 		}
@@ -177,7 +210,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "pts", dir: "desc"},
+					{column: "half_pts", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -201,7 +234,20 @@
 					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
 					
-					{title: "½ PPR<br>Pts", field: "pts", width: 55, sorter: "number" },
+					{
+						title: "Books<br>Diff",
+						field: "rankMut",
+						width: 45,
+						formatter: (cell) => {
+							const data = cell.getRow().getData();
+							return `${data.pos}${cell.getValue()}`;
+						},
+						mutatorData: (value, data) => {
+							return data[`rank_${FORMAT}`];
+						},
+						sorter: "number",
+						headerSortStartingDir: "asc"
+					},
 					{
 						title: "Player",
 						field: "player",
@@ -213,8 +259,38 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
-					{title: "FPros<br>ECR", field: "ecr.rank_ecr", width: 55, formatter: ecrFormatter, sorter: "number", headerSortStartingDir: "asc" },
-					{title: "FPros<br>ECR", field: "ecr.rank_ecr", width: 55, formatter: ecrFormatter, sorter: "number", headerSortStartingDir: "asc" },
+					{title: "½ PPR<br>Pts", field: "half_pts", width: 55, sorter: "number", visible: FORMAT == "half" ? true : false },
+					{title: "1 PPR<br>Pts", field: "full_pts", width: 55, sorter: "number", visible: FORMAT == "full" ? true : false },
+					{title: "STD<br>Pts", field: "std_pts", width: 55, sorter: "number", visible: FORMAT == "std" ? true : false },
+
+					{
+						title: "FPros<br>ECR",
+						field: "ecrMut",
+						width: 55,
+						formatter: (cell) => {
+							const data = cell.getRow().getData();
+							return `${data.pos}${cell.getValue()}`;
+						},
+						mutatorData: (value, data) => {
+							let post = "";
+							if (FORMAT != "half") {
+								post += `_${FORMAT}`;
+							}
+							return data["ecr"][`rank_ecr${post}`];
+						},
+						sorter: "number",
+						headerSortStartingDir: "asc"
+					},
+					{
+						title: "ECR<br>Diff",
+						field: "diffMut",
+						width: 40,
+						formatter: diffFormatter,
+						mutatorData: (value, data) => {
+							return data[`rank_diff_${FORMAT}`];
+						},
+						sorter: "number"
+					},
 					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
 
 					{title: "Passing", columns: [
@@ -242,6 +318,18 @@
 				TABLE.setGroupBy();
 			}
 		}
+
+		window.addEventListener('popstate', (event) => {
+			const format = event.state?.format || new URLSearchParams(location.search).get('format') || 'half';
+			const pos = event.state?.pos || new URLSearchParams(location.search).get('pos') || 'all';
+			FORMAT = format;
+			//TABLE.updateData(TABLE.getData());
+			TABLE.setSort([
+				{column: `${FORMAT}_pts`, dir: "desc"}
+			]);
+			selectPosition(pos.toUpperCase());
+			//TABLE.redraw(true);
+		});
 	</script>
 	<script src="auth.js"></script>
 </body>

@@ -1,4 +1,5 @@
 
+let CURR_USER, CURR_SESSION;
 const ENABLE_AUTH = false;
 let SAVE_DISCORD;
 const SB = supabase.createClient(
@@ -13,10 +14,12 @@ async function logout() {
 
 async function upsertProfile(session) {
 	const { data, error } = await SB.from('profiles')
-		.select('tier, discord_username, next_renewal')
+		.select('*')
 		.eq('id', session.user.id)
 		.maybeSingle();
 
+	CURR_SESSION = session;
+	CURR_USER = data;
 	if (error) {
 		console.error("Error fetching profile: ", error);
 		return;
@@ -35,25 +38,30 @@ async function upsertProfile(session) {
 		discordUsername = discordIdentity.identity_data?.user_name || discordIdentity.identity_data?.full_name;
 	}
 	if (!data) {
-		const { error: insertError } = await SB.from('profiles').insert([{
-			id: session.user.id,
-			tier: tier,
-			discord_id: discordId,
-			discord_username: discordUsername
-		}]);
+		const { d, error: insertError } = await SB.from('profiles').insert([{
+				id: session.user.id,
+				tier: tier,
+				discord_id: discordId,
+				discord_username: discordUsername
+			}])
+			.select()
+			.single();
+			CURR_USER = d;
 		if (insertError) {
 			console.error("Insert profile error: ", insertError);
 		}
 	} else {
 		tier = data.tier;
 		// if discord not yet saved but now available
-	      if (!data.discord_username && discordUsername) {
-	        const { error: updateError } = await SB.from('profiles')
-	          .update({ discord_id: discordId, discord_username: discordUsername })
-	          .eq('id', session.user.id);
-	        if (updateError) console.error('Update profile error:', updateError);
-	      }
+    if (!data.discord_username && discordUsername) {
+      const { error: updateError } = await SB.from('profiles')
+        .update({ discord_id: discordId, discord_username: discordUsername })
+        .eq('id', session.user.id);
+      if (updateError) console.error('Update profile error:', updateError);
+    }
 	}
+
+	// Signed in and logged in DB
 	let t = "🆓";
 	if (tier == "analyst") {
 		t = "💻";
@@ -64,7 +72,11 @@ async function upsertProfile(session) {
 	if (tier != "sharp" && document.querySelector("#upgrade")) {
 		document.querySelector("#upgrade").style.display = "initial";
 	}
-	//document.querySelector(".profile-badge").innerText = t;
+
+	if (tier != "free" && document.querySelector("#customize")) {
+		document.querySelector("#customize").style.display = "initial";
+	}
+	
 	if (document.querySelector(".profile-badge")) {
 		for (el of document.querySelectorAll(".profile-badge")) {
 			el.innerText = t;
@@ -184,7 +196,8 @@ async function upgrade(tier) {
 	const response = await fetch(`${API_BASE}/api/stripe-portal`, {
 		method: 'POST',
 		headers: {
-			Authorization: `Bearer ${ACCESS_TOKEN}`
+			Authorization: `Bearer ${ACCESS_TOKEN}`,
+			Tier: tier
 		}
 	});
 	const data = await response.json();

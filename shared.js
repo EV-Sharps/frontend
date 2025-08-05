@@ -35,8 +35,8 @@ let PAGE_DROPDOWN = `
 	<option value="trends">📈 Trends</option>
 	<option value="mlb">🎯 Props</option>
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
-	<option value="kambi">🚀 Dingers (K)</option>
-	<option value="preview">🔍 Preview</option>
+	<option value="kambi">🚀 Dingers (Kambi)</option>
+	<option value="preview">🔍 Pitcher Preview</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="nfl">🎯 Props</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
@@ -191,7 +191,6 @@ const sportFormatter = function(cell) {
 	return `<div>${sport}</div>`;
 }
 
-
 const percentFormatter = function(cell, params, rendered) {
 	if (!cell.getValue()) {
 		return "";
@@ -279,6 +278,11 @@ const percentileFormatter = function(cell) {
 	if (field.includes(".")) {
 		let [_,k,p] = field.split(".");
 		percentile = data["game_trends"][k][p+"Percentile"];
+	} else if (field == "hr_pa") {
+		percentile = data["hr_rate_percentile"];
+	} else if (field == "home_run") {
+		percentile = data["home_run_percentile"];
+		console.log(percentile);
 	}
 	if (percentile >= 80) {
 		cls = "positive";
@@ -1298,6 +1302,43 @@ const diffFormatter = function(cell) {
 		cls = "negative";
 	}
 	return `<div class="${cls}">${val}</div>`;
+}
+
+function closeOverlay() {
+	document.querySelector("#overlay").style.display = "none";
+}
+
+const DEFAULT_FIELDS = [
+	"evMut", "fairValMut", "impliedMut", "player", "book", "bookOdds.fd", "bookOdds.365", "bookOdds.dk", "bookOdds.mgm", "bookOdds.espn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.pn", "bookOdds.circa", "order", "pitcherHR_PA", "bvp", "bpp", "playerFactor", "savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "weather"
+];
+
+function openOverlay() {
+	if (CURR_USER?.tier === "free") {
+		return;
+	}
+	const metadata = CURR_USER?.metadata || {};
+	if (!metadata[PAGE]) {
+		metadata[PAGE] = DEFAULT_FIELDS.join(",");
+	}
+	document.querySelector("#overlay").style.display = "flex";
+
+	const items = document.querySelector("#items");
+	//items.innerHTML = "";
+
+	for (field of metadata[PAGE].split(",")) {
+		const el = document.querySelector(`#custom_${field.replaceAll(".", "_")}`);
+		if (el) {
+			el.checked = true;
+		}
+	}
+}
+
+function saveTableSettings() {
+	fetch(url, {
+		headers: { "Accept": "application/vnd.github.v3.raw" }
+	}).then(response => response.json()).then(data => {
+
+	});
 }
 
 function fetchUpdated(repo="props", render=true) {

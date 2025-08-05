@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Customize</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<style type="text/css">
+	.game-img {
+		height: 18px; width: 18px;
+	}
+	.tabulator-cell {
+		height: 24px;
+	}
+	#table {
+		height: auto;
+	}
+	#remove-row {
+		text-align: center;
+		display: flex;
+		width: 100%;
+	}
+	#remove-row div {
+
+	}
+</style>
+<body>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+			</div>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+			<div id="donate">
+				<div>Tip Jar</div>
+				<div>
+					<a href="https://cash.app/$intersectinglines" target="_blank">
+						<img src="logos/cashapp.png" alt="cashapp" />
+					</a>
+					<a href="https://buymeacoffee.com/interlines" target="_blank">
+						<img src="logos/coffee.png" alt="coffee" />
+					</a>
+				</div>
+			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+				    <div class="gsi-material-button-icon">
+				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+				        <path fill="none" d="M0 0h48v48H0z"></path>
+				      </svg>
+				    </div>
+				    <span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="username"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div id="remove-row">
+					❌
+				</div>
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script src="test.js"></script>
+	<script src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "customize";
+		let TABLE, RES, BOOK, BPP, HISTORICAL, KAMBI, PH, PLAYER;
+		let url = "";
+		let SPORT = "mlb";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+
+		renderTable(TEST);
+		setTimeout(function() {
+			let html = document.querySelector("#remove-row");
+			html.innerHTML = "";
+			TABLE.getColumns("active").forEach(col => {
+				const field = col.getField();
+				const div = document.createElement('div');
+	      div.className = 'col-item';
+	      div.setAttribute('draggable', true);
+	      div.dataset.field = field;
+	      div.innerHTML = `<span>${col.label}</span><button onclick="removeColumn('${field}')">✕</button>`;
+	      html.appendChild(div);
+			});
+		}, 300)
+
+		const removeRow = document.querySelector("#remove-row");
+
+		function renderTable(data) {
+			//data = data.filter(r => r["vs-circa_ev"] != undefined)
+
+			data.sort((a,b) => {
+				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
+			});
+			let first = [...data];
+			first.sort((a,b) => {
+				return parseInt(a.startSortable) - parseInt(b.startSortable);
+			});
+			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
+			if (idx != -1) {
+				//data.splice(idx, 0, {prop: "separator", ev: ""});
+			}
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    		placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: TEST,
+				initialSort: [
+					{column: "evMut", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()} (${data[0].start})</span>`;
+				},
+				groupToggleElement: "header",
+				groupBy: "",
+				groupStartOpen: function (value) {
+					return value == first[0].game;
+				},
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{
+						title: "Expected<br>Value",
+						field: "evMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}ev`] || "";
+						},
+						formatter: evMutFormatter,
+						responsive: 0
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairValMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}fairVal`] || "";
+						},
+						responsive: 0
+					},
+					{
+						title: "Implied",
+						field: "impliedMut",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: impliedFormatter,
+						mutatorData: (value, data) => {
+							let pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}implied`] || "";
+						},
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 90 : 140,
+						hozAlign: "left",
+						formatterParams:{
+							sport: SPORT
+						},
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						formatter: evBookFormatter,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter},
+					{title: "Diff", field: "bppDiff", visible: BPP ? true : false, width: 60, sorter: "number", formatter: percentFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
+					{title: "Circa", field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number"},
+					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
+					{title: "#", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
+					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentFormatter},
+					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
+					{title: "Historical FD", columns: [
+						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.fd_avg", width: 45, sorter: "number", formatter: plusMinusFormatter, visible: HISTORICAL ? true : false},
+						{title: "SD", field: "analysis.fd_std_dev", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "Historical PN", columns: [
+						{title: "Med", field: "analysis.pn_median", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.pn_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "SD", field: "analysis.pn_std_dev", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "Historical Circa", columns: [
+						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
+						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
+					]},
+					{title: "BPP", columns: [
+						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
+						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
+					]},
+					{title: "Batter Summary", columns: [
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : false },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+					]},
+					{title: "Pitcher Summary", columns: [
+						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : false },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter, visible: HISTORICAL ? false : true },
+					]},
+					{title: "Rankings", columns: [
+						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					]},
+					{title: "Last Homer", columns: [
+						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+					]},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					{title: "Game", field: "game", visible: false},
+					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
+					{title: "FD Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? false : true},
+					//{title: "Last HR", field: "lastHR"},
+				]
+			});
+		}
+	</script>
+</body>
+</html>

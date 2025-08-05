@@ -799,6 +799,8 @@
 		}
 
 		function renderTable(data) {
+			//data = data.filter(r => r.book != "" && r.player != "jose caballero");
+
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
 				height: "100%",

@@ -27,12 +27,8 @@
   gtag('config', 'G-FX06BZ5MRL');
 </script>
 <style>
-		#updated {
-			display: none;
-		}
-		#table-container {
-			flex-direction: row;
-			justify-content: space-evenly;
+		#table {
+			width: auto;
 		}
 		@media (max-width: 600px) {
 			#right-body {
@@ -94,53 +90,55 @@
 		<main>
 			<div id="table-container">
 				<div id="updated">Updated: </div>
-				<div id="table"></div>
-				<div id="right-body">
-					<div id="player-tables">
-						<div id="player-header">
-							<h2></h2>
-							<div class="player-dropdowns" style="gap: 5px;">
-								<div class="dropdown">
-									<select id="player-year-select" style=""></select>
-									<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-								</div>
-								<div class="dropdown">
-									<select id="player-venue-select" style="">
-										<option selected>A+H</option>
-										<option>Away</option>
-										<option>Home</option>
-									</select>
-									<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-								</div>
-							</div>
-							<div id="player-controls">
-								<div class="player-dropdowns">
+				<div style="display: flex; justify-content: space-evenly; height: 100%; width: 100%; overflow: hidden;">
+					<div id="table"></div>
+					<div id="right-body">
+						<div id="player-tables">
+							<div id="player-header">
+								<h2></h2>
+								<div class="player-dropdowns" style="gap: 5px;">
 									<div class="dropdown">
-										<select id="player-ou-select"></select>
-										<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-									</div>
-									<div class="dropdown" style="margin: 0 0.5rem;">
-										<select id="player-lines-select"></select>
+										<select id="player-year-select" style=""></select>
 										<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 									</div>
 									<div class="dropdown">
-										<select id="player-props-select"></select>
+										<select id="player-venue-select" style="">
+											<option selected>A+H</option>
+											<option>Away</option>
+											<option>Home</option>
+										</select>
 										<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 									</div>
 								</div>
+								<div id="player-controls">
+									<div class="player-dropdowns">
+										<div class="dropdown">
+											<select id="player-ou-select"></select>
+											<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+										</div>
+										<div class="dropdown" style="margin: 0 0.5rem;">
+											<select id="player-lines-select"></select>
+											<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+										</div>
+										<div class="dropdown">
+											<select id="player-props-select"></select>
+											<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+										</div>
+									</div>
+								</div>
 							</div>
-						</div>
-						<div class="player-row">
-							<div id="player-ev"></div>
-							<div id="player-odds"></div>
-						</div>
-						<div class="player-row">
-							<div id="player-pitcher"></div>
-							<div id="player-weather"></div>
-						</div>
-						<div id="player-opp"></div>
-						<div id="player-table">
-							<div id="log-chart"></div>
+							<div class="player-row">
+								<div id="player-ev"></div>
+								<div id="player-odds"></div>
+							</div>
+							<div class="player-row">
+								<div id="player-pitcher"></div>
+								<div id="player-weather"></div>
+							</div>
+							<div id="player-opp"></div>
+							<div id="player-table">
+								<div id="log-chart"></div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -170,8 +168,14 @@
 		}
 		let MIN = URLParams.get("min");
 		let DEBUG = URLParams.get("debug");
+		let GAME = URLParams.get("game");
 		let YEAR = new Date();
 		YEAR = YEAR.getFullYear();
+
+		if (GAME) {
+			let [a,h] = GAME.split("-");
+			GAME = `${a} @ ${h}`;
+		}
 
 		if (SPORT == "nhl") {
 			document.title = "🏒 Props";
@@ -333,7 +337,8 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(response => response.json()).then(data => {
-				data = data.data;
+				document.querySelector("#updated").innerText = `Updated: ${timeAgo(data.data.updated)}`;
+				data = data.data.data;
 				if (PROP) {
 					data = data.filter(r => r.prop == PROP);
 				}
@@ -353,48 +358,10 @@
 						let data = r.getData();
 						return data.prop != "ml" && !data.prop.includes("total")
 					});
-					if (rows.length > 0 && !DEBUG) {
-						if (window.location.protocol != "file:") {
-							//rows[0].getElement().click();
-						}
-					}
-					hideCols();
-					TABLE.redraw();
-				}, 200);
-			}).catch(err => console.log(err));
-		}
-
-		function fetchData2() {
-			let s = SPORT;
-			const url = `https://api.github.com/repos/dailyev/props/contents/static/${s}/evArr.json`;
-			fetch(url, {
-				headers: {
-					"Accept": "application/vnd.github.v3.raw"
-				}
-			}).then(response => response.json()).then(data => {
-				if (PROP) {
-					data = data.filter(r => r.prop == PROP);
-				}
-				if (MIN) {
-					data = data.filter(r => r.books.length >= MIN);
-				}
-				if (OVER == "true") {
-					data = data.filter(r => r.under == false);
-				}
-				RES = data;
-				renderTable(data);
-				setTimeout(function() {
-					if (PROP) {
-						TABLE.setHeaderFilterValue("prop", PROP.toUpperCase());
-					}
-					const rows = TABLE.getRows("active").filter(r => {
-						let data = r.getData();
-						return data.prop != "ml" && !data.prop.includes("total")
-					});
-					if (rows.length > 0 && !DEBUG) {
-						if (window.location.protocol != "file:") {
-							rows[0].getElement().click();
-						}
+					if (GAME) {
+						TABLE.setFilter([
+							{field:"game", type:"=", value: GAME}
+						])
 					}
 					hideCols();
 					TABLE.redraw();
@@ -721,7 +688,6 @@
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
 				placeholder:"Data Loading...",
-				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
@@ -848,7 +814,7 @@
 				cols.forEach(col => TABLE.showColumn(col));
 				document.querySelector("#right-body").style.display = "none";
 				document.querySelector("#table").style["max-width"] = "1425px";
-				document.querySelector("#left-body").style.width = "100%";
+				//document.querySelector("#left-body").style.width = "100%";
 			} else {
 				cols.forEach(col => TABLE.hideColumn(col));
 				document.querySelector("#table").style["max-width"] = "720px";

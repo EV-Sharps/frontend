@@ -55,6 +55,9 @@ body::before {
 	height: 100%;
 	overflow: hidden;
 }
+#items {
+	gap: 1rem;
+}
 #updated {
 	padding: 0.25rem 0;
 }
@@ -419,9 +422,17 @@ button {
 }
 #title {
 }
-#auth-buttons {
+#donate {
 	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+	position: absolute;
+	right: 1rem;
+}
+#auth-buttons {
 	display: none;
+	display: flex;
 	align-items: center;
 	gap: 10px; /* space between buttons */
 	justify-content: flex-end; /* push to right side of header */
@@ -440,13 +451,6 @@ h1 {
 	margin: 0;
 	font-size: 1.5rem;
 	font-weight: 700;
-}
-#donate {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 5px;
-	margin-left: 0.75rem;
 }
 
 #mobile-header #donate {
@@ -1066,7 +1070,7 @@ button#logout:hover {
 		justify-content: center;
 		margin-bottom: 0;
 	}
-	#updated, #donate {
+	#updated {
 		font-size: 0.85rem;
 	}
 	#donate img {

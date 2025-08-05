@@ -15,6 +15,9 @@
 		#chart {
 			max-height: 400px;
 		}
+		#table {
+			width: auto;
+		}
 		#right-body {
 			justify-content: center;
 		}
@@ -213,6 +216,7 @@
 						filterDue();
 					}
 					if (HARD_HIT != undefined) {
+						["barrel_ct", "game_trends.barrel_ct.5G", "game_trends.barrel_ct.3G"].forEach(x => TABLE.hideColumn(x));
 						TABLE.setSort([
 							{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
 							{column: "game_trends.hard_hit_ct.3G", dir: "desc"},
@@ -305,7 +309,7 @@
 						{title: "Total", field: "barrel_ct", width: 45, sorter: "number", formatter: percentileFormatter},
 						{title: "L5", field: "game_trends.barrel_ct.5G", width: 40, sorter: "number", formatter: percentileFormatter},
 						{title: "L5", field: "game_trends.barrel_ct.5GPercentile", visible: false},
-						{title: "L3", field: "game_trends.barrel_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter},
+						{title: "L3", field: "game_trends.barrel_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter, visible: HARD_HIT != undefined ? false : true},
 						{title: "Rate", field: "barrels_per_bip", width: 55, sorter: "number", formatter: percentileFormatter},
 						{title: "L5", field: "game_trends.barrels_per_bip.5G", width: 40, sorter: "number", formatter: percentileFormatter},
 					]},
@@ -327,8 +331,9 @@
 					]},
 					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 55, sorter: "number", formatter: percentileFormatter},
 					{title: "Exit Velocity", columns: [
-						{title: "Total", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
-						{title: "L5", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "Avg", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "100+", field: "tot100+", formatter: percentileFormatter, width: 45, sorter: "number"},
 					]},
 					{title: "Launch<br>Angle", field: "launch_angle_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
 					{title: "Distance", columns: [

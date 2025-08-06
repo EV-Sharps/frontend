@@ -142,6 +142,7 @@
 		let PRETTY = URLParams.get("pretty");
 		let DUE = URLParams.get("due");
 		let HARD_HIT = URLParams.get("HH");
+		let EXIT_VELO = URLParams.get("EV");
 		let L3 = URLParams.get("L3");
 		let TOGGLE_PERCENTILE = URLParams.get("percentiles") != undefined;
 		let BVP = URLParams.get("bvp");
@@ -220,8 +221,10 @@
 						TABLE.setSort([
 							{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
 							{column: "game_trends.hard_hit_ct.3G", dir: "desc"},
-						])
-					}
+						]);
+					} else if (EXIT_VELO != undefined) {
+						exitVelo();
+					} 
 				}, 100);
 			}).catch(err => console.log(err));
 		}
@@ -334,6 +337,8 @@
 						{title: "Avg", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
 						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number"},
 						{title: "100+", field: "tot100+", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "L5", field: "game_trends.exit_velo_100.5G", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "L3", field: "game_trends.exit_velo_100.3G", formatter: percentileFormatter, width: 45, sorter: "number"},
 					]},
 					{title: "Launch<br>Angle", field: "launch_angle_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
 					{title: "Distance", columns: [
@@ -430,17 +435,21 @@
 
 		function exitVelo() {
 			TABLE.setSort([
-				{column: "exit_velocity_avg", dir: "desc"}
+				{column: "tot100+", dir: "desc"},
+				{column: "game_trends.exit_velo_100.5G", dir: "desc"},
+				{column: "game_trends.exit_velo_100.3G", dir: "desc"},
 			]);
 			TABLE.getColumns().map(col => {
-				let arr = ["book", "player", "sweet_spot_percent", "barrel_ct", "hard_hit_ct", "exit_velocity_avg"];
+				let arr = ["book", "player", "sweet_spot_percent", "barrel_ct", "hard_hit_ct","exit_velocity_avg", "game_trends.exit_velocity_avg.5G", "tot100+", "game_trends.exit_velo_100.5G", "game_trends.exit_velo_100.3G"];
 				if (!arr.includes(col.getField())) {
 					col.hide();
+				} else {
+					col.show();
 				}
 			});
 			const rows = TABLE.getData("active");
 			const tweet = rows.slice(0, 10).map((row, idx) => {
-				return `${idx+1}. ${title(row.player)} - ${row.exit_velocity_avg} mph`;
+				return `${idx+1}. ${title(row.player)} - ${row.game_trends.exit_velo_100["3G"]} 100+ - ${row.exit_velocity_avg} mph avg`;
 			})
 			console.log(tweet.join("\n"));
 		}

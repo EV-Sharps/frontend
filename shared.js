@@ -258,6 +258,20 @@ const gapFormatter = function(cell) {
 	return `${cell.getValue()}`;
 }
 
+function getPercentileColor(field, value) {
+	if (!value) return "";
+	if (PAGE == "preview" && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field)) {
+		value = 100 - value;
+	}
+	if (value >= 95) return '#00ff66'; // bright green
+	if (value >= 80) return '#33cc66';
+	if (value >= 60) return '#66cc99';
+	if (value >= 40) return '#aaaaaa';
+	if (value >= 20) return '#e57373';
+	if (value >= 5)  return '#e53935';
+	return '#ff0000'; // very low percentile
+}
+
 const percentileFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	let field = cell.getField();
@@ -284,12 +298,14 @@ const percentileFormatter = function(cell) {
 		percentile = data["home_run_percentile"];
 		console.log(percentile);
 	}
+
+	const color = getPercentileColor(field, percentile);
 	if (percentile >= 80) {
 		cls = "positive";
 	} else if (percentile <= 20) {
 		cls = "negative";
 	}
-	//cls = "";
+	cls = "";
 	let v = "";
 
 	if (TOGGLE_PERCENTILE) {
@@ -298,13 +314,13 @@ const percentileFormatter = function(cell) {
 		let suffix = "";
 		if (field.includes("distance")) {
 			suffix = " ft";
-		} else if (field.includes("percent") || field.includes("barrels_per_bip")) {
+		} else if (field.includes("percent") || field.includes("barrels_per_bip") || field == "barrel_batted_rate") {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
 	}
 	return `
-		<div class="${cls}">${v}</div>
+		<div class="${cls}" style="color:${color}">${v}</div>
 	`;
 }
 

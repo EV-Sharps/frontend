@@ -732,6 +732,9 @@
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: function(cell) {
+							if (!cell.getValue()) {
+								return "";
+							}
 							return `${cell.getValue().toFixed(2)}u`;
 						},
 						mutatorData: (value, data) => {

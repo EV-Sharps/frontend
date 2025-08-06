@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>🏈 Ranks</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		#table {
+			width: auto;
+		}
+		@media (max-width: 600px) {
+			#table {
+				flex: 1;
+			}
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+
+<body>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+			</div>
+			<div id="center-dropdown">
+				<div id="page-select-wrapper" class="select-wrapper">
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<select id="pos-select">
+						<option value="all">All Pos</option>
+						<option value="qb">QB</option>
+						<option value="rb">RB</option>
+						<option value="wr">WR</option>
+						<option value="te">TE</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<select id="format-select">
+						<option value="half">½ PPR</option>
+						<option value="full">1 PPR</option>
+						<option value="std">STD</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div>Average between FPros, Circa, FD, DK, ESPN, MGM, CZ</div>
+				<div id="updated">Updated: </div>
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+			<div id="right-body" class="body">
+			</div>	
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript">
+		PAGE = "ranks";
+		let RES = null;
+		let TABLE = null;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let DATE = URLParams.get("date");
+		let MARK = URLParams.get("mark");
+		let TODAY = getToday();
+		let SPORT = "nfl";
+		let PROP = URLParams.get("prop");
+		let LEADERS = URLParams.get("leaders");
+		let PLAYER = URLParams.get("player");
+		let BVP = URLParams.get("bvp");
+		let PRETTY = URLParams.get("pretty");
+		let FORMAT = URLParams.get("format") || "half";
+		let POS = URLParams.get("pos") || "ALL";
+		//let LAST = URLParams.get("last") != undefined;
+		let LAST = false;
+		let YEAR = new Date();
+		YEAR = YEAR.getFullYear();
+
+		document.querySelectorAll("#donate img").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const sport = btn.textContent;
+			});
+		});
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+		}
+
+		document.querySelector("#pos-select").value = "all";
+		document.querySelector("#pos-select").addEventListener("change", (event) => {
+			let pos = event.target.value.toUpperCase();
+
+			const params = new URLSearchParams(window.location.search);
+			params.set("pos", pos);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			POS = pos.toLowerCase();
+			selectPosition(pos);
+		});
+
+		function selectPosition(pos) {
+			if (pos == "ALL") {
+				TABLE.setFilter();
+				return;
+			}
+			if (pos) {
+				TABLE.setFilter([
+					{field:"pos", type:"=", value: pos}
+				]);
+				if (pos == "QB" || pos == "ALL") {
+					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.showColumn(x));
+				} else {
+					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.hideColumn(x));
+				}
+			}
+		}
+
+		document.querySelector("#format-select").value = FORMAT;
+		document.querySelector("#format-select").addEventListener("change", (event) => {
+			let format = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("format", format);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+
+			TABLE.hideColumn(`${FORMAT}_pts`);
+			TABLE.showColumn(`${format}_pts`);
+			FORMAT = format;
+			TABLE.setData(TABLE.getData());
+			TABLE.setSort([
+				{"column": `${format}_pts`, "dir": "desc"}
+			]);
+		});
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		fetchData();
+
+		function fetchData() {
+			let s = SPORT;
+			renderTable([]);
+			fetch(API_BASE+`/api/ranks`, {
+				headers: { "Accept": "application/vnd.github.v3.raw" }
+			}).then(response => response.json()).then(data => {
+				document.querySelector("#updated").innerText = "Updated: "+timeAgo(data.data.updated);
+				data = data.data.data;
+				RES = data;
+				renderTable(data);
+				setTimeout(function() {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+					if (POS) {
+						selectPosition(POS);
+					}
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "half_pts", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					if (row.getData().prop == "separator") {
+						row.getElement().style.backgroundColor = "#d3d3d3";
+						row.getElement().style.height = "5px";
+						//row.getElement().innerHTML = "";
+					}
+				},
+				//groupBy: "game",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
+					{title: "Tier", field: "dynasty.tier", width: 45, sorter: "number" },
+					{
+						title: "Rk",
+						field: "dynasty.rk",
+						width: 45,
+						formatter: (cell) => {
+							const data = cell.getRow().getData();
+							return `${data.dynasty.pos}`;
+						},
+						sorter: "number",
+						headerSortStartingDir: "asc"
+					},
+					{title: "Age", field: "dynasty.age", width: 45, sorter: "number" },
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+            		{title: "ADSO Sheets", columns: [
+            			{title: "val", field: "sheets.val", width: 45, sorter: "number" },
+            			{title: "VRK", field: "sheets.vrk", width: 45, sorter: "number" },
+            			{title: "ECR", field: "sheets.ecr", width: 45, sorter: "number" },
+            			{title: "ADP", field: "sheets.adp", width: 45, sorter: "number" },
+            		]},
+					{title: "½ PPR<br>Pts", field: "half_pts", width: 55, sorter: "number", visible: FORMAT == "half" ? true : false },
+					{
+						title: "FPros<br>ECR",
+						field: "ecrMut",
+						width: 55,
+						formatter: (cell) => {
+							const data = cell.getRow().getData();
+							return `${data.pos}${cell.getValue()}`;
+						},
+						mutatorData: (value, data) => {
+							let post = "";
+							if (FORMAT != "half") {
+								post += `_${FORMAT}`;
+							}
+							return data["ecr"][`rank_ecr${post}`];
+						},
+						sorter: "number",
+						headerSortStartingDir: "asc"
+					},
+					{
+						title: "ECR<br>Diff",
+						field: "diffMut",
+						width: 40,
+						formatter: diffFormatter,
+						mutatorData: (value, data) => {
+							return data[`rank_diff_${FORMAT}`];
+						},
+						sorter: "number"
+					},
+					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
+
+					{title: "Passing", columns: [
+						{title: "Yards", field: "both.pass_yd", width: 60 },
+						{title: "TDs", field: "both.pass_td", width: 60 },
+						{title: "Int", field: "both.int", width: 60 },	
+					]},
+					{title: "Receiving", columns: [
+						{title: "Yards", field: "both.rec_yd", width: 60 },
+						{title: "TDs", field: "both.rec_td", width: 60 },
+					]},
+					,
+					{title: "Rushing", columns: [
+						{title: "Yards", field: "both.rush_yd", width: 60 },
+						{title: "TDs", field: "both.rush_td", width: 60 },
+					]}
+				]
+			});
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+
+		window.addEventListener('popstate', (event) => {
+			const format = event.state?.format || new URLSearchParams(location.search).get('format') || 'half';
+			const pos = event.state?.pos || new URLSearchParams(location.search).get('pos') || 'all';
+			FORMAT = format;
+			//TABLE.updateData(TABLE.getData());
+			TABLE.setSort([
+				{column: `${FORMAT}_pts`, dir: "desc"}
+			]);
+			selectPosition(pos.toUpperCase());
+			//TABLE.redraw(true);
+		});
+	</script>
+	<script src="auth.js"></script>
+</body>
+</html>

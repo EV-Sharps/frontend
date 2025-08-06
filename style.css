@@ -432,7 +432,6 @@ button {
 }
 #auth-buttons {
 	display: none;
-	display: flex;
 	align-items: center;
 	gap: 10px; /* space between buttons */
 	justify-content: flex-end; /* push to right side of header */

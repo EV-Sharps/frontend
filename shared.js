@@ -263,7 +263,8 @@ function getPercentileColor(field, value) {
 	if (PAGE == "preview" && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field)) {
 		value = 100 - value;
 	}
-	if (value >= 95) return '#00ff66'; // bright green
+	// bright green
+	if (value >= 95) return '#00ff66';
 	if (value >= 80) return '#33cc66';
 	if (value >= 60) return '#66cc99';
 	if (value >= 40) return '#aaaaaa';

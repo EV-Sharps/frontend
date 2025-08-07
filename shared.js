@@ -1,3 +1,4 @@
+let TOGGLE_PERCENTILE;
 let HTML = "";
 let TEAM = "";
 let PAGE = "";
@@ -260,7 +261,9 @@ const gapFormatter = function(cell) {
 
 function getPercentileColor(field, value) {
 	if (!value) return "";
-	if (PAGE == "preview" && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field)) {
+	if (["preview"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field)) {
+		value = 100 - value;
+	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
 	}
 	// bright green
@@ -290,14 +293,20 @@ const percentileFormatter = function(cell) {
 
 	let cls = "";
 	let percentile = data[field+"Percentile"];
-	if (field.includes(".")) {
+	if (PAGE == "dingers" || PAGE == "bvp") {
+		let [_,k] = field.split(".");
+		if (field.includes("savant")) {
+			percentile = data["savant"][k+"Percentile"];
+		} else {
+			percentile = data["pitcherData"][k+"Percentile"];
+		}
+	} else if (field.includes(".")) {
 		let [_,k,p] = field.split(".");
 		percentile = data["game_trends"][k][p+"Percentile"];
 	} else if (field == "hr_pa") {
-		percentile = data["hr_rate_percentile"];
+		percentile = data["hr_pa_percentile"];
 	} else if (field == "home_run") {
 		percentile = data["home_run_percentile"];
-		console.log(percentile);
 	}
 
 	const color = getPercentileColor(field, percentile);
@@ -315,7 +324,7 @@ const percentileFormatter = function(cell) {
 		let suffix = "";
 		if (field.includes("distance")) {
 			suffix = " ft";
-		} else if (field.includes("percent") || field.includes("barrels_per_bip") || field == "barrel_batted_rate") {
+		} else if (field.includes("percent") || ["barrels_per_bip", "barrel_batted_rate", "hr_pa"].includes(field.split(".").at(-1))) {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
@@ -503,6 +512,18 @@ function addSuffix(num) {
 	return num + "th";
 }
 
+function getOppRankColor(field, value) {
+	if (!value) return "";
+	// bright green
+	if (value >= 27) return '#00ff66';
+	if (value >= 22) return '#33cc66';
+	if (value >= 16) return '#66cc99';
+	if (value >= 11) return '#aaaaaa';
+	if (value >= 6) return '#e57373';
+	if (value >= 2)  return '#e53935';
+	return '#ff0000'; // very low percentile
+}
+
 const rankingFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const field = cell.getField();
@@ -520,6 +541,7 @@ const rankingFormatter = function(cell) {
 			return "";
 		}
 		let cls = "";
+		//const color = getOppRankColor(data.stadiumRank);
 		if (data.stadiumRank <= 10) {
 			cls = "positive";
 		} else if (data.stadiumRank >= 20) {

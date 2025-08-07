@@ -319,6 +319,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
+					{"column": "bvs", "dir": "desc"},
 					{"column": "bvpAvg", "dir": "desc"},
 					{"column": "bvpH", "dir": "desc"},
 					{"column": "bvpHR", "dir": "desc"},
@@ -359,9 +360,9 @@
 
 					//{title: "Pitcher Summary", field: "pitcherSummary"},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
-					{title: "HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
+					{title: "P<br>HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
 					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
-					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 80, visible: true, formatter: blurFormatter},
+					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
 					{title: "BPP HR Factors", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
@@ -375,20 +376,20 @@
 					{title: "Batter Summary", columns: [
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
-						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: true },
-						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter },
-						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter },
-						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: percentileFormatter },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter },
 					]},
 					{title: "Pitcher Summary", columns: [
 						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
 						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
-						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: true },
-						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: true },
-						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter },
-						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter },
-						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					]},
 					{title: "Rankings", columns: [
 						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50},
@@ -806,7 +807,7 @@
 
 		function pretty_() {
 			TABLE.getColumns().map(col => col.hide());
-			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "pitcherHR_PA", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(col => TABLE.showColumn(col));
+			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "pitcherHR_PA", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median", "savant.barrels_per_bip", "savant.exit_velocity_avg", "pitcherData.barrel_batted_rate", "pitcherData.exit_velocity_avg"].forEach(col => TABLE.showColumn(col));
 		}
 	</script>
 	<script src="auth.js"></script>

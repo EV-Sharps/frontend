@@ -96,7 +96,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript">
 		PAGE = "preview";
-		let TOGGLE_PERCENTILE, RES, TABLE;
+		let RES, TABLE;
 		let HISTORICAL = {};
 		let url = "";
 		const windowURL = new URL(window.location.href);
@@ -203,10 +203,10 @@
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Pitcher Homers Given Up", columns: [
-						{title: "Tot", field: "home_run", width: 45 },
+						{title: "Total", field: "home_run", width: 45, formatter: percentileFormatter },
 						{title: "vs L", field: "hr_l", width: 45 },
 						{title: "vs R", field: "hr_r", width: 45 },
-						{title: "Tot/PA", field: "hr_pa", width: 50, formatter: percentFormatter, sorter: "number" },
+						{title: "Tot/PA", field: "hr_pa", width: 50, formatter: percentileFormatter, sorter: "number" },
 						{title: "L/PA", field: "hr_l_rate", width: 45, formatter: percentFormatter, sorter: "number" },
 						{title: "R/PA", field: "hr_r_rate", width: 45, formatter: percentFormatter, sorter: "number" },
 					]},
@@ -221,10 +221,10 @@
 					{title: "HH%", field: "hard_hit_percent", width: 45, formatter: percentileFormatter },
 					{title: "BRL%", field: "barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					{
-						title: "HR Pitches<br>Old → New",
+						title: "HR Pitch History<br>Old → Recent",
 						field: "hr_pitch",
 						formatter: function(cell) {
-							return cell.getValue().slice(-5).join(",");
+							return cell.getValue().slice(-7).join(",");
 						},
 						hozAlign: "left"
 					}

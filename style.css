@@ -230,6 +230,7 @@ body::before {
 }
 .positive {
 	color: rgb(56, 142, 60);
+	color: #33cc66;
 	font-weight: bold;
 }
 .negative {

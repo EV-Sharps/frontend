@@ -64,16 +64,6 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div class="select-wrapper">
-					<select id="format-select">
-						<option value="half">½ PPR</option>
-						<option value="full">1 PPR</option>
-						<option value="std">STD</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
 			</div>
 		</header>
 		<main>
@@ -156,23 +146,6 @@
 			}
 		}
 
-		document.querySelector("#format-select").value = FORMAT;
-		document.querySelector("#format-select").addEventListener("change", (event) => {
-			let format = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("format", format);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-
-			TABLE.hideColumn(`${FORMAT}_pts`);
-			TABLE.showColumn(`${format}_pts`);
-			FORMAT = format;
-			TABLE.setData(TABLE.getData());
-			TABLE.setSort([
-				{"column": `${format}_pts`, "dir": "desc"}
-			]);
-		});
-
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
@@ -234,13 +207,14 @@
 					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
 					{title: "Tier", field: "dynasty.tier", width: 45, sorter: "number" },
+					{title: "Tier", field: "dynasty.tier", width: 45, sorter: "number" },
 					{
 						title: "Rk",
 						field: "dynasty.rk",
 						width: 45,
 						formatter: (cell) => {
 							const data = cell.getRow().getData();
-							return `${data.dynasty.pos}`;
+							return `${data.dynasty?.pos}`;
 						},
 						sorter: "number",
 						headerSortStartingDir: "asc"
@@ -292,6 +266,7 @@
 						},
 						sorter: "number"
 					},
+					{title: "Sleeper<br>ADP", field: "sleeperADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
 					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
 
 					{title: "Passing", columns: [
@@ -303,11 +278,10 @@
 						{title: "Yards", field: "both.rec_yd", width: 60 },
 						{title: "TDs", field: "both.rec_td", width: 60 },
 					]},
-					,
 					{title: "Rushing", columns: [
 						{title: "Yards", field: "both.rush_yd", width: 60 },
 						{title: "TDs", field: "both.rush_td", width: 60 },
-					]}
+					]},
 				]
 			});
 		}

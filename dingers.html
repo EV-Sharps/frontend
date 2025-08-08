@@ -34,17 +34,6 @@
 	.player-cell .team-img {
 		margin-top: -2px;
 	}
-	#left-body {
-		padding: 0;
-	}
-	#updated {
-	}
-	.tabulator .tabulator-col[tabulator-field=stadiumRank] .tabulator-col-content {
-		padding-top: 0;
-	}
-	.tabulator .tabulator-col[tabulator-field=oppRank] .tabulator-col-content {
-		padding-top: 2px;
-	}
 	#refresh-select {
 		padding: 0 0.5rem;
 		height: 24px;
@@ -96,6 +85,18 @@
 	#overlay button:hover {
 		background: #0056b3;
 	}
+	#overlay h3 {
+		text-align: center;
+	}
+	#table {
+		width: auto;
+		min-width: 300px;
+	}
+	@media (max-width: 1750px) {
+		#table {
+			width: 100%;
+		}
+	}
 	@media (max-width: 1350px) {
 		#table-container {
 			justify-content: normal;
@@ -105,6 +106,9 @@
 		}
 	}
 	@media (max-width: 768px) {
+		#table {
+			min-width: none;
+		}
 		.disclaimer {
 			position: initial;
 		}
@@ -236,7 +240,10 @@
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
-					<div style="display: flex;gap: 1rem;">
+					<div>
+						<h2 style="justify-content: center;">Customize</h2>
+					</div>
+					<div style="justify-content: center;display: flex;gap: 1rem;">
 						<div style="display: flex;flex-direction: column;">
 							<label for="sort-select">Sort</label>
 							<div class="select-wrapper">
@@ -265,172 +272,224 @@
 						</div>
 					</div>
 					<div id="items" style="display: flex;">
-					<div>
-						<h3>Expected Value</h3>
 						<div>
-							<input id="custom_evMut" type="checkbox">
-							<label for="custom_evMut">Expected Value</label>
+							<h3>Expected Value</h3>
+							<div>
+								<input id="custom_evMut" type="checkbox">
+								<label for="custom_evMut">Expected Value</label>
+							</div>
+							<div>
+								<input id="custom_fairValMut" type="checkbox">
+								<label for="custom_fairValMut">Fair Value</label>
+							</div>
+							<div>
+								<input id="custom_impliedMut" type="checkbox">
+								<label for="custom_impliedMut">Implied</label>
+							</div>
+							<div>
+								<input id="custom_kellyMut" type="checkbox">
+								<label for="custom_kellyMut">¼ Kelly</label>
+							</div>
 						</div>
+						<!-- Player / Odds -->
 						<div>
-							<input id="custom_fairValMut" type="checkbox">
-							<label for="custom_fairValMut">Fair Value</label>
+							<h3>Player & Odds</h3>
+							<div>
+								<input id="custom_player" type="checkbox" checked disabled>
+								<label for="custom_player">Player</label>
+							</div>
+							<div>
+								<input id="custom_book" type="checkbox" checked disabled>
+								<label for="custom_book">EV Book</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+								<label for="custom_bookOdds_fd">Fanduel</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_365" type="checkbox">
+								<label for="custom_bookOdds_365">Bet365</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_dk" type="checkbox">
+								<label for="custom_bookOdds_dk">Draftkings</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_mgm" type="checkbox">
+								<label for="custom_bookOdds_mgm">MGM</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_espn" type="checkbox">
+								<label for="custom_bookOdds_espn">ESPN</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_cz" type="checkbox">
+								<label for="custom_bookOdds_cz">Caesars</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_pn" type="checkbox">
+								<label for="custom_bookOdds_pn">Pinnacle</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+								<label for="custom_bookOdds_circa">Circa</label>
+							</div>
 						</div>
+						<!-- Vs Pitcher -->
 						<div>
-							<input id="custom_impliedMut" type="checkbox">
-							<label for="custom_impliedMut">Implied</label>
+							<h3>Vs Pitcher</h3>
+							<div>
+								<input id="custom_pitcherHR_PA" type="checkbox">
+								<label for="custom_pitcherHR_PA">HR/PA</label>
+							</div>
+							<div>
+								<input id="custom_home_run" type="checkbox">
+								<label for="custom_home_run">Total HR</label>
+							</div>
+							<div>
+								<input id="custom_bvp" type="checkbox">
+								<label for="custom_bvp">Vs Pitcher</label>
+							</div>
+							<div>
+								<input id="custom_pitcher" type="checkbox">
+								<label for="custom_pitcher">Pitcher Name</label>
+							</div>
 						</div>
+						<!-- BPP -->
 						<div>
-							<input id="custom_kellyMut" type="checkbox">
-							<label for="custom_kellyMut">¼ Kelly</label>
+							<h3>Ballparkpal</h3>
+							<div>
+								<input id="custom_bpp" type="checkbox">
+								<label for="custom_bpp">BPP Game</label>
+							</div>
+							<div>
+								<input id="custom_playerFactor" type="checkbox">
+								<label for="custom_playerFactor">BPP Player</label>
+							</div>
+						</div>
+						<!-- Savant --> 
+						<div>
+							<h3>Adv. Batter Data</h3>
+							<div>
+								<input id="custom_savant_est_ba" type="checkbox">
+								<label for="custom_savant_est_ba">xBA</label>
+							</div>
+							<div>
+								<input id="custom_savant_est_woba" type="checkbox">
+								<label for="custom_savant_est_woba">xwOBA</label>
+							</div>
+							<div>
+								<input id="custom_savant_sweet_spot_percent" type="checkbox">
+								<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
+							</div>
+							<div>
+								<input id="custom_savant_exit_velocity_avg" type="checkbox">
+								<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
+							</div>
+							<div>
+								<input id="custom_savant_hard_hit_percent" type="checkbox">
+								<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
+							</div>
+							<div>
+								<input id="custom_savant_barrels_per_bip" type="checkbox">
+								<label for="custom_savant_barrels_per_bip">Barrel %</label>
+							</div>
+						</div>
+						<!-- Pitcher Data -->
+						<div>
+							<h3>Adv. Pitcher Data</h3>
+							<div>
+								<input id="custom_pitcherData_p_era" type="checkbox">
+								<label for="custom_pitcherData_p_era">ERA</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_xba" type="checkbox">
+								<label for="custom_pitcherData_xba">xBA</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_xwoba" type="checkbox">
+								<label for="custom_pitcherData_xwoba">xwOBA</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_flyballs_percent" type="checkbox">
+								<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
+								<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
+								<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
+								<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
+							</div>
+							<div>
+								<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
+								<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
+							</div>
+						</div>
+						<!-- MISC -->
+						<div>
+							<h3>Misc</h3>
+							<div>
+								<input id="custom_order" type="checkbox">
+								<label for="custom_order">Batting Order</label>
+							</div>
+							<div>
+								<input id="custom_oppRank" type="checkbox">
+								<label for="custom_oppRank">Opp Ranks</label>
+							</div>
+							<div>
+								<input id="custom_stadiumRank" type="checkbox">
+								<label for="custom_stadiumRank">Stadium Ranks</label>
+							</div>
+							<div>
+								<input id="custom_stadiumRankLeft" type="checkbox">
+								<label for="custom_stadiumRankLeft">Stadium Ranks (L)</label>
+							</div>
+							<div>
+								<input id="custom_stadiumRankRight" type="checkbox">
+								<label for="custom_stadiumRankRight">Stadium Ranks (R)</label>
+							</div>
+							<div>
+								<input id="custom_weather" type="checkbox">
+								<label for="custom_weather">Weather</label>
+							</div>
+						</div>
+						<!-- Last Homer (DUE) -->
+						<div>
+							<h3>Last Homer (Due)</h3>
+							<div>
+								<input id="custom_homerLogs_pa_streak" type="checkbox">
+								<label for="custom_homerLogs_pa_streak">PA</label>
+							</div>
+							<div>
+								<input id="custom_homerLogs_pa_med" type="checkbox">
+								<label for="custom_homerLogs_pa_med">Median</label>
+							</div>
+							<div>
+								<input id="custom_homerLogs_pa_z_median" type="checkbox">
+								<label for="custom_homerLogs_pa_z_median">Z-score</label>
+							</div>
+							<div>
+								<input id="custom_homerLogs_pa_avg" type="checkbox">
+								<label for="custom_homerLogs_pa_avg">Average</label>
+							</div>
+							<div>
+								<input id="custom_homerLogs_pa_z" type="checkbox">
+								<label for="custom_homerLogs_pa_z">Avg Z-score</label>
+							</div>
 						</div>
 					</div>
-					<!-- Vs Pitcher -->
-					<div>
-						<h3>Vs Pitcher</h3>
-						<div>
-							<input id="custom_pitcherHR_PA" type="checkbox">
-							<label for="custom_pitcherHR_PA">HR/PA</label>
-						</div>
-						<div>
-							<input id="custom_home_run" type="checkbox">
-							<label for="custom_home_run">Total HR</label>
-						</div>
-						<div>
-							<input id="custom_bvp" type="checkbox">
-							<label for="custom_bvp">Vs Pitcher</label>
-						</div>
-						<div>
-							<input id="custom_pitcher" type="checkbox">
-							<label for="custom_pitcher">Pitcher Name</label>
-						</div>
-					</div>
-					<!-- BPP -->
-					<div>
-						<h3>Ballparkpal</h3>
-						<div>
-							<input id="custom_bpp" type="checkbox">
-							<label for="custom_bpp">BPP Game</label>
-						</div>
-						<div>
-							<input id="custom_playerFactor" type="checkbox">
-							<label for="custom_playerFactor">BPP Player</label>
-						</div>
-					</div>
-					<!-- Savant --> 
-					<div>
-						<h3>Adv. Batter Data</h3>
-						<div>
-							<input id="custom_savant_est_ba" type="checkbox">
-							<label for="custom_savant_est_ba">xBA</label>
-						</div>
-						<div>
-							<input id="custom_savant_est_woba" type="checkbox">
-							<label for="custom_savant_est_woba">xwOBA</label>
-						</div>
-						<div>
-							<input id="custom_savant_sweet_spot_percent" type="checkbox">
-							<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
-						</div>
-						<div>
-							<input id="custom_savant_exit_velocity_avg" type="checkbox">
-							<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
-						</div>
-						<div>
-							<input id="custom_savant_hard_hit_percent" type="checkbox">
-							<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
-						</div>
-						<div>
-							<input id="custom_savant_barrels_per_bip" type="checkbox">
-							<label for="custom_savant_barrels_per_bip">Barrel %</label>
-						</div>
-					</div>
-					<!-- Pitcher Data -->
-					<div>
-						<h3>Adv. Pitcher Data</h3>
-						<div>
-							<input id="custom_pitcherData_p_era" type="checkbox">
-							<label for="custom_pitcherData_p_era">ERA</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_xba" type="checkbox">
-							<label for="custom_pitcherData_xba">xBA</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_xwoba" type="checkbox">
-							<label for="custom_pitcherData_xwoba">xwOBA</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_flyballs_percent" type="checkbox">
-							<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
-							<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
-							<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
-							<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
-						</div>
-						<div>
-							<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
-							<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
-						</div>
-					</div>
-					<!-- MISC -->
-					<div>
-						<h3>Misc</h3>
-						<div>
-							<input id="custom_order" type="checkbox">
-							<label for="custom_order">Batting Order</label>
-						</div>
-						<div>
-							<input id="custom_oppRank" type="checkbox">
-							<label for="custom_oppRank">Opp Ranks</label>
-						</div>
-						<div>
-							<input id="custom_stadiumRank" type="checkbox">
-							<label for="custom_stadiumRank">Stadium Ranks</label>
-						</div>
-						<div>
-							<input id="custom_weather" type="checkbox">
-							<label for="custom_weather">Weather</label>
-						</div>
-					</div>
-					<!-- Last Homer (DUE) -->
-					<div>
-						<h3>Last Homer (Due)</h3>
-						<div>
-							<input id="custom_homerLogs_pa_streak" type="checkbox">
-							<label for="custom_homerLogs_pa_streak">PA</label>
-						</div>
-						<div>
-							<input id="custom_homerLogs_pa_med" type="checkbox">
-							<label for="custom_homerLogs_pa_med">Median</label>
-						</div>
-						<div>
-							<input id="custom_homerLogs_pa_z_median" type="checkbox">
-							<label for="custom_homerLogs_pa_z_median">Z-score</label>
-						</div>
-						<div>
-							<input id="custom_homerLogs_pa_avg" type="checkbox">
-							<label for="custom_homerLogs_pa_avg">Average</label>
-						</div>
-						<div>
-							<input id="custom_homerLogs_pa_z" type="checkbox">
-							<label for="custom_homerLogs_pa_z">Avg Z-score</label>
-						</div>
+					<div style="display: flex;justify-content: center;align-items: center;">
+						<button id="save-table" onclick="saveTableSettings();">Save</button>
+						<span id="save-status" style="margin: 0.5rem 0"></span>
+						<button onclick="closeOverlay();">Close</button>
 					</div>
 				</div>
-				<div style="display: flex;justify-content: center;">
-					<button onclick="saveTableSettings();">Save</button>
-					<button onclick="closeOverlay();">Close</button>
-				</div>
-				</div>
-				
 			</div>
 		</main>
 		<footer class="site-footer">
@@ -465,8 +524,10 @@
 			let [a,h] = GAME.split("-");
 			GAME = `${a} @ ${h}`;
 		}
-		const selectId = "#header";
 
+		handleSession();
+
+		const selectId = "#header";
 		const promoSelect = document.querySelector(selectId+" #promo-select");
 		if (BOOK) {
 			promoSelect.value = BOOK;
@@ -530,34 +591,23 @@
 			TABLE.redraw(true);
 		});
 
+		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
+			checkbox.addEventListener("change", () => {
+				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+				if (checkbox.checked) {
+					TABLE.getColumn(field)?.show();
+				} else {
+					TABLE.getColumn(field)?.hide();
+				}
+			});
+		})
+
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
 		//fetchUpdated(repo="lines");
 		renderTable([]);
-		fetchData();
-		let intervalId = 0;
-		let seconds = 60;
-		if (REFRESH == "auto") {
-			intervalId = setInterval(() => {
-				if (!MOBILE || document.hasFocus()) {
-					fetchData(render=false);
-				}
-			}, seconds * 1000);
-		} else if (REFRESH == "reload") {
-			setTimeout(() => {
-				if (!MOBILE || document.hasFocus()) {
-					window.location.href = window.location.href;
-				}
-			}, seconds * 1000);
-		} else {
-			setInterval(() => {
-				if (!MOBILE || document.hasFocus()) {
-					updateTimes();
-				}
-			}, seconds * 1000);
-		}
 
 		function parseData(data, render) {
 			UPDATED["dingers"] = data["updated"];
@@ -599,7 +649,7 @@
 			}, 200);
 		}
 
-		async function fetchData(render=true) {
+		async function fetchDingersData(render=true) {
 			let url = "/api/ev";
 			if (KAMBI != undefined) {
 				url += "?kambi=true";
@@ -780,7 +830,7 @@
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
-					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentFormatter},
+					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentileFormatter},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					{title: "Historical FD", columns: [
 						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
@@ -822,17 +872,19 @@
 						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : false },
 						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
 					]},
-					{title: "Rankings", columns: [
-						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
-						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					{title: "Stadium Rankings", columns: [
+						{title: "Both", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "Left", field: "stadiumRankLeft", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "Right", field: "stadiumRankRight", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
 					]},
-					{title: "Last Homer", columns: [
+					{title: "Last Homer (Due)", columns: [
 						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
-						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
-						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
-						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter, visible: false},
-						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: lastDiffFormatter, sorter: "number", visible: false},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: homerLogFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: homerLogFormatter},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: homerLogFormatter, visible: false},
+						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},
 					]},
 					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					{title: "Game", field: "game", visible: false},
@@ -844,6 +896,10 @@
 
 			TABLE.on("rowClick", function(e, row) {
 				rowClick(row);
+			});
+
+			TABLE.on("dataLoaded", function(data) {
+				showHideUserTable()
 			});
 		}
 

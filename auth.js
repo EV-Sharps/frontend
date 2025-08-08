@@ -53,12 +53,12 @@ async function upsertProfile(session) {
 	} else {
 		tier = data.tier;
 		// if discord not yet saved but now available
-    if (!data.discord_username && discordUsername) {
-      const { error: updateError } = await SB.from('profiles')
-        .update({ discord_id: discordId, discord_username: discordUsername })
-        .eq('id', session.user.id);
-      if (updateError) console.error('Update profile error:', updateError);
-    }
+		if (!data.discord_username && discordUsername) {
+			const { error: updateError } = await SB.from('profiles')
+				.update({ discord_id: discordId, discord_username: discordUsername })
+				.eq('id', session.user.id);
+			if (updateError) console.error('Update profile error:', updateError);
+		}
 	}
 
 	// Signed in and logged in DB
@@ -94,35 +94,69 @@ async function upsertProfile(session) {
 }
 
 const tierOrder = {
-  free: 0,
-  analyst: 1,
-  sharp: 2
+	free: 0,
+	analyst: 1,
+	sharp: 2
 };
 
 function fillPricing(tier) {
 	const currentLevel = tierOrder[tier];
 
 	document.querySelectorAll('.pricing-card').forEach(card => {
-	  const btn = card.querySelector('.select-btn');
-	  const btnText = btn.querySelector(".btn-text");
-	  if (!btn) return;
-	  const cardTier = card.dataset.tier;
-	  const cardLevel = tierOrder[cardTier];
+		const btn = card.querySelector('.select-btn');
+		const btnText = btn.querySelector(".btn-text");
+		if (!btn) return;
+		const cardTier = card.dataset.tier;
+		const cardLevel = tierOrder[cardTier];
 
-	  if (cardTier === tier) {
-	    btnText.textContent = 'Current';
-	    btn.disabled = true;
-	    btn.classList.add('current-btn');
-	  } else if (cardLevel < currentLevel) {
-	  	btnText.textContent = 'Downgrade';
+		if (cardTier === tier) {
+			btnText.textContent = 'Current';
+			btn.disabled = true;
+			btn.classList.add('current-btn');
+		} else if (cardLevel < currentLevel) {
+			btnText.textContent = 'Downgrade';
 		btn.disabled = false;
 		btn.classList.remove('current-btn');
-	  } else {
-	    btnText.textContent = 'Upgrade';
-	    btn.disabled = false;
-	    btn.classList.remove('current-btn');
-	  }
+		} else {
+			btnText.textContent = 'Upgrade';
+			btn.disabled = false;
+			btn.classList.remove('current-btn');
+		}
 	});
+}
+
+async function saveTableSettings() {
+	const saveBtn = document.querySelector("#save-table");
+	const saveStatus = document.querySelector("#save-status");
+
+	saveStatus.textContent = "Saving...";
+	saveBtn.disabled = true;
+
+	const fields = {};
+	fields[PAGE] = [];
+	document.querySelectorAll('#items input[type="checkbox"]:checked').forEach((input) => {
+		const key = input.id.replace(/^custom_/, '');
+		fields[PAGE].push(key);
+	});
+	const newData = { ...CURR_USER.metadata, ...fields };
+	const { error: updateError } = await SB.from('profiles')
+		.update({
+			metadata: newData
+		})
+		.eq('id', CURR_SESSION.user.id);
+	if (updateError) {
+		console.error('Update profile error:', updateError);
+		saveStatus.textContent = "Error Saving";
+	} else {
+		saveStatus.textContent = "✅ Saved!";
+	}
+
+	CURR_USER.metadata = newData;
+
+  setTimeout(() => {
+    saveStatus.textContent = '';
+    saveBtn.disabled = false;
+  }, 3000);
 }
 
 function fillProfile(data, discordUsername, tier, session) {
@@ -143,17 +177,17 @@ function fillProfile(data, discordUsername, tier, session) {
 }
 
 async function loginWithDiscord() {
-  const { data, error } = await SB.auth.signInWithOAuth({
-    provider: 'discord',
-    options: {
-      	//redirectTo: window.location.origin+ `/profile${HTML}?saveDiscord`
-      	redirectTo: window.location.origin+ `/profile${HTML}`
-    }
-  });
+	const { data, error } = await SB.auth.signInWithOAuth({
+		provider: 'discord',
+		options: {
+				//redirectTo: window.location.origin+ `/profile${HTML}?saveDiscord`
+				redirectTo: window.location.origin+ `/profile${HTML}`
+		}
+	});
 
-  if (error) {
-    console.error('Discord OAuth error', error);
-  }
+	if (error) {
+		console.error('Discord OAuth error', error);
+	}
 }
 
 function loginWithDiscord2() {
@@ -169,27 +203,27 @@ function loginWithDiscord2() {
 }
 
 async function saveDiscordToProfile() {
-  const { data: { user } } = await SB.auth.getUser();
+	const { data: { user } } = await SB.auth.getUser();
 
-  console.log(user);
-  if (user && user.app_metadata?.provider === 'discord') {
-    const discordId = user.user_metadata.provider_id;
-    const discordName = user.user_metadata.full_name;
+	console.log(user);
+	if (user && user.app_metadata?.provider === 'discord') {
+		const discordId = user.user_metadata.provider_id;
+		const discordName = user.user_metadata.full_name;
 
-    console.log(discordId, discordName);
-    const { data, error } = await SB.from('profiles')
-      .update({
-        discord_id: discordId,
-        discord_username: discordName
-      })
-      .eq('id', user.id);
+		console.log(discordId, discordName);
+		const { data, error } = await SB.from('profiles')
+			.update({
+				discord_id: discordId,
+				discord_username: discordName
+			})
+			.eq('id', user.id);
 
-    if (error) {
-      console.error('❌ Failed to save Discord info', error);
-    } else {
-      console.log('✅ Discord info saved to profile', data);
-    }
-  }
+		if (error) {
+			console.error('❌ Failed to save Discord info', error);
+		} else {
+			console.log('✅ Discord info saved to profile', data);
+		}
+	}
 }
 
 async function upgrade(tier) {
@@ -208,7 +242,7 @@ async function upgrade(tier) {
 	}
 }
 
-(async function handleSession() {
+async function handleSession() {
 	if (ENABLE_AUTH) {
 		const { data: { session }, error } = await SB.auth.getSession();
 		if (session) {
@@ -234,12 +268,18 @@ async function upgrade(tier) {
 		}
 	}
 
-
 	if (PAGE == "bvp") {
 		fetchBVPData();
 	} else if (PAGE == "stats") {
 		fetchStatsData();
 	} else if (PAGE == "pricing") {
 		document.querySelector("#pricing").style.display = "none";
+	} else if (PAGE == "dingers") {
+		fetchDingersData();
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchDingersData(render=false);
+			}
+		}, 60 * 1000);
 	}
-})();
+}

@@ -293,7 +293,7 @@ const percentileFormatter = function(cell) {
 
 	let cls = "";
 	let percentile = data[field+"Percentile"];
-	if (PAGE == "dingers" || PAGE == "bvp") {
+	if (["savant", "pitcherData"].includes(field.split(".")[0])) {
 		let [_,k] = field.split(".");
 		if (field.includes("savant")) {
 			percentile = data["savant"][k+"Percentile"];
@@ -303,6 +303,8 @@ const percentileFormatter = function(cell) {
 	} else if (field.includes(".")) {
 		let [_,k,p] = field.split(".");
 		percentile = data["game_trends"][k][p+"Percentile"];
+	} else if (field == "pitcherHR_PA") {
+		percentile = data["pitcher_hr_rate_percentile"];
 	} else if (field == "hr_pa") {
 		percentile = data["hr_pa_percentile"];
 	} else if (field == "home_run") {
@@ -324,7 +326,7 @@ const percentileFormatter = function(cell) {
 		let suffix = "";
 		if (field.includes("distance")) {
 			suffix = " ft";
-		} else if (field.includes("percent") || ["barrels_per_bip", "barrel_batted_rate", "hr_pa"].includes(field.split(".").at(-1))) {
+		} else if (field.includes("percent") || ["barrels_per_bip", "barrel_batted_rate", "hr_pa", "pitcherHR_PA"].includes(field.split(".").at(-1))) {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
@@ -439,9 +441,23 @@ const bppPlayerFormatter = function(cell) {
 	`;
 }
 
+function getHRFactorColor(pct) {
+  if (pct == null) return "";
+  if (pct >= 20)  return '#00ff66'; // elite boost
+  if (pct >= 10)  return '#33cc66'; // strong boost
+  if (pct >= 5)   return '#66cc99'; // mild boost
+  if (pct > 0)    return '#99ffcc'; // slight boost
+  if (pct >= -1)  return '#aaaaaa'; // neutral
+  if (pct >= -4)  return '#e57373'; // slight suppress
+  if (pct >= -9)  return '#e53935'; // mild suppress
+  if (pct >= -19) return '#d32f2f'; // strong suppress
+  return '#ff0000';                  // extreme suppress
+}
+
 const bppFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const val = parseInt(cell.getValue().replace("%", ""));
+	const color = getHRFactorColor(parseInt(cell.getValue()));
 	let cls = "";
 	if (val >= 10) {
 		cls = "positive";
@@ -449,7 +465,7 @@ const bppFormatter = function(cell) {
 		cls = "negative";
 	}
 	return `
-		<div class="${cls}">
+		<div style="color: ${color}">
 			${cell.getValue()}
 		</div>
 	`;
@@ -512,16 +528,48 @@ function addSuffix(num) {
 	return num + "th";
 }
 
-function getOppRankColor(field, value) {
+function getZColor(value) {
 	if (!value) return "";
-	// bright green
-	if (value >= 27) return '#00ff66';
-	if (value >= 22) return '#33cc66';
-	if (value >= 16) return '#66cc99';
+	if (value >= 2.0) return '#00ff66'; // bright green
+	if (value >= 1.5) return '#33cc66'; // medium green
+	if (value >= 1.0) return '#66cc99'; // light green
+	if (value >= 0) return '#99ffcc';
+	return '#aaaaaa';
+}
+
+const homerLogFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const field = cell.getField();
+
+	if (field.split(".").at(-1).substr(0, 1) != "z") {
+		return cell.getValue();
+	}
+
+	let z = cell.getValue();
+	if (!z) return "0.0";
+
+	z = z.toFixed(1);
+	if (data.blurred && field == "homerLogs.pa.z") {
+		return `<div class='blurred'>${z}</div>`;
+	}
+
+	if (z > 0) {
+		const color = getZColor(parseFloat(cell.getValue()));
+		return `<div style="color:${color}">+${z}</div>`;
+	}
+
+	return `<div>${z}</div>`;
+}
+
+function getOppRankColor(value) {
+	if (!value) return "";
+	if (value >= 27) return '#ff0000';
+	if (value >= 22) return '#e53935';
+	if (value >= 16) return '#e57373';
 	if (value >= 11) return '#aaaaaa';
-	if (value >= 6) return '#e57373';
-	if (value >= 2)  return '#e53935';
-	return '#ff0000'; // very low percentile
+	if (value >= 6) return '#66cc99';
+	if (value >= 2)  return '#33cc66';
+	return '#00ff66'; // very low percentile
 }
 
 const rankingFormatter = function(cell) {
@@ -531,26 +579,29 @@ const rankingFormatter = function(cell) {
 		return "";
 	}
 	if (field == "oppRank" || ["nba"].includes(SPORT)) {
-		cls = data.oppRankClass;
+		let cls;
+		//cls = data.oppRankClass;
 		if (data.blurred) {
 			cls = "blurred";
 		}
-		return `<div class='${cls}'>${cell.getValue()}</div>`;
+		const color = getOppRankColor(cell.getValue());
+		return `<div class='${cls}' style='color: ${color}'>${addSuffix(cell.getValue())}</div>`;
 	} else {
 		if (data.team == "ath") {
 			return "";
 		}
 		let cls = "";
-		//const color = getOppRankColor(data.stadiumRank);
+		const color = getOppRankColor(data.stadiumRank);
 		if (data.stadiumRank <= 10) {
 			cls = "positive";
 		} else if (data.stadiumRank >= 20) {
 			cls = "negative";
 		}
+		cls = "";
 		if (data.blurred) {
 			cls = "blurred";
 		}
-		return `<div class='${cls}'>${addSuffix(cell.getValue())}</div>`;
+		return `<div class='${cls}' style='color: ${color}'>${addSuffix(cell.getValue())}</div>`;
 	}
 }
 
@@ -1343,13 +1394,42 @@ const diffFormatter = function(cell) {
 	return `<div class="${cls}">${val}</div>`;
 }
 
-function closeOverlay() {
-	document.querySelector("#overlay").style.display = "none";
-}
-
 const DEFAULT_FIELDS = [
 	"evMut", "fairValMut", "impliedMut", "player", "book", "bookOdds.fd", "bookOdds.365", "bookOdds.dk", "bookOdds.mgm", "bookOdds.espn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.pn", "bookOdds.circa", "order", "pitcherHR_PA", "bvp", "bpp", "playerFactor", "savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "weather"
 ];
+
+function getNestedFields(defs, out = []) {
+	defs.forEach(def => {
+		if (def.columns) {
+			getNestedFields(def.columns, out);
+		} else if (def.field) {
+			out.push(def.field);
+		}
+	});
+	return out;
+}
+
+function showHideUserTable() {
+	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
+		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		const defs = TABLE.getColumnDefinitions();
+		const nestedFields = getNestedFields(defs);
+
+		nestedFields.forEach(field => {
+			const metaKey = field.replace(/\./g, "_");
+			if (!allowed.has(metaKey)) {
+				TABLE.getColumn(field)?.hide();
+			} else {
+				TABLE.getColumn(field)?.show();
+			}
+		})
+	}
+}
+
+function closeOverlay() {
+	document.querySelector("#overlay").style.display = "none";
+	showHideUserTable();
+}
 
 function openOverlay() {
 	if (CURR_USER?.tier === "free") {
@@ -1357,27 +1437,19 @@ function openOverlay() {
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
-		metadata[PAGE] = DEFAULT_FIELDS.join(",");
+		metadata[PAGE] = DEFAULT_FIELDS;
 	}
 	document.querySelector("#overlay").style.display = "flex";
 
 	const items = document.querySelector("#items");
 	//items.innerHTML = "";
 
-	for (field of metadata[PAGE].split(",")) {
+	for (field of metadata[PAGE] || []) {
 		const el = document.querySelector(`#custom_${field.replaceAll(".", "_")}`);
 		if (el) {
 			el.checked = true;
 		}
 	}
-}
-
-function saveTableSettings() {
-	fetch(url, {
-		headers: { "Accept": "application/vnd.github.v3.raw" }
-	}).then(response => response.json()).then(data => {
-
-	});
 }
 
 function fetchUpdated(repo="props", render=true) {

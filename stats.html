@@ -185,6 +185,7 @@
 		</footer>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "stats";
 		let TABLE = null;
@@ -215,6 +216,7 @@
 		if (!PROP) {
 			window.location.href = `./stats${HTML}?prop=hr`;
 		}
+
 		if (PROP) {
 			PROP = PROP.replaceAll("-", "+");
 			if (PROP == "k") {
@@ -222,6 +224,8 @@
 				document.querySelector("#updated-container").style.maxWidth = "1130px";
 			}
 		}
+
+		handleSession();
 
 		if (LEADERS) {
 			document.querySelector("h1").innerText = "Distance Leaders";
@@ -852,31 +856,31 @@
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
 					]},
 					{title: "Adv Batter", columns: [
-						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: true },
-						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: true },
-						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: summaryFormatter },
-						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
-						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: summaryFormatter },
-						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: false },
 					]},
 					{title: "Adv Pitcher", columns: [
 						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: true },
 						// PITCHER K (whiff_percent, oz_swing_miss_percent, in_zone_swing_miss, z_swing_miss_percent, oz_contact_percent)
 						// swings and misses
-						{title: "K%", field: "pitcherData.k_percent", width: 45, formatter: summaryFormatter, visible: false },
-						{title: "Whiff%", field: "pitcherData.whiff_percent", width: 50, formatter: summaryFormatter, visible: false },
-						{title: "OZ_M%", headerTooltip: "Out-of-Zone Swing Miss %", field: "pitcherData.oz_swing_miss_percent", width: 50, formatter: summaryFormatter, visible: false },
+						{title: "K%", field: "pitcherData.k_percent", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "Whiff%", field: "pitcherData.whiff_percent", width: 50, formatter: percentileFormatter, visible: false },
+						{title: "OZ_M%", headerTooltip: "Out-of-Zone Swing Miss %", field: "pitcherData.oz_swing_miss_percent", width: 50, formatter: percentileFormatter, visible: false },
 						//{title: "IZ_M%", headerTooltip: "In-Zone Swing Miss %", field: "pitcherData.in_zone_swing_miss", width: 50, formatter: summaryFormatter, visible: false },
-						{title: "Z Miss %", headerTooltip: "Zone Swing Miss %", field: "pitcherData.z_swing_miss_percent", width: 50, formatter: summaryFormatter, visible: false },
-						{title: "OZ Contact %", headerTooltip: "Out-of-Zone Contact %", field: "pitcherData.oz_contact_percent", width: 50, formatter: summaryFormatter, visible: false },
+						{title: "Z Miss %", headerTooltip: "Zone Swing Miss %", field: "pitcherData.z_swing_miss_percent", width: 50, formatter: percentileFormatter, visible: false },
+						{title: "OZ Contact %", headerTooltip: "Out-of-Zone Contact %", field: "pitcherData.oz_contact_percent", width: 50, formatter: percentileFormatter, visible: false },
 
-						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: IS_PITCHER ? false : true },
-						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
-						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: summaryFormatter, visible: IS_PITCHER ? false : true },
-						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: summaryFormatter, visible: false },
-						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: summaryFormatter, visible: false },
-						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: IS_PITCHER ? false : true },
-						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: summaryFormatter, visible: false },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: percentileFormatter, visible: IS_PITCHER ? false : true },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter, visible: IS_PITCHER ? false : true },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter, visible: IS_PITCHER ? false : true },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: false },
 					]},
 					{title: "Team Rankings", columns: [
 						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50},
@@ -1008,6 +1012,5 @@
 			["order", "book", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
 		}
 	</script>
-	<script src="auth.js"></script>
 </body>
 </html>

@@ -192,6 +192,7 @@
 		</footer>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "bvp";
 		let RES = null;
@@ -219,6 +220,8 @@
 		if (!SPORT) {
 			SPORT = "mlb";
 		}
+
+		handleSession();
 
 		document.querySelectorAll("#donate img").forEach(btn => {
 			btn.addEventListener("click", () => {
@@ -360,7 +363,7 @@
 
 					//{title: "Pitcher Summary", field: "pitcherSummary"},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
-					{title: "P<br>HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
+					{title: "Pitch<br>HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
 					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
 					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
 					{title: "BPP HR Factors", columns: [
@@ -371,7 +374,7 @@
 						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
 						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
 						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 					]},
 					{title: "Batter Summary", columns: [
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
@@ -810,6 +813,5 @@
 			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "pitcherHR_PA", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median", "savant.barrels_per_bip", "savant.exit_velocity_avg", "pitcherData.barrel_batted_rate", "pitcherData.exit_velocity_avg"].forEach(col => TABLE.showColumn(col));
 		}
 	</script>
-	<script src="auth.js"></script>
 </body>
 </html>

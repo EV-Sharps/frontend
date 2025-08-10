@@ -175,7 +175,7 @@
 				  </div>
 				</button>
 
-				<span id="username" class="username"></span>
+				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
@@ -211,8 +211,8 @@
 						<ul>
 							<li>⚡ Full Website Access</li>
 							<li>📊 Advanced Stats</li>
+							<li>⚙️ Customizable Tables</li>
 							<li>🔓 Analysts Discord channels</li>
-							<li>💾 Data Dumps</li>
 						</ul>
 						<button class="select-btn" onclick="handlePlanClick(this, 'analyst')">
 							<span class="btn-text">Upgrade</span>
@@ -227,6 +227,7 @@
 							<li>💻 Everything in Analyst Tier</li>
 							<li>📈 Circa movement</li>
 							<li>🎟️ Full +EV Betting Slate</li>
+							<li>💾 Data Dumps</li>
 							<li>🔓 All Discord channels</li>
 						</ul>
 						<button class="select-btn highlight" onclick="handlePlanClick(this, 'sharp')">
@@ -238,8 +239,8 @@
 			</section>
 		</main>
 	</div>
-	<script src="auth.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "pricing";
 
@@ -260,6 +261,8 @@
 			button.disabled = true;
 			upgrade(plan);
 		}
+
+		handleSession();
 	</script>
 </body>
 </html>

@@ -325,11 +325,9 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		//fetchUpdated();
-		fetchData();
-		//renderTable(TEST);
+		handleSession();
 
-		function fetchData() {
+		function fetchPropsData() {
 			let s = SPORT;
 			renderTable([]);
 			fetch(API_BASE+`/api/props?sport=${s}`, {

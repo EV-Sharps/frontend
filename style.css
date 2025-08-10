@@ -96,6 +96,7 @@ body::before {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
+		height: 32px;
 		background-color: #5865F2;
 		color: #fff;
 		font-weight: 600;
@@ -110,7 +111,7 @@ body::before {
 		background-color: #4752C4;
 	}
 	.discord-login img {
-		height: 24px;
+		height: 16px;
 		width: auto;
 	}
 	.gsi-material-button {
@@ -129,7 +130,7 @@ body::before {
 		cursor: pointer;
 		font-family: 'Roboto', arial, sans-serif;
 		font-size: 14px;
-		height: 40px;
+		height: 32px;
 		letter-spacing: 0.25px;
 		outline: none;
 		overflow: hidden;
@@ -140,7 +141,7 @@ body::before {
 		transition: background-color .218s, border-color .218s, box-shadow .218s;
 		vertical-align: middle;
 		white-space: nowrap;
-		width: 40px;
+		width: 32px;
 		max-width: 400px;
 		min-width: min-content;
 	}
@@ -369,7 +370,11 @@ input, textarea, select {
 	position: absolute;
 	left: 50%; transform: translateX(-50%);
 	display: flex;
+	align-items: center;
 	gap: 0.5rem;
+}
+#center-dropdown button {
+	background: #007bff;
 }
 footer {
 	text-align: center;
@@ -392,13 +397,21 @@ footer {
 	transform: translateX(-50%);
 }
 button {
-	background: #222;
-	color: #fff;
+	background: #007bff;
+	color: white;
 	padding: 8px 10px;
 	border-radius: 6px;
 	border: none;
 	font-weight: 500;
 	cursor: pointer;
+}
+#pricing {
+	background-color: #FFD700;
+	color: #000;
+  font-weight: bold;
+}
+#pricing:hover {
+    background-color: #FFC107;
 }
 #sub-header button:hover, #auth-buttons button:hover {
 	background: #444;
@@ -424,7 +437,7 @@ button {
 #title {
 }
 #donate {
-	display: flex;
+	display: none;
 	justify-content: center;
 	align-items: center;
 	gap: 5px;
@@ -432,7 +445,7 @@ button {
 	right: 1rem;
 }
 #auth-buttons {
-	display: none;
+	display: flex;
 	align-items: center;
 	gap: 10px; /* space between buttons */
 	justify-content: flex-end; /* push to right side of header */

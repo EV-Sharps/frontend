@@ -134,6 +134,8 @@ async function saveTableSettings() {
 
 	const fields = {};
 	fields[PAGE] = [];
+	fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
+	fields[`${PAGE}-filter`] = document.querySelector("#filter-select").value;
 	document.querySelectorAll('#items input[type="checkbox"]:checked').forEach((input) => {
 		const key = input.id.replace(/^custom_/, '');
 		fields[PAGE].push(key);
@@ -268,12 +270,18 @@ async function handleSession() {
 		}
 	}
 
-	if (PAGE == "bvp") {
+	if (PAGE === "barrels") {
+		fetchBarrelsData();
+	} else if (PAGE == "bvp") {
 		fetchBVPData();
 	} else if (PAGE == "stats") {
 		fetchStatsData();
+	} else if (PAGE == "preview") {
+		fetchPreviewData();
 	} else if (PAGE == "pricing") {
 		document.querySelector("#pricing").style.display = "none";
+	} else if (PAGE === "props") {
+		fetchPropsData();
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
 		setInterval(() => {

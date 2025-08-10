@@ -21,6 +21,11 @@
 		#right-body {
 			justify-content: center;
 		}
+		@media (max-width: 1400px) {
+			#table-container, #table {
+				width: 100%;
+			}
+		}
 		@media (max-width: 600px) {
 			#sport-select {
 				min-width: 100px;
@@ -89,7 +94,7 @@
 				  </div>
 				</button>
 
-				<span id="username" class="username"></span>
+				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
@@ -175,13 +180,7 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		if (TEST) {
-			RES = TEST;
-			fetchData(TEST);
-		} else {
-			//fetchUpdated();
-			fetchData();
-		}
+		handleSession();
 
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
@@ -194,7 +193,7 @@
 			}
 		});
 
-		function fetchData() {
+		function fetchBarrelsData() {
 			let s = SPORT;
 			renderTable([]);
 			fetch(API_BASE+"/api/barrels", {

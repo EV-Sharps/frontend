@@ -39,6 +39,11 @@
 		#left-body {
 			height: 100%;
 		}
+		@media (max-width: 1850px) {
+			#table-container, #table {
+				width: 100%;
+			}
+		}
 		@media (max-width: 600px) {
 			h1 {
 				display: initial;
@@ -121,7 +126,7 @@
 				  </div>
 				</button>
 
-				<span id="username" class="username"></span>
+				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
@@ -316,7 +321,6 @@
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
     			placeholder:"Data Loading...",
-				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
@@ -359,13 +363,22 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
+					{title: "Bats", field: "bats", width: 30 },
 					{title: "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {lastName: LAST}, hozAlign: "left", width: MOBILE || LAST ? 100 : 150},
 
-					//{title: "Pitcher Summary", field: "pitcherSummary"},
+					{title: "L/R", field: "pitcherLR", width: 30 },
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
-					{title: "Pitch<br>HR/PA", field: "pitcherHR_PA", width: 45, formatter: percentFormatter},
 					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
 					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
+					{title: "Pitcher Homers Allowed", columns: [
+						{title: "Total", field: "pitcher_percentiles.home_run", width: 45, formatter: percentileFormatter },
+						{title: "vs L", field: "pitcher_percentiles.hr_l", width: 45, formatter: percentileFormatter },
+						{title: "vs R", field: "pitcher_percentiles.hr_r", width: 45, formatter: percentileFormatter },
+						{title: "Tot/PA", field: "pitcher_percentiles.hr_pa", width: 50, formatter: percentileFormatter, sorter: "number" },
+						{title: "L/PA", field: "pitcher_percentiles.hr_l_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
+						{title: "R/PA", field: "pitcher_percentiles.hr_r_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
+					]},
+					
 					{title: "BPP HR Factors", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
@@ -394,9 +407,11 @@
 						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter },
 						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					]},
-					{title: "Rankings", columns: [
-						{title: "Opp", field: "oppRank", formatter: rankingFormatter, width: 50},
-						{title: "🏟", field: "stadiumRank", formatter: rankingFormatter, width: 50},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					{title: "Stadium Rankings", columns: [
+						{title: "Both", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "Left", field: "stadiumRankLeft", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+						{title: "Right", field: "stadiumRankRight", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
 					]},
 					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					

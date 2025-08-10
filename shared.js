@@ -300,15 +300,16 @@ const percentileFormatter = function(cell) {
 		} else {
 			percentile = data["pitcherData"][k+"Percentile"];
 		}
+	} else if (field.includes("pitcher_percentiles")) {
+		let [_,p] = field.split(".");
+		percentile = data["pitcher_percentiles"][p+"_percentile"];
 	} else if (field.includes(".")) {
 		let [_,k,p] = field.split(".");
 		percentile = data["game_trends"][k][p+"Percentile"];
 	} else if (field == "pitcherHR_PA") {
 		percentile = data["pitcher_hr_rate_percentile"];
-	} else if (field == "hr_pa") {
-		percentile = data["hr_pa_percentile"];
-	} else if (field == "home_run") {
-		percentile = data["home_run_percentile"];
+	} else if (["hr_pa", "hr_l", "hr_r", "hr_l_rate", "hr_r_rate", "home_run"].includes(field)) {
+		percentile = data[`${field}_percentile`];
 	}
 
 	const color = getPercentileColor(field, percentile);
@@ -326,7 +327,7 @@ const percentileFormatter = function(cell) {
 		let suffix = "";
 		if (field.includes("distance")) {
 			suffix = " ft";
-		} else if (field.includes("percent") || ["barrels_per_bip", "barrel_batted_rate", "hr_pa", "pitcherHR_PA"].includes(field.split(".").at(-1))) {
+		} else if ((!field.includes("pitcher_percentiles") && field.includes("percent")) || ["barrels_per_bip", "barrel_batted_rate", "hr_pa", "hr_l_rate", "hr_r_rate", "pitcherHR_PA"].includes(field.split(".").at(-1))) {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
@@ -541,6 +542,9 @@ const homerLogFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const field = cell.getField();
 
+	if (data.blurred) {
+		return `<div class='blurred'>${cell.getValue()}</div>`;
+	}
 	if (field.split(".").at(-1).substr(0, 1) != "z") {
 		return cell.getValue();
 	}
@@ -549,9 +553,6 @@ const homerLogFormatter = function(cell) {
 	if (!z) return "0.0";
 
 	z = z.toFixed(1);
-	if (data.blurred && field == "homerLogs.pa.z") {
-		return `<div class='blurred'>${z}</div>`;
-	}
 
 	if (z > 0) {
 		const color = getZColor(parseFloat(cell.getValue()));
@@ -629,7 +630,12 @@ const inningFormatter = function(cell) {
 
 const evMutFormatter = function(cell) {
 	const data = cell.getRow().getData();
-	const ev = cell.getValue();
+	//const ev = cell.getValue();
+	const pre = BOOK ? `${BOOK}_` : "";
+	const ev = data[`${pre}ev`];
+	if (ev === undefined) {
+		return "";
+	}
 	if (parseFloat(ev) > 0) {
 		return `<div class="positive">+${ev}%<div>`
 	}
@@ -1422,7 +1428,10 @@ function showHideUserTable() {
 			} else {
 				TABLE.getColumn(field)?.show();
 			}
-		})
+		});
+
+		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
+		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
 	}
 }
 

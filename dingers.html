@@ -13,7 +13,7 @@
 	<script src="jspdf.umd.min.js"></script>
 	<script src="jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<link rel="icon" type="image/x-icon" href="logos/favicon.png">
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
@@ -92,7 +92,7 @@
 		width: auto;
 		min-width: 300px;
 	}
-	@media (max-width: 1750px) {
+	@media (max-width: 1850px) {
 		#table {
 			width: 100%;
 		}
@@ -172,7 +172,7 @@
 					</svg>
 				</div>
 				<button onclick="groupByGame();">Filter Game</button>
-				<button id="customize" class="loggedIn" onclick="openOverlay()">Customize</button>
+				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
 			<div id="donate">
 				<div>Tip Jar</div>
@@ -206,7 +206,7 @@
 				  </div>
 				</button>
 
-				<span id="username" class="username"></span>
+				<span id="username" class="loggedIn username"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
@@ -215,9 +215,9 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div class="loggedOut" style="display:none">
+				<div class="loggedOut" style="display: none;">
 					<div style="padding: 0.5rem;">
-						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>faster live odds ⚡</strong>
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>Circa odds 🎯</strong>
 					</div>
 				</div>
 				<div style="padding: 0.25rem 0;font-style: italic;display:none">Refreshes every 60 seconds</div>
@@ -249,7 +249,7 @@
 							<div class="select-wrapper">
 								<select id="sort-select">
 									<option value="ev" selected>Expected Value (EV)</option>
-									<option value="implied">Implied (FV)</option>
+									<option value="impliedMut">Implied (FV)</option>
 									<option value="savant.barrels_per_bip">Barrel %</option>
 									<option value="savant.exit_velocity_avg">Exit Velocity</option>
 								</select>
@@ -275,8 +275,8 @@
 						<div>
 							<h3>Expected Value</h3>
 							<div>
-								<input id="custom_evMut" type="checkbox">
-								<label for="custom_evMut">Expected Value</label>
+								<input id="custom_curr_ev" type="checkbox">
+								<label for="custom_curr_ev">Expected Value</label>
 							</div>
 							<div>
 								<input id="custom_fairValMut" type="checkbox">
@@ -349,6 +349,10 @@
 							<div>
 								<input id="custom_bvp" type="checkbox">
 								<label for="custom_bvp">Vs Pitcher</label>
+							</div>
+							<div>
+								<input id="custom_pitcherLR" type="checkbox">
+								<label for="custom_pitcherLR">Throws</label>
 							</div>
 							<div>
 								<input id="custom_pitcher" type="checkbox">
@@ -439,6 +443,10 @@
 								<label for="custom_order">Batting Order</label>
 							</div>
 							<div>
+								<input id="custom_bats" type="checkbox">
+								<label for="custom_bats">Bats L/R</label>
+							</div>
+							<div>
 								<input id="custom_oppRank" type="checkbox">
 								<label for="custom_oppRank">Opp Ranks</label>
 							</div>
@@ -484,8 +492,13 @@
 							</div>
 						</div>
 					</div>
+					<div class="loggedOut">
+						<div style="padding: 0.5rem;text-align: center;">
+							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+						</div>
+					</div>
 					<div style="display: flex;justify-content: center;align-items: center;">
-						<button id="save-table" onclick="saveTableSettings();">Save</button>
+						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
 						<span id="save-status" style="margin: 0.5rem 0"></span>
 						<button onclick="closeOverlay();">Close</button>
 					</div>
@@ -531,7 +544,6 @@
 		const promoSelect = document.querySelector(selectId+" #promo-select");
 		if (BOOK) {
 			promoSelect.value = BOOK;
-			//document.querySelector("h1").innerText = `+EV ${BOOK.replace("-", " ").toUpperCase()} Dingers`;
 		} else {
 			promoSelect.value = "";
 		}
@@ -560,9 +572,6 @@
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
 			let field = event.target.value;
-			if (["ev", "implied"].includes(field)) {
-				field += "Mut";
-			}
 			TABLE.setSort([
 				{column: field, dir: "desc"}
 			])
@@ -578,15 +587,15 @@
 			BOOK = book;
 			const params = new URLSearchParams(window.location.search);
 			params.set("book", book);
-			let field = `ev`;
-			if (book) {
-				field = `${book}_ev`
-			}
+
+			RES.forEach(row => {
+				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.updateData(TABLE.getData());
+			TABLE.setData(RES);
 			TABLE.setSort([
-				{column: "evMut", dir: "desc"}
+				{column: "curr_ev", dir: "desc"}
 			]);
 			TABLE.redraw(true);
 		});
@@ -619,16 +628,24 @@
 			let OLD = RES;
 			RES = data;
 
+			RES.forEach(row => {
+				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+			});
+
 			if (render) {
 				renderTable(data);
 			} else {
 				if (!TABLE.options.groupBy) {
-					TABLE.setData(TABLE.getData());
+					//TABLE.setData(TABLE.getData());
+					TABLE.updateOrAddData(data);
+					updateHeaders();
+					TABLE.setSort(TABLE.getSorters());
 				} else {
 					TABLE.updateOrAddData(data);
 					updateHeaders();
 					TABLE.setSort(TABLE.getSorters());
 				}
+				TABLE.redraw(true);
 			}
 
 			setTimeout(function() {
@@ -721,7 +738,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "evMut", dir: "desc"},
+					{column: "curr_ev", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -741,13 +758,15 @@
 					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					{
 						title: "Expected<br>Value",
-						field: "evMut",
+						field: "curr_ev",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
-						mutatorData: (value, data) => {
-							let pre = BOOK ? `${BOOK}_` : "";
-							return data[`${pre}ev`] || "";
+						/*
+						accessor: (value, data) => {
+							const pre = BOOK ? `${BOOK}_` : "";
+							return data[`${pre}ev`] ?? "";
 						},
+						*/
 						formatter: evMutFormatter,
 						responsive: 0
 					},
@@ -792,7 +811,7 @@
 							return data[`${pre}kelly`] || "";
 						},
 						responsive: 0,
-						visible: false
+						visible: MOBILE ? false : true
 					},
 					{
 						title: "Player",
@@ -826,12 +845,17 @@
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
-					{title: "Circa", field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number"},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
-					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: "Bats", field: "bats", width: 40, formatter: blurFormatter},
+					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
+					
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
-					{title: "Pitcher<br>HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentileFormatter},
-					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
+					{title: "Pitcher", columns: [
+						{title: "L/R", field: "pitcherLR", width: 40, formatter: blurFormatter},
+						{title: "HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentileFormatter},
+						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
+					]},
 					{title: "Historical FD", columns: [
 						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
 						{title: "Avg", field: "analysis.fd_avg", width: 45, sorter: "number", formatter: plusMinusFormatter, visible: HISTORICAL ? true : false},
@@ -854,7 +878,7 @@
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
 					]},
 					*/
-					{title: "Batter Summary", columns: [
+					{title: "Batter Metrics", columns: [
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
@@ -862,7 +886,7 @@
 						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : false },
 						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
 					]},
-					{title: "Pitcher Summary", columns: [
+					{title: "Pitcher Metrics", columns: [
 						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
 						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
@@ -949,21 +973,21 @@
 		function groupByGame() {
 			if (!TABLE.options.groupBy) {
 				TABLE.setSort([
-					{column: "evMut", dir: "desc"},
+					{column: "curr_ev", dir: "desc"},
 					{column: "startSortable", dir: "asc"},
 				]);
 				TABLE.setGroupBy("game");
 			} else {
 				TABLE.setGroupBy("");
 				TABLE.setSort([
-					{column: "evMut", dir: "desc"},
+					{column: "curr_ev", dir: "desc"},
 				]);
 			}
 		}
 
 		function implied() {
 			TABLE.getColumns().map(c => c.hide());
-			["evMut", "fairValMut", "impliedMut", "player", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["curr_ev", "fairValMut", "impliedMut", "player", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "impliedMut", dir: "desc"}
@@ -989,16 +1013,19 @@
 
 		function pretty_() {
 			TABLE.getColumns().map(c => c.hide());
-			[`evMut`, "fairValMut", "impliedMut", "player", "bvp", "bvs", "book", "bookOdds.circa", "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`curr_ev`, "fairValMut", "impliedMut", "player", "bvp", "bvs", "book", "bookOdds.circa", "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 
 		window.addEventListener('popstate', (event) => {
 			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
 			BOOK = book;
-			TABLE.updateData(TABLE.getData());
+			RES.forEach(row => {
+				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+			});
+			TABLE.updateData(RES);
 			TABLE.setSort([
-				{column: "evMut", dir: "desc"}
+				{column: "curr_ev", dir: "desc"}
 			]);
 			TABLE.redraw(true);
 		});

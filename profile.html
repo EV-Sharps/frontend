@@ -107,7 +107,7 @@
 				  </div>
 				</button>
 
-				<span id="username" class="username"></span>
+				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
@@ -167,6 +167,12 @@
 		let discordError = URLParams.get("discordError");
 		let discordSuccess = URLParams.get("discordSuccess");
 		SAVE_DISCORD = URLParams.get("saveDiscord");
+
+		handleSession().then(res => {
+			if (CURR_USER.discord_id) {
+				document.querySelector("#link-discord-btn").textContent = "Change Discord"
+			}
+		});
 
 		const linkBtn = document.getElementById("link-discord-btn");
 		const spinner = linkBtn.querySelector('.spinner');

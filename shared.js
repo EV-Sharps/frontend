@@ -511,11 +511,13 @@ const oppFormatter = function(cell, params, rendered) {
 	const badge = data.doubleheader ? 
 		"<span class='dbl-badge'>2</span>" : "";
 	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, cell.getValue())}</div>` : `${getTeamImg(SPORT, cell.getValue())}`;
+	let pitcherLR = data.pitcherLR || "";
 	return `
 		<div class="opp-cell" aria-label="${data.pitcherSummary}">
 			${ah}
 			${gameContainer}
 			${pitcher}
+			<div class="bats">${pitcherLR}</div>
 		</div>
 	`;
 }
@@ -967,10 +969,15 @@ const playerFormatter = function(cell, params, rendered) {
 	if (!params.fullName && p.length > 16) {
 		p = p.substr(0,15)+"...";
 	}
+	let bats = data.bats?.replace("B", "S");
+	if (PAGE === "preview") {
+		bats = data.pitch_hand;
+	}
 	return `
 		<div class="player-cell">
 			<div class='game-container'>${gameContainer}</div>
 			${p} ${prop}
+			<div class="bats">${bats}</div>
 		</div>
 	`
 }

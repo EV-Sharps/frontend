@@ -363,16 +363,14 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
-					{title: "Bats", field: "bats", width: 30 },
 					{title: "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {lastName: LAST}, hozAlign: "left", width: MOBILE || LAST ? 100 : 150},
-
-					{title: "L/R", field: "pitcherLR", width: 30 },
+					//{title: "L/R", field: "pitcherLR", width: 30 },
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
 					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
 					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
 					{title: "Pitcher Homers Allowed", columns: [
 						{title: "Total", field: "pitcher_percentiles.home_run", width: 45, formatter: percentileFormatter },
-						{title: "vs L", field: "pitcher_percentiles.hr_l", width: 45, formatter: percentileFormatter },
+						{title: "vs L/R", field: "pitcher_percentiles.hr_l", width: 45, formatter: percentileFormatter },
 						{title: "vs R", field: "pitcher_percentiles.hr_r", width: 45, formatter: percentileFormatter },
 						{title: "Tot/PA", field: "pitcher_percentiles.hr_pa", width: 50, formatter: percentileFormatter, sorter: "number" },
 						{title: "L/PA", field: "pitcher_percentiles.hr_l_rate", width: 45, formatter: percentileFormatter, sorter: "number" },

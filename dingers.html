@@ -249,7 +249,7 @@
 							<div class="select-wrapper">
 								<select id="sort-select">
 									<option value="ev" selected>Expected Value (EV)</option>
-									<option value="impliedMut">Implied (FV)</option>
+									<option value="curr_implied">Implied (FV)</option>
 									<option value="savant.barrels_per_bip">Barrel %</option>
 									<option value="savant.exit_velocity_avg">Exit Velocity</option>
 								</select>
@@ -279,16 +279,16 @@
 								<label for="custom_curr_ev">Expected Value</label>
 							</div>
 							<div>
-								<input id="custom_fairValMut" type="checkbox">
-								<label for="custom_fairValMut">Fair Value</label>
+								<input id="custom_curr_fv" type="checkbox">
+								<label for="custom_curr_fv">Fair Value</label>
 							</div>
 							<div>
-								<input id="custom_impliedMut" type="checkbox">
-								<label for="custom_impliedMut">Implied</label>
+								<input id="custom_curr_implied" type="checkbox">
+								<label for="custom_curr_implied">Implied</label>
 							</div>
 							<div>
-								<input id="custom_kellyMut" type="checkbox">
-								<label for="custom_kellyMut">¼ Kelly</label>
+								<input id="custom_curr_kelly" type="checkbox">
+								<label for="custom_curr_kelly">¼ Kelly</label>
 							</div>
 						</div>
 						<!-- Player / Odds -->
@@ -443,10 +443,6 @@
 								<label for="custom_order">Batting Order</label>
 							</div>
 							<div>
-								<input id="custom_bats" type="checkbox">
-								<label for="custom_bats">Bats L/R</label>
-							</div>
-							<div>
 								<input id="custom_oppRank" type="checkbox">
 								<label for="custom_oppRank">Opp Ranks</label>
 							</div>
@@ -590,6 +586,9 @@
 
 			RES.forEach(row => {
 				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
+				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
+				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
@@ -630,6 +629,9 @@
 
 			RES.forEach(row => {
 				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
+				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
+				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
 			});
 
 			if (render) {
@@ -761,43 +763,29 @@
 						field: "curr_ev",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
-						/*
-						accessor: (value, data) => {
-							const pre = BOOK ? `${BOOK}_` : "";
-							return data[`${pre}ev`] ?? "";
-						},
-						*/
 						formatter: evMutFormatter,
 						responsive: 0
 					},
 					{
 						title: "Fair<br>Value",
-						field: "fairValMut",
+						field: "curr_fv",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: plusMinusFormatter,
-						mutatorData: (value, data) => {
-							let pre = BOOK ? `${BOOK}_` : "";
-							return data[`${pre}fairVal`] || "";
-						},
 						responsive: 0
 					},
 					{
 						title: "Implied",
-						field: "impliedMut",
+						field: "curr_implied",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: impliedFormatter,
-						mutatorData: (value, data) => {
-							let pre = BOOK ? `${BOOK}_` : "";
-							return data[`${pre}implied`] || "";
-						},
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
 					{
 						title: "¼ Kelly",
-						field: "kellyMut",
+						field: "curr_kelly",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: function(cell) {
@@ -805,10 +793,6 @@
 								return "";
 							}
 							return `${cell.getValue().toFixed(2)}u`;
-						},
-						mutatorData: (value, data) => {
-							let pre = BOOK ? `${BOOK}_` : "";
-							return data[`${pre}kelly`] || "";
 						},
 						responsive: 0,
 						visible: MOBILE ? false : true
@@ -847,7 +831,7 @@
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
-					{title: "Bats", field: "bats", width: 40, formatter: blurFormatter},
+					//{title: "Bats", field: "bats", width: 40, formatter: blurFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
@@ -987,10 +971,10 @@
 
 		function implied() {
 			TABLE.getColumns().map(c => c.hide());
-			["curr_ev", "fairValMut", "impliedMut", "player", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["curr_ev", "curr_fv", "curr_implied", "player", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
-				{column: "impliedMut", dir: "desc"}
+				{column: "curr_implied", dir: "desc"}
 			]);
 
 			const rows = TABLE.getData("active");
@@ -1002,18 +986,18 @@
 				const prev = rows[i - 1];
 
 				// If not first, and impliedMut differs from previous, increment rank
-				if (i > 0 && row["impliedMut"] !== prev["impliedMut"]) {
+				if (i > 0 && row["curr_implied"] !== prev["curr_implied"]) {
 					currentRank++;
 				}
 
-				tweet.push(`${currentRank}. ${title(row.player)} - ${row["impliedMut"]}%`);
+				tweet.push(`${currentRank}. ${title(row.player)} - ${row["curr_implied"]}%`);
 			}
 			console.log(tweet.join("\n"));
 		}
 
 		function pretty_() {
 			TABLE.getColumns().map(c => c.hide());
-			[`curr_ev`, "fairValMut", "impliedMut", "player", "bvp", "bvs", "book", "bookOdds.circa", "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`curr_ev`, "curr_fv", "curr_implied", "player", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 
@@ -1022,6 +1006,9 @@
 			BOOK = book;
 			RES.forEach(row => {
 				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
+				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
+				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
+				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
 			});
 			TABLE.updateData(RES);
 			TABLE.setSort([

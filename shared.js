@@ -28,7 +28,7 @@ function getToday() {
 let PAGE_DROPDOWN = `
 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
-	<option value="dingers">🚀 Dingers</option>
+	<option value="dingers">💣 Dingers</option>
 	<option value="feed">📡 Feed</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
@@ -36,8 +36,9 @@ let PAGE_DROPDOWN = `
 	<option value="trends">📈 Trends</option>
 	<option value="mlb">🎯 Props</option>
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
-	<option value="kambi">🚀 Dingers (Kambi)</option>
+	<option value="kambi">💣 Dingers (Kambi)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
+	<option value="preview">📰 Pitcher Mix</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="nfl">🎯 Props</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
@@ -216,11 +217,61 @@ function addPlus(value) {
 	return value;
 }
 
+const pitchMap = {
+  CH: "Changeup",
+  CU: "Curveball",
+  FC: "Cutter",
+  EP: "Eephus",
+  FO: "Forkball",
+  FF: "Fastball",
+  KN: "Knuckleball",
+  KC: "Knuckle-curve",
+  SC: "Screwball",
+  SI: "Sinker",
+  SL: "Slider",
+  SV: "Slurve",
+  FS: "Splitter",
+  ST: "Sweeper"
+};
+
+const pitchFormatter = function(cell) {
+	const pitch = cell.getValue();
+	return pitchMap[pitch];
+}
+
+function getMixField(field) {
+	if (field == "hr") {
+		return "home_run";
+	} else if (field == "hh") {
+		return "is_hard_hit";
+	} else if (field == "brl") {
+		return "is_barrel";
+	}
+	return field;
+}
+
+const mixFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const pitchNum = cell.getField().split("_")[0];
+	let field = getMixField(cell.getField().split("_")[1]);
+	const pitch = data[pitchNum+"_type"];
+	const left = data.pitch.l[pitch][field] || 0;
+	const right = data.pitch.r[pitch][field] || 0;
+	return `
+		<div class="mix-cell">
+			<span class="left">${left}</span>
+			<span class="right">${right}</span>
+			<span>${cell.getValue() || 0}</span>
+		</div>
+	`;
+}
+
 const avgFormatter= function(cell) {
-	if (cell.getValue() == "-") {
+	let v = cell.getValue();
+	if (v == "-") {
 		return "-";
 	}
-	return parseFloat(cell.getValue()).toFixed(3).replace(/^0/, '');
+	return Number.isFinite(v) ? (v === 0 ? ".000" : String(v.toFixed(3)).slice(1)) : "";
 }
 
 const eraFormatter = function(cell) {
@@ -969,7 +1020,7 @@ const playerFormatter = function(cell, params, rendered) {
 	if (!params.fullName && p.length > 16) {
 		p = p.substr(0,15)+"...";
 	}
-	let bats = data.bats?.replace("B", "S");
+	let bats = data.bats?.replace("B", "S") || "";
 	if (PAGE === "preview") {
 		bats = data.pitch_hand;
 	}

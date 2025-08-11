@@ -568,7 +568,17 @@ h1 {
 	width: 100%; height: 100%;
 	gap: 3px;
 }
-.opp-cell .bats, .player-cell .bats {
+.mix-cell {
+	position: relative;
+	width: 100%; height: 100%;
+}
+.mix-cell .left {
+	position: absolute;
+	left: 0;
+	font-size: 0.5rem;
+	bottom: -0.2rem;
+}
+.opp-cell .bats, .player-cell .bats, .mix-cell .right {
 	position: absolute;
 	right: 0;
 	bottom: -0.2rem;

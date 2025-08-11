@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>⚾ Preview</title>
+	<title>⚾ Pitcher Mix</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -61,16 +61,16 @@
 				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
 				  <div class="gsi-material-button-state"></div>
 				  <div class="gsi-material-button-content-wrapper">
-				    <div class="gsi-material-button-icon">
-				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
-				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-				        <path fill="none" d="M0 0h48v48H0z"></path>
-				      </svg>
-				    </div>
-				    <span style="display: none;">Sign in with Google</span>
+					<div class="gsi-material-button-icon">
+					  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+						<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+						<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+						<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+						<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+						<path fill="none" d="M0 0h48v48H0z"></path>
+					  </svg>
+					</div>
+					<span style="display: none;">Sign in with Google</span>
 				  </div>
 				</button>
 
@@ -96,7 +96,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "preview";
+		PAGE = "pitcher_mix";
 		let RES, TABLE;
 		let HISTORICAL = {};
 		let url = "";
@@ -106,21 +106,9 @@
 		let MARK = URLParams.get("mark");
 		let TODAY = getToday();
 		let SPORT = "mlb";
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
 		let PLAYER = URLParams.get("player");
-		let BVP = URLParams.get("bvp");
 		let PRETTY = URLParams.get("pretty");
-		//let LAST = URLParams.get("last") != undefined;
-		let LAST = false;
-		let YEAR = new Date();
-		YEAR = YEAR.getFullYear();
-
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-			});
-		});
+		let SIDE = URLParams.get("side");
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
@@ -134,13 +122,13 @@
 
 		handleSession();
 
-		function fetchPreviewData() {
-			let s = SPORT;
+		function fetchMixData() {
 			renderTable([]);
-			fetch(API_BASE+`/api/preview?sport=${s}`, {
+			fetch(API_BASE+`/api/pitcher_mix`, {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
 				data = data.data;
+				formatMix(data);
 				RES = data;
 				renderTable(data);
 				setTimeout(function() {
@@ -151,16 +139,41 @@
 			}).catch(err => console.log(err));
 		}
 
+		function safe(n){ return Number.isFinite(n) ? n : 0; }
+
+		function formatMix(data) {
+			for (const row of data) {
+				if (!row.pitch?.both) continue;
+
+				const entries = Object.entries(row.pitch.both)
+				  .sort((a,b) => safe(b[1]["#"]) - safe(a[1]["#"]));
+
+				const top = entries.slice(0, 4);
+				top.forEach((entry, i) => {
+					const k = i+1;
+					const p = entry[1];
+					row[`p${k}_type`] = entry[0];
+					row[`p${k}_n`]    = p["#"];
+					row[`p${k}_hr`]   = p.home_run;
+					row[`p${k}_avg`]  = p.ba;
+					row[`p${k}_iso`]  = p.iso;
+					row[`p${k}_brl`]  = p.is_barrel;
+					row[`p${k}_hh`]   = p.is_hard_hit;
+				});
+			}
+		}
+
 		function renderTable(data) {
+
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
+				placeholder:"Data Loading...",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "hr_pa", dir: "desc"},
+					{ column:"p1_n", dir:"desc" },
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -188,39 +201,41 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
-					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "Pitcher Homers Allowed", columns: [
-						{title: "Total", field: "home_run", width: 45, formatter: percentileFormatter },
-						{title: "vs L", field: "hr_l", width: 45, formatter: percentileFormatter },
-						{title: "vs R", field: "hr_r", width: 45, formatter: percentileFormatter },
-						{title: "Tot/PA", field: "hr_pa", width: 50, formatter: percentileFormatter, sorter: "number" },
-						{title: "L/PA", field: "hr_l_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
-						{title: "R/PA", field: "hr_r_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
-					]},
-					//{title: "PA", field: "pa", width: 45 },
-					{title: "ERA", field: "p_era", width: 45, formatter: eraFormatter, visible: false },
-					{title: "xBA", field: "xba", width: 45, formatter: baFormatter, visible: false },
-					{title: "xwOBA", field: "xwoba", width: 45, formatter: xwobaFormatter, visible: false },
-					//{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: true },
-					{title: "Fly%", field: "flyballs_percent", width: 45, formatter: percentileFormatter, visible: true },
-					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: true },
-					{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 45, formatter: percentileFormatter },
-					{title: "Hard<br>Hit", field: "hard_hit_percent", width: 45, formatter: percentileFormatter },
-					{title: "BRL%", field: "barrel_batted_rate", width: 45, formatter: percentileFormatter },
-					{
-						title: "HR Pitch History<br>Old → Recent",
-						field: "hr_pitch",
-						formatter: function(cell) {
-							return cell.getValue().slice(-7).join(",");
-						},
-						hozAlign: "left"
-					}
+					{ title: "Pitch #1", headerHozAlign:"center", columns: [
+						{ title:"#", field:"p1_n", sorter:"number", width:55, headerSortStartingDir:"desc" },
+						{ title:"Type", field:"p1_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+						{ title:"HR", field:"p1_hr", sorter:"number", width:55, formatter: mixFormatter },
+						//{ title:"AVG", field:"p1_avg", sorter:"number", formatter:avgFormatter, width:60 },
+						//{ title:"ISO", field:"p1_iso", sorter:"number", formatter:avgFormatter, width:60 },
+						{ title:"BRL", field:"p1_brl", sorter:"number", width:55, formatter: mixFormatter },
+						{ title:"HH", field:"p1_hh", sorter:"number", width:55, formatter: mixFormatter },
+				  ]},
+
+				  { title: "Pitch #2", headerHozAlign:"center", columns: [
+					{ title:"#", field:"p2_n", sorter:"number", width:55 },
+					{ title:"Type", field:"p2_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+					{ title:"HR", field:"p2_hr", sorter:"number", width:45 },
+					//{ title:"AVG", field:"p2_avg", sorter:"number", formatter:avgFormatter, width:60 },
+					//{ title:"ISO", field:"p2_iso", sorter:"number", formatter:avgFormatter, width:60 },
+					{ title:"BRL", field:"p2_brl", sorter:"number", width:45 },
+					{ title:"HH", field:"p2_hh", sorter:"number", width:45 },
+				  ]},
+
+				  { title: "Pitch #3", headerHozAlign:"center", columns: [
+					{ title:"#", field:"p3_n", sorter:"number", width:55 },
+					{ title:"Type", field:"p3_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+					{ title:"HR", field:"p3_hr", sorter:"number", width:45 },
+					//{ title:"AVG", field:"p3_avg", sorter:"number", formatter:avgFormatter, width:60 },
+					//{ title:"ISO", field:"p3_iso", sorter:"number", formatter:avgFormatter, width:60 },
+					{ title:"BRL", field:"p3_brl", sorter:"number", width:45 },
+					{ title:"HH", field:"p3_hh", sorter:"number", width:45 },
+				  ]},
 				]
 			});
 		}

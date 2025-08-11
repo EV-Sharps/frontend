@@ -276,6 +276,8 @@ async function handleSession() {
 		fetchBVPData();
 	} else if (PAGE == "stats") {
 		fetchStatsData();
+	} else if (PAGE == "pitcher_mix") {
+		fetchMixData();
 	} else if (PAGE == "preview") {
 		fetchPreviewData();
 	} else if (PAGE == "pricing") {

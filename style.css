@@ -839,7 +839,6 @@ nav {
 	color: white;
 	border: 1px solid #444;
 	border-radius: 6px;
-
 	min-width: 10ch;
 }
 
@@ -1169,6 +1168,12 @@ button#logout:hover {
 }
 
 @media (max-width: 768px) {
+	#page-select {
+		min-width: 120px;
+	}
+	.select-wrapper select {
+		min-width: 80px;
+	}
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -116,6 +116,11 @@ function isBarrel2(row) {
 	return la >= thresh[evo][0] && la <= thresh[evo][1];
 }
 
+function downloadCSV() {
+	// excel-friendly
+	TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+}
+
 function timeAgo(timestamp, short=false) {
 
 	if (timestamp === 0) {

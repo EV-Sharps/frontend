@@ -171,8 +171,9 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<button onclick="groupByGame();">Filter Game</button>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
+				<button onclick="downloadCSV()">💾 CSV</button>
+				<button onclick="groupByGame();">Filter Game</button>
 			</div>
 			<div id="donate">
 				<div>Tip Jar</div>
@@ -528,6 +529,7 @@
 		let IMP = URLParams.get("imp");
 		let GAME = URLParams.get("game");
 		let DATE = URLParams.get("date");
+		let NOCACHE = URLParams.get("nocache");
 
 		if (GAME) {
 			let [a,h] = GAME.split("-");
@@ -672,6 +674,9 @@
 			let url = "/api/ev";
 			if (KAMBI != undefined) {
 				url += "?kambi=true";
+			}
+			if (NOCACHE != undefined) {
+				url += "?nocache=true";
 			}
 			fetch(API_BASE+url, {
 				headers: {
@@ -1001,7 +1006,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`curr_ev`, "curr_fv", "curr_implied", "player", "pitcher", "pitcherHR_PA", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`curr_ev`, "curr_fv", "curr_implied", "player", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 

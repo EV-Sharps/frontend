@@ -1565,7 +1565,8 @@ const diffFormatter = function(cell) {
 }
 
 const DEFAULT_FIELDS = [
-	"evMut", "fairValMut", "impliedMut", "player", "book", "bookOdds.fd", "bookOdds.365", "bookOdds.dk", "bookOdds.mgm", "bookOdds.espn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.pn", "bookOdds.circa", "order", "pitcherHR_PA", "bvp", "bpp", "playerFactor", "savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "weather"
+	"curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "book", "bookOdds.fd", "bookOdds.365", "bookOdds.dk", "bookOdds.mgm", "bookOdds.espn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.pn", "bookOdds.circa", "order", "pitcher", "percs.hr_pa", "bvp", "bpp", "savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "weather",
+	"stadiumRank", "stadiumRankLeft", "stadiumRankRight"
 ];
 
 function getNestedFields(defs, out = []) {
@@ -1605,8 +1606,8 @@ function closeOverlay() {
 }
 
 function openOverlay() {
-	if (CURR_USER?.tier === "free") {
-		return;
+	if (CURR_USER?.tier || "free" === "free") {
+		//return;
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {

@@ -128,7 +128,7 @@
 					<div class="sub-grid">
 						<div>
 							<span class="label">Plan:</span>
-							<span id="profile-plan" class="value">loading...</span>
+							<span id="profile-plan" class="value">free</span>
 						</div>
 						<div>
 							<span class="label">Next Renewal:</span>
@@ -169,8 +169,8 @@
 		SAVE_DISCORD = URLParams.get("saveDiscord");
 
 		handleSession().then(res => {
-			if (CURR_USER.discord_id) {
-				document.querySelector("#link-discord-btn").textContent = "Change Discord"
+			if (CURR_USER?.discord_id) {
+				document.querySelector("#link-discord-btn").textContent = "Change Discord";
 			}
 		});
 

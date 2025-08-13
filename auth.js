@@ -1,6 +1,6 @@
 
 let CURR_USER, CURR_SESSION;
-const ENABLE_AUTH = false;
+let ENABLE_AUTH = false;
 let SAVE_DISCORD;
 const SB = supabase.createClient(
 	'https://nkdhryqpiulrepmphwmt.supabase.co',
@@ -129,6 +129,10 @@ async function saveTableSettings() {
 	const saveBtn = document.querySelector("#save-table");
 	const saveStatus = document.querySelector("#save-status");
 
+	if (!CURR_USER) {
+		return;
+	}
+
 	saveStatus.textContent = "Saving...";
 	saveBtn.disabled = true;
 
@@ -246,6 +250,7 @@ async function upgrade(tier) {
 
 async function handleSession() {
 	if (ENABLE_AUTH) {
+		document.querySelector("#auth-buttons").style.display = "initial";
 		const { data: { session }, error } = await SB.auth.getSession();
 		if (session) {
 			if (session.access_token) {

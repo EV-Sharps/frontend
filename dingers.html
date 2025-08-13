@@ -25,6 +25,9 @@
   gtag('config', 'G-FX06BZ5MRL');
 </script>
 <style type="text/css">
+	#overlay input {
+		disable
+	}
 	.game-img {
 		height: 18px; width: 18px;
 	}
@@ -46,7 +49,7 @@
 		margin-top: 0.5rem;
 	}
 	#customize {
-		display: none;
+		
 	}
 	#overlay {
 		display: none;
@@ -242,7 +245,7 @@
 			<div id="overlay">
 				<div class="overlay-content">
 					<div>
-						<h2 style="justify-content: center;">Customize</h2>
+						<h2 style="justify-content: center;">Customize (In Development)</h2>
 					</div>
 					<div style="justify-content: center;display: flex;gap: 1rem;">
 						<div style="display: flex;flex-direction: column;">
@@ -340,24 +343,20 @@
 						<div>
 							<h3>Vs Pitcher</h3>
 							<div>
-								<input id="custom_pitcherHR_PA" type="checkbox">
-								<label for="custom_pitcherHR_PA">HR/PA</label>
+								<input id="custom_pitcher" type="checkbox">
+								<label for="custom_pitcher">Pitcher</label>
+							</div>
+							<div>
+								<input id="custom_percs_hr_pa" type="checkbox">
+								<label for="custom_percs_hr_pa">HR/PA Rate</label>
 							</div>
 							<div>
 								<input id="custom_home_run" type="checkbox">
 								<label for="custom_home_run">Total HR</label>
 							</div>
 							<div>
-								<input id="custom_pitcher" type="checkbox">
-								<label for="custom_pitcher">Pitcher</label>
-							</div>
-							<div>
 								<input id="custom_bvp" type="checkbox">
 								<label for="custom_bvp">Vs Pitcher</label>
-							</div>
-							<div>
-								<input id="custom_pitcher" type="checkbox">
-								<label for="custom_pitcher">Pitcher Name</label>
 							</div>
 						</div>
 						<!-- BPP -->
@@ -603,7 +602,7 @@
 
 		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
 				if (checkbox.checked) {
 					TABLE.getColumn(field)?.show();
 				} else {

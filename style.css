@@ -576,12 +576,13 @@ h1 {
 	position: absolute;
 	left: 0;
 	font-size: 0.5rem;
-	bottom: -0.2rem;
+	bottom: -0.1rem;
+	width: 10px;
 }
 .opp-cell .bats, .player-cell .bats, .mix-cell .right {
 	position: absolute;
 	right: 0;
-	bottom: -0.2rem;
+	bottom: -0.1rem;
 	font-size: 0.5rem;
 }
 .opp-cell {

@@ -38,7 +38,7 @@ let PAGE_DROPDOWN = `
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">💣 Dingers (Kambi)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
-	<option value="preview">📰 Pitcher Mix</option>
+	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="nfl">🎯 Props</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
@@ -218,20 +218,20 @@ function addPlus(value) {
 }
 
 const pitchMap = {
-  CH: "Changeup",
-  CU: "Curveball",
-  FC: "Cutter",
-  EP: "Eephus",
-  FO: "Forkball",
-  FF: "Fastball",
-  KN: "Knuckleball",
-  KC: "Knuckle-curve",
-  SC: "Screwball",
-  SI: "Sinker",
-  SL: "Slider",
-  SV: "Slurve",
-  FS: "Splitter",
-  ST: "Sweeper"
+	CH: "Changeup",
+	CU: "Curveball",
+	FC: "Cutter",
+	EP: "Eephus",
+	FO: "Forkball",
+	FF: "Fastball",
+	KN: "Knuckleball",
+	KC: "Knuckle-curve",
+	SC: "Screwball",
+	SI: "Sinker",
+	SL: "Slider",
+	SV: "Slurve",
+	FS: "Splitter",
+	ST: "Sweeper"
 };
 
 const pitchFormatter = function(cell) {
@@ -257,6 +257,21 @@ const mixFormatter = function(cell) {
 	const pitch = data[pitchNum+"_type"];
 	const left = data.pitch.l[pitch][field] || 0;
 	const right = data.pitch.r[pitch][field] || 0;
+
+	return `
+		<div class="mix-cell">
+			<span>${cell.getValue() || 0}</span>
+		</div>
+	`;
+}
+
+const mixFormatter2 = function(cell) {
+	const data = cell.getRow().getData();
+	const pitchNum = cell.getField().split("_")[0];
+	let field = getMixField(cell.getField().split("_")[1]);
+	const pitch = data[pitchNum+"_type"];
+	const left = data.pitch.l[pitch][field] || 0;
+	const right = data.pitch.r[pitch][field] || 0;
 	return `
 		<div class="mix-cell">
 			<span class="left">${left}</span>
@@ -266,13 +281,77 @@ const mixFormatter = function(cell) {
 	`;
 }
 
-const avgFormatter= function(cell) {
-	let v = cell.getValue();
-	if (v == "-") {
-		return "-";
+const allowedFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const field = cell.getField().split(".")[1];
+
+	let percent = "";
+	let p = "";
+	let percentile = data.percs[field+"_percentile"];
+	if (field == "hr_pa") {
+		p = "_rate";
+		percent = "%";
+		percentile = data.percs["hr_rate_percentile"];
 	}
-	return Number.isFinite(v) ? (v === 0 ? ".000" : String(v.toFixed(3)).slice(1)) : "";
+	const color = getPercentileColor(field, percentile);
+	const left = data.percs[`hr_l${p}`] || 0;
+	const right = data.percs[`hr_r${p}`] || 0;
+
+	const leftColor = getPercentileColor(`hr_l${p}`, data.percs[`hr_l${p}_percentile`]);
+	const rightColor = getPercentileColor(`hr_r${p}`, data.percs[`hr_r${p}_percentile`]);
+	return `
+		<div class="mix-cell">
+			<span class="left" style="color:${leftColor}">${left}${percent}</span>
+			<span class="right" style="color:${rightColor}">${right}${percent}</span>
+			<span style="color:${color}">${cell.getValue() || 0}${percent}</span>
+		</div>
+	`;
 }
+
+function getPitchPercentileColor(value) {
+	if (!value) return "";
+	// bright green
+	if (value >= 90) return '#00ff66';
+	if (value >= 80) return '#33cc66';
+	if (value >= 60) return '#66cc99';
+	if (value >= 55) return '#aaaaaa';
+	if (value >= 50) return '#e57373';
+	if (value >= 30)  return '#e53935';
+	return '#ff0000'; // very low percentile
+}
+
+const pitchPercentileFormatter= function(cell) {
+	const data = cell.getRow().getData();
+	let avg = cell.getValue();
+	if (cell.getField().includes("rate")) {
+		avg += "%";
+	} else {
+		avg = avgFormatter(cell);
+	}
+	const percentile = data[cell.getField()+"_pct"];
+	const color = getPitchPercentileColor(percentile);
+	return `
+		<div style="color: ${color}">
+			${avg}
+		</div>
+	`;
+}
+
+const avgFormatter = function(cell) {
+    let v = cell.getValue();
+    if (v === "-") {
+        return "-";
+    }
+    v = parseFloat(v);
+    if (!Number.isFinite(v)) {
+      return "";
+    }
+    if (v === 0) {
+        return ".000";
+    }
+    // Keep values >= 1 fully intact, slice only if < 1
+    return v < 1 ? String(v.toFixed(3)).slice(1) : v.toFixed(3);
+};
 
 const eraFormatter = function(cell) {
 	const data = cell.getRow().getData();
@@ -354,6 +433,12 @@ const percentileFormatter = function(cell) {
 	} else if (field.includes("pitcher_percentiles")) {
 		let [_,p] = field.split(".");
 		percentile = data["pitcher_percentiles"][p+"_percentile"];
+	} else if (field.includes("percs.")) {
+		let [_,p] = field.split(".");
+		if (field == "percs.hr_pa") {
+			p = "hr_rate";
+		}
+		percentile = data["percs"][p+"_percentile"];
 	} else if (field.includes(".")) {
 		let [_,k,p] = field.split(".");
 		percentile = data["game_trends"][k][p+"Percentile"];
@@ -494,16 +579,16 @@ const bppPlayerFormatter = function(cell) {
 }
 
 function getHRFactorColor(pct) {
-  if (pct == null) return "";
-  if (pct >= 20)  return '#00ff66'; // elite boost
-  if (pct >= 10)  return '#33cc66'; // strong boost
-  if (pct >= 5)   return '#66cc99'; // mild boost
-  if (pct > 0)    return '#99ffcc'; // slight boost
-  if (pct >= -1)  return '#aaaaaa'; // neutral
-  if (pct >= -4)  return '#e57373'; // slight suppress
-  if (pct >= -9)  return '#e53935'; // mild suppress
-  if (pct >= -19) return '#d32f2f'; // strong suppress
-  return '#ff0000';                  // extreme suppress
+	if (pct == null) return "";
+	if (pct >= 20)  return '#00ff66'; // elite boost
+	if (pct >= 10)  return '#33cc66'; // strong boost
+	if (pct >= 5)   return '#66cc99'; // mild boost
+	if (pct > 0)    return '#99ffcc'; // slight boost
+	if (pct >= -1)  return '#aaaaaa'; // neutral
+	if (pct >= -4)  return '#e57373'; // slight suppress
+	if (pct >= -9)  return '#e53935'; // mild suppress
+	if (pct >= -19) return '#d32f2f'; // strong suppress
+	return '#ff0000';                  // extreme suppress
 }
 
 const bppFormatter = function(cell) {
@@ -571,6 +656,22 @@ const oppFormatter = function(cell, params, rendered) {
 			<div class="bats">${pitcherLR}</div>
 		</div>
 	`;
+}
+
+const pitcherFormatter = function(cell, params, rendered) {
+	const data = cell.getRow().getData();
+	if (!data.game) {
+		return "";
+	}
+
+	const ah = `<span style="width: 12px;text-align:center;">
+		${data.game.split(" @ ")[0] != data.team ? "@" : "v"}
+	</span>`;
+	return `<div class="opp-cell">
+			${getTeamImg(SPORT, data.opp)}
+			${title(cell.getValue().split(" ").at(-1))}
+		<span class="bats">${data.pitcherLR}</span>
+		</div>`;
 }
 
 function addSuffix(num) {
@@ -1000,12 +1101,12 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers"].includes(sport) && !params.noProp) {
+	if (!["feed", "dingers"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
-	if (["feed", "dingers", "barrels"].includes(sport) || isPlayerProp) {
-		let s = ["feed", "dingers", "barrels"].includes(sport) ? "mlb" : sport;
+	if (["feed", "dingers", "barrels"].includes(PAGE) || isPlayerProp) {
+		let s = ["feed", "dingers", "barrels"].includes(PAGE) ? "mlb" : sport;
 		let t = sport == "ncaab" ? data.teamId : data.team;
 		if (TEAM) {
 			//t = TEAM;
@@ -1021,7 +1122,7 @@ const playerFormatter = function(cell, params, rendered) {
 		p = p.substr(0,15)+"...";
 	}
 	let bats = data.bats?.replace("B", "S") || "";
-	if (PAGE === "preview") {
+	if (["pitcher_mix", "preview"].includes(PAGE)) {
 		bats = data.pitch_hand;
 	}
 	return `

@@ -347,12 +347,12 @@
 								<label for="custom_home_run">Total HR</label>
 							</div>
 							<div>
-								<input id="custom_bvp" type="checkbox">
-								<label for="custom_bvp">Vs Pitcher</label>
+								<input id="custom_pitcher" type="checkbox">
+								<label for="custom_pitcher">Pitcher</label>
 							</div>
 							<div>
-								<input id="custom_pitcherLR" type="checkbox">
-								<label for="custom_pitcherLR">Throws</label>
+								<input id="custom_bvp" type="checkbox">
+								<label for="custom_bvp">Vs Pitcher</label>
 							</div>
 							<div>
 								<input id="custom_pitcher" type="checkbox">
@@ -513,7 +513,7 @@
 		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "dingers";
+		let SPORT = "mlb";
 		let KAMBI = URLParams.get("kambi");
 		let MARK = URLParams.get("mark");
 		let BPP = URLParams.get("bpp") != undefined;
@@ -835,9 +835,9 @@
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
-					{title: "Pitcher", columns: [
-						{title: "L/R", field: "pitcherLR", width: 40, formatter: blurFormatter},
-						{title: "HR/PA", field: "pitcherHR_PA", width: 50, formatter: percentileFormatter},
+					{title: "Pitcher", field: "pitcherCols", columns: [
+						{title: "Name", field: "pitcher", width: 90, formatter: pitcherFormatter},
+						{title: "HR/PA", field: "percs.hr_pa", width: 80, formatter: allowedFormatter},
 						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					]},
 					{title: "Historical FD", columns: [
@@ -970,8 +970,10 @@
 		}
 
 		function implied() {
-			TABLE.getColumns().map(c => c.hide());
-			["curr_ev", "curr_fv", "curr_implied", "player", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			["curr_ev", "curr_fv", "curr_implied", "player", "pitcher", "pitcherHR_PA", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "curr_implied", dir: "desc"}
@@ -996,8 +998,10 @@
 		}
 
 		function pretty_() {
-			TABLE.getColumns().map(c => c.hide());
-			[`curr_ev`, "curr_fv", "curr_implied", "player", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`curr_ev`, "curr_fv", "curr_implied", "player", "pitcher", "pitcherHR_PA", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 

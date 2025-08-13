@@ -18,8 +18,31 @@
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
+		#tables {
+			display: flex;
+			width: 80%;
+			justify-content: space-evenly;
+			overflow: hidden;
+		}
+		#lefties, #righties {
+			overflow-y: auto;
+		}
 		#table {
 			width: auto;
+		}
+		#pitcher-name {
+			text-align: center;
+		}
+		#pitcher-container {
+			width: 80%;
+  			justify-content: space-evenly;
+		}
+		#pitcher-tables {
+			display: flex;
+			justify-content: space-evenly;
+		}
+		h4 {
+			margin: 0;
 		}
 		@media (max-width: 600px) {
 			#table {
@@ -48,6 +71,16 @@
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<select id="side-select">
+						<option value="both">vs Both</option>
+						<option value="l">vs LHB</option>
+						<option value="r">vs RHB</option>
+					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
@@ -83,7 +116,23 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div id="table"></div>
+				<div id="pitcher-container">
+					<h3 id="pitcher-name"></h3>
+					<div id="pitcher-tables">
+						<div>
+							<h4>vs LHB</h4>
+							<div id="pitcher-table-l"></div>	
+						</div>
+						<div>
+							<h4>vs RHB</h4>
+							<div id="pitcher-table-r"></div>
+						</div>
+					</div>
+				</div>
+				<div id="tables">
+					<div id="lefties"></div>
+					<div id="righties"></div>
+				</div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
@@ -108,13 +157,26 @@
 		let SPORT = "mlb";
 		let PLAYER = URLParams.get("player");
 		let PRETTY = URLParams.get("pretty");
-		let SIDE = URLParams.get("side");
+		TEAM = URLParams.get("team");
+		let SIDE = URLParams.get("side") || "both";
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
 			document.querySelector("#table-container").style["max-height"] = "initial";
 			document.querySelector("#watermark").style.width = "20%";
 		}
+
+		document.querySelector("#side-select").value = SIDE;
+		document.querySelector("#side-select").addEventListener("change", (event) => {
+			SIDE = event.target.value;
+			let url = new URL(window.location.href);
+			const params = new URLSearchParams(window.location.search);
+			params.set("side", SIDE);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			formatMix(RES);
+			TABLE.setData(RES);
+		})
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -124,16 +186,25 @@
 
 		function fetchMixData() {
 			renderTable([]);
-			fetch(API_BASE+`/api/pitcher_mix`, {
+			fetch(API_BASE+`/api/pitcher_mix?team=${TEAM}`, {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
 				data = data.data;
 				formatMix(data);
 				RES = data;
-				renderTable(data);
+				renderPitcherTable(data.pitcher);
+				renderTable(data.batters);
 				setTimeout(function() {
 					if (PRETTY != undefined) {
 						pretty_();
+					}
+					if (SIDE) {
+						/*
+						let col = SIDE === "both" ? "percs.hr_rate_percentile" : `percs.hr_${SIDE}_rate`
+						TABLE.setSort([
+							{column: col, dir: "desc"}
+						])
+						*/
 					}
 				}, 200);
 			}).catch(err => console.log(err));
@@ -142,102 +213,133 @@
 		function safe(n){ return Number.isFinite(n) ? n : 0; }
 
 		function formatMix(data) {
-			for (const row of data) {
-				if (!row.pitch?.both) continue;
+			const pitcher = data.pitcher;
+			SIDE = pitcher?.pitch_hand.toLowerCase();
+			for (side of ["l", "r"]) {
+				const section = pitcher.pitch[side];
+				if (!section) continue;
 
-				const entries = Object.entries(row.pitch.both)
-				  .sort((a,b) => safe(b[1]["#"]) - safe(a[1]["#"]));
-
-				const top = entries.slice(0, 4);
-				top.forEach((entry, i) => {
-					const k = i+1;
-					const p = entry[1];
-					row[`p${k}_type`] = entry[0];
-					row[`p${k}_n`]    = p["#"];
-					row[`p${k}_hr`]   = p.home_run;
-					row[`p${k}_avg`]  = p.ba;
-					row[`p${k}_iso`]  = p.iso;
-					row[`p${k}_brl`]  = p.is_barrel;
-					row[`p${k}_hh`]   = p.is_hard_hit;
+				const entries = Object.entries(section).map(([type, stats]) => {
+					return {
+						type: type,
+						...stats,
+						n: stats["#"] || 0,
+						percent: stats["%"] || 0,
+						hr: stats.home_run || 0,
+						brl: stats.is_barrel || 0,
+						hh: stats.is_hard_hit || 0
+					}
 				});
+				pitcher[`pitch_table_${side}`] = entries;
+			}
+
+			const batters = data.batters;
+			for (const row of batters) {
+				const section = row.pitch[SIDE];
+				if (!section) continue;
+
+				const entries = Object.entries(section).map(([type, stats]) => {
+					return {
+						type: type,
+						...stats,
+						n: stats["#"] || 0,
+						percent: stats["%"] || 0,
+						hr: stats.home_run || 0,
+						brl: stats.is_barrel || 0,
+						hh: stats.is_hard_hit || 0
+					}
+				});
+				row["pitch_table"] = entries;
 			}
 		}
 
 		function renderTable(data) {
-
-			TABLE = new Tabulator("#table", {
-				tooltipsHeader: true,
-				placeholder:"Data Loading...",
-				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
-				autoResize: true,
-				data: data,
-				initialSort: [
-					{ column:"p1_n", dir:"desc" },
-				],
-				columnDefaults: {
-					vertAlign: "middle",
-					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc"
-				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
-				},
-				//groupBy: "game",
-				groupHeader: function(value, count, data, group){
-					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
-				},
-				groupToggleElement: "header",
-				columns: [
-					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
-					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
+			const tables = document.querySelector("#tables");
+			const leftTable = document.querySelector("#lefties");
+			const rightTable = document.querySelector("#righties");
+			for (row of data) {
+				if (row.player != "javier assad") {
+					//continue;
+				}
+				const tableId = `table-${row.player.replaceAll(" ", "-")}`;
+				const div = document.createElement("div");
+				div.innerHTML = `
+					<h3>${title(row.player)}</h3>
+					<div id="${tableId}" class="table"></div>
+				`
+				if (row.pitch_hand == "L") {
+					leftTable.appendChild(div);
+				} else {
+					rightTable.appendChild(div);
+				}
+				TABLE = new Tabulator("#"+tableId, {
+					tooltipsHeader: true,
+					placeholder:"Data Loading...",
+					layout: "fitDataFill",
+					responsiveLayout: MOBILE ? "" : "",
+					autoResize: true,
+					data: row.pitch_table,
+					initialSort: [
+						{ column:"n", dir:"desc" },
+					],
+					columnDefaults: {
+						vertAlign: "middle",
+						hozAlign: "center",
+						resizable: false,
+						headerSortStartingDir: "desc"
 					},
-					{ title: "Pitch #1", headerHozAlign:"center", columns: [
-						{ title:"#", field:"p1_n", sorter:"number", width:55, headerSortStartingDir:"desc" },
-						{ title:"Type", field:"p1_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
-						{ title:"HR", field:"p1_hr", sorter:"number", width:55, formatter: mixFormatter },
-						//{ title:"AVG", field:"p1_avg", sorter:"number", formatter:avgFormatter, width:60 },
-						//{ title:"ISO", field:"p1_iso", sorter:"number", formatter:avgFormatter, width:60 },
-						{ title:"BRL", field:"p1_brl", sorter:"number", width:55, formatter: mixFormatter },
-						{ title:"HH", field:"p1_hh", sorter:"number", width:55, formatter: mixFormatter },
-				  ]},
+					groupToggleElement: "header",
+					columns: [
+						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+						{ title:"#", field:"n", sorter:"number", width:50 },
+						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
+						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"HR", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+					],
+				});
+			}
+		}
 
-				  { title: "Pitch #2", headerHozAlign:"center", columns: [
-					{ title:"#", field:"p2_n", sorter:"number", width:55 },
-					{ title:"Type", field:"p2_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
-					{ title:"HR", field:"p2_hr", sorter:"number", width:45 },
-					//{ title:"AVG", field:"p2_avg", sorter:"number", formatter:avgFormatter, width:60 },
-					//{ title:"ISO", field:"p2_iso", sorter:"number", formatter:avgFormatter, width:60 },
-					{ title:"BRL", field:"p2_brl", sorter:"number", width:45 },
-					{ title:"HH", field:"p2_hh", sorter:"number", width:45 },
-				  ]},
-
-				  { title: "Pitch #3", headerHozAlign:"center", columns: [
-					{ title:"#", field:"p3_n", sorter:"number", width:55 },
-					{ title:"Type", field:"p3_type", width:75, formatter: pitchFormatter, hozAlign: "left" },
-					{ title:"HR", field:"p3_hr", sorter:"number", width:45 },
-					//{ title:"AVG", field:"p3_avg", sorter:"number", formatter:avgFormatter, width:60 },
-					//{ title:"ISO", field:"p3_iso", sorter:"number", formatter:avgFormatter, width:60 },
-					{ title:"BRL", field:"p3_brl", sorter:"number", width:45 },
-					{ title:"HH", field:"p3_hh", sorter:"number", width:45 },
-				  ]},
-				]
-			});
+		function renderPitcherTable(data) {
+			document.querySelector("#pitcher-name").textContent =`${title(data.player)} (${data.pitch_hand})`;
+			for (side of ["l", "r"]) {
+				const tableId = `pitcher-table-${side}`;
+				TABLE = new Tabulator("#"+tableId, {
+					tooltipsHeader: true,
+					placeholder:"Data Loading...",
+					layout: "fitDataFill",
+					responsiveLayout: MOBILE ? "" : "",
+					autoResize: true,
+					data: data[`pitch_table_${side}`],
+					initialSort: [
+						{ column:"n", dir:"desc" },
+					],
+					columnDefaults: {
+						vertAlign: "middle",
+						hozAlign: "center",
+						resizable: false,
+						headerSortStartingDir: "desc"
+					},
+					groupToggleElement: "header",
+					columns: [
+						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+						{ title:"#", field:"n", sorter:"number", width:50 },
+						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
+						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"HR", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+					],
+				});
+			}
 		}
 
 		function groupByGame() {

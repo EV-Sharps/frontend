@@ -127,6 +127,7 @@
 	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "barrels";
+		SPORT = "mlb";
 		let TABLE = null;
 		let FEED = null;
 		let HISTORICAL = {};
@@ -140,7 +141,6 @@
 		let MARK = URLParams.get("mark");
 		let ALL = URLParams.get("all") != undefined;
 		let BOOK = URLParams.get("book");
-		let SPORT = URLParams.get("sport");
 		let PROP = URLParams.get("prop");
 		let LEADERS = URLParams.get("leaders");
 		let PLAYER = URLParams.get("player");
@@ -154,10 +154,6 @@
 		let IS_PITCHER = false;
 		let YEAR = new Date();
 		YEAR = YEAR.getFullYear();
-
-		if (!SPORT) {
-			SPORT = "mlb";
-		}
 
 		if (TOGGLE_PERCENTILE) {
 			document.querySelector("#percentiles-btn").innerText = "Raw Values";
@@ -292,6 +288,7 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
+					{title: "Pitcher", field: "pitcher", width: 90, formatter: pitcherFormatter},
 					//{title: "BIP", field: "bip", width: 55, sorter: "number"},
 					{title: "Last Homer", columns: [
 						//{title: "Gms", field: "homerLogs.g.streak", width: 40, formatter: gapFormatter},
@@ -455,7 +452,7 @@
 
 		function pretty_() {
 			TABLE.getColumns().map(col => {
-				let arr = ["book", "player", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.5G", "hard_hit_ct", "game_trends.hard_hit_ct.5G"];
+				let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.5G", "hard_hit_ct", "game_trends.hard_hit_ct.5G"];
 				if (L3 != undefined) {
 					arr.push("game_trends.barrel_ct.3G");
 					arr.push("game_trends.hard_hit_ct.3G");

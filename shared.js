@@ -290,7 +290,7 @@ const allowedFormatter = function(cell) {
 	let percentile = data.percs[field+"_percentile"];
 	if (field == "hr_pa") {
 		p = "_rate";
-		percent = "%";
+		//percent = "%";
 		percentile = data.percs["hr_rate_percentile"];
 	}
 	const color = getPercentileColor(field, percentile);

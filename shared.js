@@ -1057,7 +1057,7 @@ function getWindHTML(data) {
 	if (data.roof) {
 		return `Roof`;
 	}
-	let cond = data.weather["conditions"].toLowerCase().replace("mostlyclear", "clear").replaceAll(" ", "_");
+	let cond = data.weather["conditions"].toLowerCase().replace("mostlyclear", "clear").replace("mostlycloudy", "cloudy").replace("partlycloudy", "cloudy").replaceAll(" ", "_");
 	if (cond == "breezy_and_mostly_cloudy") {
 		cond = "breezy";
 	} else if (cond == "possible_drizzle_and_breezy") {

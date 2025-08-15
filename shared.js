@@ -689,13 +689,30 @@ function addSuffix(num) {
 	return num + "th";
 }
 
-function getZColor(value) {
+function getZColorRed(value) {
 	if (!value) return "";
 	if (value >= 2.0) return '#00ff66'; // bright green
 	if (value >= 1.5) return '#33cc66'; // medium green
 	if (value >= 1.0) return '#66cc99'; // light green
 	if (value >= 0) return '#99ffcc';
 	return '#aaaaaa';
+}
+
+function getZColor(value) {
+  if (value == null || Number.isNaN(Number(value))) return "";
+  const v = Math.max(0, Math.min(2, Number(value))); // clamp 0–2
+
+  // Lightness decreases with z (invert of the previous version):
+  // ~82% at z=0  →  ~46% at z=2 (kept >40% so it's still readable on dark)
+  const L0 = 82, L2 = 46;
+  const L = L0 + (L2 - L0) * (v / 2);
+
+  return `hsl(210 100% ${L}%)`; // 210° = blue
+}
+
+// optional: readable text color on dark background
+function pickTextForLightness(lightness) {
+  return lightness >= 62 ? '#0b1220' : '#ffffff'; // dark text on very light cells
 }
 
 const homerLogFormatter = function(cell) {
@@ -1040,7 +1057,7 @@ function getWindHTML(data) {
 	if (data.roof) {
 		return `Roof`;
 	}
-	let cond = data.weather["conditions"].toLowerCase().replaceAll(" ", "_");
+	let cond = data.weather["conditions"].toLowerCase().replace("mostlyclear", "clear").replaceAll(" ", "_");
 	if (cond == "breezy_and_mostly_cloudy") {
 		cond = "breezy";
 	} else if (cond == "possible_drizzle_and_breezy") {

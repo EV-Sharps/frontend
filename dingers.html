@@ -529,6 +529,7 @@
 		let GAME = URLParams.get("game");
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
+		let NO365 = URLParams.get("no365");
 
 		if (GAME) {
 			let [a,h] = GAME.split("-");
@@ -671,11 +672,18 @@
 
 		async function fetchDingersData(render=true) {
 			let url = "/api/ev";
+			const params = new URLSearchParams();
 			if (KAMBI != undefined) {
-				url += "?kambi=true";
+				params.set("kambi", "true");
 			}
 			if (NOCACHE != undefined) {
-				url += "?nocache=true";
+				params.set("nocache", "true");
+			}
+			if (NO365 !== undefined) {
+				params.set("no365", "true");
+			}
+			if (params.toString()) {
+				url += "?"+params.toString();
 			}
 			fetch(API_BASE+url, {
 				headers: {

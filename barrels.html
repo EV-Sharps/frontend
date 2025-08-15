@@ -291,7 +291,7 @@
 					},
 					{title: "Pitcher", field: "pitcher", width: 90, formatter: pitcherFormatter},
 					//{title: "BIP", field: "bip", width: 55, sorter: "number"},
-					{title: "Last Homer", columns: [
+					{title: "Last Homer (Due)", columns: [
 						//{title: "Gms", field: "homerLogs.g.streak", width: 40, formatter: gapFormatter},
 						//{title: "Avg", field: "homerLogs.gamesBtwnAvg", width: 40},
 						//{title: "Med", field: "homerLogs.gamesBtwnMed", width: 40},
@@ -299,9 +299,9 @@
 
 						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
 						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number"},
 						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: lastDiffFormatter, sorter: "number"},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 						{title: "SD", field: "homerLogs.pa.sd", width: 40, formatter: blurFormatter},
 					]},
 					{title: "Barrels", columns: [

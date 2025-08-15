@@ -109,14 +109,18 @@ function fillPricing(tier) {
 		const cardTier = card.dataset.tier;
 		const cardLevel = tierOrder[cardTier];
 
+		if (btn.id == "sharp-card") {
+			return;
+		}
+
 		if (cardTier === tier) {
 			btnText.textContent = 'Current';
 			btn.disabled = true;
 			btn.classList.add('current-btn');
 		} else if (cardLevel < currentLevel) {
 			btnText.textContent = 'Downgrade';
-		btn.disabled = false;
-		btn.classList.remove('current-btn');
+			btn.disabled = false;
+			btn.classList.remove('current-btn');
 		} else {
 			btnText.textContent = 'Upgrade';
 			btn.disabled = false;
@@ -201,9 +205,12 @@ async function loginWithDiscord() {
 		provider: 'discord',
 		options: {
 				//redirectTo: window.location.origin+ `/profile${HTML}?saveDiscord`
-				redirectTo: `/profile${HTML}`
+				redirectTo: window.location.origin+`/profile${HTML}`
 		}
 	});
+
+	console.log('SB URL:', SB.restUrl || SB.supabaseUrl);
+	console.log('Auth URL:', data.url);
 
 	if (error) {
 		console.error('Discord OAuth error', error);

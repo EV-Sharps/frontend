@@ -339,13 +339,7 @@
 					resizable: false,
 					headerSortStartingDir: "desc"
 				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
-				},
+				columnMinWidth: 24,
 				groupHeader: function(value, count, data, group){
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
@@ -367,7 +361,6 @@
 					},
 					{title: "Opp – Pitcher", field: "opp", formatter: oppFormatter, formatterParams: {lastName: LAST}, hozAlign: "left", width: MOBILE || LAST ? 100 : 150},
 					//{title: "L/R", field: "pitcherLR", width: 30 },
-					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 75},
 					{title: "Vs Pitcher", columns: [
 						{title: "H-AB", field: "bvpStats.h", width: 45, formatter: function(cell) {
 							const data = cell.getRow().getData();
@@ -375,8 +368,8 @@
 						}},
 						{title: "AVG", field: "bvpStats.avg", width: 45, formatter: avgFormatter},
 						{title: "SLG", field: "bvpStats.slg", width: 45, formatter: avgFormatter},
-						{title: "2B", field: "bvpStats.2b", width: 45},
-						{title: "HR", field: "bvpStats.hr", width: 45},
+						{title: "2B", field: "bvpStats.2b", width: 35},
+						{title: "HR", field: "bvpStats.hr", width: 35},
 					]},
 					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75},
 					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},

@@ -450,6 +450,9 @@ button {
 	gap: 10px; /* space between buttons */
 	justify-content: flex-end; /* push to right side of header */
 }
+.gsi-material-button {
+	display: none;
+}
 #auth #login {
 	margin-left: 0.5rem;
 }

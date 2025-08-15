@@ -182,30 +182,32 @@ function fillProfile(data, discordUsername, tier, session) {
 	}
 }
 
+async function loginWithGoogle() {
+	const { data, error } = await SB.auth.signInWithOAuth({
+		provider: 'google',
+		options: {
+			redirectTo: `/profile${HTML}`,
+			queryParams: { prompt: "select_account" }
+		}
+	});
+
+	if (error) {
+		console.error('Google OAuth error', error);
+	}
+}
+
 async function loginWithDiscord() {
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'discord',
 		options: {
 				//redirectTo: window.location.origin+ `/profile${HTML}?saveDiscord`
-				redirectTo: window.location.origin+ `/profile${HTML}`
+				redirectTo: `/profile${HTML}`
 		}
 	});
 
 	if (error) {
 		console.error('Discord OAuth error', error);
 	}
-}
-
-function loginWithDiscord2() {
-	const clientId = "";
-	const redirectUri = encodeURIComponent(`${API_BASE}/api/discord/callback`);
-	//const state = encodeURIComponent(userId);
-
-	window.location.href =
-	`https://discord.com/oauth2/authorize?client_id=${clientId}` +
-	`&redirect_uri=${redirectUri}` +
-	`&response_type=code` +
-	`&scope=identify`;
 }
 
 async function saveDiscordToProfile() {

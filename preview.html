@@ -161,20 +161,13 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "hr_pa", dir: "desc"},
+					{column: "percs.hr_pa", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
 					resizable: false,
 					headerSortStartingDir: "desc"
-				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
 				},
 				//groupBy: "game",
 				groupHeader: function(value, count, data, group){
@@ -196,13 +189,9 @@
 						frozen: MOBILE ? true : false
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "Pitcher Homers Allowed", columns: [
-						{title: "Total", field: "home_run", width: 45, formatter: percentileFormatter },
-						{title: "vs L", field: "hr_l", width: 45, formatter: percentileFormatter },
-						{title: "vs R", field: "hr_r", width: 45, formatter: percentileFormatter },
-						{title: "Tot/PA", field: "hr_pa", width: 50, formatter: percentileFormatter, sorter: "number" },
-						{title: "L/PA", field: "hr_l_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
-						{title: "R/PA", field: "hr_r_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
+					{title: "HR Allowed", columns: [
+						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
+						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},
 					]},
 					//{title: "PA", field: "pa", width: 45 },
 					{title: "ERA", field: "p_era", width: 45, formatter: eraFormatter, visible: false },
@@ -214,14 +203,29 @@
 					{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 45, formatter: percentileFormatter },
 					{title: "Hard<br>Hit", field: "hard_hit_percent", width: 45, formatter: percentileFormatter },
 					{title: "BRL%", field: "barrel_batted_rate", width: 45, formatter: percentileFormatter },
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					{
-						title: "HR Pitch History<br>Old → Recent",
-						field: "hr_pitch",
-						formatter: function(cell) {
-							return cell.getValue().slice(-7).join(",");
-						},
-						hozAlign: "left"
-					}
+						title: "HR Pitch History - Old → Recent",
+						columns: [
+							{
+								title: "LHB",
+								field: "hr_pitch_l",
+								formatter: function(cell) {
+									return cell.getValue().slice(-5).join(",");
+								},
+								hozAlign: "left"
+							},
+							{
+								title: "RHB",
+								field: "hr_pitch_r",
+								formatter: function(cell) {
+									return cell.getValue().slice(-5).join(",");
+								},
+								hozAlign: "left"
+							}
+						]
+					},
+					
 				]
 			});
 		}

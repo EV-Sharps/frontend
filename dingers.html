@@ -885,11 +885,7 @@
 						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
 					]},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
-					{title: "Stadium Rankings", columns: [
-						{title: "Both", field: "stadiumRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
-						{title: "Left", field: "stadiumRankLeft", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
-						{title: "Right", field: "stadiumRankRight", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
-					]},
+					{title: "Stadium<br>Rank", field: "stadiumRank", formatter: stadiumRankFormatter, width: 60, visible: HISTORICAL ? false : true},
 					{title: "Last Homer (Due)", columns: [
 						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
 						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: homerLogFormatter},

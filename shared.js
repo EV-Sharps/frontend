@@ -290,6 +290,10 @@ const allowedFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const field = cell.getField().split(".")[1];
 
+	if (data.blurred) {
+		return `<div class="blurred">${cell.getValue()}</div>`
+	}
+
 	let percent = "";
 	let p = "";
 	let percentile = data.percs[field+"_percentile"];
@@ -435,9 +439,6 @@ const percentileFormatter = function(cell) {
 		} else {
 			percentile = data["pitcherData"][k+"Percentile"];
 		}
-	} else if (field.includes("pitcher_percentiles")) {
-		let [_,p] = field.split(".");
-		percentile = data["pitcher_percentiles"][p+"_percentile"];
 	} else if (field.includes("percs.")) {
 		let [_,p] = field.split(".");
 		if (field == "percs.hr_pa") {
@@ -468,7 +469,7 @@ const percentileFormatter = function(cell) {
 		let suffix = "";
 		if (field.includes("distance")) {
 			suffix = " ft";
-		} else if ((!field.includes("pitcher_percentiles") && field.includes("percent")) || ["barrels_per_bip", "barrel_batted_rate", "hr_pa", "hr_l_rate", "hr_r_rate", "pitcherHR_PA"].includes(field.split(".").at(-1))) {
+		} else if (field.includes("percent") || ["barrels_per_bip", "barrel_batted_rate", "hr_pa", "hr_l_rate", "hr_r_rate", "pitcherHR_PA"].includes(field.split(".").at(-1))) {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
@@ -730,6 +731,24 @@ function getOppRankColor(value) {
 	if (value >= 6) return '#66cc99';
 	if (value >= 2)  return '#33cc66';
 	return '#00ff66'; // very low percentile
+}
+
+const stadiumRankFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const color = getOppRankColor(data.stadiumRank);
+	let cls = "";
+	if (data.blurred) {
+		cls = "blurred";
+	}
+	const leftRank = data.stadiumRankLeft;
+	const rightRank = data.stadiumRankRight;
+	return `
+	<div class='mix-cell ${cls}'>
+		<div style="color: ${color}">${cell.getValue()}</div>
+		<div class="left" style="color: ${getOppRankColor(data.stadiumRankLeft)}">${leftRank}</div>
+		<div class="right" style="color: ${getOppRankColor(data.stadiumRankRight)}">${rightRank}</div>
+	</div>
+	`;
 }
 
 const rankingFormatter = function(cell) {

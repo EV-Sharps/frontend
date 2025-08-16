@@ -21,6 +21,7 @@
       to { transform: rotate(360deg); }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <h2>Finalizing your upgrade...</h2>
@@ -49,7 +50,7 @@
           .single();
 
         if (profile?.tier !== 'free') {
-          window.location.href = '/profile';
+          window.location.href = `/profile${HTML}`;
           return;
         }
 

@@ -149,7 +149,6 @@
 							Connect Discord
 							<span class="spinner" style="display: none;"></span>
 						</button>
-						<button class="link-btn" onclick="cancelSubscription()">❌ Cancel Subscription</button>
 					</div>
 				</div>
 			</div>
@@ -162,6 +161,7 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "profile";
+		ENABLE_AUTH = true;
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
 		let discordError = URLParams.get("discordError");

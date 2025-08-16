@@ -527,6 +527,7 @@
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
 		let GAME = URLParams.get("game");
+		TEAM = URLParams.get("team");
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
 		let NO365 = URLParams.get("no365");
@@ -662,6 +663,10 @@
 				if (GAME) {
 					TABLE.setFilter([
 						{field:"game", type:"=", value: GAME}
+					])
+				} else if (TEAM) {
+					TABLE.setFilter([
+						{field:"team", type:"=", value: TEAM}
 					])
 				}
 				if (SIMPLE != undefined) {
@@ -981,7 +986,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["curr_ev", "curr_fv", "curr_implied", "player", "pitcher", "pitcherHR_PA", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "curr_implied", dir: "desc"}

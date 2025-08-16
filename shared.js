@@ -332,8 +332,11 @@ function getPitchPercentileColor(value) {
 const pitchPercentileFormatter= function(cell) {
 	const data = cell.getRow().getData();
 	let avg = cell.getValue();
-	if (cell.getField().includes("rate")) {
+	let field = cell.getField();
+	if (field.includes("rate")) {
 		avg += "%";
+	} else if (["hr"].includes(field)) {
+		avg = cell.getValue();
 	} else {
 		avg = avgFormatter(cell);
 	}
@@ -733,7 +736,7 @@ const homerLogFormatter = function(cell) {
 
 	if (z > 0) {
 		const color = getZColor(parseFloat(cell.getValue()));
-		return `<div style="color:${color}">+${z}</div>`;
+		return `<div style="color:${color};font-weight:600;">+${z}</div>`;
 	}
 
 	return `<div>${z}</div>`;
@@ -1618,6 +1621,9 @@ function getNestedFields(defs, out = []) {
 
 function showHideUserTable() {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
+		if (!CURR_USER.metadata[PAGE]) {
+			return;
+		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
 		const defs = TABLE.getColumnDefinitions();
 		const nestedFields = getNestedFields(defs);

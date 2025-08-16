@@ -87,7 +87,7 @@ async function upsertProfile(session) {
 		document.getElementById("username").innerText = `${t} ${session.user.email}`;
 	}
 	if (window.location.pathname.includes("/profile")) {
-		fillProfile(data, discordUsername, tier, session);
+		fillProfile(data, CURR_USER.discord_username, tier, session);
 	} else if (window.location.pathname.includes("/pricing")) {
 		fillPricing(tier);
 	}
@@ -108,10 +108,6 @@ function fillPricing(tier) {
 		if (!btn) return;
 		const cardTier = card.dataset.tier;
 		const cardLevel = tierOrder[cardTier];
-
-		if (btn.id == "sharp-card") {
-			return;
-		}
 
 		if (cardTier === tier) {
 			btnText.textContent = 'Current';
@@ -190,7 +186,7 @@ async function loginWithGoogle() {
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'google',
 		options: {
-			redirectTo: `/profile${HTML}`,
+			redirectTo: window.location.origin+`/profile${HTML}`,
 			queryParams: { prompt: "select_account" }
 		}
 	});

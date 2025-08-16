@@ -44,6 +44,39 @@
 		h4 {
 			margin: 0;
 		}
+		.games-bar{display:flex;align-items:center;gap:8px;width: 100%;}
+		.nav{
+			background:#0b1220;border:1px solid #1f2937;color:#e5e7eb;
+			width:32px;height:32px;border-radius:8px;cursor:pointer;
+			align-items: center;
+		}
+		.nav:hover{background:#0f172a}
+		.games-scroller{
+		display:flex;gap:12px;overflow-x:auto;padding:8px 4px;
+		scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+		}
+		.games-scroller::-webkit-scrollbar{height:6px}
+		.games-scroller::-webkit-scrollbar-thumb{background:#1f2937;border-radius:4px}
+		.game-card {
+			scroll-snap-align:center;flex:0 0 auto;width:92px;
+		    background:#0b1220;border:1px solid #1f2937;border-radius:12px;
+		    padding:8px; text-align:center; color:#e5e7eb; text-decoration:none;
+		    transition:transform .08s ease, background .15s ease;
+		}
+		.game-card.popular {
+			border-color: gold;
+		}
+		.game-card:hover { background: #0f172a; transform: translateY(-1px); }
+		.pair{display:flex;align-items:center;justify-content:center;gap:6px}
+		.team{
+			display:flex;flex-direction:column;align-items:center;gap:2px
+			color: initial;
+			text-decoration: none;
+		}
+		.team img{width:28px;height:28px;object-fit:contain}
+		.code{font-size:11px;text-transform:uppercase;color:#c7d2fe}
+		.at{font-size:10px;color:#94a3b8}
+		.chev { opacity:.6 }
 		@media (max-width: 600px) {
 			#table {
 				flex: 1;
@@ -116,6 +149,11 @@
 		</header>
 		<main>
 			<div id="table-container">
+				<div class="games-bar">
+					<button class="nav prev" aria-label="Previous">‹</button>
+					<div id="games" class="games-scroller"></div>
+					<button class="nav next" aria-label="Next">›</button>
+				</div>
 				<div id="pitcher-container">
 					<h3 id="pitcher-name"></h3>
 					<div id="pitcher-tables">
@@ -157,7 +195,7 @@
 		let SPORT = "mlb";
 		let PLAYER = URLParams.get("player");
 		let PRETTY = URLParams.get("pretty");
-		TEAM = URLParams.get("team");
+		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
 		if (MARK != undefined) {
@@ -192,6 +230,7 @@
 				data = data.data;
 				formatMix(data);
 				RES = data;
+				renderGames(data.games);
 				renderPitcherTable(data.pitcher);
 				renderTable(data.batters);
 				setTimeout(function() {
@@ -300,11 +339,41 @@
 						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
 						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"HR", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title: "Home Runs", columns: [
+							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
+							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						]},
 						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 					],
 				});
+			}
+		}
+
+		function logoSrc(code) {
+			// assumes logos live at logos/mlb/{team}.png
+			return `logos/mlb/${String(code).toLowerCase()}.png`;
+		}
+
+		function renderGames(data) {
+			const games = document.querySelector("#games");
+			for (game of data) {
+				const [a,h] = game.toUpperCase().split(" @ ");
+				const div = document.createElement("div");
+				div.className = `game-card ${[a,h].includes(TEAM.toUpperCase()) ? "popular" : ""}`;
+				div.innerHTML = `
+				<div class="pair">
+					<a class="team" href="/pitcher_mix${HTML}?team=${a.toLowerCase()}">
+						<img src="${logoSrc(a)}" alt="${a} logo" />
+						<span class="code">${a}</span>
+					</a>
+					<span class="at">@</span>
+					<a class="team" href="/pitcher_mix${HTML}?team=${h.toLowerCase()}">
+						<img src="${logoSrc(h)}" alt="${h} logo" />
+						<span class="code">${h}</span>
+					</a>
+				</div>`;
+				games.appendChild(div);
 			}
 		}
 
@@ -352,6 +421,14 @@
 				TABLE.setGroupBy();
 			}
 		}
+
+		 const gamesEl = document.querySelector("#games");
+		const prev = document.querySelector(".nav.prev");
+		const next = document.querySelector(".nav.next");
+		const scrollByPx = 320;
+
+		prev.onclick = () => gamesEl.scrollBy({ left: -scrollByPx, behavior: "smooth" });
+		next.onclick = () => gamesEl.scrollBy({ left:  scrollByPx, behavior: "smooth" });
 	</script>
 </body>
 </html>

@@ -94,15 +94,35 @@
 		text-align: left;
 		list-style: none;
 		padding: 0;
-		margin: 0 0 1.5rem;
+		flex: 1;
 	}
 	.pricing-card ul li {
 		margin: 0.5rem 0;
 		font-size: 0.95rem;
 	}
-
+	.badge {
+	  display:inline-block; font-size:.72rem; font-weight:700;
+	  padding:2px 6px; border-radius:6px; vertical-align:middle;
+	  text-align: center;
+	  width: 100px; margin: auto;
+	}
+	.badge--soon {
+	  color:#f59e0b;
+	  background:rgba(245,158,11,.12);
+	  border:1px solid rgba(245,158,11,.35);
+	}
+	.plan__eyebrow {
+	  display:inline-block;
+	  font-size:.75rem;
+	  letter-spacing:.06em;
+	  color:#f1c232;
+	  background:rgba(241,194,50,.08);
+	  border:1px solid rgba(241,194,50,.25);
+	  padding:2px 8px;
+	  border-radius:999px;
+	  margin-bottom:6px;
+	}
 	.select-btn {
-		background: #444;
 		color: #fff;
 		border: none;
 		padding: 0.6rem 1.2rem;
@@ -220,8 +240,8 @@
 					</div>
 					<div class="record">
 					  <ul style="list-style:none; padding:0; margin:0;">
-					  	<li><strong>'23-'25 +EV HRs:</strong> 582-2511 <span class="units">(+221.45u)</span></li>
-						<li><strong>'25 +EV HRs:</strong> 257-1210 <span class="units">(+92.24u)</span></li>
+					  	<li><strong>'23-'25 +EV HRs:</strong> 596-2592 <span class="units">(+194.53u)</span></li>
+						<li><strong>'25 +EV HRs:</strong> 271-1291 <span class="units">(+65.32u)</span></li>
 						<li><strong>'24 +EV ATTD:</strong> 112-197 <span class="units">(+20.92u)</span></li>
 						<li><strong>+EV ATGS:</strong> 133-294 <span class="units">(+25.47u)</span></li>
 					  </ul>
@@ -258,7 +278,8 @@
 						</button>
 					</div>
 
-					<div class="pricing-card popular" data-tier="sharp">
+					<div id="sharp-card" class="pricing-card popular" data-tier="sharp">
+						<span class="plan__eyebrow">Early Access</span>
 						<h3>🎯 Sharp</h3>
 						<p class="price">$20 <span>/mo</span></p>
 						<ul>
@@ -266,11 +287,11 @@
 							<li>📈 Circa movement alerts</li>
 							<li>🎟️ Full +EV Betting Slate</li>
 							<li>⚙️ Customizable Tables</li>
-							<li>🎯 Majority of Player Props</li>
+							<li style="display: flex; flex-direction: column;">🎽 Expanded Player Props <span class="badge badge--soon">In Progress</span></li>
 							<li>🔓 All Discord channels</li>
 						</ul>
-						<button class="select-btn highlight" onclick="" disabled>
-							<span class="btn-text">Coming Soon</span>
+						<button class="select-btn highlight" onclick="handlePlanClick(this, 'sharp')">
+							<span class="btn-text">1st Month 50% Off!</span>
 							<span class="spinner" style="display:none;"></span>
 						</button>
 					</div>

@@ -451,7 +451,7 @@ button {
 	justify-content: flex-end; /* push to right side of header */
 }
 .gsi-material-button {
-	display: none;
+	
 }
 #auth #login {
 	margin-left: 0.5rem;

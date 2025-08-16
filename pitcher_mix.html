@@ -77,10 +77,27 @@
 		.code{font-size:11px;text-transform:uppercase;color:#c7d2fe}
 		.at{font-size:10px;color:#94a3b8}
 		.chev { opacity:.6 }
-		@media (max-width: 600px) {
+		.splits-toggle { 
+			display:none; gap:8px; margin:8px 0 12px;
+			justify-content: center;
+		}
+		.toggle-btn{
+		  padding:6px 10px; border-radius:8px; border:1px solid #243449;
+		  background:#0b1220; color:#e5e7eb; cursor:pointer; font-weight:600;
+		}
+		
+		@media (max-width: 768px) {
 			#table {
 				flex: 1;
 			}
+			#pitcher-container, #tables {
+				width: 100%;
+			}
+			.splits-toggle {
+				display: flex;
+			}
+			.toggle-btn.is-active{ border-color:#ffd45a; box-shadow:inset 0 0 0 1px rgba(255,212,90,.35); }
+			.is-hidden{ display:none; }
 		}
 	</style>
 </head>
@@ -156,12 +173,16 @@
 				</div>
 				<div id="pitcher-container">
 					<h3 id="pitcher-name"></h3>
+					<div id="pitcher-splits-toggle" class="splits-toggle" role="tablist" aria-label="Splits">
+				    <button class="toggle-btn is-active" role="tab" aria-selected="true" data-target="l">LHB</button>
+				    <button class="toggle-btn" role="tab" aria-selected="false" data-target="r">RHB</button>
+				  </div>
 					<div id="pitcher-tables">
-						<div>
+						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
 							<h4>vs LHB</h4>
 							<div id="pitcher-table-l"></div>	
 						</div>
-						<div>
+						<div class="split-panel is-hidden" id="panel-r" role="tabpanel" aria-labelledby="tab-r">
 							<h4>vs RHB</h4>
 							<div id="pitcher-table-r"></div>
 						</div>
@@ -169,7 +190,7 @@
 				</div>
 				<div id="tables">
 					<div id="lefties"></div>
-					<div id="righties"></div>
+					<div id="righties" class="is-hidden"></div>
 				</div>
 				<div id="watermark">
 					<img src="logos/logo.png">
@@ -429,6 +450,33 @@
 
 		prev.onclick = () => gamesEl.scrollBy({ left: -scrollByPx, behavior: "smooth" });
 		next.onclick = () => gamesEl.scrollBy({ left:  scrollByPx, behavior: "smooth" });
+
+		(function initSplitsToggle(){
+			const toggle = document.getElementById('pitcher-splits-toggle');
+			const panels = {
+				l: document.getElementById('panel-l'),
+				r: document.getElementById('panel-r'),
+				lefties: document.getElementById("lefties"),
+				righties: document.getElementById("righties"),
+			};
+
+			toggle.addEventListener('click', (e) => {
+				const btn = e.target.closest('.toggle-btn');
+				if (!btn) return;
+
+				// update active button
+				toggle.querySelectorAll('.toggle-btn').forEach(b => {
+				 	b.classList.toggle('is-active', b === btn);
+					b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+				});
+
+				const side = btn.dataset.target;
+				lefties.classList.toggle("is-hidden", side === "r");
+				righties.classList.toggle("is-hidden", side === "l");
+				panels.l.classList.toggle('is-hidden', side !== 'l');
+				panels.r.classList.toggle('is-hidden', side !== 'r');
+			});
+		})();
 	</script>
 </body>
 </html>

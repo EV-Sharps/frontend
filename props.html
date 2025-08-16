@@ -713,9 +713,8 @@
 				columns: [
 					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					{
-						title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0
+						title: "Expected<br>Value", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0
 					},
-					{title: "Kelly", field: "kelly",  width: MOBILE ? 40 : 60, sorter: "number", formatter: kellyFormatter, visible: false},
 					{title: "FV", field: "fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter},
 					{title: "Expected<br>Value", field: "vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "Fair<br>Value", field: "vs-circa_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
@@ -725,6 +724,7 @@
 					{title: "FV", field: "mgm-20_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "EV", field: "mgm-20-vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
 					{title: "FV", field: "mgm-20-vs-circa_fairVal",  width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: false},
+					{title: "Kelly", field: "kelly",  width: MOBILE ? 40 : 60, sorter: "number", formatter: kellyFormatter},
 					{
 						title: "Player",
 						field: "player",

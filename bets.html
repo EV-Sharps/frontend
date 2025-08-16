@@ -14,6 +14,9 @@
 	.game-img {
 		height: 18px; width: 18px;
 	}
+	#table {
+		width: auto;
+	}
 	@media (max-width: 1350px) {
 		#table-container {
 			justify-content: normal;
@@ -32,140 +35,106 @@
 	}
 </style>
 <body>
-	<div id="left-body" class="body">
-		<div id="header">
-			<h1>+EV Sharps</h1>
-			<div id="sub-header">
-				<div class="dropdown">
-					<select id="sport-select">
-						<option value="dingers">⚾ Dingers</option>
-						<option value="mlb">⚾ MLB</option>
-						<option value="nhl">🏒 NHL</option>
-						<option value="nba">🏀 NBA</option>
-						<option value="ncaab">🏀 NCAAB</option>
-						<option value="bets">Bets</option>
-					</select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-				</div>
-				<div class="dropdown">
-					<select id="promo-select">
-						<option value="" selected>Promos</option>
-						<option value="fd-50%">FD 50% HR</option>
-						<option value="dk">DK No Sweat</option>
-					</select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-				</div>
-				<button onclick="groupByGame();">Group By Game</button>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
 			</div>
-			<div id="donate">
-				<div>Tip Jar</div>
-				<div>
-					<a href="https://cash.app/$intersectinglines" target="_blank">
-						<img src="logos/cashapp.png" alt="cashapp" />
-					</a>
-					<a href="https://buymeacoffee.com/interlines" target="_blank">
-						<img src="logos/coffee.png" alt="coffee" />
-					</a>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
 			</div>
-		</div>
-		<div id="table-container">
-
-		</div>
-		<div id="mobile-header">
-			<h1>+EV Sharps</h1>
-			<div id="sub-header">
-				<div style="display: flex;gap:5px;width: 75%;justify-content: center;">
-					<div class="dropdown">
-						<select id="sport-select">
-							<option value="dingers">⚾ Dingers</option>
-							<option value="mlb">⚾ MLB</option>
-							<option value="nhl">🏒 NHL</option>
-							<option value="nba">🏀 NBA</option>
-							<option value="ncaab">🏀 NCAAB</option>
-							<option value="bets">Bets</option>
-						</select>
-						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-					</div>
-					<div class="dropdown">
-						<select id="promo-select">
-							<option value="" selected>Promos</option>
-							<option value="fd-50%">FD 50% HR</option>
-							<option value="dk">DK No Sweat</option>
-						</select>
-						<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-					</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div class="record">
+				  <ul style="list-style:none; padding:0; margin:0;">
+				  	<li><strong>'23-'25 +EV HRs:</strong> 596-2592 <span class="units">(+194.53u)</span></li>
+					<li><strong>2025 +EV HRs:</strong> 271-1291 <span class="units">(+65.32u)</span></li>
+				  </ul>
 				</div>
-				<div style="display: flex; gap:5px;width: 75%;justify-content: center;">
-					<div id="donate" style="top:8px;">
-						<div>Tip Jar</div>
-						<div>
-							<a href="https://cash.app/$intersectinglines" target="_blank">
-								<img src="logos/cashapp.png" alt="cashapp" />
-							</a>
-							<a href="https://buymeacoffee.com/interlines" target="_blank">
-								<img src="logos/coffee.png" alt="coffee" />
-							</a>
-						</div>
-					</div>
-				</div>
+				<div id="table"></div>
 			</div>
-		</div>
+		</main>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript">
-		let TABLE = null;
+		let TABLE, LAST, PLAYER;
 		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "bets";
+		PAGE = "bets";
+		let SPORT = "mlb";
 		let BOOK = URLParams.get("book");
-
-		if (SPORT) {
-			document.querySelector("#sport-select").value = SPORT;
-		}
-
-		document.querySelector("#sport-select").addEventListener("change", (event) => {
-			const sport = event.target.value;
-			if (sport == "dingers") {
-				window.location.href = `./${sport}${HTML}`;
-			} else {
-				window.location.href = `/props${HTML}?sport=${sport}`;
-			}
-		});
-
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-				
-			});
-		});
-
-		window.addEventListener("resize", () => {
-			MOBILE = window.innerWidth <= 600;
-		});
 
 		fetchPlays();
 
 		function fetchPlays() {
-			const url = `https://api.github.com/repos/dailyev/props/contents/plays.json`;
-			fetch(url, {
+			fetch(API_BASE+"/api/bets", {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
-				const body = document.querySelector("#table-container");
-				for (row of data) {
-					const el = document.createElement("div");
-					el.className = "bet-row";
-					const book = row["book"];
-					el.innerHTML = `
-						<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />
-						${row["odds"]}
-						${title(row["player"])}
-						(${row["betEV"]}% EV, ${row["circaEV"]}% Circa EV, +${row["ev"]["fairVal"]} FV, now ${row["ev"]["line"]})
-					`;
-					body.appendChild(el);
-				}
+				renderTable(data);
 			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "game", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				groupToggleElement: "header",
+				columns: [
+					{
+						title: "Expected<br>Value",
+						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						responsive: 0
+					},
+					{
+						title: "¼ Kelly",
+						field: "kelly",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						responsive: 0
+					},
+					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						formatter: evBookFormatter,
+						responsive: 0
+					},
+					{title: "Circa", field: "circa"}
+				]
+			});
 		}
 	</script>
 </body>

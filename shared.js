@@ -940,6 +940,8 @@ const evBookFormatter = function(cell, params, rendered) {
 	let line = data.line === undefined ? "-" : data.line;
 	if (window.location.href.includes("stats") || window.location.href.includes("bvp")) {
 		line = data.daily.odds;
+	} else if (PAGE == "bets") {
+		line = data.odds;
 	}
 	let lineInt = parseInt(line);
 	let implied = -lineInt / (-lineInt + 100);
@@ -1181,6 +1183,9 @@ const playerFormatter = function(cell, params, rendered) {
 function getGameImgs(data, params) {
 	let away = data.awayTeamId || data.game.split(" @ ")[0];
 	let home = data.homeTeamId || data.game.split(" @ ")[1];
+	if (!data.game) {
+		return "";
+	}
 	let awayAlt = data.game.split(" @ ")[0].toUpperCase();
 	let homeAlt = data.game.split(" @ ")[1].toUpperCase();
 	if (SPORT == "ncaab") {
@@ -1198,6 +1203,9 @@ function getGameImgs(data, params) {
 const gameFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	if (data.prop == "separator") return "";
+	if (!data.game) {
+		return "";
+	}
 	const gameImgs = getGameImgs(data, params);
 	return `
 		<div class='game-cell'>

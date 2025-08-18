@@ -88,7 +88,9 @@
 		  padding:6px 10px; border-radius:8px; border:1px solid #243449;
 		  background:#0b1220; color:#e5e7eb; cursor:pointer; font-weight:600;
 		}
-		
+		.batter-container h3 {
+			margin-bottom: 0;
+		}
 		@media (max-width: 768px) {
 			#table {
 				flex: 1;
@@ -186,11 +188,17 @@
 					</div>
 					<div id="pitcher-tables">
 						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
-							<h4>vs LHB</h4>
+							<div style="display: flex; justify-content: space-between;">
+								<h4>vs LHB</h4>
+								<div id="pitcher-hr-l"></div>
+							</div>
 							<div id="pitcher-table-l"></div>	
 						</div>
 						<div class="split-panel is-hidden" id="panel-r" role="tabpanel" aria-labelledby="tab-r">
-							<h4>vs RHB</h4>
+							<div style="display: flex; justify-content: space-between;">
+								<h4>vs RHB</h4>
+								<div id="pitcher-hr-r"></div>
+							</div>
 							<div id="pitcher-table-r"></div>
 						</div>
 					</div>
@@ -304,6 +312,9 @@
 				pitcher[`pitch_table_${side}`] = entries;
 			}
 
+			document.querySelector("#pitcher-hr-l").textContent = pitcher?.hr_pitch_l;
+			document.querySelector("#pitcher-hr-r").textContent = pitcher?.hr_pitch_r;
+
 			const top_pitches = getTopPitches(pitcher);
 			const throws = pitcher.pitch_hand.toLowerCase();
 			const batters = data.batters || [];
@@ -350,8 +361,12 @@
 			for (row of data) {
 				const tableId = `table-${row.player.replaceAll(" ", "-")}`;
 				const div = document.createElement("div");
+				div.className = "batter-container";
 				div.innerHTML = `
-					<h3>${title(row.player)} (${row.pitch_hand.replace("B", "S")})</h3>
+					<div style="display: flex; justify-content: space-between;align-items: flex-end;">
+						<h3>${title(row.player)} (${row.pitch_hand.replace("B", "S")})</h3>
+						<div>${row[`hr_pitch_${SIDE}`] || ""}</div>
+					</div>
 					<div id="${tableId}" class="table"></div>
 				`
 				let which = "r";

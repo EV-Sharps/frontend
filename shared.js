@@ -236,12 +236,18 @@ const pitchMap = {
 	SL: "Slider",
 	SV: "Slurve",
 	FS: "Splitter",
-	ST: "Sweeper"
+	ST: "Sweeper",
+	CS: "Circle Change"
 };
 
 const pitchFormatter = function(cell) {
+	const data = cell.getRow().getData();
 	const pitch = cell.getValue();
-	return pitchMap[pitch];
+	return `
+	<div class="mix-cell">
+		${pitchMap[pitch]}
+		<span class="right">${data.pitch_num || ""}</span>
+	</div>`;
 }
 
 function getMixField(field) {
@@ -482,6 +488,13 @@ const percentileFormatter = function(cell) {
 	`;
 }
 
+const blurCircaFormatter = function(cell) {
+	if (!cell.getRow().getData().circa_blurred) {
+		return cell.getValue();
+	}
+	return `<div class="blurred">${cell.getValue()}</div>`;
+}
+
 const blurFormatter = function(cell) {
 	if (!cell.getRow().getData().blurred) {
 		return cell.getValue();
@@ -653,7 +666,7 @@ const oppFormatter = function(cell, params, rendered) {
 	} else {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
 	}
-	const badge = data.doubleheader ? 
+	const badge = data.doubleheader || data.team.includes("gm2") ? 
 		"<span class='dbl-badge'>2</span>" : "";
 	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, cell.getValue())}</div>` : `${getTeamImg(SPORT, cell.getValue())}`;
 	let pitcherLR = data.pitcherLR || "";
@@ -703,14 +716,23 @@ function getZColorRed(value) {
 
 function getZColor(value) {
   if (value == null || Number.isNaN(Number(value))) return "";
-  const v = Math.max(0, Math.min(2, Number(value))); // clamp 0–2
+  const v = Number(value)
 
-  // Lightness decreases with z (invert of the previous version):
-  // ~82% at z=0  →  ~46% at z=2 (kept >40% so it's still readable on dark)
-  const L0 = 82, L2 = 46;
-  const L = L0 + (L2 - L0) * (v / 2);
+  // Lightness values (kept in readable range for dark bg)
+  const L0 = 82; // near 0
+  const Lmax = 46; // at |2|
 
-  return `hsl(210 100% ${L}%)`; // 210° = blue
+  if (v >= 0) {
+    // Clamp positives 0–2 → blue scale
+    const clamped = Math.min(2, v);
+    const L = L0 + (Lmax - L0) * (clamped / 2);
+    return `hsl(210 100% ${L}%)`; // Blue
+  } else {
+    // Clamp negatives [0 → -1] → Orange
+    const clamped = Math.max(-1, v); // don’t go below -1
+    const L = L0 + (Lmax - L0) * (Math.abs(clamped) / 1); 
+    return `hsl(30 100% ${L}%)`; // Orange
+  }
 }
 
 // optional: readable text color on dark background
@@ -733,11 +755,12 @@ const homerLogFormatter = function(cell) {
 	if (!z) return "0.0";
 
 	z = z.toFixed(1);
-
 	if (z > 0) {
-		const color = getZColor(parseFloat(cell.getValue()));
-		return `<div style="color:${color};font-weight:600;">+${z}</div>`;
+		z = "+"+z;
 	}
+
+	const color = getZColor(parseFloat(cell.getValue()));
+	return `<div style="color:${color};font-weight:600;">${z}</div>`;
 
 	return `<div>${z}</div>`;
 }
@@ -1014,7 +1037,7 @@ const kellyFormatter = function(cell, params, rendered) {
 	return `
 		<div class='kelly-cell'>
 			<div class='kelly'>${kelly.toFixed(2)}u</div>
-			<div class='kelly-wager'>$${(kelly * 10).toFixed(2)}</div>
+			<div class='kelly-wager'>$${(kelly * 50).toFixed(2)}</div>
 		</div>
 	`;
 }
@@ -1612,7 +1635,7 @@ const diffFormatter = function(cell) {
 }
 
 const DEFAULT_FIELDS = [
-	"curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "book", "bookOdds.fd", "bookOdds.365", "bookOdds.dk", "bookOdds.mgm", "bookOdds.espn", "bookOdds.kambi", "bookOdds.cz", "bookOdds.pn", "bookOdds.circa", "order", "pitcher", "percs.hr_pa", "bvp", "bpp", "savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "weather",
+	"curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "book", "bookOdds_fd", "bookOdds_365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_espn", "bookOdds_kambi", "bookOdds_cz", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
 	"stadiumRank", "stadiumRankLeft", "stadiumRankRight"
 ];
 

@@ -166,7 +166,7 @@
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
-					resizable: false,
+					//resizable: false,
 					headerSortStartingDir: "desc"
 				},
 				//groupBy: "game",
@@ -211,7 +211,7 @@
 								title: "LHB",
 								field: "hr_pitch_l",
 								formatter: function(cell) {
-									return cell.getValue().slice(-5).join(",");
+									return cell.getValue()?.slice(-5).join(",");
 								},
 								hozAlign: "left"
 							},
@@ -219,7 +219,7 @@
 								title: "RHB",
 								field: "hr_pitch_r",
 								formatter: function(cell) {
-									return cell.getValue().slice(-5).join(",");
+									return cell.getValue()?.slice(-5).join(",");
 								},
 								hozAlign: "left"
 							}

@@ -30,6 +30,9 @@
 		#table {
 			width: auto;
 		}
+		.table {
+			max-height: 150px;
+		}
 		#pitcher-name {
 			text-align: center;
 		}
@@ -89,6 +92,10 @@
 		@media (max-width: 768px) {
 			#table {
 				flex: 1;
+			}
+			#pitcher-container {
+				display: flex;
+				flex-wrap: wrap;
 			}
 			#pitcher-container, #tables {
 				width: 100%;
@@ -174,9 +181,9 @@
 				<div id="pitcher-container">
 					<h3 id="pitcher-name"></h3>
 					<div id="pitcher-splits-toggle" class="splits-toggle" role="tablist" aria-label="Splits">
-				    <button class="toggle-btn is-active" role="tab" aria-selected="true" data-target="l">LHB</button>
-				    <button class="toggle-btn" role="tab" aria-selected="false" data-target="r">RHB</button>
-				  </div>
+					    <button class="toggle-btn is-active" role="tab" aria-selected="true" data-target="l">LHB</button>
+					    <button class="toggle-btn" role="tab" aria-selected="false" data-target="r">RHB</button>
+					</div>
 					<div id="pitcher-tables">
 						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
 							<h4>vs LHB</h4>
@@ -254,6 +261,7 @@
 				renderGames(data.games);
 				renderPitcherTable(data.pitcher);
 				renderTable(data.batters);
+
 				setTimeout(function() {
 					if (PRETTY != undefined) {
 						pretty_();
@@ -296,12 +304,23 @@
 				pitcher[`pitch_table_${side}`] = entries;
 			}
 
+			const top_pitches = getTopPitches(pitcher);
+			const throws = pitcher.pitch_hand.toLowerCase();
 			const batters = data.batters || [];
 			for (const row of batters) {
 				const section = row.pitch[SIDE];
 				if (!section) continue;
 
 				const entries = Object.entries(section).map(([type, stats]) => {
+					let num = top_pitches[row.pitch_hand.toLowerCase()];
+					if (row.player == "spencer torkelson") {
+						console.log(row.pitch_hand, num, type, num.indexOf(type));
+					}
+					if (num) {
+						num = num.indexOf(type) === -1 ? 0 : num.indexOf(type) + 1;
+					} else {
+						num = "";
+					}
 					return {
 						type: type,
 						...stats,
@@ -309,29 +328,39 @@
 						percent: stats["%"] || 0,
 						hr: stats.home_run || 0,
 						brl: stats.is_barrel || 0,
-						hh: stats.is_hard_hit || 0
+						hh: stats.is_hard_hit || 0,
+						pitch_num: num
 					}
 				});
 				row["pitch_table"] = entries;
 			}
 		}
 
+		function getTopPitches(data) {
+			const map = {};
+			for (which of ["l", "r"]) {
+				if (!data[`pitch_table_${which}`]) continue;
+				const pitches = data[`pitch_table_${which}`].sort((a,b) => b.n - a.n).map(r => r.type);
+				map[which] = pitches;
+			}
+			return map;
+		} 
+
 		function renderTable(data) {
 			const tables = document.querySelector("#tables");
 			const leftTable = document.querySelector("#lefties");
 			const rightTable = document.querySelector("#righties");
 			for (row of data) {
-				if (row.player != "javier assad") {
-					//continue;
-				}
 				const tableId = `table-${row.player.replaceAll(" ", "-")}`;
 				const div = document.createElement("div");
 				div.innerHTML = `
 					<h3>${title(row.player)} (${row.pitch_hand.replace("B", "S")})</h3>
 					<div id="${tableId}" class="table"></div>
 				`
-				if (row.pitch_hand == "L") {
+				let which = "r";
+				if (row.pitch_hand == "L" || (row.pitch_hand == "S" && throws == "R")) {
 					leftTable.appendChild(div);
+					which = "l";
 				} else {
 					rightTable.appendChild(div);
 				}
@@ -427,7 +456,10 @@
 						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
 						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"HR", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title: "Home Runs", columns: [
+							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
+							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						]},
 						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
 					],

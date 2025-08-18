@@ -351,8 +351,8 @@
 								<label for="custom_percs_hr_pa">HR/PA Rate</label>
 							</div>
 							<div>
-								<input id="custom_home_run" type="checkbox">
-								<label for="custom_home_run">Total HR</label>
+								<input id="custom_percs_home_run" type="checkbox">
+								<label for="custom_percs_home_run">Total HR</label>
 							</div>
 							<div>
 								<input id="custom_bvp" type="checkbox">
@@ -449,14 +449,6 @@
 							<div>
 								<input id="custom_stadiumRank" type="checkbox">
 								<label for="custom_stadiumRank">Stadium Ranks</label>
-							</div>
-							<div>
-								<input id="custom_stadiumRankLeft" type="checkbox">
-								<label for="custom_stadiumRankLeft">Stadium Ranks (L)</label>
-							</div>
-							<div>
-								<input id="custom_stadiumRankRight" type="checkbox">
-								<label for="custom_stadiumRankRight">Stadium Ranks (R)</label>
 							</div>
 							<div>
 								<input id="custom_weather" type="checkbox">
@@ -846,7 +838,7 @@
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
 					//{title: "Bats", field: "bats", width: 40, formatter: blurFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
@@ -855,6 +847,7 @@
 					{title: "Pitcher", field: "pitcherCols", columns: [
 						{title: "Name", field: "pitcher", width: 90, formatter: pitcherFormatter},
 						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},
+						{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},
 						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					]},
 					{title: "Historical FD", columns: [
@@ -1014,7 +1007,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`curr_ev`, "curr_fv", "curr_implied", "player", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`curr_ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 

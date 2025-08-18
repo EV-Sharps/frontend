@@ -195,7 +195,7 @@
 				]);
 			}
 			if (!DEBUG && window.location.protocol != "file:") {
-				TABLE.getRows("active")[0].getElement().click();
+				//TABLE.getRows("active")[0].getElement().click();
 			}
 		});
 
@@ -696,15 +696,8 @@
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
-					//resizable: false,
+					resizable: false,
 					headerSortStartingDir: "desc"
-				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
 				},
 				groupHeader: function(value, count, data, group){
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
@@ -758,7 +751,7 @@
 					{title: "FD", field: "bookOdds.fd",  width: MOBILE ? 60 : 85, sorter: "number", responsive: 5},
 					{title: "DK", field: "bookOdds.dk",  width: MOBILE ? 60 : 85, sorter: "number", responsive: 6},
 					{title: "MGM", field: "bookOdds.mgm",  width: 85, sorter: "number", responsive: 7},
-					{title: "ESPN", field: "bookOdds.espn",  width: 85, sorter: "number", responsive: 8, visible: false},
+					{title: "ESPN", field: "bookOdds.espn",  width: 85, sorter: "number", responsive: 8},
 					{title: "Bet365", field: "bookOdds.365",  width: 85, sorter: "number", responsive: 9},
 					{title: "Kambi", field: "bookOdds.kambi",  width: 85, sorter: "number", responsive: 11, visible: false},
 					{title: "CZ", field: "bookOdds.cz",  width: 85, sorter: "number", responsive: 12},

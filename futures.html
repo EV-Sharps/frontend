@@ -86,7 +86,7 @@
 		YEAR = YEAR.getFullYear();
 
 		if (!SPORT) {
-			SPORT = "mlb";
+			SPORT = "nfl";
 		}
 
 		if (TOGGLE_PERCENTILE) {
@@ -163,10 +163,10 @@
 				},
 				groupToggleElement: "header",
 				columns: [
-					{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: MOBILE ? plusMinusFormatter : evFormatter, responsive: 0},
+					{title: "Expected<br>Value", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: MOBILE ? plusMinusFormatter : evFormatter, responsive: 0},
 					{title: "EV", field: "vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: MOBILE ? plusMinusFormatter : evFormatter, responsive: 0, visible: false},
-					{title: "FV", field: "fairVal",  width: MOBILE ? 40 : 45, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: true},
-					{title: "Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, responsive: 0},
+					{title: "Fair<br>Value", field: "fairVal",  width: MOBILE ? 40 : 45, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: true},
+					{title: "¼ Kelly", field: "kelly",  width: MOBILE ? 40 : 45, sorter: "number", formatter: kellyFormatter, responsive: 0},
 					{
 						title: "Player",
 						field: "player",
@@ -180,6 +180,7 @@
 						responsive: 0,
 						frozen: MOBILE ? true : false
 					},
+					{title: "+EV Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, responsive: 0},
 					{title: `FD`, field: "bookOdds.fd",  width: 70, sorter: "number"},
 					{title: `DK`, field: "bookOdds.dk",  width: 70, sorter: "number"},
 					{title: `MGM`, field: "bookOdds.mgm",  width: 70, sorter: "number"},

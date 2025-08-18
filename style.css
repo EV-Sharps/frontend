@@ -647,16 +647,15 @@ h1 {
 		display: none;
 	}
 }
-/*
+.kelly-wager { display: none; }
 .kelly-cell:hover {
 	.kelly { display: none; }
 	.kelly-wager { display: initial; }
 }
-*/
 .field-cell {
 	position: relative;
 }
-.evbook-implied, .ev-cell .ou, .kelly-wager, .bvp-pitcher {
+.evbook-implied, .ev-cell .ou, .bvp-pitcher {
 	display: none;
 }
 .sport-img {

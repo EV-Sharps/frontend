@@ -73,7 +73,7 @@ async function upsertProfile(session) {
 		document.querySelector("#upgrade").style.display = "initial";
 	}
 
-	if (tier != "free" && document.querySelector("#customize")) {
+	if (tier == "sharp" && document.querySelector("#customize")) {
 		document.querySelector("#customize").style.display = "initial";
 	}
 	
@@ -118,7 +118,7 @@ function fillPricing(tier) {
 			btn.disabled = false;
 			btn.classList.remove('current-btn');
 		} else {
-			btnText.textContent = 'Upgrade';
+			//btnText.textContent = 'Upgrade';
 			btn.disabled = false;
 			btn.classList.remove('current-btn');
 		}
@@ -267,9 +267,6 @@ async function handleSession() {
 		} else {
 			// No Session
 			Array.from(document.querySelectorAll(".loggedIn")).map(x => x.style.display = "none");
-			if (PAGE == "profile") {
-				//window.location = `/pricing${HTML}`;
-			}
 		}
 	}	else {
 		// TEST. No Auth

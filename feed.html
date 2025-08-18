@@ -52,7 +52,7 @@
 		flex-direction: column;
 	}
 	#table, #updated-container {
-		max-width: 515px;
+		max-width: 560px;
 	}
 	#hrtable {
 		width: max-content;
@@ -168,9 +168,7 @@
 		let PLAYER = URLParams.get("player");
 		let PRETTY = URLParams.get("pretty");
 		TEAM = URLParams.get("team");
-		let TABLE = null;
-		let HIST = null;
-		let HRTABLE = null;
+		let TABLE, RES, HIST, HRTABLE;
 		let HRROWS = [];
 		let ALMOST = [];
 		let BARRELS = [];
@@ -280,6 +278,7 @@
 		}
 
 		function parseData(res, render=false) {
+			RES = res;
 			const data = [];
 				ALMOST = [];
 				BARRELS = [];
@@ -399,11 +398,7 @@
 					parseData(res, render);
 				}).catch(err => console.log(err));
 			} else {
-				url = `http://localhost:5000`;
-				if (!window.location.host.includes("localhost")) {
-					url = `https://api-production-3a3b.up.railway.app`;
-				}
-				fetch(url+"/api/feed?date="+DATE, {
+				fetch(API_BASE+"/api/feed?date="+DATE, {
 					headers: {
 						Authorization: `Bearer ${ACCESS_TOKEN}`
 					}
@@ -613,6 +608,8 @@
 						formatterParams:{ sport: SPORT },
 						width: MOBILE ? 90 : 150
 					},
+					{title: "Pitch", field: "pitch", hozAlign: "center",width: 40},
+					//{title: "Pitcher", field: "pitcher", headerFilter: "input",	width: MOBILE ? 90 : 150},
 					//{title: "PA", field: "pa", hozAlign: "center", sorter: "number"},
 					//{title: "In", field: "in", hozAlign: "center", sorter: "number"},
 					{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
@@ -663,10 +660,11 @@
 						width: 130
 					},
 					{title: "Result", field: "result", width: MOBILE ? 50 : 60, visible: false},
+					{title: "Pitch", field: "pitch", hozAlign: "center",width: 40},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
 					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
-					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true},
-					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true},
+					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 55, visible: MOBILE ? true : true},
+					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 45, visible: MOBILE ? true : true, formatter: laFormatter},
 					{title: "DT", field: "dt", visible: false},
 				]
 			});

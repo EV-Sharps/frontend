@@ -551,7 +551,15 @@ const summaryFormatter = function(cell, params, rendered) {
 	if (data.blurred) {
 		cls = "blurred";
 	}
+
+	if (field == "la") {
+		suffix += "°";
+	}
 	return `<div class="${cls}">${cell.getValue()}${suffix}</div>`;
+}
+
+const laFormatter = function(cell) {
+	return cell.getValue()+"°";
 }
 
 const baFormatter = function(cell) {
@@ -716,13 +724,18 @@ function getZColorRed(value) {
 
 function getZColor(value) {
   if (value == null || Number.isNaN(Number(value))) return "";
-  const v = Number(value)
+  const f = parseFloat(value);
+  const v = Number(value);
 
   // Lightness values (kept in readable range for dark bg)
   const L0 = 82; // near 0
   const Lmax = 46; // at |2|
 
-  if (v >= 0) {
+  if (f >= -0.24 && f <= -0.1) {
+  	return "";
+  }
+
+  if (f >= -0.1) {
     // Clamp positives 0–2 → blue scale
     const clamped = Math.min(2, v);
     const L = L0 + (Lmax - L0) * (clamped / 2);

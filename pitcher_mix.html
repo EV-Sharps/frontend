@@ -307,15 +307,12 @@
 			const top_pitches = getTopPitches(pitcher);
 			const throws = pitcher.pitch_hand.toLowerCase();
 			const batters = data.batters || [];
-			for (const row of batters) {
+			for (const row of batters.sort((a,b) => b.hr_pitch?.length - a.hr_pitch?.length)) {
 				const section = row.pitch[SIDE];
 				if (!section) continue;
 
 				const entries = Object.entries(section).map(([type, stats]) => {
 					let num = top_pitches[row.pitch_hand.toLowerCase()];
-					if (row.player == "spencer torkelson") {
-						console.log(row.pitch_hand, num, type, num.indexOf(type));
-					}
 					if (num) {
 						num = num.indexOf(type) === -1 ? 0 : num.indexOf(type) + 1;
 					} else {

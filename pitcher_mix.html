@@ -316,7 +316,7 @@
 			document.querySelector("#pitcher-hr-r").textContent = pitcher?.hr_pitch_r;
 
 			const top_pitches = getTopPitches(pitcher);
-			const throws = pitcher.pitch_hand.toLowerCase();
+			const throws = pitcher.pitch_hand?.toLowerCase();
 			const batters = data.batters || [];
 			for (const row of batters.sort((a,b) => b.hr_pitch?.length - a.hr_pitch?.length)) {
 				const section = row.pitch[SIDE];

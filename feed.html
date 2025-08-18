@@ -52,7 +52,7 @@
 		flex-direction: column;
 	}
 	#table, #updated-container {
-		max-width: 560px;
+		max-width: 645px;
 	}
 	#hrtable {
 		width: max-content;
@@ -158,7 +158,7 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "feed";
-		let SPORT = "feed";
+		let SPORT = "mlb";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
 		let TODAY = getToday();
@@ -608,8 +608,8 @@
 						formatterParams:{ sport: SPORT },
 						width: MOBILE ? 90 : 150
 					},
-					{title: "Pitch", field: "pitch", hozAlign: "center",width: 40},
-					//{title: "Pitcher", field: "pitcher", headerFilter: "input",	width: MOBILE ? 90 : 150},
+					{title: "Pitcher", field: "pitcher", headerFilter: "input", formatter: pitcherFormatter,	visible: MOBILE ? false : true},
+					
 					//{title: "PA", field: "pa", hozAlign: "center", sorter: "number"},
 					//{title: "In", field: "in", hozAlign: "center", sorter: "number"},
 					{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
@@ -623,6 +623,7 @@
 							return rowValue === headerValue;
 						}
 					},
+					{title: "Pitch", field: "pitch", hozAlign: "center",width: 40},
 					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true, formatter: summaryFormatter},
 					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},

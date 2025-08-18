@@ -693,14 +693,20 @@ const pitcherFormatter = function(cell, params, rendered) {
 	if (!data.game) {
 		return "";
 	}
+	let [a,h] = data.game.split(" @ ");
+
+	let opp = data.opp;
+	if (!opp) {
+		opp = a == data.team ? h : a;
+	}
 
 	const ah = `<span style="width: 12px;text-align:center;">
 		${data.game.split(" @ ")[0] != data.team ? "@" : "v"}
 	</span>`;
 	return `<div class="opp-cell">
-			${getTeamImg(SPORT, data.opp)}
-			${title(cell.getValue().split(" ").at(-1))}
-		<span class="bats">${data.pitcherLR}</span>
+			${getTeamImg(SPORT, opp)}
+			${title(cell.getValue()?.split(" ").at(-1))}
+		<span class="bats">${data.pitcherLR || ""}</span>
 		</div>`;
 }
 

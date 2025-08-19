@@ -35,6 +35,7 @@ let PAGE_DROPDOWN = `
 	<option value="barrels">🏏 Barrels</option>
 	<option value="trends">📈 Trends</option>
 	<option value="mlb">🎯 Props</option>
+	<option value="bases">⬜ Bases</option>
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">💣 Dingers (Kambi)</option>
 	<option value="preview">🔍 Pitcher Preview</option>

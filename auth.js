@@ -293,11 +293,8 @@ async function handleSession() {
 		fetchPropsData();
 	} else if (PAGE == "bases") {
 		fetchBasesData();
-		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
-				fetchBasesData(render=false);
-			}
-		}, 60 * 1000);
+	} else if (PAGE == "sb") {
+		fetchSBData();
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
 		setInterval(() => {

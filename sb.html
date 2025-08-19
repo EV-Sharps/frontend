@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>⚾ Bases</title>
+	<title>⚾ Stolen Bases</title>
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
@@ -500,7 +500,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "bases";
+		PAGE = "sb";
 		let TABLE, EV_COL, FV_COL, RES;
 		let url = "";
 		const windowURL = new URL(window.location.href);
@@ -667,10 +667,10 @@
 			}, 200);
 		}
 
-		async function fetchBasesData(render=true) {
+		async function fetchSBData(render=true) {
 			let url = "/api/ev";
 			const params = new URLSearchParams();
-			params.set("bases", "true");
+			params.set("sb", "true");
 			if (NOCACHE != undefined) {
 				params.set("nocache", "true");
 			}
@@ -827,9 +827,9 @@
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
 					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 75, sorter: "number", visible: NO365 == undefined ? true : false},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 70 : 75, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 75, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},

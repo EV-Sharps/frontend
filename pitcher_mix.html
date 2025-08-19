@@ -33,14 +33,14 @@
 		.table {
 			max-height: 150px;
 		}
-		#pitcher-name {
+		#pitcher-name, #team-pitcher-name {
 			text-align: center;
 		}
 		#pitcher-container {
 			width: 80%;
   			justify-content: space-evenly;
 		}
-		#pitcher-tables {
+		#team-pitcher-tables, #pitcher-tables {
 			display: flex;
 			justify-content: space-evenly;
 		}
@@ -202,6 +202,23 @@
 							<div id="pitcher-table-r"></div>
 						</div>
 					</div>
+					<h3 id="team-pitcher-name"></h3>
+					<div id="team-pitcher-tables">
+						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
+							<div style="display: flex; justify-content: space-between;">
+								<h4>vs LHB</h4>
+								<div id="team-pitcher-hr-l"></div>
+							</div>
+							<div id="team-pitcher-table-l"></div>	
+						</div>
+						<div class="split-panel is-hidden" id="panel-r" role="tabpanel" aria-labelledby="tab-r">
+							<div style="display: flex; justify-content: space-between;">
+								<h4>vs RHB</h4>
+								<div id="team-pitcher-hr-r"></div>
+							</div>
+							<div id="team-pitcher-table-r"></div>
+						</div>
+					</div>
 				</div>
 				<div id="tables">
 					<div id="lefties"></div>
@@ -268,6 +285,7 @@
 				RES = data;
 				renderGames(data.games);
 				renderPitcherTable(data.pitcher);
+				renderPitcherTable(data.team_pitcher, "team-");
 				renderTable(data.batters);
 
 				setTimeout(function() {
@@ -288,9 +306,7 @@
 
 		function safe(n){ return Number.isFinite(n) ? n : 0; }
 
-		function formatMix(data) {
-			const pitcher = data.pitcher;
-			SIDE = pitcher.pitch_hand?.toLowerCase() || "both";
+		function transformPitcher(pitcher) {
 			for (side of ["l", "r"]) {
 				if (!pitcher?.pitch) {
 					continue;
@@ -311,9 +327,21 @@
 				});
 				pitcher[`pitch_table_${side}`] = entries;
 			}
+		}
+
+		function formatMix(data) {
+			const pitcher = data.pitcher;
+			const team_pitcher = data.team_pitcher;
+			SIDE = pitcher.pitch_hand?.toLowerCase() || "both";
+
+			transformPitcher(pitcher);
+			transformPitcher(team_pitcher);			
 
 			document.querySelector("#pitcher-hr-l").textContent = pitcher?.hr_pitch_l;
 			document.querySelector("#pitcher-hr-r").textContent = pitcher?.hr_pitch_r;
+
+			document.querySelector("#team-pitcher-hr-l").textContent = team_pitcher?.hr_pitch_l;
+			document.querySelector("#team-pitcher-hr-r").textContent = team_pitcher?.hr_pitch_r;
 
 			const top_pitches = getTopPitches(pitcher);
 			const throws = pitcher.pitch_hand?.toLowerCase();
@@ -439,10 +467,10 @@
 			}
 		}
 
-		function renderPitcherTable(data) {
-			document.querySelector("#pitcher-name").textContent =`${title(data.player)} (${data.pitch_hand})`;
+		function renderPitcherTable(data, prefix="") {
+			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand})`;
 			for (side of ["l", "r"]) {
-				const tableId = `pitcher-table-${side}`;
+				const tableId = `${prefix}pitcher-table-${side}`;
 				TABLE = new Tabulator("#"+tableId, {
 					tooltipsHeader: true,
 					placeholder:"Data Loading...",

@@ -291,6 +291,13 @@ async function handleSession() {
 		document.querySelector("#pricing").style.display = "none";
 	} else if (PAGE === "props") {
 		fetchPropsData();
+	} else if (PAGE == "bases") {
+		fetchBasesData();
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchBasesData(render=false);
+			}
+		}, 60 * 1000);
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
 		setInterval(() => {

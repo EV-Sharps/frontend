@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>⚾ Dingers</title>
+	<title>⚾ Bases</title>
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
@@ -500,7 +500,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "dingers";
+		PAGE = "bases";
 		let TABLE, EV_COL, FV_COL, RES;
 		let url = "";
 		const windowURL = new URL(window.location.href);
@@ -667,17 +667,12 @@
 			}, 200);
 		}
 
-		async function fetchDingersData(render=true) {
+		async function fetchBasesData(render=true) {
 			let url = "/api/ev";
 			const params = new URLSearchParams();
-			if (KAMBI != undefined) {
-				params.set("kambi", "true");
-			}
+			params.set("bases", "true");
 			if (NOCACHE != undefined) {
 				params.set("nocache", "true");
-			}
-			if (NO365 != undefined) {
-				params.set("no365", "true");
 			}
 			if (params.toString()) {
 				url += "?"+params.toString();
@@ -813,7 +808,8 @@
 						formatter: playerFormatter,
 						width: MOBILE ? 90 : 140,
 						formatterParams:{
-							sport: SPORT
+							sport: SPORT,
+							noProp: true
 						},
 						hozAlign: "left",
 						responsive: 0,
@@ -836,7 +832,7 @@
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},

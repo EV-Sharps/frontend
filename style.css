@@ -1096,6 +1096,7 @@ button#logout:hover {
 		flex: 0 0 auto;
 	}
 	#center-dropdown {
+		width: 100%;
 		transform: none;
 		position: static;
 		display: flex;
@@ -1106,7 +1107,7 @@ button#logout:hover {
 		padding: 0.5rem 0;
 		-webkit-overflow-scrolling: touch;
 	}
-	#center-dropdown button {
+	#center-dropdown button, #center-dropdown select {
 		flex: 0 0 auto;
 	}
 	#content {

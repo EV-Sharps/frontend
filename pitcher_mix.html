@@ -365,7 +365,7 @@
 				div.innerHTML = `
 					<div style="display: flex; justify-content: space-between;align-items: flex-end;">
 						<h3>${title(row.player)} (${row.pitch_hand.replace("B", "S")})</h3>
-						<div>${row[`hr_pitch_${SIDE}`] || ""}</div>
+						<div>${(row[`hr_pitch_${SIDE}`] || []).slice(-7).join(",")}</div>
 					</div>
 					<div id="${tableId}" class="table"></div>
 				`

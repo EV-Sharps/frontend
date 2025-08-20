@@ -35,6 +35,8 @@
 		}
 		#pitcher-name, #team-pitcher-name {
 			text-align: center;
+			display: flex;
+			justify-content: center;
 		}
 		#pitcher-container {
 			width: 80%;
@@ -43,6 +45,9 @@
 		#team-pitcher-tables, #pitcher-tables {
 			display: flex;
 			justify-content: space-evenly;
+		}
+		#team-pitcher-tables, .team-pitcher {
+			display: none;
 		}
 		h4 {
 			margin: 0;
@@ -202,8 +207,8 @@
 							<div id="pitcher-table-r"></div>
 						</div>
 					</div>
-					<h3 id="team-pitcher-name"></h3>
-					<div id="team-pitcher-tables">
+					<h3 id="team-pitcher-name" class="team-pitcher"></h3>
+					<div id="team-pitcher-tables" class="team-pitcher">
 						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
 							<div style="display: flex; justify-content: space-between;">
 								<h4>vs LHB</h4>
@@ -244,6 +249,7 @@
 		const URLParams = new URLSearchParams(windowURL.search);
 		let DATE = URLParams.get("date");
 		let MARK = URLParams.get("mark");
+		let GAME = URLParams.get("game") != undefined;
 		let TODAY = getToday();
 		let SPORT = "mlb";
 		let PLAYER = URLParams.get("player");
@@ -299,6 +305,10 @@
 							{column: col, dir: "desc"}
 						])
 						*/
+					}
+					if (GAME) {
+						document.querySelector("#team-pitcher-tables").style.display = "flex";
+						document.querySelectorAll(".team-pitcher").forEach(r => r.style.display = "flex");
 					}
 				}, 200);
 			}).catch(err => console.log(err));

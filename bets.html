@@ -53,8 +53,8 @@
 			<div id="table-container">
 				<div class="record">
 				  <ul style="list-style:none; padding:0; margin:0;">
-				  	<li><strong>'23-'25 +EV HRs:</strong> 597-2613 <span class="units">(+179.28u)</span></li>
-					<li><strong>2025 +EV HRs:</strong> 272-1312 <span class="units">(+50.07u)</span></li>
+				  	<li><strong>'23-'25 +EV HRs:</strong> 599-2628 <span class="units">(+175.78u)</span></li>
+					<li><strong>2025 +EV HRs:</strong> 274-1327 <span class="units">(+46.57u)</span></li>
 				  </ul>
 				</div>
 				<div id="table"></div>
@@ -77,6 +77,7 @@
 			fetch(API_BASE+"/api/bets", {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
+				RES = data;
 				renderTable(data);
 			}).catch(err => console.log(err));
 		}
@@ -101,15 +102,31 @@
 				groupToggleElement: "header",
 				columns: [
 					{
-						title: "Expected<br>Value",
+						title: "Circa<br>+EV",
 						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						responsive: 0,
+						formatter: evFormatter
+					},
+					{
+						title: "¼ Kelly",
+						field: "kelly",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						responsive: 0
 					},
 					{
-						title: "¼ Kelly",
-						field: "kelly",
+						title: "Market<br>+EV",
+						field: "mkt_ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						responsive: 0,
+						formatter: evFormatter
+					},
+					{
+						title: "Market<br>¼ Kelly",
+						field: "mkt_kelly",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						responsive: 0

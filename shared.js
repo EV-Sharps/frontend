@@ -35,7 +35,8 @@ let PAGE_DROPDOWN = `
 	<option value="barrels">🏏 Barrels</option>
 	<option value="trends">📈 Trends</option>
 	<option value="mlb">🎯 Props</option>
-	<option value="bases">⬜ Bases</option>
+	<option value="bases">⬜ Total Bases</option>
+	<option value="sb">⬜ Stolen Bases</option>
 	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">💣 Dingers (Kambi)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
@@ -705,7 +706,7 @@ const pitcherFormatter = function(cell, params, rendered) {
 		${data.game.split(" @ ")[0] != data.team ? "@" : "v"}
 	</span>`;
 	return `<div class="opp-cell">
-			${getTeamImg(SPORT, opp)}
+			${getTeamImg(SPORT, opp.replace("-gm2", ""))}
 			${title(cell.getValue()?.split(" ").at(-1))}
 		<span class="bats">${data.pitcherLR || ""}</span>
 		</div>`;
@@ -887,14 +888,15 @@ const evFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	let ev = cell.getValue();
 	if (!ev || data.prop == "separator") return "";
+	let cls = "";
 	if (parseFloat(ev) > 0) {
 		ev = "+"+ev;
+		cls = "positive";
 	}
-
-	let ou = data.ou || data.daily.ou;
+	let ou = data.ou || data.daily?.ou || "";
 	return `
 		<div class='ev-cell'>
-			<span class='ev'>${ev}%</span>
+			<span class='ev ${cls}'>${ev}%</span>
 			<span class='ou'>${ou}</span>
 		</div>
 	`;
@@ -957,7 +959,7 @@ const evBookFormatter = function(cell, params, rendered) {
 			</div>`;
 	}
 
-	if (params.book && (!params.book.includes("vs-") || params.book.includes("-vs-circa"))) {
+	if (params.book && (!params.book.includes("vs-") || params.book.includes("-vs-circa") || params.book.includes("-vs-fd"))) {
 		const book = params.book.split("-")[0];
 		let line = data.bookOdds[book] || "0";
 		if (line.includes("/")) {

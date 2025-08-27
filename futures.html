@@ -119,9 +119,11 @@
 				setTimeout(() => {
 					if (BOOK) {
 						TABLE.hideColumn("ev");
+						TABLE.hideColumn("kelly");
 						TABLE.hideColumn("fairVal");
 						TABLE.showColumn(`${BOOK}_ev`);
 						TABLE.showColumn(`${BOOK}_fairVal`);
+						TABLE.showColumn(`${BOOK}_kelly`);
 						TABLE.setSort([
 							{column: `${BOOK}_ev`, dir: "desc"}
 						]);
@@ -167,6 +169,7 @@
 					{title: "EV", field: "vs-circa_ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: MOBILE ? plusMinusFormatter : evFormatter, responsive: 0, visible: false},
 					{title: "Fair<br>Value", field: "fairVal",  width: MOBILE ? 40 : 45, sorter: "number", formatter: plusMinusFormatter, responsive: 0, visible: true},
 					{title: "¼ Kelly", field: "kelly",  width: MOBILE ? 40 : 45, sorter: "number", formatter: kellyFormatter, responsive: 0},
+					{title: "¼ Kelly", field: "vs-circa_kelly",  width: MOBILE ? 40 : 45, sorter: "number", formatter: kellyFormatter, responsive: 0},
 					{
 						title: "Player",
 						field: "player",

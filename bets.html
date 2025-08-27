@@ -53,8 +53,8 @@
 			<div id="table-container">
 				<div class="record">
 				  <ul style="list-style:none; padding:0; margin:0;">
-				  	<li><strong>'23-'25 +EV HRs:</strong> 599-2628 <span class="units">(+175.78u)</span></li>
-					<li><strong>2025 +EV HRs:</strong> 274-1327 <span class="units">(+46.57u)</span></li>
+				  	<li id="record-all"><strong>'23-'25 +EV HRs:</strong> <span class="w-l">603-2643</span> <span class="units">(+175.43u)</span></li>
+					<li id="record-szn"><strong>2025 +EV HRs:</strong> <span class="w-l">278-1342</span> <span class="units">(+46.22u)</span></li>
 				  </ul>
 				</div>
 				<div id="table"></div>
@@ -78,7 +78,13 @@
 				headers: { "Accept": "application/vnd.github.v3.raw" }
 			}).then(response => response.json()).then(data => {
 				RES = data;
-				renderTable(data);
+				let [wl, units] = data.record.all.split(" ");
+				document.querySelector("#record-all .w-l").textContent = wl;
+				document.querySelector("#record-all .units").textContent = units;
+				[wl, units] = data.record.szn.split(" ");
+				document.querySelector("#record-szn .w-l").textContent = wl;
+				document.querySelector("#record-szn .units").textContent = units;
+				renderTable(data.data);
 			}).catch(err => console.log(err));
 		}
 

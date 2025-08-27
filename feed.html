@@ -207,7 +207,7 @@
 			let sort = [];
 			if (result) {
 				rows = HRROWS;
-				sort = [{column: "dt", dir: "desc"}];
+				sort = [{column: "created_at", dir: "desc"}];
 			} else if (event.target.value == "barrels") {
 				rows = BARRELS;
 				sort = [
@@ -320,7 +320,7 @@
 							data.push(row);
 							if (row["result"] == "Home Run") {
 								HRROWS.push(row);
-							} else if (row["hr/park"] != "" && (row["hr/park"].split("/")[0] != "0")) {
+							} else if (row["hr/park"] && row["hr/park"] != "" && (row["hr/park"].split("/")[0] != "0")) {
 								ALMOST.push(row);
 							}
 
@@ -353,61 +353,26 @@
 				}
 		}
 
-		async function fetchFeed2(render=false) {
-			let today = new Date().toISOString().split('T')[0];
-			if (DATE) {
-				today = DATE;
+		async function fetchFeed(render=false) {
+			let url = "/api/feed";
+			const params = new URLSearchParams();
+
+			if (DATE && DATE != TODAY) {
+				params.set("date", DATE);
 			}
 
-			let url = `http://localhost:5000/api/feed?date=${today}`;
-			if (!window.location.host.includes("localhost")) {
-				url = `https://api-production-3a3b.up.railway.app/api/feed?date=${today}`;
+			if (params.toString()) {
+				url += "?"+params.toString();
 			}
-			fetch(url, {
+			fetch(API_BASE+url, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
-			}).then(res => res.json()).then(res => {
-				// from static g
+			}).then(
+				response => response.json()
+			).then(res => {
 				parseData(res, render);
-				
-				// When we go DB calls
-				//HRROWS = data.filter(r => r.result == "Home Run");
-			//	renderTable(data);
-				//renderHRTable(HRROWS);
 			}).catch(err => console.log(err));
-		}
-
-		async function fetchFeed(render=false) {
-			let url = "https://api.github.com/repos/dailyev/feed/contents/feed.json";
-
-			if (DATE && DATE != TODAY) {
-				url = `https://api.github.com/repos/dailyev/props/contents/static/splits/mlb_feed/${DATE}.json`;
-			} else if (PLAYER) {
-				url = `https://api.github.com/repos/dailyev/props/contents/static/splits/mlb_feed/${TEAM}.json`;
-			}
-
-			if (url.includes("/feed/")) {
-				fetch(url, {
-					headers: {
-						"Accept": "application/vnd.github.v3.raw"
-					}
-				}).then(
-					response => response.json()
-				).then(res => {
-					parseData(res, render);
-				}).catch(err => console.log(err));
-			} else {
-				fetch(API_BASE+"/api/feed?date="+DATE, {
-					headers: {
-						Authorization: `Bearer ${ACCESS_TOKEN}`
-					}
-				}).then(
-					response => response.json()
-				).then(res => {
-					parseData(res, render);
-				}).catch(err => console.log(err));
-			}
 		}
 		renderTable([]);
 		renderHRTable([]);

@@ -853,13 +853,10 @@
 					
 					//{title: "xBA", field: "xba",  width: 45, sorter: "number", formatter: avgFormatter, visible: MOBILE ? false : true},
 					{title: "Vs Pitcher", field: "bvp", hozAlign: "left", width: 70},
-					{title: "BPP Factors", columns: [
-						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
-						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
-					]},
+					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter},
 					{title: "Adv Batter", columns: [
-						{title: "xBA", field: "savant.est_ba", width: 45, formatter: percentileFormatter, visible: true },
-						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: percentileFormatter, visible: true },
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: true },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: true },
 						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
 						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: percentileFormatter },

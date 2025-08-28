@@ -255,7 +255,7 @@ async function upgrade(tier) {
 
 async function handleSession() {
 	if (ENABLE_AUTH) {
-		document.querySelector("#auth-buttons").style.display = "initial";
+		document.querySelector("#auth-buttons").style.display = "flex";
 		const { data: { session }, error } = await SB.auth.getSession();
 		if (session) {
 			if (session.access_token) {

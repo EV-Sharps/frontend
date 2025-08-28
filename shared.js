@@ -1707,6 +1707,10 @@ function openOverlay() {
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
 		metadata[PAGE] = DEFAULT_FIELDS;
+		if (MOBILE) {
+			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
+			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");
+		}
 	}
 	document.querySelector("#overlay").style.display = "flex";
 

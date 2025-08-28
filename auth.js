@@ -293,6 +293,8 @@ async function handleSession() {
 		fetchPropsData();
 	} else if (PAGE == "bases") {
 		fetchBasesData();
+	} else if (PAGE == "feed") {
+		runFeed();
 	} else if (PAGE == "sb") {
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {

@@ -30,6 +30,8 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
 	<option value="feed">📡 Feed</option>
+	<option value="bets">🎟️ Bets</option>
+	<option value="bets">📉 Movement</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels</option>
@@ -37,7 +39,6 @@ let PAGE_DROPDOWN = `
 	<option value="mlb">🎯 Props</option>
 	<option value="bases">⬜ Total Bases</option>
 	<option value="sb">⬜ Stolen Bases</option>
-	<!-- <option value="historical">📜 Dingers (H)</option> -->
 	<option value="kambi">💣 Dingers (Kambi)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
@@ -50,6 +51,9 @@ let PAGE_DROPDOWN = `
 	<option value="nhl">🏒 NHL Props</option>
 	<option value="nba">🏀 NBA Props</option>
 	<option value="ncaab">🏀 CBB Props</option>
+	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
+	<option value="profile">👤 Profile</option>
+	<option value="pricing">💳 Pricing</option>
 `;
 
 setTimeout(() => {
@@ -121,6 +125,10 @@ function isBarrel2(row) {
 function downloadCSV() {
 	// excel-friendly
 	TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+}
+
+const timeAgoFormatter = function(cell) {
+	return timeAgo(cell.getValue());
 }
 
 function timeAgo(timestamp, short=false) {
@@ -695,6 +703,8 @@ const pitcherFormatter = function(cell, params, rendered) {
 	if (!data.game) {
 		return "";
 	}
+
+	let cls = data.blurred ? "blurred" : "";
 	let [a,h] = data.game.split(" @ ");
 
 	let opp = data.opp;
@@ -705,7 +715,7 @@ const pitcherFormatter = function(cell, params, rendered) {
 	const ah = `<span style="width: 12px;text-align:center;">
 		${data.game.split(" @ ")[0] != data.team ? "@" : "v"}
 	</span>`;
-	return `<div class="opp-cell">
+	return `<div class="opp-cell ${cls}">
 			${getTeamImg(SPORT, opp.replace("-gm2", ""))}
 			${title(cell.getValue()?.split(" ").at(-1))}
 		<span class="bats">${data.pitcherLR || ""}</span>
@@ -1657,7 +1667,7 @@ const diffFormatter = function(cell) {
 }
 
 const DEFAULT_FIELDS = [
-	"curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "book", "bookOdds_fd", "bookOdds_365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_espn", "bookOdds_kambi", "bookOdds_cz", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
+	"curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "book", "bookOdds_fd", "bookOdds_365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
 	"stadiumRank", "stadiumRankLeft", "stadiumRankRight"
 ];
 

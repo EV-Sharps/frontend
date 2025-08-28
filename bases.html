@@ -620,7 +620,7 @@
 				data = data.filter(r => PLAYER.split(",").includes(r.player))
 			}
 			let OLD = RES;
-			RES = data;
+			RES = data || [];
 
 			RES.forEach(row => {
 				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]

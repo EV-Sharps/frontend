@@ -371,7 +371,7 @@
 						{title: "2B", field: "bvpStats.2b", width: 35},
 						{title: "HR", field: "bvpStats.hr", width: 35},
 					]},
-					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75},
+					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
 					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
 					{title: "Pitcher HR Allowed", columns: [
 						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
@@ -382,10 +382,12 @@
 						//{title: "R/PA", field: "percs.hr_r_rate", width: 45, formatter: percentileFormatter, sorter: "number" },
 					]},
 					
+					/*
 					{title: "BPP HR Factors", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
 						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter, visible: false}
 					]},
+					*/
 					{title: "Last Homer (Due)", columns: [
 						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
 						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
@@ -828,7 +830,7 @@
 
 		function pretty_() {
 			TABLE.getColumns().map(col => col.hide());
-			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "bpp", "percs.home_run", "percs.hr_pa", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median", "savant.barrels_per_bip", "savant.exit_velocity_avg", "pitcherData.barrel_batted_rate", "pitcherData.exit_velocity_avg", "bvpStats.h", "bvpStats.avg", "bvpStats.slg", "bvpStats.2b", "bvpStats.hr"].forEach(col => TABLE.showColumn(col));
+			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "percs.home_run", "percs.hr_pa", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median", "savant.barrels_per_bip", "savant.exit_velocity_avg", "pitcherData.barrel_batted_rate", "pitcherData.exit_velocity_avg", "bvpStats.h", "bvpStats.avg", "bvpStats.slg", "bvpStats.2b", "bvpStats.hr"].forEach(col => TABLE.showColumn(col));
 		}
 	</script>
 </body>

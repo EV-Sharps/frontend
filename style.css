@@ -437,7 +437,7 @@ button {
 #title {
 }
 #donate {
-	display: flex;
+	display: none;
 	justify-content: center;
 	align-items: center;
 	gap: 5px;
@@ -445,7 +445,7 @@ button {
 	right: 1rem;
 }
 #auth-buttons {
-	display: none;
+	display: flex;
 	align-items: center;
 	gap: 10px;
 	justify-content: flex-end;

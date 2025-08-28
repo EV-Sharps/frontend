@@ -322,10 +322,12 @@
 								<input id="custom_bookOdds_mgm" type="checkbox">
 								<label for="custom_bookOdds_mgm">MGM</label>
 							</div>
+							<!-- 
 							<div>
-								<input id="custom_bookOdds_espn" type="checkbox">
-								<label for="custom_bookOdds_espn">ESPN</label>
+								<input id="custom_bookOdds_kambi" type="checkbox">
+								<label for="custom_bookOdds_kambi">Kambi</label>
 							</div>
+							-->
 							<div>
 								<input id="custom_bookOdds_cz" type="checkbox">
 								<label for="custom_bookOdds_cz">Caesars</label>
@@ -360,6 +362,7 @@
 							</div>
 						</div>
 						<!-- BPP -->
+						<!-- 
 						<div>
 							<h3>Ballparkpal</h3>
 							<div>
@@ -371,6 +374,7 @@
 								<label for="custom_playerFactor">BPP Player</label>
 							</div>
 						</div>
+						-->
 						<!-- Savant --> 
 						<div>
 							<h3>Adv. Batter Data</h3>
@@ -622,6 +626,8 @@
 			let OLD = RES;
 			RES = data;
 
+			//KAMBI = CURR_USER.metadata[PAGE]?.includes("bookOdds_kambi");
+
 			RES.forEach(row => {
 				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
 				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
@@ -670,7 +676,7 @@
 		async function fetchDingersData(render=true) {
 			let url = "/api/ev";
 			const params = new URLSearchParams();
-			if (KAMBI != undefined) {
+			if (KAMBI) {
 				params.set("kambi", "true");
 			}
 			if (NOCACHE != undefined) {
@@ -834,7 +840,7 @@
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
+					//{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
@@ -865,7 +871,7 @@
 						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
 						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
 					]},
-					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter},
+					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter, visible: false},
 					/*
 					{title: "BPP", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
@@ -979,7 +985,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "bpp", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "curr_implied", dir: "desc"}
@@ -998,9 +1004,15 @@
 					currentRank++;
 				}
 
+				if (currentRank > 20) {
+					continue;
+				}
+
 				tweet.push(`${currentRank}. ${title(row.player)} - ${row["curr_implied"]}%`);
 			}
-			console.log(tweet.join("\n"));
+			const today = new Date();
+			let header = `🎯 Circa's top 20 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 
+			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 
 		function pretty_() {

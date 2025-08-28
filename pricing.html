@@ -43,6 +43,10 @@
 		justify-content: center;
 	}
 
+	#pricing-cards p {
+		margin:0;font-size:1.1rem; line-height:1.4;
+	}
+
 	#pricing-cards .pricing-intro {
 		color: #aaa;
 		margin-bottom: 2rem;
@@ -167,6 +171,27 @@
 			gap: 2rem;
 			margin-bottom: 4rem;
 		}
+		#pricing-cards h2 {
+			font-size: 1.25rem;
+			margin-top: 0.5rem;
+		}
+		#pricing-cards p {
+			font-size: 0.9rem;
+			padding: 0.5rem;
+		}
+		#header {
+			flex-direction: row;
+			align-items: center;
+		}
+		#center-dropdown {
+			width: auto;
+		}
+		#page-select {
+			max-width: 150px;
+		}
+		#auth-buttons {
+			justify-content: center;
+		}
 	}
 </style>
 <body>
@@ -216,7 +241,7 @@
 				<div style="display: flex;flex-direction: column;align-items: center;">
 					<div>
 						<h2>Become a +EV Sharp today!</h2>
-						<p style="margin:0;font-size:1.1rem; line-height:1.4;">
+						<p>
 							Our system pinpoints +EV Home Runs, Touchdowns, and Goalscorers, and other props so you can act fast, bet smart, and stay ahead of the market
 						</p>
 					</div>
@@ -249,7 +274,7 @@
 						<ul>
 							<li>⚡ Full Website Access</li>
 							<li>📊 Advanced Stats</li>
-							<li>🎽 Player Props</li>
+							<li style="display: flex; flex-direction: column;">🎽 Player Props <span class="badge badge--soon">In Progress</span></li>
 							<li>💾 Data Dumps</li>
 							<li>🔓 Analysts Discord channels</li>
 						</ul>
@@ -260,9 +285,9 @@
 					</div>
 
 					<div id="sharp-card" class="pricing-card popular" data-tier="sharp">
-						<span class="plan__eyebrow">Early Access</span>
 						<h3>🎯 Sharp</h3>
-						<p class="price">$20 <span>/mo</span></p>
+						<p class="price">$25 <span>/mo</span></p>
+						<span class="plan__eyebrow">Early Access</span>
 						<ul>
 							<li>💻 Everything in Analyst Tier</li>
 							<li>📈 Circa movement alerts</li>
@@ -272,7 +297,7 @@
 							<li>🔓 All Discord channels</li>
 						</ul>
 						<button class="select-btn highlight" onclick="handlePlanClick(this, 'sharp')">
-							<span class="btn-text">1st Month 50% Off!</span>
+							<span class="btn-text">1st Month 40% Off!</span>
 							<span class="spinner" style="display:none;"></span>
 						</button>
 					</div>

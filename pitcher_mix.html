@@ -188,6 +188,11 @@
 					<div id="games" class="games-scroller"></div>
 					<button class="nav next" aria-label="Next">›</button>
 				</div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to view full slate! 
+					</div>
+				</div>
 				<div id="pitcher-container">
 					<h3 id="pitcher-name"></h3>
 					<div id="pitcher-splits-toggle" class="splits-toggle" role="tablist" aria-label="Splits">
@@ -287,7 +292,9 @@
 		function fetchMixData() {
 			renderTable([]);
 			fetch(API_BASE+`/api/pitcher_mix?team=${TEAM}`, {
-				headers: { "Accept": "application/vnd.github.v3.raw" }
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
 			}).then(response => response.json()).then(data => {
 				data = data.data;
 				formatMix(data);

@@ -130,7 +130,9 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "game", dir: "desc"},
+					{column: "cashedOut", dir: "desc"},
+					{column: "ev", dir: "desc"},
+					{column: "mkt_ev", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -138,12 +140,20 @@
 					resizable: false,
 					headerSortStartingDir: "desc"
 				},
+				rowFormatter: function(row) {
+					const data = row.getData();
+					if (data.cashedOut) {
+						row.getElement().querySelector(".player-cell").style.textDecoration = "line-through";
+						row.getElement().querySelector(".evbook-cell").style.textDecoration = "line-through";
+						//row.getElement().style.opacity = "0.7";
+					}
+				},
 				groupToggleElement: "header",
 				columns: [
 					{
 						title: "Circa<br>+EV",
 						field: "ev",
-						width: MOBILE ? 40 : 60,
+						width: MOBILE ? 45 : 60,
 						sorter: "number",
 						responsive: 0,
 						formatter: evFormatter
@@ -158,7 +168,7 @@
 					{
 						title: "Market<br>+EV",
 						field: "mkt_ev",
-						width: MOBILE ? 40 : 60,
+						width: MOBILE ? 45 : 60,
 						sorter: "number",
 						responsive: 0,
 						formatter: evFormatter

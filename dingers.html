@@ -362,19 +362,19 @@
 							</div>
 						</div>
 						<!-- BPP -->
-						<!-- 
 						<div>
 							<h3>Ballparkpal</h3>
 							<div>
 								<input id="custom_bpp" type="checkbox">
 								<label for="custom_bpp">BPP Game</label>
 							</div>
+							<!-- 
 							<div>
 								<input id="custom_playerFactor" type="checkbox">
 								<label for="custom_playerFactor">BPP Player</label>
 							</div>
+							-->
 						</div>
-						-->
 						<!-- Savant --> 
 						<div>
 							<h3>Adv. Batter Data</h3>
@@ -871,7 +871,7 @@
 						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
 						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
 					]},
-					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter, visible: false},
+					{title: "@BPP<br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
 					/*
 					{title: "BPP", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},

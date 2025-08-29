@@ -90,6 +90,11 @@
 		<main>
 			<div id="table-container">
 				<div id="updated">Updated: </div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to sharp to see player props
+					</div>
+				</div>
 				<div style="display: flex; justify-content: space-evenly; height: 100%; width: 100%; overflow: hidden;">
 					<div id="table"></div>
 					<div id="right-body">
@@ -751,7 +756,7 @@
 					{title: "FD", field: "bookOdds.fd",  width: MOBILE ? 60 : 85, sorter: "number", responsive: 5},
 					{title: "DK", field: "bookOdds.dk",  width: MOBILE ? 60 : 85, sorter: "number", responsive: 6},
 					{title: "MGM", field: "bookOdds.mgm",  width: 85, sorter: "number", responsive: 7},
-					{title: "ESPN", field: "bookOdds.espn",  width: 85, sorter: "number", responsive: 8},
+					{title: "ESPN", field: "bookOdds.espn",  width: 85, sorter: "number", responsive: 8, visible: false},
 					{title: "Bet365", field: "bookOdds.365",  width: 85, sorter: "number", responsive: 9},
 					{title: "Kambi", field: "bookOdds.kambi",  width: 85, sorter: "number", responsive: 11, visible: false},
 					{title: "CZ", field: "bookOdds.cz",  width: 85, sorter: "number", responsive: 12},

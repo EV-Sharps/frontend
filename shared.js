@@ -30,8 +30,8 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
 	<option value="feed">📡 Feed</option>
-	<option value="bets">🎟️ Bets</option>
-	<option value="movement">📉 Movement</option>
+	<option value="bets">🎟️ Bets (Sharps)</option>
+	<option value="movement">📉 Movement (Sharps)</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels</option>
@@ -128,7 +128,7 @@ function downloadCSV() {
 }
 
 const timeAgoFormatter = function(cell) {
-	return timeAgo(cell.getValue());
+	return timeAgo(cell.getValue()).replace(" minutes", " min");
 }
 
 function timeAgo(timestamp, short=false) {
@@ -1065,7 +1065,8 @@ const kellyFormatter = function(cell, params, rendered) {
 	if (data.line < 0) {
 		dec = 100 / data.line;
 	}
-	const kelly = parseFloat(data.ev) / Math.abs(dec) / 4;
+	let ev = params.circa ? data["vs-circa_ev"] : data.ev;
+	const kelly = parseFloat(ev) / Math.abs(dec) / 4;
 	return `
 		<div class='kelly-cell'>
 			<div class='kelly'>${kelly.toFixed(2)}u</div>

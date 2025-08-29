@@ -129,6 +129,21 @@
 				groupToggleElement: "header",
 				columns: [
 					{title: "Datetime", field: "dt", formatter: timeAgoFormatter},
+					{title: "Trend", field: "trending",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							let trend = "";
+							if (data.from) {
+								if (parseInt(data.from.split("/")[0]) > parseInt(data.ou.split("/")[0])) {
+									trend = "📉";
+								} else {
+									trend = "📈";
+								}
+							}
+							return trend; 
+						},
+						width: 40
+					},
 					{
 						title: "Circa<br>+EV",
 						field: "ev",
@@ -155,6 +170,7 @@
 						formatter: evBookFormatter,
 						responsive: 0
 					},
+					{title: "Circa<br>Fair Val", field: "fv", width: 50},
 					{title: "Current<br>Circa", field: "ou"},
 					{title: "Previous<br>Circa", field: "from"}
 				]

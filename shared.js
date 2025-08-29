@@ -1449,18 +1449,13 @@ function movingAverage(arr, windowSize) {
 function renderFeed() {
 	const data = TABLE.getSelectedRows()[0].getData();
 	let player = data.player;
-	let url = `http://localhost:5000`;
-	if (!window.location.host.includes("localhost")) {
-		url = `https://api-production-3a3b.up.railway.app`;
-	}
-	fetch(url+`/api/feed?team=${data.team}`, {
+	fetch(API_BASE+`/api/feed?team=${data.team}`, {
 		headers: {
 			Authorization: `Bearer ${ACCESS_TOKEN}`
 		}
 	}).then(
 		response => response.json()
 	).then(res => {
-
 		const data = [];
 		for (dt of Object.keys(res[player])) {
 			let row = res[player][dt];

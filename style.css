@@ -1095,7 +1095,7 @@ button#logout:hover {
 	.dropdown {
 		flex: 0 0 auto;
 	}
-	#center-dropdown {
+	#center-dropdown, #auth-buttons {
 		width: 100%;
 		transform: none;
 		position: static;
@@ -1107,7 +1107,7 @@ button#logout:hover {
 		padding: 0.5rem 0;
 		-webkit-overflow-scrolling: touch;
 	}
-	#center-dropdown button, #center-dropdown select {
+	#center-dropdown button, #center-dropdown select, #auth-buttons #username, #auth-buttons button {
 		flex: 0 0 auto;
 	}
 	#content {
@@ -1190,8 +1190,22 @@ button#logout:hover {
 }
 
 @media (max-width: 768px) {
+	#header {
+		flex-direction: row;
+		align-items: center;
+	}
+	#center-dropdown, #auth-buttons {
+		width: auto;
+	}
+	#auth-buttons {
+		justify-content: initial;
+	}
 	#page-select {
 		min-width: 120px;
+		max-width: 150px;
+	}
+	#username {
+		font-size: 0.9rem;
 	}
 	.select-wrapper select {
 		min-width: 80px;

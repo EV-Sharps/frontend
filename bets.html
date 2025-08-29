@@ -186,7 +186,15 @@
 						formatter: evBookFormatter,
 						responsive: 0
 					},
-					{title: "Circa", field: "circa"}
+					{title: "Circa", field: "circa"},
+					{title: `FD`, field: "evData.bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `PN`, field: "evData.bookOdds.pn",  width: 70, sorter: "number"},
+					{title: `B365`, field: "evData.bookOdds.365", hozAlign: "center", width: 70, sorter: "number"},
+					{title: `DK`, field: "evData.bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `MGM`, field: "evData.bookOdds.mgm",  width: 70, sorter: "number"},
+					{title: `Kambi<br>Parx/Bally`, field: "evData.bookOdds.kambi",  width: 70, sorter: "number"},
+					{title: `CZ`, field: "evData.bookOdds.cz",  width: 50, sorter: "number"},
+					{title: `PN`, field: "evData.bookOdds.pn",  width: 70, sorter: "number"},
 				]
 			});
 		}

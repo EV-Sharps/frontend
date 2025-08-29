@@ -84,7 +84,7 @@ async function upsertProfile(session) {
 	}
 	// maybe make logo separate and larger
 	if (document.getElementById("username")) {
-		document.getElementById("username").innerText = `${t} ${session.user.email}`;
+		document.getElementById("username").innerText = `${t} ${session.user.email.split("@")[0]}`;
 	}
 	if (window.location.pathname.includes("/profile")) {
 		fillProfile(data, CURR_USER.discord_username, tier, session);

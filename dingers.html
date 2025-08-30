@@ -333,6 +333,22 @@
 								<label for="custom_bookOdds_cz">Caesars</label>
 							</div>
 							<div>
+								<input id="custom_bookOdds_fn" type="checkbox">
+								<label for="custom_bookOdds_fn">Fanatics</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_br" type="checkbox">
+								<label for="custom_bookOdds_br">BetRivers</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_hr" type="checkbox">
+								<label for="custom_bookOdds_hr">Hard Rock</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_bv" type="checkbox">
+								<label for="custom_bookOdds_bv">Bovada</label>
+							</div>
+							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
 								<label for="custom_bookOdds_pn">Pinnacle</label>
 							</div>
@@ -843,6 +859,10 @@
 					//{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
 					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number", visible: false},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", visible: false},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", visible: false},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
@@ -871,7 +891,7 @@
 						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
 						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
 					]},
-					{title: "@BPP<br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
+					{title: "<a href='https://www.x.com/BallparkPal' target='new'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
 					/*
 					{title: "BPP", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},

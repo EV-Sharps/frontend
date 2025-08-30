@@ -80,6 +80,7 @@
 				  <ul style="list-style:none; padding:0; margin:0;">
 				  	<li id="record-all"><strong>'23-'25 +EV HRs:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
 					<li id="record-szn"><strong>2025 +EV HRs:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
+					<li id="record-today"><strong>Today:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
 				  </ul>
 				</div>
 				<div class="loggedOut">
@@ -111,6 +112,7 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
+				//for (record of [data.record.all, data.record.szn, data.record.])
 				let [wl, units] = data.record.all.split(" ");
 				document.querySelector("#record-all .w-l").textContent = wl;
 				document.querySelector("#record-all .units").textContent = units;

@@ -27,6 +27,9 @@
 </script>
 
 <style>
+	main {
+		flex-direction: column;
+	}
 	#discord_username {
 		margin-bottom: 0.5rem;
 	}
@@ -68,8 +71,30 @@
 	.discord-success strong {
 	  font-weight: 600;
 	}
+	#help {
+		background-color: #5865F2; 
+	    color: white; 
+	    padding: 14px 20px; 
+	    margin: auto; 
+	    border-radius: 10px; 
+	    font-size: 16px; 
+	    font-weight: 600; 
+	    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+	    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	    display: flex; 
+	    align-items: center; 
+	    gap: 10px;
+	    max-width: 400px;
+	}
 	
-	@media (max-width: 600px) {
+	@media (max-width: 768px) {
+		#help {
+			font-size: 0.9rem;
+		}
+		main {
+			justify-content: initial;
+			overflow: auto;
+		}
 	}
 </style>
 <body>
@@ -115,6 +140,13 @@
 			</div>
 		</header>
 		<main>
+			<div id="help" class="loggedIn">
+			    <span>
+			        If you have signed up <strong>before joining</strong> our Discord, make sure you 
+			        <span style="color: #FFD700; font-weight: bold;">reconnect</span> with 
+			        <strong>Change Discord</strong> to get the correct role assigned!
+			    </span>
+			</div>
 			<div class="profile-container">
 				<div class="profile-header">
 					<div class="profile-badge"></div>

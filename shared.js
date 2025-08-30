@@ -128,7 +128,7 @@ function downloadCSV() {
 }
 
 const timeAgoFormatter = function(cell) {
-	return timeAgo(cell.getValue()).replace(" minutes", " min");
+	return timeAgo(cell.getValue(), short=true);
 }
 
 function timeAgo(timestamp, short=false) {

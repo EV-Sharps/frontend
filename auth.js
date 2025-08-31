@@ -298,7 +298,11 @@ async function handleSession() {
 	} else if (PAGE == "sb") {
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {
-		fetchPlays();
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchPlays();
+			}
+		}, 30 * 1000);
 	} else if (PAGE == "tds") {
 		fetchTuddys();
 	} else if (PAGE == "dingers") {

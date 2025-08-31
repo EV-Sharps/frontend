@@ -177,6 +177,7 @@
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 				<button onclick="downloadCSV()">💾 CSV</button>
+				<button onclick="noBR()">No BR</button>
 				<button onclick="groupByGame();">Filter Game</button>
 			</div>
 			<div id="donate">
@@ -613,6 +614,15 @@
 			]);
 			TABLE.redraw(true);
 		});
+
+		function noBR() {
+			const params = new URLSearchParams(window.location.search);
+			//NOBR = true;
+			params.set("noBR", NOBR);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			fetchDingersData();
+		}
 
 		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 			checkbox.addEventListener("change", () => {

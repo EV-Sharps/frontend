@@ -541,6 +541,7 @@
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
 		let NO365 = URLParams.get("no365");
+		let NOBR = URLParams.get("noBR");
 
 		if (GAME) {
 			let [a,h] = GAME.split("-");
@@ -698,6 +699,9 @@
 			}
 			if (NO365 != undefined) {
 				params.set("no365", "true");
+			}
+			if (NOBR != undefined) {
+				params.set("noBR", "true");
 			}
 			if (params.toString()) {
 				url += "?"+params.toString();

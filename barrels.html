@@ -448,6 +448,25 @@
 			console.log(tweet.join("\n"));
 		}
 
+		function print_() {
+			const rows = TABLE.getData("active");
+			let currentRank = 1;
+			let tweet = [];
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+				if (i > 0 && row["game_trends"]["barrel_ct"]["3G"] !== prev["game_trends"]["barrel_ct"]["3G"]) {
+					currentRank++;
+				}
+
+				if (currentRank > 3) {
+					continue;
+				}
+				tweet.push(`${title(row.player)} - ${row["game_trends"]["barrel_ct"]["3G"]}`);
+			}
+			console.log(tweet.join("\n"));
+		}
+
 		function pretty_() {
 			TABLE.getColumns().map(col => {
 				let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.5G", "hard_hit_ct", "game_trends.hard_hit_ct.5G"];

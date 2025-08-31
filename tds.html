@@ -133,8 +133,8 @@
 		}
 
 		function updateHeaders() {
-			for (book in UPDATED["dingers"]) {
-				if (book == "dingers" || !UPDATED["dingers"][book]) {
+			for (book in UPDATED[PAGE]) {
+				if (!UPDATED[PAGE][book]) {
 					continue;
 				}
 
@@ -142,7 +142,7 @@
 					continue;
 				}
 				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`;
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
 			}
 		}
 
@@ -154,6 +154,7 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
+				UPDATED[PAGE] = data["updated"];
 				renderTable(data.data);
 
 				setTimeout(function() {
@@ -237,25 +238,25 @@
 					},
 					{
 						title: "EV Book", field: "book",
-						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter,
 						formatterParams:{book:BOOK},
 						responsive: 0
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
 					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: false},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number"},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number"},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false},
-					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number"},
-					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number"},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number"},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: false},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number"},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number"},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number"},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number"},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number"},
 					{field: "ev", visible: false, sorter: "number"}
 				]
 			});

@@ -322,12 +322,10 @@
 								<input id="custom_bookOdds_mgm" type="checkbox">
 								<label for="custom_bookOdds_mgm">MGM</label>
 							</div>
-							<!-- 
 							<div>
-								<input id="custom_bookOdds_kambi" type="checkbox">
-								<label for="custom_bookOdds_kambi">Kambi</label>
+								<input id="custom_bookOdds_espn" type="checkbox">
+								<label for="custom_bookOdds_espn">ESPN</label>
 							</div>
-							-->
 							<div>
 								<input id="custom_bookOdds_cz" type="checkbox">
 								<label for="custom_bookOdds_cz">Caesars</label>
@@ -633,7 +631,7 @@
 		renderTable([]);
 
 		function parseData(data, render) {
-			UPDATED["dingers"] = data["updated"];
+			UPDATED[PAGE] = data["updated"];
 			data = data["data"];
 
 			if (PLAYER) {

@@ -128,6 +128,24 @@
 
 		handleSession();
 
+		function updateTimes() {
+			updateHeaders();
+		}
+
+		function updateHeaders() {
+			for (book in UPDATED["dingers"]) {
+				if (book == "dingers" || !UPDATED["dingers"][book]) {
+					continue;
+				}
+
+				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
+					continue;
+				}
+				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`;
+			}
+		}
+
 		function fetchTuddys() {
 			renderTable([]);
 			fetch(API_BASE+`/api/tds`, {
@@ -139,7 +157,8 @@
 				renderTable(data.data);
 
 				setTimeout(function() {
-				}, 200);
+					updateTimes();
+				}, 500);
 			}).catch(err => console.log(err));
 		}
 

@@ -43,6 +43,7 @@ let PAGE_DROPDOWN = `
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
+	<option value="nfl">🏈 TDs</option>
 	<option value="nfl">🎯 Props</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
 	<option value="futures">🔮 Futures</option>
@@ -681,10 +682,12 @@ const oppFormatter = function(cell, params, rendered) {
 	let pitcher = "";
 	if (PAGE == "preview") {
 		pitcher = cell.getValue().toUpperCase();
+	} else if (PAGE == "tds") {
+		pitcher = data.opp.toUpperCase();
 	} else {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
 	}
-	const badge = data.doubleheader || data.team.includes("gm2") ? 
+	const badge = data.doubleheader || data.team?.includes("gm2") ? 
 		"<span class='dbl-badge'>2</span>" : "";
 	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, cell.getValue())}</div>` : `${getTeamImg(SPORT, cell.getValue())}`;
 	let pitcherLR = data.pitcherLR || "";
@@ -1162,9 +1165,8 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 	if (params.lastName || (MOBILE && cell.getTable().element.id == "table")) {
 		player = player.split(" ");
-		if (player[player.length-1] == "Hernandez") {
+		if (["Hernandez", "Lowe"].includes(player[player.length-1])) {
 			player = player[0][0] + " " + player[player.length-1];
-
 		} else {
 			player = player[player.length-1];
 		}

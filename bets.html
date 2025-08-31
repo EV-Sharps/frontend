@@ -119,6 +119,9 @@
 				[wl, units] = data.record.szn.split(" ");
 				document.querySelector("#record-szn .w-l").textContent = wl;
 				document.querySelector("#record-szn .units").textContent = units;
+				[wl, units] = data.record.today.split(" ");
+				document.querySelector("#record-today .w-l").textContent = wl;
+				document.querySelector("#record-today .units").textContent = units;
 				renderTable(data.data);
 			}).catch(err => console.log(err));
 		}

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title> Touchdowns</title>
+
+	<!--
+	<script type="text/javascript" src="test.js"></script>
+	-->
+
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="flatpickr.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		#table {
+			width: auto;
+		}
+	</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
+<body>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+			</div>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<select id="promo-select">
+						<option value="" selected>All Books</option>
+						<option value="vs-fd">vs FD</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+					<div class="gsi-material-button-icon">
+					  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+						<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+						<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+						<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+						<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+						<path fill="none" d="M0 0h48v48H0z"></path>
+					  </svg>
+					</div>
+					<span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="username loggedIn"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div id="table">
+				</div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
+	</main>
+	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "tds";
+		let RES, TABLE, LAST, NO365, KAMBI, BOOK;
+		let HISTORICAL = {};
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let DATE = URLParams.get("date");
+		let MARK = URLParams.get("mark");
+		let GAME = URLParams.get("game") != undefined;
+		let TODAY = getToday();
+		let SPORT = "nfl";
+		let PLAYER = URLParams.get("player");
+		let PRETTY = URLParams.get("pretty");
+		TEAM = URLParams.get("team") || "det";
+		let SIDE = URLParams.get("side") ?? "both";
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+			document.querySelector("#table-container").style["max-height"] = "initial";
+			document.querySelector("#watermark").style.width = "20%";
+		}
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		handleSession();
+
+		function fetchTuddys() {
+			renderTable([]);
+			fetch(API_BASE+`/api/tds`, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(response => response.json()).then(data => {
+				RES = data;
+				renderTable(data.data);
+
+				setTimeout(function() {
+				}, 200);
+			}).catch(err => console.log(err));
+		}
+
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    			placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "ev", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					//resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				//groupBy: "game",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: [
+					{
+						title: "Expected<br>Value",
+						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: evMutFormatter,
+						responsive: 0
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairVal",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						responsive: 0
+					},
+					{
+						title: "Implied",
+						field: "implied",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: impliedFormatter,
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{
+						title: "¼ Kelly",
+						field: "kelly",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: function(cell) {
+							if (!cell.getValue()) {
+								return "";
+							}
+							return `${cell.getValue().toFixed(2)}u`;
+						},
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						formatter: evBookFormatter,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number"},
+					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: false},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number"},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number"},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number"},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number"},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number"},
+					{field: "ev", visible: false, sorter: "number"}
+				]
+			});
+		}
+
+		function logoSrc(code) {
+			// assumes logos live at logos/mlb/{team}.png
+			return `logos/mlb/${String(code).toLowerCase()}.png`;
+		}
+
+		function renderGames(data) {
+			const games = document.querySelector("#games");
+			for (game of data) {
+				const [a,h] = game.toUpperCase().split(" @ ");
+				const div = document.createElement("div");
+				div.className = `game-card ${[a,h].includes(TEAM.toUpperCase()) ? "popular" : ""}`;
+				div.innerHTML = `
+				<div class="pair">
+					<a class="team" href="/pitcher_mix${HTML}?team=${a.toLowerCase()}">
+						<img src="${logoSrc(a)}" alt="${a} logo" />
+						<span class="code">${a}</span>
+					</a>
+					<span class="at">@</span>
+					<a class="team" href="/pitcher_mix${HTML}?team=${h.toLowerCase()}">
+						<img src="${logoSrc(h)}" alt="${h} logo" />
+						<span class="code">${h}</span>
+					</a>
+				</div>`;
+				games.appendChild(div);
+			}
+		}
+
+		function renderPitcherTable(data, prefix="") {
+			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand})`;
+			for (side of ["l", "r"]) {
+				const tableId = `${prefix}pitcher-table-${side}`;
+				TABLE = new Tabulator("#"+tableId, {
+					tooltipsHeader: true,
+					placeholder:"Data Loading...",
+					layout: "fitDataFill",
+					responsiveLayout: MOBILE ? "" : "",
+					autoResize: true,
+					data: data[`pitch_table_${side}`],
+					initialSort: [
+						{ column:"n", dir:"desc" },
+					],
+					columnDefaults: {
+						vertAlign: "middle",
+						hozAlign: "center",
+						resizable: false,
+						headerSortStartingDir: "desc"
+					},
+					groupToggleElement: "header",
+					columns: [
+						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left" },
+						{ title:"#", field:"n", sorter:"number", width:50 },
+						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
+						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title: "Home Runs", columns: [
+							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
+							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						]},
+						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
+					],
+				});
+			}
+		}
+
+		function groupByGame() {
+			if (!TABLE.options.groupBy) {
+				TABLE.setGroupBy("game");
+			} else {
+				TABLE.setGroupBy();
+			}
+		}
+	</script>
+</body>
+</html>

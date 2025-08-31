@@ -299,6 +299,8 @@ async function handleSession() {
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();
+	} else if (PAGE == "tds") {
+		fetchTuddys();
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
 		setInterval(() => {

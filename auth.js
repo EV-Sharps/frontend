@@ -298,6 +298,7 @@ async function handleSession() {
 	} else if (PAGE == "sb") {
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {
+		fetchPlays();
 		setInterval(() => {
 			if (!MOBILE || document.hasFocus()) {
 				fetchPlays();

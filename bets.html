@@ -158,6 +158,24 @@
 				},
 				groupToggleElement: "header",
 				columns: [
+					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 65 : 70,
+						formatter: evBookFormatter,
+						responsive: 0
+					},
 					{
 						title: "Circa<br>+EV",
 						field: "ev",
@@ -188,24 +206,7 @@
 						sorter: "number",
 						responsive: 0
 					},
-					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
-					},
-					{
-						title: "EV Book", field: "book",
-						vertAlign:"bottom", width: MOBILE ? 65 : 70,
-						formatter: evBookFormatter,
-						responsive: 0
-					},
+					
 					{title: "Circa", field: "circa"},
 					{title: `FD`, field: "evData.bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number"},
 					{title: `PN`, field: "evData.bookOdds.pn",  width: 70, sorter: "number"},

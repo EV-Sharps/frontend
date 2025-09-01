@@ -177,7 +177,6 @@
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 				<button onclick="downloadCSV()">💾 CSV</button>
-				<button onclick="noBR()">No BR</button>
 				<button onclick="groupByGame();">Filter Game</button>
 			</div>
 			<div id="donate">
@@ -904,7 +903,7 @@
 						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
 						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
 					]},
-					{title: "<a href='https://www.x.com/BallparkPal' target='new'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
+					{title: "<a href='https://www.x.com/BallparkPal' target='new'  onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'  onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
 					/*
 					{title: "BPP", columns: [
 						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
@@ -942,6 +941,7 @@
 					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					{title: "Game", field: "game", visible: false},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
+					{title: "Start", field: "start", visible: false},
 					{title: "FD Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? false : true},
 					//{title: "Last HR", field: "lastHR"},
 				]
@@ -1052,7 +1052,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`curr_ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`curr_ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "order", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 

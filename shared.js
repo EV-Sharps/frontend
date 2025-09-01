@@ -810,6 +810,17 @@ function getOppRankColor(value) {
 	return '#00ff66'; // very low percentile
 }
 
+function getTDsOppRankColor(value) {
+	if (!value) return "";
+	if (value >= 27) return '#00ff66';
+	if (value >= 22) return '#33cc66';
+	if (value >= 16) return '#66cc99';
+	if (value >= 11) return '#aaaaaa';
+	if (value >= 6) return '#e57373';
+	if (value >= 2)  return '#e53935';
+	return '#ff0000'; // very low percentile
+}
+
 const stadiumRankFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const color = getOppRankColor(data.stadiumRank);
@@ -828,7 +839,7 @@ const stadiumRankFormatter = function(cell) {
 	`;
 }
 
-const rankingFormatter = function(cell) {
+const rankingFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	const field = cell.getField();
 	if (!data.game || !cell.getValue()) {
@@ -840,8 +851,24 @@ const rankingFormatter = function(cell) {
 		if (data.blurred) {
 			cls = "blurred";
 		}
-		const color = getOppRankColor(cell.getValue());
-		return `<div class='${cls}' style='color: ${color}'>${addSuffix(cell.getValue())}</div>`;
+		let value = cell.getValue();
+		let color;
+		if (PAGE == "tds") {
+			if (value["opp-rz-scoring-pct"] === undefined) {
+				return "";
+			}
+			if (params.key == "home-away") {
+				const ha = data.team == data.game.split(" ")[0] ? "home" : "away";
+				value = value["opp-rz-scoring-pct"][ha];
+			} else {
+				value = value["opp-rz-scoring-pct"]["rank"];	
+			}
+			color = getTDsOppRankColor(value);
+		} else {
+			color = getOppRankColor(value);
+		}
+		
+		return `<div class='${cls}' style='color: ${color}'>${addSuffix(value)}</div>`;
 	} else {
 		if (data.team == "ath") {
 			return "";

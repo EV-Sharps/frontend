@@ -122,6 +122,12 @@
 				[wl, units] = data.record.today.split(" ");
 				document.querySelector("#record-today .w-l").textContent = wl;
 				document.querySelector("#record-today .units").textContent = units;
+				if (units) {
+					const num = parseFloat(units.match(/-?\d+(\.\d+)?/)[0]);
+					if (num < 0) {
+						document.querySelector("#record-today .units").style.color = "red";
+					}
+				}
 				renderTable(data.data);
 			}).catch(err => console.log(err));
 		}
@@ -158,6 +164,14 @@
 				},
 				groupToggleElement: "header",
 				columns: [
+					{
+						title: "Circa<br>+EV",
+						field: "ev",
+						width: MOBILE ? 45 : 60,
+						sorter: "number",
+						responsive: 0,
+						formatter: evFormatter
+					},
 					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
 					{
 						title: "Player",
@@ -176,14 +190,13 @@
 						formatter: evBookFormatter,
 						responsive: 0
 					},
-					{
-						title: "Circa<br>+EV",
-						field: "ev",
-						width: MOBILE ? 45 : 60,
-						sorter: "number",
-						responsive: 0,
-						formatter: evFormatter
+					{title: "Units", field: "units", width: 40,
+						formatter: function(cell) {
+							const data = cell.getData();
+							return data.units ? data.units : "1u";
+						}
 					},
+					
 					{
 						title: "¼ Kelly",
 						field: "kelly",

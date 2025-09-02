@@ -41,15 +41,19 @@
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
 					<select id="page-select"></select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
 				<div class="select-wrapper">
+					<label for="promo-select" class="select-label">Devig</label>
 					<select id="promo-select">
-						<option value="" selected>All Books</option>
+						<option value="" selected>Market Avg</option>
 						<option value="vs-fd">vs FD</option>
+						<option value="vs-pn">vs PN</option>
+						<option value="vs-circa">vs Circa</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -126,6 +130,28 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
+		document.querySelector("#promo-select").addEventListener("change", (event) => {
+			const promo = event.target.value;
+			let url = new URL(window.location.href);
+
+			const params = new URLSearchParams(window.location.search);
+			//params.set("book", promo);
+
+			RES.data.forEach(row => {
+				const bookOdds = row.bookOdds;
+				let avg = getAverageImplied(bookOdds);
+				let d = devig(avg.avgAmerican.toString());
+				row["ev"] = d;
+			});
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.setData(RES);
+			TABLE.setSort([
+				{column: "ev", dir: "desc"}
+			]);
+			TABLE.redraw(true);
+		});
+
 		handleSession();
 
 		function updateTimes() {
@@ -195,6 +221,24 @@
 						responsive: 0
 					},
 					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 75 : 75,
+						formatter: evBookFormatter,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE || LAST ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : false
+					},
+					{
 						title: "Fair<br>Value",
 						field: "fairVal",
 						width: MOBILE ? 40 : 60,
@@ -225,24 +269,8 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
-					},
-					{
-						title: "EV Book", field: "book",
-						vertAlign:"bottom", width: MOBILE ? 75 : 75,
-						formatter: evBookFormatter,
-						formatterParams:{book:BOOK},
-						responsive: 0
-					},
+					
+					
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, width: 55},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},

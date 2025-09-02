@@ -854,7 +854,7 @@ const rankingFormatter = function(cell, params, rendered) {
 		let value = cell.getValue();
 		let color;
 		if (PAGE == "tds") {
-			if (value["opp-rz-scoring-pct"] === undefined) {
+			if (value["opp-rz-scoring-pct"] === undefined || data.player.includes("d/st")) {
 				return "";
 			}
 			if (params.key == "home-away") {

@@ -180,6 +180,22 @@ function groupByGame() {
 	}
 }
 
+const evOddsFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const odds = cell.getValue();
+	let cls = "";
+
+	if (!odds) {
+		return "";
+	}
+
+	if (PAGE != "dingers" && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+		cls = "#00ff66";
+	}
+
+	return `<span style='color:${cls}'>${odds}</span>`;
+}
+
 const oddsFormatter = function(cell) {
 	let odds = cell.getValue();
 	if (!odds) {
@@ -1781,3 +1797,117 @@ function fetchUpdated(repo="props", render=true) {
 		}
 	}).catch(err => console.log(err));
 }
+
+function devig(ou, finalOdds, promo="") {
+	const parts = String(ou).split("/");
+	if (!parts[0]) return;
+
+	const over = parseInt(parts[0], 10);
+	if (!Number.isFinite(over)) return;
+
+	let impliedOver = americanToImplied(over);
+	const bet = 100;
+	let profit = (finalOdds >= 0)
+		? (finalOdds * bet / 100)
+		: (100 * bet) / Math.abs(finalOdds);
+
+	let under;
+	if (ou.indexOf("/") === -1 || parts.length < 2 || parts[1] === "") {
+		const vig = (promo == "vs-fd") ? 0.05 : 0.07;
+		const u = 1 + vig - impliedOver;
+		if (u >= 1) return;
+
+		if (over > 0) {
+			under = Math.trunc((100*u) / (-1 + u));
+		} else {
+			under = Math.trunc((100 - 100 * u) / u);
+		}
+	} else {
+		under = parseInt(parts[1], 10);
+	}
+
+	if (!Number.isFinite(under)) return;
+	let impliedUnder = americanToImplied(under);
+
+	let x = impliedOver;
+	let y = impliedUnder;
+	let iter = 0;
+
+	while (Math.abs((x + y) - 1) > 1e-8 && iter < 50) {
+		const sum = x + y;
+		const k = Math.log(2) / Math.log(2 / sum);
+		x = Math.pow(x, k);
+		y = Math.pow(y, k);
+		iter += 1;
+	}
+
+	const dec = 1 / x;
+	let fairVal;
+	if (dec >= 2) {
+		fairVal = Math.round((dec - 1) * 100);
+	} else {
+		fairVal = Math.round(-100 / (dec - 1));
+	}
+	const implied = round2(x * 100);
+
+	// Multiplicative and additive methods (your “mult” and “add”)
+	const mult = impliedOver / (impliedOver + impliedUnder);
+	const add = impliedOver - (impliedOver + impliedUnder - 1) / 2;
+
+	// EV via each method, take the minimum (your approach)
+	const methods = [x, mult, add];
+	const evs = methods.map(m => {
+	const ev = m * profit + (1 - m) * (-1 * bet);
+	return round1(ev);
+	});
+	let ev = Math.min(...evs);
+
+	console.log(ev);
+}
+
+// Convert American odds → implied probability
+function americanToImplied(odds) {
+  odds = parseInt(odds, 10);
+  if (isNaN(odds)) return null;
+  return odds > 0
+    ? 100 / (odds + 100)
+    : Math.abs(odds) / (Math.abs(odds) + 100);
+}
+
+// Convert implied probability → American odds
+function impliedToAmerican(prob) {
+  if (prob <= 0 || prob >= 1) return null;
+  return prob >= 0.5
+    ? -Math.round((prob / (1 - prob)) * 100)
+    : Math.round(((1 - prob) / prob) * 100);
+}
+function getAverageImplied(books) {
+  const impliedProbs = Object.values(books)
+    .map(americanToImplied)
+    .filter(p => p !== null);
+
+  if (impliedProbs.length === 0) return null;
+
+  const avgProb = impliedProbs.reduce((a, b) => a + b, 0) / impliedProbs.length;
+  const avgAmerican = impliedToAmerican(avgProb);
+
+  return { avgProb, avgAmerican };
+}
+
+function round2(n) { return Math.round(n * 100) / 100; }
+function round1(n) { return Math.round(n * 10) / 10; }
+
+const books = {
+  fd: "490",
+  b365: "500",
+  dk: "1000",
+  cz: "575",
+  fn: "425",
+  br: "575",
+  bv: "500"
+};
+
+//devig("520/-700", 650)
+//let avg = getAverageImplied(books);
+
+//devig(avg.avgAmerican.toString(), 1000)

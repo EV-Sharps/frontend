@@ -51,9 +51,9 @@
 					<label for="promo-select" class="select-label">Devig</label>
 					<select id="promo-select">
 						<option value="" selected>Market Avg</option>
-						<option value="vs-fd">vs FD</option>
-						<option value="vs-pn">vs PN</option>
-						<option value="vs-circa">vs Circa</option>
+						<option value="fd">vs FD</option>
+						<option value="pn">vs PN</option>
+						<option value="circa">vs Circa</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -131,20 +131,42 @@
 		});
 
 		document.querySelector("#promo-select").addEventListener("change", (event) => {
-			const promo = event.target.value;
+			const devigBook = event.target.value;
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
-			//params.set("book", promo);
+			params.set("devig", devigBook);
 
 			RES.data.forEach(row => {
-				const bookOdds = row.bookOdds;
+				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds);
 				if (!avg) {
 					return;
 				}
-				let d = devig(avg.avgAmerican.toString());
-				row["ev"] = d;
+				const highest = highestOver(bookOdds, devigBook);
+				let ou = avg.avgAmerican.toString();
+				if (devigBook) {
+					ou = bookOdds[devigBook];
+				}
+				if (!ou) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				let d = devig(ou, highest);
+				if (!d) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				row["ev"] = d.ev;
+				row["fairVal"] = d.fairVal;
+				row["implied"] = d.implied;
+				row["kelly"] = d.kelly;
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
@@ -293,73 +315,6 @@
 					{field: "ev", visible: false, sorter: "number"}
 				]
 			});
-		}
-
-		function logoSrc(code) {
-			// assumes logos live at logos/mlb/{team}.png
-			return `logos/mlb/${String(code).toLowerCase()}.png`;
-		}
-
-		function renderGames(data) {
-			const games = document.querySelector("#games");
-			for (game of data) {
-				const [a,h] = game.toUpperCase().split(" @ ");
-				const div = document.createElement("div");
-				div.className = `game-card ${[a,h].includes(TEAM.toUpperCase()) ? "popular" : ""}`;
-				div.innerHTML = `
-				<div class="pair">
-					<a class="team" href="/pitcher_mix${HTML}?team=${a.toLowerCase()}">
-						<img src="${logoSrc(a)}" alt="${a} logo" />
-						<span class="code">${a}</span>
-					</a>
-					<span class="at">@</span>
-					<a class="team" href="/pitcher_mix${HTML}?team=${h.toLowerCase()}">
-						<img src="${logoSrc(h)}" alt="${h} logo" />
-						<span class="code">${h}</span>
-					</a>
-				</div>`;
-				games.appendChild(div);
-			}
-		}
-
-		function renderPitcherTable(data, prefix="") {
-			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand})`;
-			for (side of ["l", "r"]) {
-				const tableId = `${prefix}pitcher-table-${side}`;
-				TABLE = new Tabulator("#"+tableId, {
-					tooltipsHeader: true,
-					placeholder:"Data Loading...",
-					layout: "fitDataFill",
-					responsiveLayout: MOBILE ? "" : "",
-					autoResize: true,
-					data: data[`pitch_table_${side}`],
-					initialSort: [
-						{ column:"n", dir:"desc" },
-					],
-					columnDefaults: {
-						vertAlign: "middle",
-						hozAlign: "center",
-						resizable: false,
-						headerSortStartingDir: "desc"
-					},
-					groupToggleElement: "header",
-					columns: [
-						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left" },
-						{ title:"#", field:"n", sorter:"number", width:50 },
-						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
-						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
-						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title: "Home Runs", columns: [
-							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
-							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						]},
-						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-					],
-				});
-			}
 		}
 
 		function groupByGame() {

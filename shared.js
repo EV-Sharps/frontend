@@ -185,7 +185,7 @@ const evOddsFormatter = function(cell) {
 	const odds = cell.getValue();
 	let cls = "";
 
-	if (!odds) {
+	if (PAGE == "dingers" || !odds) {
 		return "";
 	}
 
@@ -1858,13 +1858,22 @@ function devig(ou, finalOdds, promo="") {
 
 	// EV via each method, take the minimum (your approach)
 	const methods = [x, mult, add];
+	const fairValue = Math.min(...methods);
 	const evs = methods.map(m => {
-	const ev = m * profit + (1 - m) * (-1 * bet);
-	return round1(ev);
+		const ev = m * profit + (1 - m) * (-1 * bet);
+		return round1(ev);
 	});
 	let ev = Math.min(...evs);
+	const kelly = Number(
+		(
+		    (
+		      (finalOdds / 100) * (implied / 100) -
+		      (1 - implied / 100)
+		    ) * 100 / (finalOdds / 100) / 4
+		).toFixed(2)
+	);
 
-	return ev;
+	return { ev, fairVal, implied, kelly };
 }
 
 // Convert American odds → implied probability
@@ -1899,17 +1908,11 @@ function getAverageImplied(books) {
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
-const books = {
-  fd: "490",
-  b365: "500",
-  dk: "1000",
-  cz: "575",
-  fn: "425",
-  br: "575",
-  bv: "500"
-};
-
-//devig("520/-700", 650)
-//let avg = getAverageImplied(books);
-
-//devig(avg.avgAmerican.toString(), 1000)
+function highestOver(bookOdds, excludeBook="") {
+	return Object.entries(bookOdds)
+		.filter(([key, value]) => (!excludeBook || (excludeBook != "" && key !== excludeBook)) && value !== undefined && value !== null)
+		.reduce((max, [, value]) => {
+			const num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
+			return !isNaN(num) && num > max ? num : max;
+		}, -Infinity);
+}

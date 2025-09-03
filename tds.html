@@ -48,12 +48,26 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="promo-select" class="select-label">Devig</label>
-					<select id="promo-select">
+					<label for="devig-select" class="select-label">Devig</label>
+					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="boost-select" class="select-label">Boost</label>
+					<select id="boost-select">
+						<option value="0" selected>None</option>
+						<option value="0.10">10%</option>
+						<option value="0.25">25%</option>
+						<option value="0.30">30%</option>
+						<option value="0.50">50%</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -116,6 +130,8 @@
 		let TODAY = getToday();
 		let SPORT = "nfl";
 		let PLAYER = URLParams.get("player");
+		let DEVIG = URLParams.get("devig");
+		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
@@ -130,8 +146,7 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		document.querySelector("#promo-select").addEventListener("change", (event) => {
-			const devigBook = event.target.value;
+		function setDevig(devigBook) {
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
@@ -175,6 +190,63 @@
 				{column: "ev", dir: "desc"}
 			]);
 			TABLE.redraw(true);
+		}
+
+		function setBoost(boost) {
+			let devigBook = document.getElementById("devig-select").value;
+			let url = new URL(window.location.href);
+
+			const params = new URLSearchParams(window.location.search);
+			params.set("boost", boost);
+
+			RES.data.forEach(row => {
+				const bookOdds = { ...row.bookOdds };
+				let avg = getAverageImplied(bookOdds);
+				if (!avg) {
+					return;
+				}
+				const highest = highestOver(bookOdds, devigBook, boost);
+				let ou = avg.avgAmerican.toString();
+				if (devigBook) {
+					ou = bookOdds[devigBook];
+				}
+				if (!ou) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				let d = devig(ou, highest);
+				if (!d) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				row["ev"] = d.ev;
+				row["fairVal"] = d.fairVal;
+				row["implied"] = d.implied;
+				row["kelly"] = d.kelly;
+			});
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.setData(RES.data);
+			TABLE.setSort([
+				{column: "ev", dir: "desc"}
+			]);
+			TABLE.redraw(true);
+		}
+
+		document.querySelector("#boost-select").value = BOOST || 0;
+		document.querySelector("#boost-select").addEventListener("change", (event) => {
+			setBoost(event.target.value);
+		});
+
+		document.querySelector("#devig-select").value = DEVIG || "";
+		document.querySelector("#devig-select").addEventListener("change", (event) => {
+			setDevig(event.target.value);
 		});
 
 		handleSession();
@@ -210,6 +282,9 @@
 
 				setTimeout(function() {
 					updateTimes();
+					if (DEVIG) {
+						setDevig(DEVIG);
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}
@@ -311,6 +386,7 @@
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
 					{field: "ev", visible: false, sorter: "number"}
 				]

@@ -189,7 +189,7 @@ const evOddsFormatter = function(cell) {
 		return "";
 	}
 
-	if (PAGE != "dingers" && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	if (PAGE != "dingers" && data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 	}
 

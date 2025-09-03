@@ -128,8 +128,22 @@
 				},
 				groupToggleElement: "header",
 				columns: [
-					{title: "Datetime", field: "dt", formatter: timeAgoFormatter, width: 60},
-					
+					{title: "Datetime", field: "dt", formatter: timeAgoFormatter},
+					{title: "Trend", field: "trending",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							let trend = "";
+							if (data.from) {
+								if (parseInt(data.from.split("/")[0]) > parseInt(data.ou.split("/")[0])) {
+									trend = "📉";
+								} else {
+									trend = "📈";
+								}
+							}
+							return trend; 
+						},
+						width: 40
+					},
 					{
 						title: "Circa<br>+EV",
 						field: "ev",
@@ -138,6 +152,7 @@
 						responsive: 0,
 						formatter: evFormatter
 					},
+					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
 					{
 						title: "Player",
 						field: "player",
@@ -156,25 +171,8 @@
 						responsive: 0
 					},
 					{title: "Circa<br>Fair Val", field: "fv", width: 50},
-					{title: "Previous<br>Circa", field: "from"},
-					{title: "Trend", field: "trending",
-						formatter: function(cell) {
-							const data = cell.getRow().getData();
-							let trend = "";
-							if (data.from) {
-								if (parseInt(data.from.split("/")[0]) > parseInt(data.ou.split("/")[0])) {
-									trend = "📉";
-									color = "#33cc66";
-								} else {
-									trend = "📈";
-									color = "#e57373";
-								}
-							}
-							return `<div style='width:90%; background:${color}'>${trend}</div>`;
-						},
-						width: 40
-					},
 					{title: "Current<br>Circa", field: "ou"},
+					{title: "Previous<br>Circa", field: "from"}
 				]
 			});
 		}

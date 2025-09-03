@@ -185,11 +185,11 @@ const evOddsFormatter = function(cell) {
 	const odds = cell.getValue();
 	let cls = "";
 
-	if (PAGE == "dingers" || !odds) {
+	if (!odds) {
 		return "";
 	}
 
-	if (parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	if (PAGE != "dingers" && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 	}
 

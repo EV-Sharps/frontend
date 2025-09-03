@@ -1929,7 +1929,7 @@ function highestOver(bookOdds, excludeBook, boost) {
 		.filter(([key, value]) => (!excludeBook || (excludeBook != "" && key !== excludeBook)) && value !== undefined && value !== null)
 		.reduce((max, [, value]) => {
 			let num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
-			num = 
+			//
 			return !isNaN(num) && num > max ? num : max;
 		}, -Infinity);
 }

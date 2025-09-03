@@ -140,12 +140,15 @@
 			RES.data.forEach(row => {
 				const bookOdds = row.bookOdds;
 				let avg = getAverageImplied(bookOdds);
+				if (!avg) {
+					return;
+				}
 				let d = devig(avg.avgAmerican.toString());
 				row["ev"] = d;
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setData(RES);
+			TABLE.setData(RES.data);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
@@ -286,7 +289,7 @@
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: "LYR", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "Last Year</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
 					{field: "ev", visible: false, sorter: "number"}
 				]
 			});

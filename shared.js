@@ -189,7 +189,7 @@ const evOddsFormatter = function(cell) {
 		return "";
 	}
 
-	if (PAGE != "dingers" && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	if (parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 	}
 
@@ -1245,6 +1245,8 @@ const playerFormatter = function(cell, params, rendered) {
 		} else if (["rfi", "gift"].includes(data.prop)) {
 			player = "";
 		}
+	} else if (["movement"].includes(PAGE)) {
+		isPlayerProp = false;
 	}
 
 	let prop = "";
@@ -1862,7 +1864,7 @@ function devig(ou, finalOdds, promo="") {
 	});
 	let ev = Math.min(...evs);
 
-	console.log(ev);
+	return ev;
 }
 
 // Convert American odds → implied probability

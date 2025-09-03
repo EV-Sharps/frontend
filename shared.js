@@ -189,7 +189,7 @@ const evOddsFormatter = function(cell) {
 		return "";
 	}
 
-	if (PAGE != "dingers" && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	if (PAGE != "dingers" && data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 	}
 
@@ -1890,6 +1890,17 @@ function impliedToAmerican(prob) {
     ? -Math.round((prob / (1 - prob)) * 100)
     : Math.round(((1 - prob) / prob) * 100);
 }
+
+function americanToDecimal(a) {
+  a = Number(a);
+  if (!Number.isFinite(a)) return null;
+  return a > 0 ? 1 + a / 100 : 1 + 100 / Math.abs(a);
+}
+function decimalToAmerican(d) {
+  if (!(d > 1)) return null;
+  return d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
+}
+
 function getAverageImplied(books) {
   const impliedProbs = Object.values(books)
     .map(americanToImplied)
@@ -1903,14 +1914,22 @@ function getAverageImplied(books) {
   return { avgProb, avgAmerican };
 }
 
+function applyProfitBoost(american, boost) {
+  const D = americanToDecimal(american);
+  if (D == null) return null;
+  const Dp = 1 + (D - 1) * (1 + boost); // boosted decimal
+  return decimalToAmerican(Dp);
+}
+
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
-function highestOver(bookOdds, excludeBook="") {
+function highestOver(bookOdds, excludeBook, boost) {
 	return Object.entries(bookOdds)
 		.filter(([key, value]) => (!excludeBook || (excludeBook != "" && key !== excludeBook)) && value !== undefined && value !== null)
 		.reduce((max, [, value]) => {
-			const num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
+			let num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
+			num = 
 			return !isNaN(num) && num > max ? num : max;
 		}, -Infinity);
 }

@@ -100,7 +100,7 @@
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
 		PAGE = "bets";
-		let SPORT = "mlb";
+		let SPORT = URLParams.get("sport") || "mlb";
 		let BOOK = URLParams.get("book");
 
 		handleSession();
@@ -113,9 +113,11 @@
 			}).then(response => response.json()).then(data => {
 				RES = data;
 				//for (record of [data.record.all, data.record.szn, data.record.])
-				let [wl, units] = data[SPORT].record.all.split(" ");
-				document.querySelector("#record-all .w-l").textContent = wl;
-				document.querySelector("#record-all .units").textContent = units;
+				if (data[SPORT].record.all) {
+					let [wl, units] = data[SPORT].record.all.split(" ");
+					document.querySelector("#record-all .w-l").textContent = wl;
+					document.querySelector("#record-all .units").textContent = units;
+				}
 				[wl, units] = data[SPORT].record.szn.split(" ");
 				document.querySelector("#record-szn .w-l").textContent = wl;
 				document.querySelector("#record-szn .units").textContent = units;

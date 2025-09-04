@@ -113,13 +113,13 @@
 			}).then(response => response.json()).then(data => {
 				RES = data;
 				//for (record of [data.record.all, data.record.szn, data.record.])
-				let [wl, units] = data.record.all.split(" ");
+				let [wl, units] = data[SPORT].record.all.split(" ");
 				document.querySelector("#record-all .w-l").textContent = wl;
 				document.querySelector("#record-all .units").textContent = units;
-				[wl, units] = data.record.szn.split(" ");
+				[wl, units] = data[SPORT].record.szn.split(" ");
 				document.querySelector("#record-szn .w-l").textContent = wl;
 				document.querySelector("#record-szn .units").textContent = units;
-				[wl, units] = data.record.today.split(" ");
+				[wl, units] = data[SPORT].record.today.split(" ");
 				document.querySelector("#record-today .w-l").textContent = wl;
 				document.querySelector("#record-today .units").textContent = units;
 				if (units) {
@@ -128,7 +128,7 @@
 						document.querySelector("#record-today .units").style.color = "red";
 					}
 				}
-				renderTable(data.data);
+				renderTable(data[SPORT].data);
 			}).catch(err => console.log(err));
 		}
 

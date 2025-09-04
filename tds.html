@@ -200,18 +200,10 @@
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
-			if (boost) {
-				params.set("boost", boost);
-			}
-			if (devigBook) {
-				params.set("devig", devigBook);
-			}
-			if (game) {
-				params.set("game", game);
-			}
-			if (book) {
-				params.set("book", book);
-			}
+			params.set("boost", boost);
+			params.set("devig", devigBook);
+			params.set("game", game);
+			params.set("book", book);
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };

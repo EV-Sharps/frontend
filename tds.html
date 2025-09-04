@@ -48,6 +48,13 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
+					<label for="book-select" class="select-label">Books</label>
+					<select id="book-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
@@ -63,16 +70,21 @@
 					<label for="boost-select" class="select-label">Boost</label>
 					<select id="boost-select">
 						<option value="0" selected>None</option>
-						<option value="0.10">10%</option>
-						<option value="0.25">25%</option>
-						<option value="0.30">30%</option>
-						<option value="0.50">50%</option>
+						<option value="10">10%</option>
+						<option value="25">25%</option>
+						<option value="30">30%</option>
+						<option value="50">50%</option>
 						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+				<input id="boost-custom"
+				       type="number" min="0" step="5"
+				       placeholder="Custom %"
+				       style="display:none; width:7ch; margin-left:.5rem;" />
+				<span id="boost-applied" style="margin-left:.5rem; color:#9fb7ff;"></span>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -148,7 +160,7 @@
 
 		function setDevig(devigBook) {
 			let url = new URL(window.location.href);
-
+			let boost = document.getElementById("boost-select").value;
 			const params = new URLSearchParams(window.location.search);
 			params.set("devig", devigBook);
 
@@ -158,7 +170,7 @@
 				if (!avg) {
 					return;
 				}
-				const highest = highestOver(bookOdds, devigBook);
+				const highest = highestOver(bookOdds, devigBook, boost);
 				let ou = avg.avgAmerican.toString();
 				if (devigBook) {
 					ou = bookOdds[devigBook];
@@ -170,7 +182,7 @@
 					row["kelly"] = "";
 					return;
 				}
-				let d = devig(ou, highest);
+				let d = devig(ou, highest.value);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -178,6 +190,8 @@
 					row["kelly"] = "";
 					return;
 				}
+				row["book"] = highest.book;
+				row["line"] = highest.value;
 				row["ev"] = d.ev;
 				row["fairVal"] = d.fairVal;
 				row["implied"] = d.implied;
@@ -217,7 +231,7 @@
 					row["kelly"] = "";
 					return;
 				}
-				let d = devig(ou, highest);
+				let d = devig(ou, highest.value);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -225,6 +239,8 @@
 					row["kelly"] = "";
 					return;
 				}
+				row["book"] = highest.book;
+				row["line"] = highest.value;
 				row["ev"] = d.ev;
 				row["fairVal"] = d.fairVal;
 				row["implied"] = d.implied;
@@ -239,9 +255,21 @@
 			TABLE.redraw(true);
 		}
 
-		document.querySelector("#boost-select").value = BOOST || 0;
-		document.querySelector("#boost-select").addEventListener("change", (event) => {
+		const boostSel = document.getElementById('boost-select');
+		const boostCustom = document.getElementById('boost-custom');
+
+		boostSel.value = BOOST || 0;
+
+		if (BOOST == "custom") {
+			boostCustom.style.display = "";
+		}
+		boostSel.addEventListener("change", (event) => {
+			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
 			setBoost(event.target.value);
+		});
+
+		boostCustom.addEventListener("input", () => {
+			setBoost(boostCustom.value);
 		});
 
 		document.querySelector("#devig-select").value = DEVIG || "";

@@ -992,7 +992,7 @@ const evBookFormatter2 = function(cell, params, rendered) {
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
-	const img = data.book ? `<img class='book-img' src='logos/${data.book}.png' alt='${data.book}' title='${data.book}' />` : "";
+	const img = data.book ? `<img class='book-img' src='logos/${data.book.replace('kambi', 'parx')}.png' alt='${data.book}' title='${data.book}' />` : "";
 	return `
 		<div class='evbook-cell'>
 			<span class='evbook-odds'>${data.line}</span>

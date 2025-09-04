@@ -62,6 +62,7 @@
 						<option value="fn">FN</option>
 						<option value="br">BR</option>
 						<option value="bv">BV</option>
+						<option value="kambi">Kambi</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -104,6 +105,19 @@
 					<select id="game-select">
 						<option value="" selected>All</option>
 						<option value="dal-phi">DAL @ PHI</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
+						<option value="" selected>All</option>
+						<option value="attd">ATTD</option>
+						<option value="2+td">2+ TD</option>
+						<option value="ftd">FTD</option>
+						<option value="ltd">LTD</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -170,6 +184,7 @@
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let BOOK = URLParams.get("book");
+		let PROP = URLParams.get("prop");
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
@@ -193,6 +208,7 @@
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
+			let prop = document.getElementById("prop-select").value;
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
@@ -204,6 +220,7 @@
 			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
+			params.set("prop", prop);
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -280,18 +297,39 @@
 			changeFilter();
 		});
 
+		document.querySelector("#prop-select").value = PROP || "";
+		document.querySelector("#prop-select").addEventListener("change", (event) => {
+			PROP = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("prop", PROP);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			if (PROP) {
+				TABLE.removeFilter("prop");
+				TABLE.addFilter({field:"prop", type:"=", value: PROP});
+			} else {
+				TABLE.removeFilter("prop");
+			}
+			TABLE.redraw(true);
+		});
+
 		if (GAME) {
 			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
 		}
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("game", GAME);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
 			if (GAME) {
 				GAME = GAME.replace("-", " @ ");
-				TABLE.setFilter([
+				TABLE.removeFilter("game");
+				TABLE.addFilter(
 					{field:"game", type:"=", value: GAME}
-				])
+				)
 			} else {
-				TABLE.setFilter();
+				TABLE.removeFilter("game");
 			}
 			TABLE.redraw(true);
 		});
@@ -343,6 +381,7 @@
 							{field:"game", type:"=", value: GAME}
 						])
 					}
+					changeFilter();
 				}, 500);
 			}).catch(err => console.log(err));
 		}
@@ -398,7 +437,10 @@
 					},
 					{
 						title: "Prop",
-						field: "prop"
+						field: "prop",
+						formatter: function(cell) {
+							return cell.getValue().substring(0, 8);
+						}
 					},
 					{
 						title: "Fair<br>Value",
@@ -447,6 +489,7 @@
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", formatter: evOddsFormatter},
+					{title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.kambi",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},

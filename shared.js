@@ -1878,16 +1878,32 @@ function devig(ou, finalOdds, promo="") {
 		return round1(ev);
 	});
 	let ev = Math.min(...evs);
-	const kelly = Number(
-		(
-		    (
-		      (finalOdds / 100) * (implied / 100) -
-		      (1 - implied / 100)
-		    ) * 100 / (finalOdds / 100) / 4
-		).toFixed(2)
-	);
+	const kelly = getKelly(finalOdds, ev);
 
 	return { ev, fairVal, implied, kelly };
+}
+
+function getKelly2(finalOdds, implied) {
+  const p = implied / 100;
+  let b;
+
+  if (finalOdds > 0) {
+    b = finalOdds / 100;
+  } else {
+    b = 100 / Math.abs(finalOdds);
+  }
+
+  const kelly = ((p * b - (1 - p)) / b) / 4; // quarter Kelly
+  return Number(kelly.toFixed(2));
+}
+
+function getKelly(finalOdds, ev) {
+  let p = finalOdds / 100;
+  if (finalOdds < 0) {
+  	p = 100 / finalOdds;
+  }
+  
+  return ev / Math.abs(p) / 4;
 }
 
 // Convert American odds → implied probability
@@ -1941,13 +1957,14 @@ function applyProfitBoost(american, boost) {
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
-function highestOver(bookOdds, excludeBook, boost, book) {
+function highestOver(bookOdds, excludeBooks, boost, book) {
 	if (!boost) {
 		boost = 0;
 	}
 	return Object.entries(bookOdds)
 		.filter(([key, value]) => 
-			(!excludeBook || (excludeBook != "" && key !== excludeBook))
+			//(!excludeBook || (excludeBook != "" && key !== excludeBook))
+			!excludeBooks.includes(key)
 			&& (!book || key === book)
 			&& value !== undefined && value !== null
 		)

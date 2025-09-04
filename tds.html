@@ -214,7 +214,8 @@
 				if (!avg) {
 					return;
 				}
-				const highest = highestOver(bookOdds, devigBook, boost, book);
+				const excluded = [devigBook, "circa"];
+				const highest = highestOver(bookOdds, excluded, boost, book);
 				let ou = avg.avgAmerican.toString();
 				if (devigBook) {
 					ou = bookOdds[devigBook];

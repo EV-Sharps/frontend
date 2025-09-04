@@ -1919,6 +1919,7 @@ function getAverageImplied(books) {
 function applyProfitBoost(american, boost) {
   const D = americanToDecimal(american);
   if (D == null) return null;
+  boost = boost / 100;
   const Dp = 1 + (D - 1) * (1 + boost); // boosted decimal
   return decimalToAmerican(Dp);
 }
@@ -1927,11 +1928,17 @@ function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
 function highestOver(bookOdds, excludeBook, boost) {
+	if (!boost) {
+		boost = 0;
+	}
 	return Object.entries(bookOdds)
 		.filter(([key, value]) => (!excludeBook || (excludeBook != "" && key !== excludeBook)) && value !== undefined && value !== null)
-		.reduce((max, [, value]) => {
+		.reduce((max, [key, value]) => {
 			let num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
-			//
-			return !isNaN(num) && num > max ? num : max;
-		}, -Infinity);
+			if (isNaN(num)) return max;
+			num = applyProfitBoost(num, boost);
+			return num > max.value ? { book: key, value: num } : max;
+		},
+		{book: null, value: -Infinity}
+	);
 }

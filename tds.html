@@ -188,6 +188,9 @@
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
+			if (boost === "custom") {
+				boost = boostCustom.value;
+			}
 			BOOK = book;
 			let url = new URL(window.location.href);
 
@@ -266,7 +269,7 @@
 		});
 
 		boostCustom.addEventListener("input", () => {
-			setBoost(boostCustom.value);
+			changeFilter();
 		});
 
 		document.querySelector("#devig-select").value = DEVIG || "";

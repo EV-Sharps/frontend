@@ -49,7 +49,17 @@
 				</div>
 				<div class="select-wrapper">
 					<label for="book-select" class="select-label">Books</label>
-					<select id="book-select"></select>
+					<select id="book-select">
+						<option value="" selected>All</option>
+						<option value="fd">FD</option>
+						<option value="dk">DK</option>
+						<option value="b365">B365</option>
+						<option value="mgm">MGM</option>
+						<option value="cz">CZ</option>
+						<option value="fn">FN</option>
+						<option value="br">BR</option>
+						<option value="bv">BV</option>
+					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
@@ -88,6 +98,7 @@
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
 						<option value="" selected>All</option>
+						<option value="dal-phi">DAL @ PHI</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -139,7 +150,7 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "tds";
-		let RES, TABLE, LAST, NO365, KAMBI, BOOK;
+		let RES, TABLE, LAST, NO365, KAMBI;
 		let HISTORICAL = {};
 		let url = "";
 		const windowURL = new URL(window.location.href);
@@ -153,6 +164,7 @@
 		let DEVIG = URLParams.get("devig");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
+		let BOOK = URLParams.get("book");
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
@@ -171,60 +183,27 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		function setDevig(devigBook) {
-			let url = new URL(window.location.href);
-			let boost = document.getElementById("boost-select").value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("devig", devigBook);
-
-			RES.data.forEach(row => {
-				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds);
-				if (!avg) {
-					return;
-				}
-				const highest = highestOver(bookOdds, devigBook, boost);
-				let ou = avg.avgAmerican.toString();
-				if (devigBook) {
-					ou = bookOdds[devigBook];
-				}
-				if (!ou) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				let d = devig(ou, highest.value);
-				if (!d) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				row["book"] = highest.book;
-				row["line"] = highest.value;
-				row["ev"] = d.ev;
-				row["fairVal"] = d.fairVal;
-				row["implied"] = d.implied;
-				row["kelly"] = d.kelly;
-			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.setData(RES.data);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
-			TABLE.redraw(true);
-		}
-
-		function setBoost(boost) {
+		function changeFilter() {
 			let devigBook = document.getElementById("devig-select").value;
+			let boost = document.getElementById("boost-select").value;
+			let game = document.getElementById("game-select").value;
+			let book = document.getElementById("book-select").value;
+			BOOK = book;
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
-			params.set("boost", boost);
+			if (boost) {
+				params.set("boost", boost);
+			}
+			if (devigBook) {
+				params.set("devig", devigBook);
+			}
+			if (game) {
+				params.set("game", game);
+			}
+			if (book) {
+				params.set("book", book);
+			}
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -232,7 +211,7 @@
 				if (!avg) {
 					return;
 				}
-				const highest = highestOver(bookOdds, devigBook, boost);
+				const highest = highestOver(bookOdds, devigBook, boost, book);
 				let ou = avg.avgAmerican.toString();
 				if (devigBook) {
 					ou = bookOdds[devigBook];
@@ -265,20 +244,25 @@
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
-			TABLE.redraw(true);
+			if (game) {
+				TABLE.setFilter([
+					{field:"game", type:"=", value: game.replace("-", " @ ")}
+				]);
+			}
+			TABLE.setData(RES.data);
+			//TABLE.redraw(true);
 		}
 
 		const boostSel = document.getElementById('boost-select');
 		const boostCustom = document.getElementById('boost-custom');
 
 		boostSel.value = BOOST || 0;
-
 		if (BOOST == "custom") {
 			boostCustom.style.display = "";
 		}
 		boostSel.addEventListener("change", (event) => {
 			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-			setBoost(event.target.value);
+			changeFilter();
 		});
 
 		boostCustom.addEventListener("input", () => {
@@ -287,7 +271,27 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			setDevig(event.target.value);
+			changeFilter();
+		});
+
+		document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		document.querySelector("#game-select").addEventListener("change", (event) => {
+			GAME = event.target.value;
+			if (GAME) {
+				GAME = GAME.replace("-", " @ ");
+				TABLE.setFilter([
+					{field:"game", type:"=", value: GAME}
+				])
+			} else {
+				TABLE.setFilter();
+			}
+			TABLE.redraw(true);
+		});
+
+		document.querySelector("#book-select").value = BOOK || "";
+		document.querySelector("#book-select").addEventListener("change", (event) => {
+			BOOK = event.target.value;
+			changeFilter();
 		});
 
 		handleSession();
@@ -306,7 +310,7 @@
 					continue;
 				}
 				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
 			}
 		}
 
@@ -318,14 +322,13 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
-				console.log(RES)
 				UPDATED[PAGE] = data["updated"];
 				renderTable(data.data);
 
 				setTimeout(function() {
 					updateTimes();
 					if (DEVIG) {
-						setDevig(DEVIG);
+						changeFilter();
 					}
 					if (GAME) {
 						TABLE.setFilter([
@@ -364,13 +367,13 @@
 						field: "ev",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
-						formatter: evMutFormatter,
+						formatter: evFormatter,
 						responsive: 0
 					},
 					{
 						title: "EV Book", field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
-						formatter: evBookFormatter,
+						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
 						responsive: 0
 					},
@@ -421,11 +424,11 @@
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, width: 55},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `Circa <img class='book-img' src='logos/circa.png' alt='circa' title='circa' />`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false, formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number", formatter: evOddsFormatter},

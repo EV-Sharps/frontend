@@ -986,6 +986,20 @@ const hedgeBookFormatter = function(cell) {
 	</div>`;
 }
 
+const evBookFormatter2 = function(cell, params, rendered) {
+	const data = cell.getRow().getData();
+	let line = data.line;
+	if (parseInt(line || 0) > 0) {
+		line = `+${line}`;
+	}
+	return `
+		<div class='evbook-cell'>
+			<span class='evbook-odds'>${data.line}</span>
+			<img class='book-img' src='logos/${data.book}.png' alt='${data.book}' title='${data.book}' />
+		</div>
+	`;
+}
+
 const evBookFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	if (data.prop == "separator" || !cell.getValue()) return "";
@@ -1927,12 +1941,16 @@ function applyProfitBoost(american, boost) {
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
-function highestOver(bookOdds, excludeBook, boost) {
+function highestOver(bookOdds, excludeBook, boost, book) {
 	if (!boost) {
 		boost = 0;
 	}
 	return Object.entries(bookOdds)
-		.filter(([key, value]) => (!excludeBook || (excludeBook != "" && key !== excludeBook)) && value !== undefined && value !== null)
+		.filter(([key, value]) => 
+			(!excludeBook || (excludeBook != "" && key !== excludeBook))
+			&& (!book || key === book)
+			&& value !== undefined && value !== null
+		)
 		.reduce((max, [key, value]) => {
 			let num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
 			if (isNaN(num)) return max;

@@ -1245,6 +1245,8 @@ const playerFormatter = function(cell, params, rendered) {
 		} else if (["rfi", "gift"].includes(data.prop)) {
 			player = "";
 		}
+	} else if (["movement"].includes(PAGE)) {
+		isPlayerProp = false;
 	}
 
 	let prop = "";

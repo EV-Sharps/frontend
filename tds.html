@@ -84,7 +84,15 @@
 				       type="number" min="0" step="5"
 				       placeholder="Custom %"
 				       style="display:none; width:7ch; margin-left:.5rem;" />
-				<span id="boost-applied" style="margin-left:.5rem; color:#9fb7ff;"></span>
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
+						<option value="" selected>All</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -138,7 +146,7 @@
 		const URLParams = new URLSearchParams(windowURL.search);
 		let DATE = URLParams.get("date");
 		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") != undefined;
+		let GAME = URLParams.get("game");
 		let TODAY = getToday();
 		let SPORT = "nfl";
 		let PLAYER = URLParams.get("player");
@@ -152,6 +160,11 @@
 			document.querySelector("#watermark").style.display = "initial";
 			document.querySelector("#table-container").style["max-height"] = "initial";
 			document.querySelector("#watermark").style.width = "20%";
+		}
+
+		if (GAME) {
+			let [a,h] = GAME.split("-");
+			GAME = `${a} @ ${h}`;
 		}
 
 		window.addEventListener("resize", () => {
@@ -199,7 +212,7 @@
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setData(RES);
+			TABLE.setData(RES.data);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
@@ -313,6 +326,11 @@
 					updateTimes();
 					if (DEVIG) {
 						setDevig(DEVIG);
+					}
+					if (GAME) {
+						TABLE.setFilter([
+							{field:"game", type:"=", value: GAME}
+						])
 					}
 				}, 500);
 			}).catch(err => console.log(err));

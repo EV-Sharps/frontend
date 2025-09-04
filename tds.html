@@ -305,6 +305,7 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
+				console.log(RES)
 				UPDATED[PAGE] = data["updated"];
 				renderTable(data.data);
 

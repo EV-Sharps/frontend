@@ -1814,7 +1814,7 @@ function fetchUpdated(repo="props", render=true) {
 	}).catch(err => console.log(err));
 }
 
-function devig(ou, finalOdds, promo="") {
+function devig(ou, finalOdds, promo) {
 	const parts = String(ou).split("/");
 	if (!parts[0]) return;
 
@@ -1878,8 +1878,15 @@ function devig(ou, finalOdds, promo="") {
 		return round1(ev);
 	});
 	let ev = Math.min(...evs);
-	const kelly = getKelly(finalOdds, ev);
 
+	if (promo == "no-sweat") {
+		// Modest 70% conversion
+		x = 0.70
+		ev = ((100 * (finalOdds / 100 + 1)) * fairValue - 100 + (100 * x));
+		ev = round1(ev);
+	}
+
+	const kelly = getKelly(finalOdds, ev);
 	return { ev, fairVal, implied, kelly };
 }
 
@@ -1978,6 +1985,9 @@ function getAverageImplied(books) {
 function applyProfitBoost(american, boost) {
   const D = americanToDecimal(american);
   if (D == null) return null;
+  if (boost == "no-sweat") {
+  	boost = 0;
+  }
   boost = boost / 100;
   const Dp = 1 + (D - 1) * (1 + boost); // boosted decimal
   return decimalToAmerican(Dp);

@@ -85,6 +85,7 @@
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
+						<option value="no-sweat">No Sweat</option>
 						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -233,7 +234,7 @@
 					row["kelly"] = "";
 					return;
 				}
-				let d = devig(ou, highest.value);
+				let d = devig(ou, highest.value, boost);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -441,7 +442,7 @@
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false, formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number", formatter: evOddsFormatter},
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},

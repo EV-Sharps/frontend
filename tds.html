@@ -274,7 +274,9 @@
 			changeFilter();
 		});
 
-		document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		if (GAME) {
+			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		}
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
 			if (GAME) {

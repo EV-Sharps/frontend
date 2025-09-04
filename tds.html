@@ -71,6 +71,7 @@
 						<option value="fd">vs FD</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
+						<option value="pn+circa">PN & Circa</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -214,10 +215,15 @@
 				if (!avg) {
 					return;
 				}
-				const excluded = [devigBook, "circa"];
+				const excluded = ["pn", "circa"];
+				if (devigBook) {
+					excluded.push(devigBook);
+				}
 				const highest = highestOver(bookOdds, excluded, boost, book);
 				let ou = avg.avgAmerican.toString();
-				if (devigBook) {
+				if (devigBook == "pn+circa") {
+					ou = averageSharps(bookOdds);
+				} else if (devigBook) {
 					ou = bookOdds[devigBook];
 				}
 				if (!ou) {

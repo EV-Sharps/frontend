@@ -1906,6 +1906,35 @@ function getKelly(finalOdds, ev) {
   return ev / Math.abs(p) / 4;
 }
 
+function averageSharps(bookOdds) {
+	let pn = bookOdds.pn;
+	let circa = bookOdds.circa;
+	let overs = [];
+	let unders = [];
+	if (pn) {
+		let [o,u] = pn.split("/");
+		overs.push(americanToImplied(o));
+		unders.push(americanToImplied(u));
+	}
+	if (circa) {
+		let [o,u] = circa.split("/");
+		overs.push(americanToImplied(o));
+		unders.push(americanToImplied(u));
+	}
+	
+	if (overs && overs.length > 0) {
+		overs = overs.reduce((sum, val) => sum + val, 0) / overs.length;
+		overs = impliedToAmerican(overs);
+
+		if (unders && unders.length > 0) {
+			unders = unders.reduce((sum, val) => sum + val, 0) / unders.length;
+			unders = impliedToAmerican(unders);
+		}
+		return unders ? `${overs}/${unders}` : unders;
+	}
+	return "";
+}
+
 // Convert American odds → implied probability
 function americanToImplied(odds) {
   odds = parseInt(odds, 10);

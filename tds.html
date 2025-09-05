@@ -111,7 +111,7 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
+					<label for="prop-select" class="select-label">Prop (wip)</label>
 					<select id="prop-select">
 						<option value="" selected>All</option>
 						<option value="attd">ATTD</option>
@@ -315,6 +315,8 @@
 
 		if (GAME) {
 			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		} else {
+			document.querySelector("#game-select").value = "";
 		}
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
@@ -322,16 +324,8 @@
 			params.set("game", GAME);
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			if (GAME) {
-				GAME = GAME.replace("-", " @ ");
-				TABLE.removeFilter("game");
-				TABLE.addFilter(
-					{field:"game", type:"=", value: GAME}
-				)
-			} else {
-				TABLE.removeFilter("game");
-			}
-			TABLE.redraw(true);
+			TABLE.clearFilter();
+			changeFilter();
 		});
 
 		document.querySelector("#book-select").value = BOOK || "";
@@ -493,7 +487,8 @@
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "ev", visible: false, sorter: "number"}
+					{field: "ev", visible: false, sorter: "number"},
+					{field: "game", visible: false}
 				]
 			});
 		}

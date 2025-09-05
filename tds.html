@@ -224,7 +224,7 @@
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds);
+				let avg = getAverageImplied(bookOdds, row.under);
 				if (!avg) {
 					return;
 				}
@@ -232,12 +232,25 @@
 				if (devigBook) {
 					excluded.push(devigBook);
 				}
-				const highest = highestOver(bookOdds, excluded, boost, book);
+				const highest = highestOver(bookOdds, excluded, boost, book, row.under);
 				let ou = avg.avgAmerican.toString();
-				if (devigBook == "pn+circa") {
-					ou = averageSharps(bookOdds);
-				} else if (devigBook) {
-					ou = bookOdds[devigBook];
+				if (row.under) {
+				    // If under, swap priority
+				    if (devigBook) {
+				        // Use the book's under odds if available
+				        const val = bookOdds[devigBook];
+				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+				    } else if (devigBook === "pn+circa") {
+				        // Fallback to averageSharps for unders if combining books
+				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
+				    }
+				} else {
+				    // Normal over-first logic
+				    if (devigBook === "pn+circa") {
+				        ou = averageSharps(bookOdds);
+				    } else if (devigBook) {
+				        ou = bookOdds[devigBook];
+				    }
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -246,6 +259,7 @@
 					row["kelly"] = "";
 					return;
 				}
+
 				let d = devig(ou, highest.value, boost);
 				if (!d) {
 					row["ev"] = "";
@@ -267,10 +281,16 @@
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
+			const filters = [];
+			TABLE.clearFilter();
 			if (game) {
-				TABLE.setFilter([
-					{field:"game", type:"=", value: game.replace("-", " @ ")}
-				]);
+				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
+			}
+			if (prop) {
+				filters.push({field:"prop", type:"=", value: prop});
+			}
+			if (filters.length > 0) {
+				TABLE.setFilter(filters);
 			}
 			TABLE.setData(RES.data);
 			//TABLE.redraw(true);
@@ -304,13 +324,7 @@
 			params.set("prop", PROP);
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			if (PROP) {
-				TABLE.removeFilter("prop");
-				TABLE.addFilter({field:"prop", type:"=", value: PROP});
-			} else {
-				TABLE.removeFilter("prop");
-			}
-			TABLE.redraw(true);
+			changeFilter();
 		});
 
 		if (GAME) {
@@ -448,11 +462,13 @@
 						title: "Line",
 						field: "handicap",
 						formatter: function(cell) {
-							const prop = cell.getRow().getData().prop;
+							const data = cell.getRow().getData();
+							const prop = data.prop;
 							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
 								return "";
 							}
-							return `o${cell.getValue()}`;
+							let ou = data.under ? "u" : "o";
+							return `${ou}${cell.getValue()}`;
 						}
 					},
 					{

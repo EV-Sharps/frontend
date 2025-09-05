@@ -383,19 +383,19 @@ const pitchPercentileFormatter= function(cell) {
 }
 
 const avgFormatter = function(cell) {
-    let v = cell.getValue();
-    if (v === "-") {
-        return "-";
-    }
-    v = parseFloat(v);
-    if (!Number.isFinite(v)) {
-      return "";
-    }
-    if (v === 0) {
-        return ".000";
-    }
-    // Keep values >= 1 fully intact, slice only if < 1
-    return v < 1 ? String(v.toFixed(3)).slice(1) : v.toFixed(3);
+	let v = cell.getValue();
+	if (v === "-") {
+		return "-";
+	}
+	v = parseFloat(v);
+	if (!Number.isFinite(v)) {
+	  return "";
+	}
+	if (v === 0) {
+		return ".000";
+	}
+	// Keep values >= 1 fully intact, slice only if < 1
+	return v < 1 ? String(v.toFixed(3)).slice(1) : v.toFixed(3);
 };
 
 const eraFormatter = function(cell) {
@@ -769,19 +769,19 @@ function getZColor(value) {
   const Lmax = 46; // at |2|
 
   if (f >= -0.24 && f <= -0.1) {
-  	return "";
+	return "";
   }
 
   if (f >= -0.1) {
-    // Clamp positives 0–2 → blue scale
-    const clamped = Math.min(2, v);
-    const L = L0 + (Lmax - L0) * (clamped / 2);
-    return `hsl(210 100% ${L}%)`; // Blue
+	// Clamp positives 0–2 → blue scale
+	const clamped = Math.min(2, v);
+	const L = L0 + (Lmax - L0) * (clamped / 2);
+	return `hsl(210 100% ${L}%)`; // Blue
   } else {
-    // Clamp negatives [0 → -1] → Orange
-    const clamped = Math.max(-1, v); // don’t go below -1
-    const L = L0 + (Lmax - L0) * (Math.abs(clamped) / 1); 
-    return `hsl(30 100% ${L}%)`; // Orange
+	// Clamp negatives [0 → -1] → Orange
+	const clamped = Math.max(-1, v); // don’t go below -1
+	const L = L0 + (Lmax - L0) * (Math.abs(clamped) / 1); 
+	return `hsl(30 100% ${L}%)`; // Orange
   }
 }
 
@@ -1899,9 +1899,9 @@ function getKelly2(finalOdds, implied) {
   let b;
 
   if (finalOdds > 0) {
-    b = finalOdds / 100;
+	b = finalOdds / 100;
   } else {
-    b = 100 / Math.abs(finalOdds);
+	b = 100 / Math.abs(finalOdds);
   }
 
   const kelly = ((p * b - (1 - p)) / b) / 4; // quarter Kelly
@@ -1911,7 +1911,7 @@ function getKelly2(finalOdds, implied) {
 function getKelly(finalOdds, ev) {
   let p = finalOdds / 100;
   if (finalOdds < 0) {
-  	p = 100 / finalOdds;
+	p = 100 / finalOdds;
   }
   
   return ev / Math.abs(p) / 4;
@@ -1951,16 +1951,16 @@ function americanToImplied(odds) {
   odds = parseInt(odds, 10);
   if (isNaN(odds)) return null;
   return odds > 0
-    ? 100 / (odds + 100)
-    : Math.abs(odds) / (Math.abs(odds) + 100);
+	? 100 / (odds + 100)
+	: Math.abs(odds) / (Math.abs(odds) + 100);
 }
 
 // Convert implied probability → American odds
 function impliedToAmerican(prob) {
   if (prob <= 0 || prob >= 1) return null;
   return prob >= 0.5
-    ? -Math.round((prob / (1 - prob)) * 100)
-    : Math.round(((1 - prob) / prob) * 100);
+	? -Math.round((prob / (1 - prob)) * 100)
+	: Math.round(((1 - prob) / prob) * 100);
 }
 
 function americanToDecimal(a) {
@@ -1973,10 +1973,21 @@ function decimalToAmerican(d) {
   return d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
 }
 
-function getAverageImplied(books) {
+function getAverageImplied(books, under) {
   const impliedProbs = Object.values(books)
-    .map(americanToImplied)
-    .filter(p => p !== null);
+	.map(val => {
+	  if (!val) return null;
+
+	  // Handle "over/under" format like "200/-250"
+	  const parts = String(val).split("/");
+	  let odd = parts[0]; // default: over odds
+	  if (under && parts.length > 1) {
+		odd = parts[1]; // switch to under odds if available
+	  }
+
+	  return americanToImplied(odd);
+	})
+	.filter(p => p !== null);
 
   if (impliedProbs.length === 0) return null;
 
@@ -1990,7 +2001,7 @@ function applyProfitBoost(american, boost) {
   const D = americanToDecimal(american);
   if (D == null) return null;
   if (boost == "no-sweat") {
-  	boost = 0;
+	boost = 0;
   }
   boost = boost / 100;
   const Dp = 1 + (D - 1) * (1 + boost); // boosted decimal
@@ -2000,23 +2011,33 @@ function applyProfitBoost(american, boost) {
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
-function highestOver(bookOdds, excludeBooks, boost, book) {
+function highestOver(bookOdds, excluded, boost, book, under) {
 	if (!boost) {
 		boost = 0;
 	}
 	return Object.entries(bookOdds)
-		.filter(([key, value]) => 
-			//(!excludeBook || (excludeBook != "" && key !== excludeBook))
-			!excludeBooks.includes(key)
-			&& (!book || key === book)
-			&& value !== undefined && value !== null
+		.filter(([key, value]) =>
+		  // exclude list
+		  !excluded.includes(key) &&
+		  // if a specific book is requested, only consider that one
+		  (!book || key === book) &&
+		  value !== undefined && value !== null && value !== ""
 		)
-		.reduce((max, [key, value]) => {
-			let num = parseInt(String(value).split("/")[0].replace("+", ""), 10);
+		.reduce(
+		  (max, [key, value]) => {
+			// value can be "550" or "431/-655"
+			const parts = String(value).split("/");
+			const pick = under && parts.length > 1 ? parts[1] : parts[0];
+
+			// parse "+375" -> 375, "-120" -> -120
+			let num = parseInt(pick.replace("+", ""), 10);
 			if (isNaN(num)) return max;
+
+			// apply your profit boost (works for +/- American)
 			num = applyProfitBoost(num, boost);
-			return num > max.value ? { book: key, value: num } : max;
-		},
-		{book: null, value: -Infinity}
+
+			return num > max.value ? { book: key, value: num, raw: pick } : max;
+		  },
+		  { book: null, value: -Infinity, raw: null }
 	);
 }

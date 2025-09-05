@@ -433,7 +433,14 @@
 						title: "Prop",
 						field: "prop",
 						formatter: function(cell) {
-							return cell.getValue().substring(0, 8);
+							const data = cell.getRow().getData();
+							let line = data.handicap;
+							let prop = cell.getValue();
+							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
+								return prop;
+							}
+							line = parseFloat(line) + 0.5;
+							return `${line}+ ${cell.getValue()}`;
 						}
 					},
 					{

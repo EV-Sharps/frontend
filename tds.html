@@ -88,9 +88,12 @@
 				      <label><input type="checkbox" value="hr"> HR</label>
 				      <label><input type="checkbox" value="kambi"> Kambi</label>
 				      <div class="chkdd-actions">
-				      	<button onclick="saveExcludeBooks()">Save choices</button>
+				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
+				      </div>
+				      <div>
+				      	<span id="exclude-status"></span>
 				      </div>
 				    </div>
 				  </div>

@@ -189,11 +189,22 @@ const evOddsFormatter = function(cell) {
 		return "";
 	}
 
+	let res = odds;
 	if (PAGE != "dingers" && data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
+		if (odds.includes("/")) {
+			let [o,u] = odds.split("/");
+			if (data.under) {
+				res = `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`
+			} else {
+				res = `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`
+			}
+			return res;
+		}
+		return `<span style='color:${cls}'>${odds}</span>`;
 	}
 
-	return `<span style='color:${cls}'>${odds}</span>`;
+	return res;
 }
 
 const oddsFormatter = function(cell) {

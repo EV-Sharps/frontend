@@ -90,7 +90,7 @@ function changePage(page) {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
 		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (["mlb", "nba", "nfl", "nhl"].includes(page)) {
+	} else if (["mlb", "nba", "nhl"].includes(page)) {
 		window.location.href = `./props${HTML}?sport=${page}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
@@ -709,7 +709,7 @@ const oppFormatter = function(cell, params, rendered) {
 	let pitcher = "";
 	if (PAGE == "preview") {
 		pitcher = cell.getValue().toUpperCase();
-	} else if (PAGE == "tds") {
+	} else if (PAGE == "tds" || PAGE == "nfl") {
 		pitcher = data.opp.toUpperCase();
 	} else {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
@@ -880,7 +880,7 @@ const rankingFormatter = function(cell, params, rendered) {
 		}
 		let value = cell.getValue();
 		let color;
-		if (PAGE == "tds") {
+		if (PAGE == "tds" || PAGE == "nfl") {
 			if (value["opp-rz-scoring-pct"] === undefined || data.player.includes("d/st")) {
 				return "";
 			}

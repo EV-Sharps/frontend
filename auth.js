@@ -340,6 +340,8 @@ async function handleSession() {
 		}, 30 * 1000);
 	} else if (PAGE == "tds") {
 		fetchTuddys();
+	} else if (PAGE == "nfl") {
+		fetchNFLProps();
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
 		setInterval(() => {

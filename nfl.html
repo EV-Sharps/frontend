@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏈 Touchdowns</title>
+	<title>🏈 Props</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -196,7 +196,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "tds";
+		PAGE = "nfl";
 		let RES, TABLE, LAST, NO365, KAMBI;
 		let HISTORICAL = {};
 		let url = "";
@@ -452,17 +452,17 @@
 		function initExcluded() {
 			if (!CURR_USER) return;
 
-			let excluded = CURR_USER?.metadata?.["tds-exclude"] || [];
+			let excluded = CURR_USER?.metadata?.["nfl-exclude"] || [];
 			const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
 			checkboxes.forEach(checkbox => {
 				checkbox.checked = excluded.includes(checkbox.value);
 			});
 		}
 
-		function fetchTuddys() {
+		function fetchNFLProps() {
 			renderTable([]);
 			initExcluded();
-			fetch(API_BASE+`/api/tds`, {
+			fetch(API_BASE+`/api/nfl`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

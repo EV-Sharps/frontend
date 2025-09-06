@@ -238,22 +238,22 @@
 		// Exclude
 		const dd = document.getElementById('exclude-dd');
 		const excludeBtn = dd.querySelector('.chkdd-btn');
-		const menu = dd.querySelector('.chkdd-menu');
+		let menu = dd.querySelector('.chkdd-menu');
 		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
 		const countEl = dd.querySelector('.count');
 
 		function getExcludedBooks() {
 		  return boxes.filter(b => b.checked).map(b => b.value);
 		}
-		excludeBtn.addEventListener("click", () => {
-			const open = dd.classList.toggle("open");
-			excludeBtn.setAttribute("aria-expanded", open ? true : false);
+		excludeBtn.addEventListener("click", (e) => {
+			//const open = dd.classList.toggle("open");
+			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
+			e.stopPropagation();
+			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
+  			open ? closeMenu() : openMenu();
 		});
 		document.addEventListener('click', (e) => {
-		  if (!dd.contains(e.target)) {
-		    dd.classList.remove('open');
-		    excludeBtn.setAttribute('aria-expanded', 'false');
-		  }
+			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
 		});
 		boxes.forEach(b => b.addEventListener('change', () => {
 		  changeFilter();
@@ -266,6 +266,23 @@
 		  boxes.forEach(b => b.checked = state);
 		  changeFilter();
 		});
+
+		function openMenu() {
+		  const r = excludeBtn.getBoundingClientRect();
+		  menu.style.position = 'fixed';
+		  menu.style.top = `${r.bottom + 6}px`;
+		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+		  menu.style.right = 'auto';
+		  document.body.appendChild(menu);       // move out of the scroller
+		  menu.style.display = 'block';
+		  excludeBtn.setAttribute('aria-expanded','true');
+		}
+
+		function closeMenu() {
+		  menu.style.display = 'none';
+		  dd.appendChild(menu);                  // put it back (optional)
+		  excludeBtn.setAttribute('aria-expanded','false');
+		}
 		
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
@@ -376,6 +393,8 @@
 			TABLE.setData(RES.data);
 			//TABLE.redraw(true);
 		}
+
+
 
 		const boostSel = document.getElementById('boost-select');
 		const boostCustom = document.getElementById('boost-custom');

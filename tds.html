@@ -21,34 +21,6 @@
 		#table {
 			width: auto;
 		}
-		#boost-custom {
-			font-size: 16px;
-		}
-		#header {
-			z-index: 50;
-		}
-
-		.chkdd { position:relative; }
-		.chkdd-btn {
-		  background:#1b1f26; color:#e6e9ef; border:1px solid #2f3642; border-radius:.6rem;
-		  padding:.55rem .8rem; font-size:.9rem; cursor:pointer;
-		}
-		.chkdd-btn .count { opacity:.7; margin-left:.25rem; }
-		.chkdd-menu {
-		  position:absolute; top:calc(100% + 6px); right:0; min-width:180px;
-		  background:#0e1217; border:1px solid #2f3642; border-radius:.6rem;
-		  box-shadow:0 8px 24px rgba(0,0,0,.35); padding:.4rem; display:none; z-index:50;
-		}
-		.chkdd.open .chkdd-menu { display:block; }
-		.chkdd-menu label {
-		  display:flex; align-items:center; gap:.5rem; padding:.35rem .4rem; cursor:pointer; color:#cfd6e4;
-		}
-		.chkdd-menu label:hover { background:#151a22; }
-		.chkdd-menu input { accent-color:#6eb1ff; }
-		.chkdd-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.35rem; }
-		.chkdd-actions button {
-		  background:#1b1f26; color:#cfd6e4; border:1px solid #2f3642; border-radius:.35rem; padding:.25rem .5rem; cursor:pointer;
-		}
 		@media (max-width: 1500px) {
 			#table {
 				width: 100%;
@@ -116,6 +88,7 @@
 				      <label><input type="checkbox" value="hr"> HR</label>
 				      <label><input type="checkbox" value="kambi"> Kambi</label>
 				      <div class="chkdd-actions">
+				      	<button onclick="saveExcludeBooks()">Save choices</button>
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
 				      </div>
@@ -473,8 +446,19 @@
 			}
 		}
 
+		function initExcluded() {
+			if (!CURR_USER) return;
+
+			let exlcuded = CURR_USER?.metadata?.["tds-exclude"] || [];
+			const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
+			checkboxes.forEach(checkbox => {
+				checkbox.checked = excluded.includes(checkbox.value);
+			});
+		}
+
 		function fetchTuddys() {
 			renderTable([]);
+			initExcluded();
 			fetch(API_BASE+`/api/tds`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`

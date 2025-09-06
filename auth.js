@@ -165,6 +165,34 @@ async function saveTableSettings() {
   }, 3000);
 }
 
+async function saveExcludeBooks() {
+	if (!CURR_USER) {
+		return;
+	}
+
+	const data = {};
+	data[`${PAGE}-exclude`] = getExcludedBooks();
+	const newData = { ...CURR_USER.metadata, ...data };
+	const { error: updateError } = await SB.from('profiles')
+		.update({
+			metadata: newData
+		})
+		.eq('id', CURR_SESSION.user.id);
+	if (updateError) {
+		console.error('Update profile error:', updateError);
+		saveStatus.textContent = "Error Saving";
+	} else {
+		saveStatus.textContent = "✅ Saved!";
+	}
+
+	CURR_USER.metadata = newData;
+
+  setTimeout(() => {
+    saveStatus.textContent = '';
+    saveBtn.disabled = false;
+  }, 3000);
+}
+
 function fillProfile(data, discordUsername, tier, session) {
 	if (document.querySelector("#profile-username")) {
 		document.querySelector("#profile-username").innerText = `${session.user.email}`;

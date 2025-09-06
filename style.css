@@ -66,6 +66,34 @@ body::before {
 	z-index: 1; /* ensure your content is above overlay */
 	color: #fff;
 }
+#boost-custom {
+	font-size: 16px;
+}
+#header {
+	z-index: 50;
+}
+
+.chkdd { position:relative; }
+.chkdd-btn {
+  background:#1b1f26; color:#e6e9ef; border:1px solid #2f3642; border-radius:.6rem;
+  font-size:.9rem; cursor:pointer;
+}
+.chkdd-btn .count { opacity:.7; margin-left:.25rem; }
+.chkdd-menu {
+  position:absolute; top:calc(100% + 6px); right:0; min-width:180px;
+  background:#0e1217; border:1px solid #2f3642; border-radius:.6rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.35); padding:.4rem; display:none; z-index:50;
+}
+.chkdd.open .chkdd-menu { display:block; }
+.chkdd-menu label {
+  display:flex; align-items:center; gap:.5rem; padding:.35rem .4rem; cursor:pointer; color:#cfd6e4;
+}
+.chkdd-menu label:hover { background:#151a22; }
+.chkdd-menu input { accent-color:#6eb1ff; }
+.chkdd-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.35rem; }
+.chkdd-actions button {
+  background:#1b1f26; color:#cfd6e4; border:1px solid #2f3642; border-radius:.35rem; padding:.25rem .5rem; cursor:pointer;
+}
 .oauth-btn {
 		display: inline-flex;
 		align-items: center;

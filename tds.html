@@ -24,6 +24,31 @@
 		#boost-custom {
 			font-size: 16px;
 		}
+		#header {
+			z-index: 50;
+		}
+
+		.chkdd { position:relative; }
+		.chkdd-btn {
+		  background:#1b1f26; color:#e6e9ef; border:1px solid #2f3642; border-radius:.6rem;
+		  padding:.55rem .8rem; font-size:.9rem; cursor:pointer;
+		}
+		.chkdd-btn .count { opacity:.7; margin-left:.25rem; }
+		.chkdd-menu {
+		  position:absolute; top:calc(100% + 6px); right:0; min-width:180px;
+		  background:#0e1217; border:1px solid #2f3642; border-radius:.6rem;
+		  box-shadow:0 8px 24px rgba(0,0,0,.35); padding:.4rem; display:none; z-index:50;
+		}
+		.chkdd.open .chkdd-menu { display:block; }
+		.chkdd-menu label {
+		  display:flex; align-items:center; gap:.5rem; padding:.35rem .4rem; cursor:pointer; color:#cfd6e4;
+		}
+		.chkdd-menu label:hover { background:#151a22; }
+		.chkdd-menu input { accent-color:#6eb1ff; }
+		.chkdd-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.35rem; }
+		.chkdd-actions button {
+		  background:#1b1f26; color:#cfd6e4; border:1px solid #2f3642; border-radius:.35rem; padding:.25rem .5rem; cursor:pointer;
+		}
 	</style>
 </head>
 
@@ -61,6 +86,7 @@
 						<option value="cz">CZ</option>
 						<option value="fn">FN</option>
 						<option value="br">BR</option>
+						<option value="hr">HR</option>
 						<option value="bv">BV</option>
 						<option value="kambi">Kambi</option>
 					</select>
@@ -68,6 +94,28 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+				<div class="chkdd" id="exclude-dd">
+				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+				      Exclude <span class="count" aria-hidden="true"></span>
+				    </button>
+				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
+				      <label><input type="checkbox" value="fd"> FD</label>
+				      <label><input type="checkbox" value="dk"> DK</label>
+				      <label><input type="checkbox" value="b365"> B365</label>
+				      <label><input type="checkbox" value="mgm"> MGM</label>
+				      <label><input type="checkbox" value="espn"> ESPN</label>
+				      <label><input type="checkbox" value="cz"> CZ</label>
+				      <label><input type="checkbox" value="fn"> FN</label>
+				      <label><input type="checkbox" value="br"> BR</label>
+				      <label><input type="checkbox" value="bv"> BV</label>
+				      <label><input type="checkbox" value="hr"> HR</label>
+				      <label><input type="checkbox" value="kambi"> Kambi</label>
+				      <div class="chkdd-actions">
+				        <button type="button" data-act="all">All</button>
+				        <button type="button" data-act="none">None</button>
+				      </div>
+				    </div>
+				  </div>
 				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
@@ -104,7 +152,6 @@
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
 						<option value="" selected>All</option>
-						<option value="kc-lac">KC @ LAC</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -188,6 +235,38 @@
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
+		// Exclude
+		const dd = document.getElementById('exclude-dd');
+		const excludeBtn = dd.querySelector('.chkdd-btn');
+		const menu = dd.querySelector('.chkdd-menu');
+		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
+		const countEl = dd.querySelector('.count');
+
+		function getExcludedBooks() {
+		  return boxes.filter(b => b.checked).map(b => b.value);
+		}
+		excludeBtn.addEventListener("click", () => {
+			const open = dd.classList.toggle("open");
+			excludeBtn.setAttribute("aria-expanded", open ? true : false);
+		});
+		document.addEventListener('click', (e) => {
+		  if (!dd.contains(e.target)) {
+		    dd.classList.remove('open');
+		    excludeBtn.setAttribute('aria-expanded', 'false');
+		  }
+		});
+		boxes.forEach(b => b.addEventListener('change', () => {
+		  changeFilter();
+		}));
+
+		menu.addEventListener('click', (e) => {
+		  const act = e.target?.dataset?.act;
+		  if (!act) return;
+		  const state = act === 'all';
+		  boxes.forEach(b => b.checked = state);
+		  changeFilter();
+		});
+		
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
 			document.querySelector("#table-container").style["max-height"] = "initial";
@@ -209,6 +288,7 @@
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
 			let prop = document.getElementById("prop-select").value;
+			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
@@ -228,11 +308,12 @@
 				if (!avg) {
 					return;
 				}
-				const excluded = ["pn", "circa"];
+				const ex = excluded;
+				ex.push("pn"); ex.push("circa");
 				if (devigBook) {
-					excluded.push(devigBook);
+					ex.push(devigBook);
 				}
-				const highest = highestOver(bookOdds, excluded, boost, book, row.under);
+				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
 				    // If under, swap priority
@@ -377,6 +458,26 @@
 			}).then(response => response.json()).then(data => {
 				RES = data;
 				UPDATED[PAGE] = data["updated"];
+
+				const gameSel = document.getElementById("game-select");
+				data.games.forEach(game => {
+					const option = document.createElement("option");
+					option.value = game.replace(" @ ", "-");
+					option.textContent = game.toUpperCase();
+					gameSel.appendChild(option);
+				});
+
+				const propSel = document.getElementById("prop-select");
+				data.props.forEach(prop => {
+					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
+						return;
+					}
+					const option = document.createElement("option");
+					option.value = prop;
+					option.textContent = prop.toUpperCase();
+					propSel.appendChild(option);
+				});
+
 				renderTable(data.data);
 
 				setTimeout(function() {

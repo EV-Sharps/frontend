@@ -170,6 +170,12 @@ async function saveExcludeBooks() {
 		return;
 	}
 
+	const saveBtn = document.querySelector("#save-exclude");
+	const saveStatus = document.querySelector("#exclude-status");
+
+	saveStatus.textContent = "Saving...";
+	saveBtn.disabled = true;
+
 	const data = {};
 	data[`${PAGE}-exclude`] = getExcludedBooks();
 	const newData = { ...CURR_USER.metadata, ...data };

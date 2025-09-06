@@ -58,7 +58,7 @@
 						<option value="" selected>All</option>
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
-						<option value="b365">B365</option>
+						<!-- <option value="b365">B365</option> -->
 						<option value="mgm">MGM</option>
 						<option value="cz">CZ</option>
 						<option value="fn">FN</option>
@@ -449,7 +449,7 @@
 		function initExcluded() {
 			if (!CURR_USER) return;
 
-			let exlcuded = CURR_USER?.metadata?.["tds-exclude"] || [];
+			let excluded = CURR_USER?.metadata?.["tds-exclude"] || [];
 			const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
 			checkboxes.forEach(checkbox => {
 				checkbox.checked = excluded.includes(checkbox.value);

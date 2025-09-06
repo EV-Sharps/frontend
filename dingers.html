@@ -147,6 +147,25 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
+					<label for="book-select" class="select-label">Book</label>
+					<select id="book-select">
+						<option value="" selected>All</option>
+						<option value="fd">FD</option>
+						<option value="dk">DK</option>
+						<option value="b365">B365</option>
+						<option value="mgm">MGM</option>
+						<option value="cz">CZ</option>
+						<option value="fn">FN</option>
+						<option value="br">BR</option>
+						<option value="hr">HR</option>
+						<option value="bv">BV</option>
+						<option value="kambi">Kambi</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
 					<label for="promo-select" class="select-label">Promo</label>
 					<select id="promo-select">
 						<option value="" selected>All Books</option>
@@ -1076,6 +1095,16 @@
 			]);
 			TABLE.redraw(true);
 		});
+
+		document.querySelector("#book-select").value = BOOK || "";
+		document.querySelector("#book-select").addEventListener("change", (event) => {
+			BOOK = event.target.value;
+			changeFilter();
+		});
+
+		function changeFilter() {
+			
+		}
 	</script>
 </body>
 </html>

@@ -2038,6 +2038,9 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		  (max, [key, value]) => {
 			// value can be "550" or "431/-655"
 			const parts = String(value).split("/");
+			if (under && parts.length <= 1) {
+				return max;
+			}
 			const pick = under && parts.length > 1 ? parts[1] : parts[0];
 
 			// parse "+375" -> 375, "-120" -> -120

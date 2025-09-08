@@ -449,19 +449,7 @@
 			}
 		}
 
-		function initExcluded() {
-			if (!CURR_USER) return;
-
-			let excluded = CURR_USER?.metadata?.["nfl-exclude"] || [];
-			const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
-			checkboxes.forEach(checkbox => {
-				checkbox.checked = excluded.includes(checkbox.value);
-			});
-		}
-
 		function fetchNFLProps() {
-			renderTable([]);
-			initExcluded();
 			fetch(API_BASE+`/api/nfl`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`

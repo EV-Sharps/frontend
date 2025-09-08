@@ -73,6 +73,9 @@ body::before {
 	z-index: 50;
 }
 
+.btn-group {
+	display: flex;
+}
 .chkdd { position:relative; }
 .chkdd-btn {
   background:#1b1f26; color:#e6e9ef; border:1px solid #2f3642; border-radius:.6rem;
@@ -395,11 +398,12 @@ input, textarea, select {
 }
 
 #center-dropdown {
-	position: absolute;
-	left: 50%; transform: translateX(-50%);
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
+	position: absolute;
+  width: 100%;
+  justify-content: center;
 }
 #center-dropdown button {
 	background: #007bff;
@@ -1249,6 +1253,9 @@ button#logout:hover {
 	}
 	#center-dropdown, #auth-buttons {
 		width: auto;
+	}
+	#center-dropdown {
+		justify-content: initial;
 	}
 	#auth-buttons {
 		justify-content: initial;

@@ -356,7 +356,7 @@
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setData(RES.data);
+			//TABLE.setData(RES.data);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
@@ -449,19 +449,7 @@
 			}
 		}
 
-		function initExcluded() {
-			if (!CURR_USER) return;
-
-			let excluded = CURR_USER?.metadata?.["tds-exclude"] || [];
-			const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
-			checkboxes.forEach(checkbox => {
-				checkbox.checked = excluded.includes(checkbox.value);
-			});
-		}
-
 		function fetchTuddys() {
-			renderTable([]);
-			initExcluded();
 			fetch(API_BASE+`/api/tds`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
@@ -495,6 +483,9 @@
 					updateTimes();
 					if (DEVIG) {
 						changeFilter();
+					}
+					if (PRETTY != undefined) {
+						pretty_();
 					}
 					if (GAME) {
 						TABLE.setFilter([
@@ -636,7 +627,6 @@
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "ev", visible: false, sorter: "number"},
 					{field: "game", visible: false}
 				]
 			});
@@ -648,6 +638,14 @@
 			} else {
 				TABLE.setGroupBy();
 			}
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>
 </body>

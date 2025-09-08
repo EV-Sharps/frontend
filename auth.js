@@ -165,6 +165,16 @@ async function saveTableSettings() {
   }, 3000);
 }
 
+function initExcluded() {
+	if (!CURR_USER) return;
+
+	let excluded = CURR_USER?.metadata?.[`${PAGE}-exclude`] || [];
+	const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
+	checkboxes.forEach(checkbox => {
+		checkbox.checked = excluded.includes(checkbox.value);
+	});
+}
+
 async function saveExcludeBooks() {
 	if (!CURR_USER) {
 		return;
@@ -340,10 +350,26 @@ async function handleSession() {
 		}, 30 * 1000);
 	} else if (PAGE == "tds") {
 		fetchTuddys();
+		initExcluded();
+		renderTable([]);
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchTuddys();
+			}
+		}, 30 * 1000);
 	} else if (PAGE == "nfl") {
 		fetchNFLProps();
+		initExcluded();
+		renderTable([]);
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchNFLProps();
+			}
+		}, 30 * 1000);
 	} else if (PAGE == "dingers") {
 		fetchDingersData();
+		initExcluded();
+		renderTable([]);
 		setInterval(() => {
 			if (!MOBILE || document.hasFocus()) {
 				fetchDingersData(render=false);

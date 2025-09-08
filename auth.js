@@ -372,7 +372,7 @@ async function handleSession() {
 		renderTable([]);
 		setInterval(() => {
 			if (!MOBILE || document.hasFocus()) {
-				fetchDingersData(render=false);
+				fetchDingersData();
 			}
 		}, 60 * 1000);
 	}

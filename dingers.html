@@ -719,7 +719,7 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		function parseData(data, render) {
+		function parseData(data) {
 			UPDATED[PAGE] = data["updated"];
 			const games = data["games"];
 			data = data["data"];
@@ -739,37 +739,9 @@
 					gameSel.appendChild(option);
 				});
 			}
-
-			if (render) {
-				renderTable(data);
-			} else {
-				if (!TABLE.options.groupBy) {
-					//TABLE.setData(TABLE.getData());
-					TABLE.updateOrAddData(data);
-					updateHeaders();
-					TABLE.setSort(TABLE.getSorters());
-				} else {
-					TABLE.updateOrAddData(data);
-					updateHeaders();
-					TABLE.setSort(TABLE.getSorters());
-				}
-				TABLE.redraw(true);
-			}
-
-			setTimeout(function() {
-				if (PRETTY != undefined) {
-					pretty_();
-				}
-				if (IMP != undefined) {
-					implied();
-				}
-				if (SIMPLE != undefined) {
-					["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
-				}
-			}, 200);
 		}
 
-		async function fetchDingersData(render=true) {
+		async function fetchDingersData() {
 			let url = "/api/ev";
 			const params = new URLSearchParams();
 			if (NOCACHE != undefined) {
@@ -789,8 +761,17 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(res => res.json()).then(res => {
-				parseData(res.data, render);
+				parseData(res.data);
 				setTimeout(function() {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+					if (IMP != undefined) {
+						implied();
+					}
+					if (SIMPLE != undefined) {
+						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
+					}
 					updateTimes();
 					changeFilter();
 				}, 500)

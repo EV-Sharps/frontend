@@ -721,8 +721,8 @@
 
 		function parseData(data, render) {
 			UPDATED[PAGE] = data["updated"];
-			data = data["data"];
 			const games = data["games"];
+			data = data["data"];
 
 			if (PLAYER) {
 				data = data.filter(r => PLAYER.split(",").includes(r.player))

@@ -2000,20 +2000,27 @@ function decimalToAmerican(d) {
 }
 
 function getAverageImplied(books, under) {
-  const impliedProbs = Object.values(books)
-	.map(val => {
-	  if (!val) return null;
+	const skipUnder = new Set(["kambi", "espn"]);
+  const impliedProbs = Object.entries(books)
+  	.filter(([book, val]) => {
+  		if (val === null || val === "") return false;
+  		const hasSlash = String(val).includes("/");
 
+  		if (under) {
+  			if (skipUnder.has(book)) return false;
+  			if (!hasSlash) return false;
+  		}
+  		return true;
+  	})
+	.map(([b, val]) => {
 	  // Handle "over/under" format like "200/-250"
 	  const parts = String(val).split("/");
-	  let odd = parts[0]; // default: over odds
-	  if (under && parts.length > 1) {
-		odd = parts[1]; // switch to under odds if available
-	  }
-
+	  const odd = under ? parts[parts.length - 1] : parts[0];
+	  const num = parseInt(odd, 10);
+	  if (Number.isNaN(num)) return null;
 	  return americanToImplied(odd);
 	})
-	.filter(p => p !== null);
+	.filter((p) => p != null);
 
   if (impliedProbs.length === 0) return null;
 
@@ -2021,6 +2028,23 @@ function getAverageImplied(books, under) {
   const avgAmerican = impliedToAmerican(avgProb);
 
   return { avgProb, avgAmerican };
+}
+
+function buildOU(books) {
+	const over = getAverageImplied(books, false)?.avgAmerican ?? "-";
+	const under = getAverageImplied(books, true)?.avgAmerican ?? "-";
+
+	let ou = `${over}/${under}`;
+
+	// mirror:
+	// if ou == "-/-" or startswith "-/" or "0/" → skip (return null)
+	if (ou === "-/-" || ou.startsWith("-/") || ou.startsWith("0/")) return null;
+
+	// if endswith "/-" or "/0" → keep only over side
+	if (ou.endsWith("/-") || ou.endsWith("/0")) {
+		ou = ou.split("/")[0];
+	}
+	return ou;
 }
 
 function applyProfitBoost(american, boost) {

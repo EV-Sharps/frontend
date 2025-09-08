@@ -792,11 +792,7 @@
 				parseData(res.data, render);
 				setTimeout(function() {
 					updateTimes();
-					if (GAME) {
-						TABLE.setFilter([
-							{field:"game", type:"=", value: GAME}
-						])
-					}
+					changeFilter();
 				}, 500)
 			}).catch(err => console.log(err));
 		}
@@ -1185,8 +1181,9 @@
 
 			RES.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
+				//let avg = getAverageImplied(bookOdds, row.under);
+				let ou = buildOU(bookOdds);
+				if (!ou) {
 					return;
 				}
 				const ex = excluded;
@@ -1195,7 +1192,8 @@
 					ex.push(devigBook);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				let ou = avg.avgAmerican.toString();
+				//let ou = avg.avgAmerican.toString();
+
 				if (row.under) {
 				    // If under, swap priority
 				    if (devigBook) {

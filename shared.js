@@ -1739,7 +1739,7 @@ const diffFormatter = function(cell) {
 }
 
 const DEFAULT_FIELDS = [
-	"ev", "fairVal", "implied", "kelly", "player", "book", "bookOdds_fd", "bookOdds_365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
+	"ev", "fairVal", "implied", "kelly", "player", "book", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
 	"stadiumRank", "stadiumRankLeft", "stadiumRankRight"
 ];
 
@@ -1764,6 +1764,8 @@ function showHideUserTable() {
 			for (k of CURR_USER.metadata[PAGE]) {
 				if (k.includes("curr_")) {
 					arr.push(k.replace("curr_", ""));
+				} else if (k == "365") {
+					arr.push("b365");
 				} else if (k == "curr_fv" || k == "fv") {
 					arr.push("fairVal");
 				} else {

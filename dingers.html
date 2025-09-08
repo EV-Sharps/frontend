@@ -339,20 +339,20 @@
 						<div>
 							<h3>Expected Value</h3>
 							<div>
-								<input id="custom_curr_ev" type="checkbox">
-								<label for="custom_curr_ev">Expected Value</label>
+								<input id="custom_ev" type="checkbox">
+								<label for="custom_ev">Expected Value</label>
 							</div>
 							<div>
-								<input id="custom_curr_fv" type="checkbox">
-								<label for="custom_curr_fv">Fair Value</label>
+								<input id="custom_fairVal" type="checkbox">
+								<label for="custom_fairVal">Fair Value</label>
 							</div>
 							<div>
-								<input id="custom_curr_implied" type="checkbox">
-								<label for="custom_curr_implied">Implied</label>
+								<input id="custom_implied" type="checkbox">
+								<label for="custom_implied">Implied</label>
 							</div>
 							<div>
-								<input id="custom_curr_kelly" type="checkbox">
-								<label for="custom_curr_kelly">¼ Kelly</label>
+								<input id="custom_kelly" type="checkbox">
+								<label for="custom_kelly">¼ Kelly</label>
 							</div>
 						</div>
 						<!-- Player / Odds -->
@@ -678,10 +678,6 @@
 			} else {
 				plotHRGap();
 			}
-		});
-
-		document.querySelector("#filter-select").addEventListener("change", function(event) {
-			groupByGame();
 		});
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
@@ -1067,21 +1063,6 @@
 			}
 		}
 
-		function groupByGame() {
-			if (!TABLE.options.groupBy) {
-				TABLE.setSort([
-					{column: "curr_ev", dir: "desc"},
-					{column: "startSortable", dir: "asc"},
-				]);
-				TABLE.setGroupBy("game");
-			} else {
-				TABLE.setGroupBy("");
-				TABLE.setSort([
-					{column: "curr_ev", dir: "desc"},
-				]);
-			}
-		}
-
 		function implied() {
 			TABLE.getColumns().map(c => {
 				c.hide()
@@ -1120,7 +1101,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`curr_ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "order", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "order", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 

@@ -699,10 +699,10 @@
 					continue;
 				}
 
-				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
+				if (!TABLE.getColumn(`bookOdds.${book}`)) {
 					continue;
 				}
-				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
+				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
 				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`;
 			}
 		}

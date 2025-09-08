@@ -332,7 +332,7 @@ const mixFormatter2 = function(cell) {
 
 const allowedFormatter = function(cell) {
 	const data = cell.getRow().getData();
-	const field = cell.getField().split(".")[1];
+	const [which, field] = cell.getField().split(".");
 
 	if (data.blurred) {
 		return `<div class="blurred">${cell.getValue()}</div>`
@@ -340,18 +340,18 @@ const allowedFormatter = function(cell) {
 
 	let percent = "";
 	let p = "";
-	let percentile = data.percs[field+"_percentile"];
+	let percentile = data[which][field+"_percentile"];
 	if (field == "hr_pa") {
 		p = "_rate";
 		//percent = "%";
-		percentile = data.percs["hr_rate_percentile"];
+		percentile = data[which]["hr_rate_percentile"];
 	}
 	const color = getPercentileColor(field, percentile);
-	const left = data.percs[`hr_l${p}`] || 0;
-	const right = data.percs[`hr_r${p}`] || 0;
+	const left = data[which][`hr_l${p}`] || 0;
+	const right = data[which][`hr_r${p}`] || 0;
 
-	const leftColor = getPercentileColor(`hr_l${p}`, data.percs[`hr_l${p}_percentile`]);
-	const rightColor = getPercentileColor(`hr_r${p}`, data.percs[`hr_r${p}_percentile`]);
+	const leftColor = getPercentileColor(`hr_l${p}`, data[which][`hr_l${p}_percentile`]);
+	const rightColor = getPercentileColor(`hr_r${p}`, data[which][`hr_r${p}_percentile`]);
 	return `
 		<div class="mix-cell">
 			<span class="left" style="color:${leftColor}">${left}${percent}</span>
@@ -1740,7 +1740,7 @@ const diffFormatter = function(cell) {
 
 const DEFAULT_FIELDS = [
 	"ev", "fairVal", "implied", "kelly", "player", "book", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
-	"stadiumRank", "stadiumRankLeft", "stadiumRankRight"
+	"stadiumRank", "stadiumRankLeft", "stadiumRankRight", "batter_percs_hr_pa", "batter_percs_home_run"
 ];
 
 function getNestedFields(defs, out = []) {

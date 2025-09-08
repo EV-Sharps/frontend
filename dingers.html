@@ -453,6 +453,14 @@
 						<div>
 							<h3>Adv. Batter Data</h3>
 							<div>
+								<input id="custom_batter_percs_hr_pa" type="checkbox">
+								<label for="custom_batter_percs_hr_pa">HR/PA %</label>
+							</div>
+							<div>
+								<input id="custom_batter_percs_home_run" type="checkbox">
+								<label for="custom_batter_percs_home_run">HR</label>
+							</div>
+							<div>
 								<input id="custom_savant_est_ba" type="checkbox">
 								<label for="custom_savant_est_ba">xBA</label>
 							</div>
@@ -698,7 +706,7 @@
 
 		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
 				if (checkbox.checked) {
 					TABLE.getColumn(field)?.show();
 				} else {
@@ -975,6 +983,8 @@
 					]},
 					*/
 					{title: "Batter Metrics", columns: [
+						{title: "HR/PA%", field: "batter_percs.hr_pa", width: 60, formatter: allowedFormatter },
+						{title: "HR", field: "batter_percs.home_run", width: 60, formatter: allowedFormatter },
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },

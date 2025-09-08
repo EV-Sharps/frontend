@@ -927,13 +927,6 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					{
-						title: "EV Book", field: "book",
-						vertAlign:"bottom", width: MOBILE ? 65 : 70,
-						formatter: evBookFormatter,
-						formatterParams:{book:BOOK},
-						responsive: 0
-					},
 					{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter},
 					{title: "Diff", field: "bppDiff", visible: BPP ? true : false, width: 60, sorter: "number", formatter: percentFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter

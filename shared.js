@@ -1759,6 +1759,17 @@ function showHideUserTable() {
 		if (!CURR_USER.metadata[PAGE]) {
 			return;
 		}
+		if (PAGE == "dingers") {
+			let arr = [];
+			for (k of CURR_USER.metadata[PAGE]) {
+				if (k.includes("curr_")) {
+					arr.push(k.replace("curr_", ""));
+				} else {
+					arr.push(k);
+				}
+			}
+			CURR_USER.metadata[PAGE] = arr;
+		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
 		const defs = TABLE.getColumnDefinitions();
 		const nestedFields = getNestedFields(defs);

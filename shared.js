@@ -1764,8 +1764,8 @@ function showHideUserTable() {
 			for (k of CURR_USER.metadata[PAGE]) {
 				if (k.includes("curr_")) {
 					arr.push(k.replace("curr_", ""));
-				} else if (k == "365") {
-					arr.push("b365");
+				} else if (k == "bookOdds_365") {
+					arr.push("bookOdds_b365");
 				} else if (k == "curr_fv" || k == "fv") {
 					arr.push("fairVal");
 				} else {

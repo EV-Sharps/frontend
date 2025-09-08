@@ -190,7 +190,7 @@ const evOddsFormatter = function(cell) {
 	}
 
 	let res = odds;
-	if (PAGE != "dingers" && data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 		if (odds.includes("/")) {
 			let [o,u] = odds.split("/");

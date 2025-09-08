@@ -792,6 +792,11 @@
 				parseData(res.data, render);
 				setTimeout(function() {
 					updateTimes();
+					if (GAME) {
+						TABLE.setFilter([
+							{field:"game", type:"=", value: GAME}
+						])
+					}
 				}, 500)
 			}).catch(err => console.log(err));
 		}
@@ -1237,6 +1242,14 @@
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
+			const filters = [];
+			TABLE.clearFilter();
+			if (game) {
+				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
+			}
+			if (filters.length > 0) {
+				TABLE.setFilter(filters);
+			}
 			TABLE.setData(RES);
 		}
 	</script>

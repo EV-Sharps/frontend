@@ -477,20 +477,12 @@
 					propSel.appendChild(option);
 				});
 
-				renderTable(data.data);
+				//renderTable(data.data);
 
 				setTimeout(function() {
 					updateTimes();
-					if (DEVIG) {
-						changeFilter();
-					}
 					if (PRETTY != undefined) {
 						pretty_();
-					}
-					if (GAME) {
-						TABLE.setFilter([
-							{field:"game", type:"=", value: GAME}
-						])
 					}
 					changeFilter();
 				}, 500);

@@ -352,6 +352,7 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(res => res.json()).then(res => {
+				UPDATED[PAGE] = res.data["updated"];
 				RES = res.data;
 				const gameSel = document.getElementById("game-select");
 				RES.games.forEach(game => {
@@ -373,11 +374,7 @@
 		}
 
 		function updateHeaders() {
-			for (book in UPDATED["dingers"]) {
-				if (book == "dingers" || !UPDATED["dingers"][book]) {
-					continue;
-				}
-
+			for (book in UPDATED[PAGE]) {
 				if (!TABLE.getColumn(`bookOdds.${book}`)) {
 					continue;
 				}

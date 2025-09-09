@@ -206,11 +206,13 @@
 							}
 							let ou = data.under ? "u" : "o";
 							return `${ou}${cell.getValue()}`;
-						}
+						},
+						visible: SPORT === "mlb" ? false : true
 					},
 					{
 						title: "Prop",
-						field: "prop"
+						field: "prop",
+						visible: SPORT === "mlb" ? false : true
 					},
 					{
 						title: "EV Book", field: "book",

@@ -189,6 +189,10 @@ const evOddsFormatter = function(cell) {
 		return "";
 	}
 
+	if (data.blurred) {
+		return `<div class='blurred'>${cell.getValue()}</div>`;
+	}
+
 	let res = odds;
 	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";

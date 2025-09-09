@@ -140,35 +140,96 @@
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
 					<select id="page-select"></select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<select id="promo-select">
-						<option value="" selected>All Books</option>
-						<option value="mgm-20">MGM 20% HR</option>
-						<option value="fd-30">FD 30%</option>
-						<option value="fd-50">FD 50%</option>
-						<option value="dk-15">DK 15%</option>
-						<option value="dk-50">DK 50%</option>
-						<option value="espn-50">ESPN 50%</option>
-						<option value="cz-50">CZ 50%</option>
-						<option value="dk-200">DK +200</option>
-						<option value="dk-sweat">DK No Sweat</option>
-						<option value="mgm-sweat">MGM No Sweat</option>
-						<option value="espn-hr" hidden>ESPN HR</option>
-						<option value="dk-dinger" hidden>DK Dinger</option>
+					<label for="book-select" class="select-label">Book</label>
+					<select id="book-select">
+						<option value="" selected>All</option>
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
+						<option value="b365">B365</option>
 						<option value="mgm">MGM</option>
-						<option value="espn">ESPN</option>
-						<option value="vs-fd">vs FD</option>
-						<option value="vs-365">vs Bet365</option>
-						<option value="vs-pn">vs Pinny</option>
-						<option value="vs-circa">vs Circa</option>
-						<option value="vs-sharp">vs Sharps</option>
+						<option value="cz">CZ</option>
+						<option value="fn">FN</option>
+						<option value="br">BR</option>
+						<option value="hr">HR</option>
+						<option value="bv">BV</option>
+						<option value="kambi">Kambi</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div>
+					<div class="chkdd" id="exclude-dd">
+				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+				      Exclude <span class="count" aria-hidden="true"></span>
+				    </button>
+				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
+				      <label><input type="checkbox" value="fd"> Fanduel (FD)</label>
+				      <label><input type="checkbox" value="dk"> Draftkings (DK)</label>
+				      <label><input type="checkbox" value="b365"> B365</label>
+				      <label><input type="checkbox" value="mgm"> MGM</label>
+				      <label><input type="checkbox" value="espn"> ESPN</label>
+				      <label><input type="checkbox" value="cz"> Caesars (CZ)</label>
+				      <label><input type="checkbox" value="fn"> Fanatics (FN)</label>
+				      <label><input type="checkbox" value="br"> Betrivers (BR)</label>
+				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
+				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
+				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
+				      <div class="chkdd-actions">
+				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+				        <button type="button" data-act="all">All</button>
+				        <button type="button" data-act="none">None</button>
+				      </div>
+				      <div>
+				      	<span id="exclude-status"></span>
+				      </div>
+				    </div>
+				  </div>
+				</div>
+				<div class="select-wrapper">
+					<label for="devig-select" class="select-label">Devig</label>
+					<select id="devig-select">
+						<option value="" selected>Market Avg</option>
+						<option value="fd">vs FD</option>
+						<option value="circa">vs Circa</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="boost-select" class="select-label">Boost</label>
+					<select id="boost-select">
+						<option value="0" selected>None</option>
+						<option value="10">10%</option>
+						<option value="15">15%</option>
+						<option value="20">20%</option>
+						<option value="25">25%</option>
+						<option value="30">30%</option>
+						<option value="50">50%</option>
+						<option value="100">100%</option>
+						<option value="no-sweat">No Sweat</option>
+						<option value="custom">Custom...</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<input id="boost-custom"
+			       type="number" min="0" step="5"
+			       placeholder="Custom %"
+			       style="display:none; width:7ch;" />
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
+						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -176,7 +237,6 @@
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 				<button onclick="downloadCSV()">💾 CSV</button>
-				<button onclick="groupByGame();">Filter Game</button>
 			</div>
 			<div id="donate">
 				<div>Tip Jar</div>
@@ -240,256 +300,6 @@
 						</svg>
 					</div>
 					<div id="chart"></div>
-				</div>
-			</div>
-			<div id="overlay">
-				<div class="overlay-content">
-					<div>
-						<h2 style="justify-content: center;">Customize (In Development)</h2>
-					</div>
-					<div style="justify-content: center;display: flex;gap: 1rem;">
-						<div style="display: flex;flex-direction: column;">
-							<label for="sort-select">Sort</label>
-							<div class="select-wrapper">
-								<select id="sort-select">
-									<option value="ev" selected>Expected Value (EV)</option>
-									<option value="curr_implied">Implied (FV)</option>
-									<option value="savant.barrels_per_bip">Barrel %</option>
-									<option value="savant.exit_velocity_avg">Exit Velocity</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-						<div style="display: flex;flex-direction: column;">
-							<label for="filter-select">Filter</label>
-							<div class="select-wrapper">
-								<select id="filter-select">
-									<option value="" selected>None</option>
-									<option value="game">Game</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-					</div>
-					<div id="items" style="display: flex;">
-						<div>
-							<h3>Expected Value</h3>
-							<div>
-								<input id="custom_curr_ev" type="checkbox">
-								<label for="custom_curr_ev">Expected Value</label>
-							</div>
-							<div>
-								<input id="custom_curr_fv" type="checkbox">
-								<label for="custom_curr_fv">Fair Value</label>
-							</div>
-							<div>
-								<input id="custom_curr_implied" type="checkbox">
-								<label for="custom_curr_implied">Implied</label>
-							</div>
-							<div>
-								<input id="custom_curr_kelly" type="checkbox">
-								<label for="custom_curr_kelly">¼ Kelly</label>
-							</div>
-						</div>
-						<!-- Player / Odds -->
-						<div>
-							<h3>Player & Odds</h3>
-							<div>
-								<input id="custom_player" type="checkbox" checked disabled>
-								<label for="custom_player">Player</label>
-							</div>
-							<div>
-								<input id="custom_book" type="checkbox" checked disabled>
-								<label for="custom_book">EV Book</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_fd">Fanduel</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_365" type="checkbox">
-								<label for="custom_bookOdds_365">Bet365</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_dk" type="checkbox">
-								<label for="custom_bookOdds_dk">Draftkings</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_mgm" type="checkbox">
-								<label for="custom_bookOdds_mgm">MGM</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_espn" type="checkbox">
-								<label for="custom_bookOdds_espn">ESPN</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_cz" type="checkbox">
-								<label for="custom_bookOdds_cz">Caesars</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_pn" type="checkbox">
-								<label for="custom_bookOdds_pn">Pinnacle</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_circa">Circa</label>
-							</div>
-						</div>
-						<!-- Vs Pitcher -->
-						<div>
-							<h3>Vs Pitcher</h3>
-							<div>
-								<input id="custom_pitcher" type="checkbox">
-								<label for="custom_pitcher">Pitcher</label>
-							</div>
-							<div>
-								<input id="custom_percs_hr_pa" type="checkbox">
-								<label for="custom_percs_hr_pa">HR/PA Rate</label>
-							</div>
-							<div>
-								<input id="custom_percs_home_run" type="checkbox">
-								<label for="custom_percs_home_run">Total HR</label>
-							</div>
-							<div>
-								<input id="custom_bvp" type="checkbox">
-								<label for="custom_bvp">Vs Pitcher</label>
-							</div>
-						</div>
-						<!-- BPP -->
-						<div>
-							<h3>Ballparkpal</h3>
-							<div>
-								<input id="custom_bpp" type="checkbox">
-								<label for="custom_bpp">BPP Game</label>
-							</div>
-							<div>
-								<input id="custom_playerFactor" type="checkbox">
-								<label for="custom_playerFactor">BPP Player</label>
-							</div>
-						</div>
-						<!-- Savant --> 
-						<div>
-							<h3>Adv. Batter Data</h3>
-							<div>
-								<input id="custom_savant_est_ba" type="checkbox">
-								<label for="custom_savant_est_ba">xBA</label>
-							</div>
-							<div>
-								<input id="custom_savant_est_woba" type="checkbox">
-								<label for="custom_savant_est_woba">xwOBA</label>
-							</div>
-							<div>
-								<input id="custom_savant_sweet_spot_percent" type="checkbox">
-								<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
-							</div>
-							<div>
-								<input id="custom_savant_exit_velocity_avg" type="checkbox">
-								<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
-							</div>
-							<div>
-								<input id="custom_savant_hard_hit_percent" type="checkbox">
-								<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
-							</div>
-							<div>
-								<input id="custom_savant_barrels_per_bip" type="checkbox">
-								<label for="custom_savant_barrels_per_bip">Barrel %</label>
-							</div>
-						</div>
-						<!-- Pitcher Data -->
-						<div>
-							<h3>Adv. Pitcher Data</h3>
-							<div>
-								<input id="custom_pitcherData_p_era" type="checkbox">
-								<label for="custom_pitcherData_p_era">ERA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_xba" type="checkbox">
-								<label for="custom_pitcherData_xba">xBA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_xwoba" type="checkbox">
-								<label for="custom_pitcherData_xwoba">xwOBA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_flyballs_percent" type="checkbox">
-								<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
-								<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
-								<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
-								<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
-								<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
-							</div>
-						</div>
-						<!-- MISC -->
-						<div>
-							<h3>Misc</h3>
-							<div>
-								<input id="custom_order" type="checkbox">
-								<label for="custom_order">Batting Order</label>
-							</div>
-							<div>
-								<input id="custom_oppRank" type="checkbox">
-								<label for="custom_oppRank">Opp Ranks</label>
-							</div>
-							<div>
-								<input id="custom_stadiumRank" type="checkbox">
-								<label for="custom_stadiumRank">Stadium Ranks</label>
-							</div>
-							<div>
-								<input id="custom_weather" type="checkbox">
-								<label for="custom_weather">Weather</label>
-							</div>
-						</div>
-						<!-- Last Homer (DUE) -->
-						<div>
-							<h3>Last Homer (Due)</h3>
-							<div>
-								<input id="custom_homerLogs_pa_streak" type="checkbox">
-								<label for="custom_homerLogs_pa_streak">PA</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_med" type="checkbox">
-								<label for="custom_homerLogs_pa_med">Median</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_z_median" type="checkbox">
-								<label for="custom_homerLogs_pa_z_median">Z-score</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_avg" type="checkbox">
-								<label for="custom_homerLogs_pa_avg">Average</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_z" type="checkbox">
-								<label for="custom_homerLogs_pa_z">Avg Z-score</label>
-							</div>
-						</div>
-					</div>
-					<div class="loggedOut">
-						<div style="padding: 0.5rem;text-align: center;">
-							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
-						</div>
-					</div>
-					<div style="display: flex;justify-content: center;align-items: center;">
-						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
-						<span id="save-status" style="margin: 0.5rem 0"></span>
-						<button onclick="closeOverlay();">Close</button>
-					</div>
 				</div>
 			</div>
 		</main>

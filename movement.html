@@ -93,13 +93,19 @@
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
 		PAGE = "movement";
-		let SPORT = "mlb";
+		let SPORT = URLParams.get("sport") || "mlb";
 		let BOOK = URLParams.get("book");
 
 		handleSession();
 
 		function fetchPlays() {
-			fetch(API_BASE+"/api/movement", {
+			let url = "/api/movement";
+			const params = new URLSearchParams();
+			params.set("sport", SPORT);
+			if (params.toString()) {
+				url += "?"+params.toString();
+			}
+			fetch(API_BASE+url, {
 				headers: { 
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

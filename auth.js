@@ -336,10 +336,12 @@ async function handleSession() {
 	} else if (PAGE === "props") {
 		fetchPropsData();
 	} else if (PAGE == "bases") {
+		renderTable([]);
 		fetchBasesData();
 	} else if (PAGE == "feed") {
 		runFeed();
 	} else if (PAGE == "sb") {
+		renderTable([]);
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();

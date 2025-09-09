@@ -165,34 +165,6 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div>
-					<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude <span class="count" aria-hidden="true"></span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> Fanduel (FD)</label>
-				      <label><input type="checkbox" value="dk"> Draftkings (DK)</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> Caesars (CZ)</label>
-				      <label><input type="checkbox" value="fn"> Fanatics (FN)</label>
-				      <label><input type="checkbox" value="br"> Betrivers (BR)</label>
-				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
-				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
-				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
-				  </div>
-				</div>
 				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
@@ -333,6 +305,8 @@
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
 		let NO365 = URLParams.get("no365");
+		let BOOST = URLParams.get("boost");
+		let DEVIG = URLParams.get("devig");
 
 		if (GAME) {
 			let [a,h] = GAME.split("-");
@@ -340,14 +314,6 @@
 		}
 
 		handleSession();
-
-		const selectId = "#header";
-		const promoSelect = document.querySelector(selectId+" #promo-select");
-		if (BOOK) {
-			promoSelect.value = BOOK;
-		} else {
-			promoSelect.value = "";
-		}
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
@@ -367,115 +333,9 @@
 			}
 		});
 
-		document.querySelector("#filter-select").addEventListener("change", function(event) {
-			groupByGame();
-		});
-
-		document.querySelector("#sort-select").addEventListener("change", function(event) {
-			let field = event.target.value;
-			TABLE.setSort([
-				{column: field, dir: "desc"}
-			])
-		});
-
-		let lastPromo = "";
-		promoSelect.addEventListener("change", (event) => {
-			const book = event.target.value;
-			let url = new URL(window.location.href);
-			//url.searchParams.set("book", book);
-			//window.location.href = `./dingers${HTML}${url.search}`;
-
-			BOOK = book;
-			const params = new URLSearchParams(window.location.search);
-			params.set("book", book);
-
-			RES.forEach(row => {
-				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
-				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
-				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
-				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
-			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.setData(RES);
-			TABLE.setSort([
-				{column: "curr_ev", dir: "desc"}
-			]);
-			TABLE.redraw(true);
-		});
-
-		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
-			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
-				if (checkbox.checked) {
-					TABLE.getColumn(field)?.show();
-				} else {
-					TABLE.getColumn(field)?.hide();
-				}
-			});
-		})
-
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
-
-		//fetchUpdated(repo="lines");
-		renderTable([]);
-
-		function parseData(data, render) {
-			UPDATED["dingers"] = data["updated"];
-			data = data["data"];
-
-			if (PLAYER) {
-				data = data.filter(r => PLAYER.split(",").includes(r.player))
-			}
-			let OLD = RES;
-			RES = data;
-
-			RES.forEach(row => {
-				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
-				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
-				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
-				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
-			});
-
-			if (render) {
-				renderTable(data);
-			} else {
-				if (!TABLE.options.groupBy) {
-					//TABLE.setData(TABLE.getData());
-					TABLE.updateOrAddData(data);
-					updateHeaders();
-					TABLE.setSort(TABLE.getSorters());
-				} else {
-					TABLE.updateOrAddData(data);
-					updateHeaders();
-					TABLE.setSort(TABLE.getSorters());
-				}
-				TABLE.redraw(true);
-			}
-
-			setTimeout(function() {
-				if (PRETTY != undefined) {
-					pretty_();
-				}
-				if (IMP != undefined) {
-					implied();
-				}
-				if (GAME) {
-					TABLE.setFilter([
-						{field:"game", type:"=", value: GAME}
-					])
-				} else if (TEAM) {
-					TABLE.setFilter([
-						{field:"team", type:"=", value: TEAM}
-					])
-				}
-				if (SIMPLE != undefined) {
-					["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
-				}
-			}, 200);
-		}
 
 		async function fetchSBData(render=true) {
 			let url = "/api/ev";
@@ -492,9 +352,18 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(res => res.json()).then(res => {
-				parseData(res.data, render);
+				RES = res.data;
+				const gameSel = document.getElementById("game-select");
+				RES.games.forEach(game => {
+					const option = document.createElement("option");
+					option.value = game.replace(" @ ", "-");
+					option.textContent = game.toUpperCase();
+					gameSel.appendChild(option);
+				});
+
 				setTimeout(function() {
 					updateTimes();
+					changeFilter();
 				}, 500)
 			}).catch(err => console.log(err));
 		}
@@ -513,16 +382,13 @@
 					continue;
 				}
 				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<br>${timeAgo(UPDATED["dingers"][book], short=true)}`;
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
 			}
 		}
 
 		function hideCols() {
 			if (SPORT == "mlb" || SPORT.includes("futures")) {
 				const cols = ["totalSplits", "totalOver", "total10Over"];
-				if (PROP == "hr") {
-					cols.push("prop");
-				}
 				cols.forEach(col => TABLE.hideColumn(col));
 			}
 
@@ -530,6 +396,138 @@
 				TABLE.showColumn("bookOdds.bv");
 			}
 		}
+
+		function changeFilter() {
+			let devigBook = document.getElementById("devig-select").value;
+			let boost = document.getElementById("boost-select").value;
+			let game = document.getElementById("game-select").value;
+			let book = document.getElementById("book-select").value;
+			let excluded = [];
+			if (boost === "custom") {
+				boost = boostCustom.value;
+			}
+			BOOK = book;
+			let url = new URL(window.location.href);
+
+			const params = new URLSearchParams(window.location.search);
+			params.set("boost", boost);
+			params.set("devig", devigBook);
+			params.set("game", game);
+			params.set("book", book);
+
+			RES.data.forEach(row => {
+				const bookOdds = { ...row.bookOdds };
+				let avg = getAverageImplied(bookOdds, row.under);
+				if (!avg) {
+					return;
+				}
+				const ex = excluded;
+				ex.push("pn"); ex.push("circa");
+				if (devigBook) {
+					ex.push(devigBook);
+				}
+				const highest = highestOver(bookOdds, ex, boost, book, row.under);
+				let ou = avg.avgAmerican.toString();
+				if (row.under) {
+				    // If under, swap priority
+				    if (devigBook) {
+				        // Use the book's under odds if available
+				        const val = bookOdds[devigBook];
+				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+				    } else if (devigBook === "pn+circa") {
+				        // Fallback to averageSharps for unders if combining books
+				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
+				    }
+				} else {
+				    // Normal over-first logic
+				    if (devigBook === "pn+circa") {
+				        ou = averageSharps(bookOdds);
+				    } else if (devigBook) {
+				        ou = bookOdds[devigBook];
+				    }
+				}
+				if (!ou) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+
+				let d = devig(ou, highest.value, boost);
+				if (!d) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				row["book"] = highest.book;
+				row["line"] = highest.value;
+				row["ev"] = d.ev;
+				row["fairVal"] = d.fairVal;
+				row["implied"] = d.implied;
+				row["kelly"] = d.kelly;
+			});
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			//TABLE.setData(RES.data);
+			TABLE.setSort([
+				{column: "ev", dir: "desc"}
+			]);
+			const filters = [];
+			TABLE.clearFilter();
+			if (game) {
+				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
+			}
+			if (filters.length > 0) {
+				TABLE.setFilter(filters);
+			}
+			TABLE.setData(RES.data);
+			//TABLE.redraw(true);
+		}
+
+		const boostSel = document.getElementById('boost-select');
+		const boostCustom = document.getElementById('boost-custom');
+
+		boostSel.value = BOOST || 0;
+		if (BOOST == "custom") {
+			boostCustom.style.display = "";
+		}
+		boostSel.addEventListener("change", (event) => {
+			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
+			changeFilter();
+		});
+
+		boostCustom.addEventListener("input", () => {
+			changeFilter();
+		});
+
+		document.querySelector("#devig-select").value = DEVIG || "";
+		document.querySelector("#devig-select").addEventListener("change", (event) => {
+			changeFilter();
+		});
+
+		if (GAME) {
+			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		} else {
+			document.querySelector("#game-select").value = "";
+		}
+		document.querySelector("#game-select").addEventListener("change", (event) => {
+			GAME = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("game", GAME);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.clearFilter();
+			changeFilter();
+		});
+
+		document.querySelector("#book-select").value = BOOK || "";
+		document.querySelector("#book-select").addEventListener("change", (event) => {
+			BOOK = event.target.value;
+			changeFilter();
+		});
 
 		function renderTable(data) {
 			//data = data.filter(r => ["cal raleigh", "kyle schwarber"].includes(r.player));
@@ -574,7 +572,7 @@
 					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					{
 						title: "Expected<br>Value",
-						field: "curr_ev",
+						field: "ev",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: evMutFormatter,
@@ -582,7 +580,7 @@
 					},
 					{
 						title: "Fair<br>Value",
-						field: "curr_fv",
+						field: "fairVal",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: plusMinusFormatter,
@@ -590,7 +588,7 @@
 					},
 					{
 						title: "Implied",
-						field: "curr_implied",
+						field: "implied",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: impliedFormatter,
@@ -599,7 +597,7 @@
 					},
 					{
 						title: "¼ Kelly",
-						field: "curr_kelly",
+						field: "kelly",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: function(cell) {
@@ -640,9 +638,8 @@
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.365", hozAlign: "center", width: 80, sorter: "number", visible: NO365 == undefined ? true : false},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: 80, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 75, sorter: "number", visible: HISTORICAL ? false : true},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", visible: false},
-					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", visible: KAMBI ? true : false},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", visible: HISTORICAL ? false : true},
+					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number"},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number"},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
@@ -656,28 +653,7 @@
 						{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},
 						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					]},
-					{title: "Historical FD", columns: [
-						{title: "Med", field: "analysis.fd_median", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
-						{title: "Avg", field: "analysis.fd_avg", width: 45, sorter: "number", formatter: plusMinusFormatter, visible: HISTORICAL ? true : false},
-						{title: "SD", field: "analysis.fd_std_dev", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
-						{title: "Z", field: "analysis.fd_z_score", width: 45, sorter: "number", visible: HISTORICAL ? true : false},
-					]},
-					{title: "Historical PN", columns: [
-						{title: "Med", field: "analysis.pn_median", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
-						{title: "Avg", field: "analysis.pn_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
-						{title: "SD", field: "analysis.pn_std_dev", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
-					]},
-					{title: "Historical Circa", columns: [
-						{title: "Med", field: "analysis.circa_median", width: 65, sorter: "number", visible: HISTORICAL ? true : false},
-						{title: "Avg", field: "analysis.circa_avg", width: 60, sorter: "number", visible: HISTORICAL ? true : false},
-					]},
 					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter},
-					/*
-					{title: "BPP", columns: [
-						{title: "Game", field: "bpp", width: 50, formatter: bppFormatter},
-						{title: "Player", field: "playerFactor", width: 50, formatter: bppPlayerFormatter}
-					]},
-					*/
 					{title: "Batter Metrics", columns: [
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
@@ -719,7 +695,7 @@
 			});
 
 			TABLE.on("dataLoaded", function(data) {
-				showHideUserTable()
+				//showHideUserTable()
 			});
 		}
 

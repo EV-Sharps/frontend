@@ -1798,7 +1798,7 @@ function showHideUserTable() {
 
 function closeOverlay() {
 	document.querySelector("#overlay").style.display = "none";
-	showHideUserTable();
+	//showHideUserTable();
 }
 
 function openOverlay() {

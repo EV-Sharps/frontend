@@ -459,6 +459,7 @@
 				UPDATED[PAGE] = data["updated"];
 
 				const gameSel = document.getElementById("game-select");
+				gameSel.innerHTML = "";
 				data.games.forEach(game => {
 					const option = document.createElement("option");
 					option.value = game.replace(" @ ", "-");

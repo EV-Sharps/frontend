@@ -1924,6 +1924,53 @@ function devig(ou, finalOdds, promo) {
 	return { ev, fairVal, implied, kelly };
 }
 
+function getFairValue(ou, method = "") {
+	over = parseInt(ou.split("/")[0]);
+	const impliedOver = (over > 0)
+		? 100 / (over+100) : -over / (-over+100);
+
+	let under = "";
+	if (!ou.includes("/")) {
+		u = 1.07 - impliedOver;
+		if (u > 1) return;
+		under = (over > 0)
+			? parseInt((100*u) / (-1+u)) : parseInt((100 - 100*u) / u);
+	} else {
+		under = parseInt(ou.split("/")[1]);
+	}
+
+	const impliedUnder = (under > 0)
+		? 100 / (under+100) : -under / (-under+100);
+
+	// power method
+	let x = impliedOver;
+	let y = impliedUnder;
+	let iter = 0;
+
+	while (Math.abs((x + y) - 1) > 1e-8 && iter < 50) {
+		const sum = x + y;
+		const k = Math.log(2) / Math.log(2 / sum);
+		x = Math.pow(x, k);
+		y = Math.pow(y, k);
+		iter += 1;
+	}
+
+	const mult = impliedOver / (impliedOver + impliedUnder);
+	const add = impliedOver - (impliedOver + impliedUnder - 1) / 2;
+
+	const methods = [x, mult, add];
+	const fairValue = Math.min(...methods);
+
+	if (method === "mult") {
+		return mult;
+	} else if (method === "add") {
+		return add;
+	} else if (method === "power") {
+		return x;
+	}
+	return fairValue;
+}
+
 function getKelly2(finalOdds, implied) {
   const p = implied / 100;
   let b;
@@ -2098,3 +2145,15 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		  { book: null, value: -Infinity, raw: null }
 	);
 }
+
+
+function parlay(ous) {
+	let totalFV = 1;
+	ous.forEach(ou => {
+		const fv = getFairValue(ou);
+		totalFV *= fv;
+	});
+
+	console.log(totalFV, impliedToAmerican(totalFV));
+}
+

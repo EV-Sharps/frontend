@@ -198,6 +198,7 @@
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "PA", field: "pa", width: 40},
 					{title: "HR Allowed", columns: [
+						//{title: "Total<br><div style='position:relative;width:100%;'><span style='position:absolute;left:1px;font-size:0.5rem;'>L</span><span style='position:absolute;right:1px;font-size:0.5rem;'>R</span></div>", field: "percs.home_run", width: 55, formatter: allowedFormatter },
 						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
 						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},
 					]},

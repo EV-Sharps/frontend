@@ -1060,10 +1060,10 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["curr_ev", "curr_fv", "curr_implied", "curr_kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fv", "implied", "kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
-				{column: "curr_implied", dir: "desc"}
+				{column: "implied", dir: "desc"}
 			]);
 
 			const rows = TABLE.getData("active");
@@ -1075,7 +1075,7 @@
 				const prev = rows[i - 1];
 
 				// If not first, and impliedMut differs from previous, increment rank
-				if (i > 0 && row["curr_implied"] !== prev["curr_implied"]) {
+				if (i > 0 && row["implied"] !== prev["implied"]) {
 					currentRank++;
 				}
 
@@ -1083,7 +1083,7 @@
 					continue;
 				}
 
-				tweet.push(`${currentRank}. ${title(row.player)} - ${row["curr_implied"]}%`);
+				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
 			}
 			const today = new Date();
 			let header = `🎯 Circa's top 20 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 

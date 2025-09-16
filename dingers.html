@@ -618,8 +618,10 @@
 		let DEVIG = URLParams.get("devig");
 
 		if (GAME) {
+			GAME = GAME.replaceAll("-gm2", "_gm2");
 			let [a,h] = GAME.split("-");
 			GAME = `${a} @ ${h}`;
+			GAME = GAME.replaceAll("_gm2", "-gm2");
 		}
 
 		handleSession();

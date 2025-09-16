@@ -1231,7 +1231,12 @@
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
-				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
+				console.log(game);
+				game = game.replaceAll("-gm2", "_gm2");
+				let [a,h] = game.split("-");
+				game = `${a} @ ${h}`;
+				game = game.replaceAll("_gm2", "-gm2");
+				filters.push({field:"game", type:"=", value: game});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);

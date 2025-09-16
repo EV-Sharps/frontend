@@ -395,6 +395,8 @@
 						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 					]},
 					{title: "Batter Summary", columns: [
+						{title: "HR/PA%", field: "batter_percs.hr_pa", width: 60, formatter: allowedFormatter },
+						{title: "HR", field: "batter_percs.home_run", width: 60, formatter: allowedFormatter },
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: true },

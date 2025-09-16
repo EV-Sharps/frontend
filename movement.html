@@ -45,6 +45,15 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+				<div class="select-wrapper">
+					<select id="sport-select">
+						<option value="mlb">MLB</option>
+						<option value="nfl">NFL</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -95,8 +104,20 @@
 		PAGE = "movement";
 		let SPORT = URLParams.get("sport") || "mlb";
 		let BOOK = URLParams.get("book");
+		let sport_select = document.querySelector("#sport-select");
+		sport_select.value = SPORT;
 
 		handleSession();
+
+		sport_select.addEventListener("change", (e) => {
+			SPORT = e.target.value;
+			let url = new URL(window.location.href);
+			const params = new URLSearchParams(window.location.search);
+			params.set("sport", SPORT);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			fetchPlays();
+		});
 
 		function fetchPlays() {
 			let url = "/api/movement";

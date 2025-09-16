@@ -735,6 +735,7 @@
 			RES = data;
 
 			const gameSel = document.getElementById("game-select");
+			gameSel.innerHTML = `<option value="" selected>All</option>`;
 			if (games && games.length > 0) {
 				games.forEach(game => {
 					const option = document.createElement("option");

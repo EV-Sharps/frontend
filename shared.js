@@ -194,7 +194,8 @@ const evOddsFormatter = function(cell) {
 	}
 
 	let res = odds;
-	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[0]) >= parseInt(data.fairVal || 0)) {
+	let idx = data.under ? 1 : 0;
+	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0)) {
 		cls = "#00ff66";
 		if (odds.includes("/")) {
 			let [o,u] = odds.split("/");

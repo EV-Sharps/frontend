@@ -2157,3 +2157,86 @@ function parlay(ous) {
 	console.log(totalFV, impliedToAmerican(totalFV));
 }
 
+function colHeader(field) {
+	try {
+	  const col = TABLE.getColumn(field);
+	  if (!col) return null;
+	  const el = col.getElement();
+	  return el || null;
+	} catch(e) { return null; }
+}
+
+function buildTourSteps() {
+	const steps = [];
+
+	const evEl = colHeader("ev");
+	const book = colHeader("book");
+	const fv = colHeader("fairVal");
+	const implied = colHeader("implied");
+	const kelly = colHeader("kelly");
+	const hr_pa = colHeader("percs.hr_pa");
+
+	steps.push({
+		element: document.querySelector("#table"),
+		title: "How to use this table",
+		intro: "This is a +EV Home Run value finder.",
+		position: "right"
+	});
+
+	if (evEl) steps.push({
+		element: evEl,
+		title: "Expected Value (EV%)",
+		intro: "Your edge vs the market based on our projection & current best line. Green = positive edge. Start here",
+		position: "right"
+	});
+
+	if (book) steps.push({
+		element: book,
+		title: "EV Book",
+		intro: "Which sportsbook price is driving the EV. Use it to know where to place the bet.",
+		position: "right"
+	});
+
+	if (fv) steps.push({
+		element: fv,
+		title: "Fair Value (FV)",
+		intro: "Fair odds after removing the sportsbook inbuilt \"fees\" (vig). Odds above the fair value = +EV",
+		position: "right"
+	});
+
+	if (implied) steps.push({
+		element: implied,
+		title: "Implied",
+		intro: "Fair Value formatted as an implied percentage. This is what the devig book thinks this play has of hitting",
+		position: "right"
+	});
+
+	if (kelly) steps.push({
+		element: kelly,
+		title: "¼ Kelly (QK)",
+		intro: "Stake sizing with 25% Kelly for steadier growth and lower variance.",
+		position: "right"
+	});
+
+	if (hr_pa) steps.push({
+		element: hr_pa,
+		title: "Pitcher HR/PA %",
+		intro: "Home Runs allowed to batters per plate appearance showing LHB - Total - RHB splits.",
+		position: "right"
+	});
+
+	return steps;
+}
+
+function startHelpTour() {
+	const steps = buildTourSteps();
+	const tour = introJs.tour().setOptions({
+		steps,
+		showButtons: true,
+		showStepNumbers: true,
+		exitOnOverlayClick: true,
+		//tooltipClass: "introjs-modern",
+		//highlightClass: "introjs-highlight"
+	});
+	tour.start();
+}

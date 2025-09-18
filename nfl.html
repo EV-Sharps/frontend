@@ -466,7 +466,7 @@
 					option.textContent = game.toUpperCase();
 					gameSel.appendChild(option);
 				});
-				gameSel = GAME;
+				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
 				data.props.forEach(prop => {

@@ -243,6 +243,19 @@ const sportFormatter = function(cell) {
 
 const percentFormatter = function(cell, params, rendered) {
 	if (!cell.getValue()) {
+		if (["tds", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
+			return "0%";
+		}
+		return "";
+	}
+	if (cell.getRow().getData().blurred) {
+		return "<div class='blurred'>"+cell.getValue()+"</div>";
+	}
+	return cell.getValue()+"%";
+}
+
+const percentFormatterLYR = function(cell, params, rendered) {
+	if (!cell.getValue()) {
 		return "";
 	}
 	if (cell.getRow().getData().blurred) {
@@ -885,15 +898,32 @@ const rankingFormatter = function(cell, params, rendered) {
 		}
 		let value = cell.getValue();
 		let color;
-		if (PAGE == "tds" || PAGE == "nfl") {
-			if (value["opp-rz-scoring-pct"] === undefined || data.player.includes("d/st")) {
+		if (PAGE == "nfl") {
+			const keys = {
+				pass_yds: "opp-pass-yds",
+				rec_yds: "opp-pass-yds",
+				rush_yds: "opp-rush-yds",
+				rec: "opp-cmp",
+				pass_cmp: "opp-cmp",
+				pass_td: "opp-pass-td",
+				pass_att: "opp-pass-att",
+				rush_att: "opp-rush-att"
+			};
+			let key = keys[data.prop];
+			if (!key || !value[key]) {
+				return "";
+			}
+			value = value[key]["rank"];
+			color = getTDsOppRankColor(value);
+		} else if (PAGE == "tds") {
+			if (value[params.key] === undefined || data.player.includes("d/st")) {
 				return "";
 			}
 			if (params.key == "home-away") {
 				const ha = data.team == data.game.split(" ")[0] ? "home" : "away";
-				value = value["opp-rz-scoring-pct"][ha];
+				value = value[params.key][ha];
 			} else {
-				value = value["opp-rz-scoring-pct"]["rank"];	
+				value = value[params.key]["rank"];	
 			}
 			color = getTDsOppRankColor(value);
 		} else {

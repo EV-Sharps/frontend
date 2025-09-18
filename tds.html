@@ -291,6 +291,7 @@
 				boost = boostCustom.value;
 			}
 			BOOK = book;
+			GAME = game;
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
@@ -464,6 +465,7 @@
 					option.textContent = game.toUpperCase();
 					gameSel.appendChild(option);
 				});
+				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
 				data.props.forEach(prop => {

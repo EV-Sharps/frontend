@@ -291,6 +291,7 @@
 				boost = boostCustom.value;
 			}
 			BOOK = book;
+			GAME = game;
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
 			params.set("boost", boost);
@@ -465,6 +466,7 @@
 					option.textContent = game.toUpperCase();
 					gameSel.appendChild(option);
 				});
+				gameSel = GAME;
 
 				const propSel = document.getElementById("prop-select");
 				data.props.forEach(prop => {
@@ -595,8 +597,6 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					
-					
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},

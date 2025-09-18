@@ -1824,6 +1824,8 @@ function showHideUserTable() {
 
 		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
+		DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
+		document.getElementById("devig-select").value = DEVIG;
 	}
 }
 

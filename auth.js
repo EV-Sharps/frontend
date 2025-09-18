@@ -140,6 +140,7 @@ async function saveTableSettings() {
 	fields[PAGE] = [];
 	fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
 	fields[`${PAGE}-filter`] = document.querySelector("#filter-select").value;
+	fields[`${PAGE}-devig`] = document.querySelector("#custom-devig-select").value;
 	document.querySelectorAll('#items input[type="checkbox"]:checked').forEach((input) => {
 		const key = input.id.replace(/^custom_/, '');
 		fields[PAGE].push(key);

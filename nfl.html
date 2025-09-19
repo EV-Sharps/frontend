@@ -204,7 +204,7 @@
 		const URLParams = new URLSearchParams(windowURL.search);
 		let DATE = URLParams.get("date");
 		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game");
+		let GAME = URLParams.get("game") || "";
 		let TODAY = getToday();
 		let SPORT = "nfl";
 		let PLAYER = URLParams.get("player");

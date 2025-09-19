@@ -29,6 +29,7 @@ let PAGE_DROPDOWN = `
 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
+	<option value="strikeouts">💨 Strikeouts</option>
 	<option value="feed">📡 Feed</option>
 	<option value="bets">🎟️ Bets (Sharps)</option>
 	<option value="movement">📉 Movement (Sharps)</option>
@@ -1314,7 +1315,7 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "strikeouts"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
@@ -2114,11 +2115,11 @@ function getAverageImplied(books, under) {
   return { avgProb, avgAmerican };
 }
 
-function buildOU(books) {
+function buildOU(books, isUnder) {
 	const over = getAverageImplied(books, false)?.avgAmerican ?? "-";
 	const under = getAverageImplied(books, true)?.avgAmerican ?? "-";
 
-	let ou = `${over}/${under}`;
+	let ou = isUnder ? `${under}/${over}` : `${over}/${under}`;
 
 	// mirror:
 	// if ou == "-/-" or startswith "-/" or "0/" → skip (return null)

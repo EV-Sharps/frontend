@@ -1130,7 +1130,9 @@
 
 		window.addEventListener('popstate', (event) => {
 			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
+			const game = event.state?.game || new URLSearchParams(location.search).get('game') || '';
 			BOOK = book;
+			GAME = game;
 			changeFilter();
 		});
 

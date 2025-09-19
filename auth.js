@@ -360,6 +360,15 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
+	} else if (PAGE == "strikeouts") {
+		fetchStrikeouts();
+		initExcluded();
+		renderTable([]);
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchStrikeouts();
+			}
+		}, 30 * 1000);
 	} else if (PAGE == "nfl") {
 		fetchNFLProps();
 		initExcluded();

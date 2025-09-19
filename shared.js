@@ -1925,13 +1925,6 @@ function devig(ou, finalOdds, promo) {
 		iter += 1;
 	}
 
-	const dec = 1 / x;
-	let fairVal;
-	if (dec >= 2) {
-		fairVal = Math.round((dec - 1) * 100);
-	} else {
-		fairVal = Math.round(-100 / (dec - 1));
-	}
 	const implied = round2(x * 100);
 
 	// Multiplicative and additive methods (your “mult” and “add”)
@@ -1940,6 +1933,15 @@ function devig(ou, finalOdds, promo) {
 
 	// EV via each method, take the minimum (your approach)
 	const methods = [x, mult, add];
+
+	let fairVal  = Math.min(...methods);
+	const dec = 1 / fairVal;
+	if (dec >= 2) {
+		fairVal = Math.round((dec - 1) * 100);
+	} else {
+		fairVal = Math.round(-100 / (dec - 1));
+	}
+
 	const fairValue = Math.min(...methods);
 	const evs = methods.map(m => {
 		const ev = m * profit + (1 - m) * (-1 * bet);

@@ -48,6 +48,7 @@
 				<div class="select-wrapper">
 					<select id="sport-select">
 						<option value="mlb">MLB</option>
+						<option value="k">Ks</option>
 						<option value="nfl">NFL</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -230,7 +231,7 @@
 							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
 								return "";
 							}
-							let ou = data.under ? "u" : "o";
+							let ou = data.ouIdx == 1 ? "u" : "o";
 							return `${ou}${cell.getValue()}`;
 						},
 						visible: SPORT === "mlb" ? false : true

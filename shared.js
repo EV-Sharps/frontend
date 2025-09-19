@@ -1361,7 +1361,7 @@ function getGameImgs(data, params) {
 		homeAlt = title(homeAlt);
 	}
 	let sport = params.sport || data.sport;
-	sport = sport.replace("dingers", "mlb").replace("feed", "mlb");
+	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb");
 	return [
 		`<img class='game-img away' src='logos/${sport}/${away}.png' alt='${awayAlt}' title='${awayAlt}' />`,
 		`<img class='game-img home' src='logos/${sport}/${home}.png' alt='${homeAlt}' title='${homeAlt}' />`

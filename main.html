@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>🏆 Main</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<style type="text/css">
+	#table {
+		width: auto;
+	}
+</style>
+<body>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+			</div>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="book-select" class="select-label">Book</label>
+					<select id="book-select">
+						<option value="" selected>All</option>
+						<option value="fd">FD</option>
+						<option value="dk">DK</option>
+						<option value="b365">B365</option>
+						<option value="mgm">MGM</option>
+						<option value="cz">CZ</option>
+						<option value="fn">FN</option>
+						<option value="br">BR</option>
+						<option value="hr">HR</option>
+						<option value="bv">BV</option>
+						<option value="kambi">Kambi</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div style="flex: 0 0 auto;">
+					<div class="chkdd" id="exclude-dd">
+				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+				      Exclude <span class="count" aria-hidden="true"></span>
+				    </button>
+				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
+				      <label><input type="checkbox" value="fd"> Fanduel (FD)</label>
+				      <label><input type="checkbox" value="dk"> Draftkings (DK)</label>
+				      <label><input type="checkbox" value="b365"> B365</label>
+				      <label><input type="checkbox" value="mgm"> MGM</label>
+				      <label><input type="checkbox" value="espn"> ESPN</label>
+				      <label><input type="checkbox" value="cz"> Caesars (CZ)</label>
+				      <label><input type="checkbox" value="fn"> Fanatics (FN)</label>
+				      <label><input type="checkbox" value="br"> Betrivers (BR)</label>
+				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
+				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
+				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
+				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+				      <div class="chkdd-actions">
+				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+				        <button type="button" data-act="all">All</button>
+				        <button type="button" data-act="none">None</button>
+				      </div>
+				      <div>
+				      	<span id="exclude-status"></span>
+				      </div>
+				    </div>
+				  </div>
+				</div>
+				<div class="select-wrapper">
+					<label for="devig-select" class="select-label">Devig</label>
+					<select id="devig-select">
+						<option value="" selected>Market Avg</option>
+						<option value="fd">vs FD</option>
+						<option value="pn">vs PN</option>
+						<option value="circa">vs Circa</option>
+						<option value="pn+circa">PN & Circa</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="boost-select" class="select-label">Boost</label>
+					<select id="boost-select">
+						<option value="0" selected>None</option>
+						<option value="10">10%</option>
+						<option value="15">15%</option>
+						<option value="20">20%</option>
+						<option value="25">25%</option>
+						<option value="30">30%</option>
+						<option value="50">50%</option>
+						<option value="100">100%</option>
+						<option value="no-sweat">No Sweat</option>
+						<option value="custom">Custom...</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<input id="boost-custom"
+			       type="number" min="0" step="5"
+			       placeholder="Custom %"
+			       style="display:none; width:7ch;" />
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
+						<option value="" selected>All</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<button onclick="downloadCSV()">💾 CSV</button>
+			</div>
+			<div id="donate">
+				<div>Tip Jar</div>
+				<div>
+					<a href="https://cash.app/$intersectinglines" target="_blank">
+						<img src="logos/cashapp.png" alt="cashapp" />
+					</a>
+					<a href="https://buymeacoffee.com/interlines" target="_blank">
+						<img src="logos/coffee.png" alt="coffee" />
+					</a>
+				</div>
+			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+				    <div class="gsi-material-button-icon">
+				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+				        <path fill="none" d="M0 0h48v48H0z"></path>
+				      </svg>
+				    </div>
+				    <span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="loggedIn username"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
+			<div id="table-container">
+				<div class="loggedOut" style="display: none;">
+					<div style="padding: 0.5rem;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>Circa odds 🎯</strong>
+					</div>
+				</div>
+				<div style="padding: 0.25rem 0;font-style: italic;display:none">Refreshes every 60 seconds</div>
+				<div id="table"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+			</div>
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "main";
+		let TABLE, EV_COL, FV_COL, RES;
+		let url = "";
+		const windowURL = new URL(window.location.href);
+		const URLParams = new URLSearchParams(windowURL.search);
+		let SPORT = "mlb";
+		let KAMBI = URLParams.get("kambi");
+		let MARK = URLParams.get("mark");
+		let BPP = URLParams.get("bpp") != undefined;
+		let PH = URLParams.get("ph") != undefined;
+		let SIMPLE = URLParams.get("simple");
+		let PLAYER = URLParams.get("player");
+		let REFRESH = URLParams.get("refresh") || "off";
+		REFRESH = "auto";
+		let BOOK = URLParams.get("book");
+		let HISTORICAL = URLParams.get("historical");
+		let PRETTY = URLParams.get("pretty");
+		let IMP = URLParams.get("imp");
+		let GAME = URLParams.get("game");
+		TEAM = URLParams.get("team");
+		let DATE = URLParams.get("date");
+		let NOCACHE = URLParams.get("nocache");
+		let NO365 = URLParams.get("no365");
+		let NOBR = URLParams.get("noBR");
+		let BOOST = URLParams.get("boost");
+		let DEVIG = URLParams.get("devig");
+
+		if (GAME) {
+			GAME = GAME.replaceAll("-gm2", "_gm2");
+			let [a,h] = GAME.split("-");
+			GAME = `${a} @ ${h}`;
+			GAME = GAME.replaceAll("_gm2", "-gm2");
+		}
+
+		handleSession();
+
+		const dd = document.getElementById('exclude-dd');
+		const excludeBtn = dd.querySelector('.chkdd-btn');
+		let menu = dd.querySelector('.chkdd-menu');
+		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
+		const countEl = dd.querySelector('.count');
+
+		function getExcludedBooks() {
+		  return boxes.filter(b => b.checked).map(b => b.value);
+		}
+		excludeBtn.addEventListener("click", (e) => {
+			//const open = dd.classList.toggle("open");
+			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
+			e.stopPropagation();
+			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
+  			open ? closeMenu() : openMenu();
+		});
+		document.addEventListener('click', (e) => {
+			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
+		});
+		boxes.forEach(b => b.addEventListener('change', () => {
+		  changeFilter();
+		}));
+
+		menu.addEventListener('click', (e) => {
+		  const act = e.target?.dataset?.act;
+		  if (!act) return;
+		  const state = act === 'all';
+		  boxes.forEach(b => b.checked = state);
+		  changeFilter();
+		});
+
+		function openMenu() {
+		  const r = excludeBtn.getBoundingClientRect();
+		  menu.style.position = 'fixed';
+		  menu.style.top = `${r.bottom + 6}px`;
+		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+		  menu.style.right = 'auto';
+		  document.body.appendChild(menu);       // move out of the scroller
+		  menu.style.display = 'block';
+		  excludeBtn.setAttribute('aria-expanded','true');
+		}
+
+		function closeMenu() {
+		  menu.style.display = 'none';
+		  dd.appendChild(menu);                  // put it back (optional)
+		  excludeBtn.setAttribute('aria-expanded','false');
+		}
+
+		if (MARK != undefined) {
+			document.querySelector("#watermark").style.display = "initial";
+			if (PRETTY != undefined || IMP !== undefined) {
+				document.querySelector("#watermark").style.width = "20%";
+			}
+		}
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		function parseData(data) {
+			UPDATED[PAGE] = data["updated"];
+			const games = data["games"];
+			data = data["data"];
+
+			if (PLAYER) {
+				data = data.filter(r => PLAYER.split(",").includes(r.player))
+			}
+			let OLD = RES;
+			RES = data;
+
+			const gameSel = document.getElementById("game-select");
+			gameSel.innerHTML = `<option value="" selected>All</option>`;
+			if (games && games.length > 0) {
+				games.forEach(game => {
+					const option = document.createElement("option");
+					option.value = game.replace(" @ ", "-");
+					option.textContent = game.toUpperCase();
+					gameSel.appendChild(option);
+				});
+			}
+			gameSel.value = GAME;
+		}
+
+		async function fetchMain() {
+			let url = "/api/main";
+			fetch(API_BASE+url, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(res => res.json()).then(res => {
+				parseData(res);
+				setTimeout(function() {
+					updateTimes();
+					changeFilter();
+				}, 500)
+			}).catch(err => console.log(err));
+		}
+
+		function updateTimes() {
+			updateHeaders();
+		}
+
+		function updateHeaders() {
+			for (book in UPDATED[PAGE]) {
+				if (!UPDATED[PAGE][book]) {
+					continue;
+				}
+
+				if (!TABLE.getColumn(`bookOdds.${book}`)) {
+					continue;
+				}
+				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
+				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
+			}
+		}
+
+		function renderTable(data) {
+			data.sort((a,b) => {
+				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
+			});
+			let first = [...data];
+			first.sort((a,b) => {
+				return parseInt(a.startSortable) - parseInt(b.startSortable);
+			});
+			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
+			if (idx != -1) {
+				//data.splice(idx, 0, {prop: "separator", ev: ""});
+			}
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    		placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "ev", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()} (${data[0].start})</span>`;
+				},
+				groupToggleElement: "header",
+				groupBy: "",
+				groupStartOpen: function (value) {
+					return value == first[0].game;
+				},
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{
+						title: "Expected<br>Value",
+						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: evFormatter,
+						responsive: 0
+					},
+					{
+						title: "EV Book", field: "book",
+						vertAlign:"bottom", width: MOBILE ? 75 : 75,
+						formatter: evBookFormatter2,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{
+						title: "Prop", field: "prop",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							let gameContainer = getGameImgs(data, {sport: "mlb"}).join("");
+							let ou = data.under ? "u" : "o";
+							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
+							if (data.prop == "ml") {
+								return `
+									<div style="display:flex;gap: 3px;">
+										${getTeamImg("mlb", data.team)} ML ${ah} ${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+									</div>
+								`;
+							} else if (data.prop == "spread") {
+								return `
+									<div style="display:flex;gap: 3px;">
+										${getTeamImg("mlb", data.team)} ${data.team.toUpperCase()}
+
+										${data.handicap} ${ah}
+
+										${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+									</div>
+								`;
+							}
+							
+							return `
+								<div style="display:flex;gap: 3px;">
+									${gameContainer} ${ou}${data.handicap}
+							</div>`;
+						},
+						hozAlign: "left",
+						frozen: true
+					},
+					{
+						title: "Opp", field: "opp",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							return `
+								<div style="display:flex;gap: 3px;">
+									${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+								</div>
+							`;
+						},
+						visible: false
+					},
+					{
+						title: "Line",
+						field: "handicap",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							const prop = data.prop;
+							let ou = data.under ? "u" : "o";
+							return `${ou}${cell.getValue()}`;
+						},
+						width: 50,
+						visible: false
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairVal",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						responsive: 0
+					},
+					{
+						title: "Implied",
+						field: "implied",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: impliedFormatter,
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{
+						title: "¼ Kelly",
+						field: "kelly",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: function(cell) {
+							if (!cell.getValue()) {
+								return "";
+							}
+							return `${cell.getValue().toFixed(2)}u`;
+						},
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter
+					},
+					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `ESPN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					//{title: `BB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					//{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true, formatter: evOddsFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
+					{title: "Game", field: "game", visible: false},
+					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
+					{title: "Start", field: "start", visible: false},
+				]
+			});
+		}
+
+		window.addEventListener('popstate', (event) => {
+			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
+			const game = event.state?.game || new URLSearchParams(location.search).get('game') || '';
+			BOOK = book;
+			GAME = game;
+			changeFilter();
+		});
+
+		document.querySelector("#book-select").value = BOOK || "";
+		document.querySelector("#book-select").addEventListener("change", (event) => {
+			BOOK = event.target.value;
+			changeFilter();
+		});
+
+		const boostSel = document.getElementById('boost-select');
+		const boostCustom = document.getElementById('boost-custom');
+
+		boostSel.value = BOOST || 0;
+		if (BOOST == "custom") {
+			boostCustom.style.display = "";
+		}
+		boostSel.addEventListener("change", (event) => {
+			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
+			changeFilter();
+		});
+
+		boostCustom.addEventListener("input", () => {
+			changeFilter();
+		});
+
+		document.querySelector("#devig-select").value = DEVIG || "";
+		document.querySelector("#devig-select").addEventListener("change", (event) => {
+			changeFilter();
+		});
+
+		if (GAME) {
+			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
+		} else {
+			document.querySelector("#game-select").value = "";
+		}
+		document.querySelector("#game-select").addEventListener("change", (event) => {
+			GAME = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("game", GAME);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.clearFilter();
+			changeFilter();
+		});
+
+		function changeFilter() {
+			let devigBook = document.getElementById("devig-select")?.value;
+			let boost = document.getElementById("boost-select")?.value;
+			let game = document.getElementById("game-select")?.value;
+			let book = document.getElementById("book-select")?.value;
+			let excluded = getExcludedBooks();
+			if (boost === "custom") {
+				boost = boostCustom.value;
+			}
+
+			let url = new URL(window.location.href);
+			const params = new URLSearchParams(window.location.search);
+
+			params.set("boost", boost);
+			params.set("devig", devigBook);
+			params.set("game", game);
+			params.set("book", book);
+
+			RES.forEach(row => {
+				const bookOdds = { ...row.bookOdds };
+				//let avg = getAverageImplied(bookOdds, row.under);
+				let ou = buildOU(bookOdds, row.under);
+				if (!ou) {
+					return;
+				}
+				const ex = excluded;
+				ex.push("pn"); ex.push("circa");
+				if (devigBook) {
+					ex.push(devigBook);
+				}
+				const highest = highestOver(bookOdds, ex, boost, book, row.under);
+				//let ou = avg.avgAmerican.toString();
+
+				if (row.under) {
+				    // If under, swap priority
+				    if (devigBook) {
+				        // Use the book's under odds if available
+				        const val = bookOdds[devigBook];
+				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+				    } else if (devigBook === "pn+circa") {
+				        // Fallback to averageSharps for unders if combining books
+				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
+				    }
+				} else {
+				    if (devigBook === "pn+circa") {
+				        ou = averageSharps(bookOdds);
+				    } else if (devigBook) {
+				        ou = bookOdds[devigBook];
+				    }
+				}
+				if (!ou) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+
+				let d = devig(ou, highest.value, boost);
+				if (!d) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				row["book"] = highest.book;
+				row["line"] = highest.value;
+				row["ev"] = d.ev;
+				row["fairVal"] = d.fairVal;
+				row["implied"] = d.implied;
+				row["kelly"] = d.kelly;
+			});
+
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			TABLE.setSort([
+				{column: "ev", dir: "desc"}
+			]);
+			const filters = [];
+			TABLE.clearFilter();
+			if (game) {
+				game = game.replaceAll("-gm2", "_gm2");
+				let [a,h] = game.split("-");
+				game = `${a} @ ${h}`;
+				game = game.replaceAll("_gm2", "-gm2");
+				filters.push({field:"game", type:"=", value: game});
+			}
+			if (filters.length > 0) {
+				TABLE.setFilter(filters);
+			}
+			TABLE.setData(RES);
+		}
+	</script>
+</body>
+</html>

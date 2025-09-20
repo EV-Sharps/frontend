@@ -369,6 +369,15 @@ async function handleSession() {
 				fetchStrikeouts();
 			}
 		}, 30 * 1000);
+	} else if (PAGE == "main") {
+		fetchMain();
+		initExcluded();
+		renderTable([]);
+		setInterval(() => {
+			if (!MOBILE || document.hasFocus()) {
+				fetchMain();
+			}
+		}, 30 * 1000);
 	} else if (PAGE == "nfl") {
 		fetchNFLProps();
 		initExcluded();

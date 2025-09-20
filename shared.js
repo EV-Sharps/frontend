@@ -31,6 +31,7 @@ let PAGE_DROPDOWN = `
 	<option value="dingers">💣 Dingers</option>
 	<option value="strikeouts">💨 Strikeouts</option>
 	<option value="feed">📡 Feed</option>
+	<option value="main">🏆 Main (Sharps)</option>
 	<option value="bets">🎟️ Bets (Sharps)</option>
 	<option value="movement">📉 Movement (Sharps)</option>
 	<option value="bvp">🆚 BvP</option>

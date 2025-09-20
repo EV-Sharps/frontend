@@ -271,11 +271,6 @@
 			document.querySelector("#watermark").style.width = "20%";
 		}
 
-		if (GAME) {
-			let [a,h] = GAME.split("-");
-			GAME = `${a} @ ${h}`;
-		}
-
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
@@ -408,11 +403,6 @@
 			changeFilter();
 		});
 
-		if (GAME) {
-			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
-		} else {
-			document.querySelector("#game-select").value = "";
-		}
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
 			const params = new URLSearchParams(window.location.search);

@@ -634,7 +634,7 @@
 		let HISTORICAL = URLParams.get("historical");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game");
+		let GAME = URLParams.get("game") || "";
 		TEAM = URLParams.get("team");
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
@@ -642,13 +642,6 @@
 		let NOBR = URLParams.get("noBR");
 		let BOOST = URLParams.get("boost");
 		let DEVIG = URLParams.get("devig");
-
-		if (GAME) {
-			GAME = GAME.replaceAll("-gm2", "_gm2");
-			let [a,h] = GAME.split("-");
-			GAME = `${a} @ ${h}`;
-			GAME = GAME.replaceAll("_gm2", "-gm2");
-		}
 
 		handleSession();
 
@@ -772,6 +765,7 @@
 					gameSel.appendChild(option);
 				});
 			}
+			gameSel.value = GAME;
 		}
 
 		async function fetchDingersData() {
@@ -843,6 +837,7 @@
 			}
 		}
 
+		let loaded = false;
 		function renderTable(data) {
 			//data = data.filter(r => ["cal raleigh", "kyle schwarber"].includes(r.player));
 
@@ -1038,9 +1033,11 @@
 			});
 
 			TABLE.on("dataLoaded", function(data) {
-				showHideUserTable();
-				//const btn = document.querySelector("#help-tour-btn");
-				//btn.onclick = startHelpTour();
+				showHideUserTable(loaded);
+				if (!loaded) {
+					changeFilter();
+				}
+				loaded = true;
 			});
 		}
 
@@ -1164,11 +1161,6 @@
 			changeFilter();
 		});
 
-		if (GAME) {
-			document.querySelector("#game-select").value = GAME.replace(" @ ", "-") || "";
-		} else {
-			document.querySelector("#game-select").value = "";
-		}
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
 			const params = new URLSearchParams(window.location.search);
@@ -1192,10 +1184,18 @@
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
 
+			GAME = game;
 			params.set("boost", boost);
 			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
+
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+
+			if (!RES) {
+				return;
+			}
 
 			RES.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -1252,9 +1252,6 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 			});
-
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);

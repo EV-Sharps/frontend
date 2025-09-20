@@ -1790,7 +1790,7 @@ function getNestedFields(defs, out = []) {
 	return out;
 }
 
-function showHideUserTable() {
+function showHideUserTable(loaded) {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
 		if (!CURR_USER.metadata[PAGE]) {
 			return;
@@ -1825,8 +1825,10 @@ function showHideUserTable() {
 
 		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
-		DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
-		//document.getElementById("devig-select").value = DEVIG;
+		if (!loaded) {
+			DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
+			document.getElementById("devig-select").value = DEVIG;
+		}
 	}
 }
 

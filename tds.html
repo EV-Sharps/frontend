@@ -60,6 +60,7 @@
 						<option value="dk">DK</option>
 						<!-- <option value="b365">B365</option> -->
 						<option value="mgm">MGM</option>
+						<option value="espn">ESPN</option>
 						<option value="cz">CZ</option>
 						<option value="fn">FN</option>
 						<option value="br">BR</option>
@@ -353,9 +354,7 @@
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
 			//TABLE.setData(RES.data);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
+
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -367,8 +366,12 @@
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
+
 			TABLE.setData(RES.data);
 			//TABLE.redraw(true);
+			if (TABLE.getSorters().length == 0) {
+				TABLE.setSort([{column: "ev", dir: "desc"}]);
+			}
 		}
 
 		const boostSel = document.getElementById('boost-select');
@@ -620,7 +623,8 @@
 					},
 					{title: "Season", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "game", visible: false}
+					{field: "game", visible: false},
+					{field: "pos", visible: false}
 				]
 			});
 		}

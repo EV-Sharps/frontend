@@ -347,7 +347,7 @@ async function handleSession() {
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchPlays();
 			}
 		}, 30 * 1000);
@@ -356,7 +356,7 @@ async function handleSession() {
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
@@ -365,7 +365,7 @@ async function handleSession() {
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchStrikeouts();
 			}
 		}, 30 * 1000);
@@ -374,7 +374,7 @@ async function handleSession() {
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchMain();
 			}
 		}, 30 * 1000);
@@ -383,7 +383,7 @@ async function handleSession() {
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchNFLProps();
 			}
 		}, 30 * 1000);
@@ -392,7 +392,7 @@ async function handleSession() {
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
-			if (!MOBILE || document.hasFocus()) {
+			if (document.hasFocus()) {
 				fetchDingersData();
 			}
 		}, 60 * 1000);

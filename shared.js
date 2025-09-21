@@ -1863,6 +1863,8 @@ function openOverlay() {
 			el.checked = true;
 		}
 	}
+
+	document.querySelector("#custom-devig-select").value = metadata[`${PAGE}-devig`] || "";
 }
 
 function fetchUpdated(repo="props", render=true) {

@@ -46,6 +46,7 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
+	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
 	<option value="futures">🔮 Futures</option>
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>

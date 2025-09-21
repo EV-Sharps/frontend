@@ -191,7 +191,7 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with any sports league. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
@@ -202,7 +202,7 @@
 		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "mlb";
+		let SPORT = URLParams.get("sport") || "mlb";
 		let KAMBI = URLParams.get("kambi");
 		let MARK = URLParams.get("mark");
 		let BPP = URLParams.get("bpp") != undefined;
@@ -317,7 +317,7 @@
 		}
 
 		async function fetchMain() {
-			let url = "/api/main";
+			let url = "/api/main?sport="+SPORT;
 			fetch(API_BASE+url, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
@@ -406,23 +406,23 @@
 						title: "Prop", field: "prop",
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
-							let gameContainer = getGameImgs(data, {sport: "mlb"}).join("");
+							let gameContainer = getGameImgs(data, {sport: SPORT}).join("");
 							let ou = data.under ? "u" : "o";
 							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
 							if (data.prop == "ml") {
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg("mlb", data.team)} ML ${ah} ${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ML ${ah} ${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
 									</div>
 								`;
 							} else if (data.prop == "spread") {
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg("mlb", data.team)} ${data.team.toUpperCase()}
+										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()}
 
 										${data.handicap} ${ah}
 
-										${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+										${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
 									</div>
 								`;
 							}
@@ -441,7 +441,7 @@
 							const data = cell.getRow().getData();
 							return `
 								<div style="display:flex;gap: 3px;">
-									${getTeamImg("mlb", data.opp)} ${data.opp.toUpperCase()}
+									${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
 								</div>
 							`;
 						},

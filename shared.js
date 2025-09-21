@@ -78,6 +78,8 @@ setTimeout(() => {
 		select.value = SPORT;
 	} else if (PAGE == "dingers" && KAMBI) {
 		select.value = "kambi";
+	} else if (PAGE == "main" && SPORT === "nfl") {
+		select.value = "main?sport=nfl";
 	} else {
 		select.value = PAGE;
 	}
@@ -1194,7 +1196,7 @@ function getTeamImg(sport, team) {
 	if (!team) {
 		return "";
 	}
-	return `<img class='team-img' src='logos/${sport}/${team}.png' alt='${team}' title='${team}' />`;
+	return `<img class='team-img' src='logos/${sport}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
 }
 
 const brlFormatter = function(cell) {

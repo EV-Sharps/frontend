@@ -325,6 +325,8 @@
 				        	ou = `${u}/${o}`;
 				        }
 				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+				    } else {
+				    	ou = buildOU(bookOdds, true);
 				    }
 				} else {
 				    // Normal over-first logic
@@ -343,6 +345,9 @@
 				}
 
 				let d = devig(ou, highest.value, boost, row.under);
+				if (row.player == "lamar jackson" && row.prop == "pass_td" && row.under && row.handicap == 1.5) {
+					console.log(ou, d)
+				}
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";

@@ -346,6 +346,7 @@ async function handleSession() {
 		fetchSBData();
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();
+		renderTable([]);
 		setInterval(() => {
 			if (document.hasFocus()) {
 				fetchPlays();

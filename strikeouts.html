@@ -576,14 +576,19 @@
 
 				if (row.under) {
 				    // If under, swap priority
-				    if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    }
+					if (devigBook === "pn+circa") {
+			        // Fallback to averageSharps for unders if combining books
+			        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
+			    } else if (devigBook) {
+			        // Use the book's under odds if available
+			        const val = bookOdds[devigBook];
+			        ou = val;
+			        if (val && String(val).includes("/")) {
+			        	let [o,u] = String(val).split("/");
+			        	ou = `${u}/${o}`;
+			        }
+			        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+			    }
 				} else {
 				    if (devigBook === "pn+circa") {
 				        ou = averageSharps(bookOdds);
@@ -599,7 +604,7 @@
 					return;
 				}
 
-				let d = devig(ou, highest.value, boost);
+				let d = devig(ou, highest.value, boost, row.under);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";

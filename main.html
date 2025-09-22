@@ -426,6 +426,11 @@
 										${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
 									</div>
 								`;
+							} else if (data.prop == "away_total" || data.prop == "home_total") {
+								return `
+									<div style="display:flex;gap: 3px;">
+										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${ou}${data.handicap} TT
+								</div>`;
 							}
 							
 							return `

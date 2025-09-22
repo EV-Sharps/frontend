@@ -1889,11 +1889,11 @@ function fetchUpdated(repo="props", render=true) {
 	}).catch(err => console.log(err));
 }
 
-function devig(ou, finalOdds, promo) {
+function devig(ou, finalOdds, promo, isUnder = false) {
 	const parts = String(ou).split("/");
 	if (!parts[0]) return;
 
-	const over = parseInt(parts[0], 10);
+	let over = parseInt(parts[0], 10);
 	if (!Number.isFinite(over)) return;
 
 	let impliedOver = americanToImplied(over);
@@ -1912,6 +1912,13 @@ function devig(ou, finalOdds, promo) {
 			under = Math.trunc((100*u) / (-1 + u));
 		} else {
 			under = Math.trunc((100 - 100 * u) / u);
+		}
+		//console.log(isUnder, over, under);
+		if (isUnder) {
+			let tmpUnder = under;
+			under = over;
+			over = tmpUnder;
+			impliedOver = americanToImplied(over);
 		}
 	} else {
 		under = parseInt(parts[1], 10);
@@ -2037,7 +2044,7 @@ function getKelly(finalOdds, ev) {
   return ev / Math.abs(p) / 4;
 }
 
-function averageSharps(bookOdds) {
+function averageSharps(bookOdds, isUnder = false) {
 	let pn = bookOdds.pn;
 	let circa = bookOdds.circa;
 	let overs = [];
@@ -2061,7 +2068,11 @@ function averageSharps(bookOdds) {
 			unders = unders.reduce((sum, val) => sum + val, 0) / unders.length;
 			unders = impliedToAmerican(unders);
 		}
-		return unders ? `${overs}/${unders}` : unders;
+		if (unders) {
+			return isUnder ? `${unders}/${overs}` : `${overs}/${unders}`;
+		} else {
+			return unders;
+		}
 	}
 	return "";
 }

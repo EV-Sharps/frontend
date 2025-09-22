@@ -84,6 +84,7 @@
 				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
 				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
 				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
+				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
 				      <div class="chkdd-actions">
 				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 				        <button type="button" data-act="all">All</button>
@@ -480,6 +481,7 @@
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true, formatter: evOddsFormatter},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					{title: "Game", field: "game", visible: false},

@@ -88,8 +88,8 @@
 			<div id="table-container">
 				<div class="record">
 				  <ul style="list-style:none; padding:0; margin:0;">
-				  	<li id="record-all"><strong>'23-'25 +EV HRs:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
-					<li id="record-szn"><strong>2025 +EV HRs:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
+				  	<li id="record-all"><strong>'23-'25 +EV:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
+					<li id="record-szn"><strong>2025 +EV:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
 					<li id="record-today"><strong>Today:</strong> <span class="w-l"></span> <span class="units">(+u)</span></li>
 				  </ul>
 				</div>
@@ -134,9 +134,11 @@
 				document.querySelector("#record-all .w-l").textContent = wl;
 				document.querySelector("#record-all .units").textContent = units;
 			}
-			[wl, units] = RES[SPORT].record.szn.split(" ");
-			document.querySelector("#record-szn .w-l").textContent = wl;
-			document.querySelector("#record-szn .units").textContent = units;
+			if (RES[SPORT].record.szn) {
+				[wl, units] = RES[SPORT].record.szn.split(" ");
+				document.querySelector("#record-szn .w-l").textContent = wl;
+				document.querySelector("#record-szn .units").textContent = units;
+			}
 			[wl, units] = RES[SPORT].record.today.split(" ");
 			document.querySelector("#record-today .w-l").textContent = wl;
 			document.querySelector("#record-today .units").textContent = units;
@@ -144,7 +146,18 @@
 				const num = parseFloat(units.match(/-?\d+(\.\d+)?/)[0]);
 				if (num < 0) {
 					document.querySelector("#record-today .units").style.color = "red";
+				} else {
+					document.querySelector("#record-today .units").style.color = "green";
 				}
+			}
+
+			if (SPORT == "nfl") {
+				document.querySelector("#record-today strong").textContent = "Week:"
+			}
+			if (SPORT != "MLB") {
+				document.querySelector("#record-all").style.display = "none";
+			} else {
+				document.querySelector("#record-all").style.display = "flex";
 			}
 		}
 

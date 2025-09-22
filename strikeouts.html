@@ -326,6 +326,11 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(res => res.json()).then(res => {
+				if (res.data.length == 0) {
+					TABLE.options.placeholder = "No Data";
+					TABLE.redraw(true);
+					return;
+				}
 				parseData(res.data);
 				setTimeout(function() {
 					updateTimes();

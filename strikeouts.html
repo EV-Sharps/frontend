@@ -100,6 +100,7 @@
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
+						<option value="dk">vs DK</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
@@ -327,7 +328,7 @@
 				}
 			}).then(res => res.json()).then(res => {
 				if (res.data.length == 0) {
-					TABLE.options.placeholder = "No Data";
+					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
 					TABLE.redraw(true);
 					return;
 				}

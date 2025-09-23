@@ -105,6 +105,7 @@
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
 						<option value="dk">vs DK</option>
+						<option value="bol">vs BOL</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
@@ -345,9 +346,6 @@
 				}
 
 				let d = devig(ou, highest.value, boost, row.under);
-				if (row.player == "lamar jackson" && row.prop == "pass_td" && row.under && row.handicap == 1.5) {
-					console.log(ou, d)
-				}
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -496,6 +494,7 @@
 		}
 
 		function renderTable(data) {
+			const allProps = [...new Set(data.map(row => row.prop))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
     			placeholder:"Data Loading...",
@@ -570,6 +569,19 @@
 							}
 							//line = parseFloat(line) + 0.5;
 							return `o${line} ${cell.getValue()}`;
+						},
+						editor:"input", headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
 						}
 					},
 					

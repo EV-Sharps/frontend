@@ -196,9 +196,19 @@
 				rowFormatter: function(row) {
 					const data = row.getData();
 					if (data.cashedOut) {
-						row.getElement().querySelector(".player-cell").style.textDecoration = "line-through";
-						row.getElement().querySelector(".evbook-cell").style.textDecoration = "line-through";
-						//row.getElement().style.opacity = "0.7";
+						const el = row.getElement();
+						const ev = el.querySelector(".ev-cell");
+						const player = el.querySelector(".player-cell");
+						const evBook = el.querySelector(".evbook-cell");
+						if (ev) {
+							ev.style.textDecoration = "line-through";
+						}
+						if (player) {
+							player.style.textDecoration = "line-through";
+						}
+						if (evBook) {
+							evBook.style.textDecoration = "line-through";
+						}
 					}
 					if (data.homer) {
 						row.getCells().map(r => r.getElement().classList.add("homer"));

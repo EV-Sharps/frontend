@@ -940,10 +940,9 @@
 					},
 					{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter},
 					{title: "Diff", field: "bppDiff", visible: BPP ? true : false, width: 60, sorter: "number", formatter: percentFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter
 					},
-					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
@@ -954,10 +953,7 @@
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true, formatter: evOddsFormatter},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
-					//{title: "Kambi*", field: "bookOdds.kambi",  width: 70, sorter: "number"},
-					//{title: "Bats", field: "bats", width: 40, formatter: blurFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},

@@ -47,6 +47,7 @@ let PAGE_DROPDOWN = `
 	<option value="tds">🏈 TDs</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
+	<option value="backfields">🏈 Backfields</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
 	<option value="futures">🔮 Futures</option>
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
@@ -1268,7 +1269,6 @@ const ftFormatter = function(cell, params, rendered) {
 
 const playerFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	if (data.prop == "separator") return "";
 	const sport = params.sport || data.sport;
 	let player = title(data.player);
 	if (PLAYER) {
@@ -1318,7 +1318,7 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers", "strikeouts"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "strikeouts", "backfields"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";

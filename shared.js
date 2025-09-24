@@ -1351,6 +1351,26 @@ const playerFormatter = function(cell, params, rendered) {
 	`
 }
 
+const trendFormatter = function(cell, params, rendered) {
+	const div = document.createElement("div");
+	let val = cell.getValue();
+	div.innerText = val;
+	const data = cell.getRow().getData();
+	let avgVal = data[cell.getField().replace("last", "").toLowerCase()];
+	if (cell.getField() != "lastPts") {
+		val = parseInt(val.replace("%", ""));
+		avgVal = parseInt(avgVal.replace("%", ""));
+	}
+	if (data["lastSnap"].replace("%", "") != "0") {
+		if (val > avgVal) {
+			div.classList.add("positive");
+		} else if (val < avgVal) {
+			div.classList.add("negative");
+		}
+	}
+	return div;
+}
+
 function getGameImgs(data, params) {
 	let away = data.awayTeamId || data.game.split(" @ ")[0];
 	let home = data.homeTeamId || data.game.split(" @ ")[1];

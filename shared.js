@@ -55,6 +55,7 @@ let PAGE_DROPDOWN = `
 	<option value="nhl">🏒 NHL Props</option>
 	<option value="nba">🏀 NBA Props</option>
 	<option value="ncaab">🏀 CBB Props</option>
+	<option value="ncaaf">🏈 CFB Props</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -722,11 +723,12 @@ const oppFormatter = function(cell, params, rendered) {
 	const ah = `<span style="width: 12px;text-align:center;">
 		${data.game.split(" @ ")[0] != cell.getValue() ? "@" : "v"}
 	</span>`;
-	if (params.prop == "k" || params.is_pitcher) {
+	let team = data.oppId || data.opp;
+	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf") {
 		return `<div class="opp-cell">
 			${ah}
-			${getTeamImg(SPORT, cell.getValue())}
-			${cell.getValue().toUpperCase()}
+			${getTeamImg(SPORT, team)}
+			${team.toUpperCase()}
 		</div>`;
 	}
 	let pitcher = "";
@@ -734,12 +736,12 @@ const oppFormatter = function(cell, params, rendered) {
 		pitcher = cell.getValue().toUpperCase();
 	} else if (PAGE == "tds" || PAGE == "nfl") {
 		pitcher = data.opp.toUpperCase();
-	} else {
+	} else if (data.pitcher) {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
 	}
 	const badge = data.doubleheader || data.team?.includes("gm2") ? 
 		"<span class='dbl-badge'>2</span>" : "";
-	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, cell.getValue())}</div>` : `${getTeamImg(SPORT, cell.getValue())}`;
+	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, team)}</div>` : `${getTeamImg(SPORT, team)}`;
 	let pitcherLR = data.pitcherLR || "";
 	return `
 		<div class="opp-cell" aria-label="${data.pitcherSummary}">
@@ -1197,7 +1199,7 @@ function getTeamImg(sport, team) {
 	if (!team) {
 		return "";
 	}
-	return `<img class='team-img' src='logos/${sport}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
+	return `<img class='team-img' src='logos/${sport.replace("ncaaf", "ncaab")}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
 }
 
 const brlFormatter = function(cell) {
@@ -1292,7 +1294,7 @@ const playerFormatter = function(cell, params, rendered) {
 		return player;
 	}
 
-	let team = SPORT == "ncaab" ? data.teamId : data.team;
+	let team = SPORT.includes("ncaa") ? data.teamId : data.team;
 	if (team == undefined) {
 		team = "";
 	}
@@ -1302,10 +1304,12 @@ const playerFormatter = function(cell, params, rendered) {
 		isPlayerProp = false;
 		player = data.prop.replace("_", " ").toUpperCase();
 		if (data.prop.includes("ml")) {
-			const g = SPORT == "ncaab" ? title(data.game) : data.game.toUpperCase();
+			const g = SPORT.includes("ncaa") ? title(data.game) : data.game.toUpperCase();
 			player = data.under ? g.split(" @ ")[1] : g.split(" @ ")[0];
 		} else if (data.prop == "total" && SPORT == "ncaab") {
 			player = `Total (${data.gameId.toUpperCase()})`;
+		} else if (data.prop == "total" && SPORT == "ncaaf") {
+			player = `${data.gameId.toUpperCase()}`;
 		} else if (data.prop.includes("away_total") || data.prop.includes("home_total")) {
 			player = `${team.toUpperCase()} ${data.prop.replace("home_", "").replace("away_", "").toUpperCase()}`;
 		} else if (data.prop.includes("spread")) {
@@ -1324,7 +1328,7 @@ const playerFormatter = function(cell, params, rendered) {
 	let gameContainer = "";
 	if (["feed", "dingers", "barrels"].includes(PAGE) || isPlayerProp) {
 		let s = ["feed", "dingers", "barrels"].includes(PAGE) ? "mlb" : sport;
-		let t = sport == "ncaab" ? data.teamId : data.team;
+		let t = sport.includes("ncaa") ? data.teamId : data.team;
 		if (TEAM) {
 			//t = TEAM;
 		}
@@ -1379,12 +1383,12 @@ function getGameImgs(data, params) {
 	}
 	let awayAlt = data.game.split(" @ ")[0].toUpperCase();
 	let homeAlt = data.game.split(" @ ")[1].toUpperCase();
-	if (SPORT == "ncaab") {
+	if (SPORT.includes("ncaa")) {
 		awayAlt = title(awayAlt);
 		homeAlt = title(homeAlt);
 	}
 	let sport = params.sport || data.sport;
-	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb");
+	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab");
 	return [
 		`<img class='game-img away' src='logos/${sport}/${away}.png' alt='${awayAlt}' title='${awayAlt}' />`,
 		`<img class='game-img home' src='logos/${sport}/${home}.png' alt='${homeAlt}' title='${homeAlt}' />`

@@ -742,14 +742,15 @@
 					if (PRETTY != undefined) {
 						pretty_();
 					}
-					if (IMP != undefined) {
-						implied();
-					}
 					if (SIMPLE != undefined) {
 						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
 					}
 					updateTimes();
 					changeFilter();
+
+					if (IMP != undefined) {
+						implied();
+					}
 				}, 500)
 			}).catch(err => console.log(err));
 		}
@@ -1033,7 +1034,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fv", "implied", "kelly", "player", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

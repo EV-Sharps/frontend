@@ -1360,6 +1360,27 @@ button#logout:hover {
 	}
 }
 
+@media (max-width: 1150px) {
+	.dropdown {
+		flex: 0 0 auto;
+	}
+	#center-dropdown, #auth-buttons {
+		width: 100%;
+		transform: none;
+		position: static;
+		display: flex;
+		align-items: center;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		gap: 0.5rem;
+		padding: 0.5rem 0;
+		-webkit-overflow-scrolling: touch;
+	}
+	#center-dropdown button, #center-dropdown select, #auth-buttons #username, #auth-buttons button {
+		flex: 0 0 auto;
+	}
+}
+
 @media (hover: hover) and (pointer: fine) {
 	.tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover, .tabulator-row:hover {
 		background-color: #34393b !important;

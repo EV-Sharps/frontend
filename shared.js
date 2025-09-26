@@ -1797,10 +1797,15 @@ const diffFormatter = function(cell) {
 	return `<div class="${cls}">${val}</div>`;
 }
 
-const DEFAULT_FIELDS = [
+const DEFAULT_FIELDS_ALL = [
 	"ev", "fairVal", "implied", "kelly", "player", "book", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "order", "pitcher", "percs_hr_pa", "bvp", "bpp", "savant_exit_velocity_avg", "savant_barrels_per_bip", "pitcherData_flyballs_percent", "pitcherData_exit_velocity_avg", "pitcherData_barrel_batted_rate", "oppRank", "homerLogs_pa_streak", "homerLogs_pa_med", "homerLogs_pa_z_median", "weather",
 	"stadiumRank", "stadiumRankLeft", "stadiumRankRight", "batter_percs_hr_pa", "batter_percs_home_run"
 ];
+
+const DEFAULT_FIELDS = {
+	tds: ["ev", "book", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
+	nfl: ["ev", "book", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"]
+};
 
 function getNestedFields(defs, out = []) {
 	defs.forEach(def => {
@@ -1866,7 +1871,7 @@ function openOverlay() {
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
-		metadata[PAGE] = DEFAULT_FIELDS;
+		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_FIELDS_ALL;
 		if (MOBILE) {
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");

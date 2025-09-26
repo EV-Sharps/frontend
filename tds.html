@@ -154,6 +154,7 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -189,6 +190,122 @@
 				</div>
 				<div id="watermark">
 					<img src="logos/logo.png">
+				</div>
+			</div>
+			<div id="overlay">
+				<div class="overlay-content">
+					<div><h2 style="justify-content: center;">Customize</h2></div>
+					<div style="justify-content: center;display: flex;gap: 1rem;">
+						<div style="display: flex;flex-direction: column;">
+							<label for="custom-devig-select">Devig</label>
+							<div class="select-wrapper">
+								<select id="custom-devig-select">
+									<option value="" selected>Market Avg</option>
+									<option value="fd">vs FD</option>
+									<option value="pn">vs PN</option>
+									<option value="circa">vs Circa</option>
+								</select>
+								<svg class="select-arrow" viewBox="0 0 20 20">
+									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+								</svg>
+							</div>
+						</div>
+					</div>
+					<div id="items" style="display: flex;">
+						<div>
+							<h3>Expected Value</h3>
+							<div>
+								<input id="custom_ev" type="checkbox">
+								<label for="custom_ev">Expected Value</label>
+							</div>
+							<div>
+								<input id="custom_fairVal" type="checkbox">
+								<label for="custom_fairVal">Fair Value</label>
+							</div>
+							<div>
+								<input id="custom_implied" type="checkbox">
+								<label for="custom_implied">Implied</label>
+							</div>
+							<div>
+								<input id="custom_kelly" type="checkbox">
+								<label for="custom_kelly">¼ Kelly</label>
+							</div>
+						</div>
+						<!-- Player / Odds -->
+						<div>
+							<h3>Player & Odds</h3>
+							<div>
+								<input id="custom_player" type="checkbox" checked disabled>
+								<label for="custom_player">Player</label>
+							</div>
+							<div>
+								<input id="custom_book" type="checkbox" checked disabled>
+								<label for="custom_book">EV Book</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+								<label for="custom_bookOdds_fd">Fanduel</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_dk" type="checkbox">
+								<label for="custom_bookOdds_dk">Draftkings</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_mgm" type="checkbox">
+								<label for="custom_bookOdds_mgm">MGM</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_espn" type="checkbox">
+								<label for="custom_bookOdds_espn">ESPN</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_cz" type="checkbox">
+								<label for="custom_bookOdds_cz">Caesars</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_fn" type="checkbox">
+								<label for="custom_bookOdds_fn">Fanatics</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_br" type="checkbox">
+								<label for="custom_bookOdds_br">BetRivers</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_hr" type="checkbox">
+								<label for="custom_bookOdds_hr">Hard Rock</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_kambi" type="checkbox">
+								<label for="custom_bookOdds_kambi">Kambi (BB)</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_bv" type="checkbox">
+								<label for="custom_bookOdds_bv">Bovada</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_bol" type="checkbox">
+								<label for="custom_bookOdds_bol">Betonline</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_pn" type="checkbox">
+								<label for="custom_bookOdds_pn">Pinnacle</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+								<label for="custom_bookOdds_circa">Circa</label>
+							</div>
+						</div>
+					</div>
+					<div class="loggedOut">
+						<div style="padding: 0.5rem;text-align: center;">
+							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+						</div>
+					</div>
+					<div style="display: flex;justify-content: center;align-items: center;">
+						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
+						<span id="save-status" style="margin: 0.5rem 0"></span>
+						<button onclick="closeOverlay();">Close</button>
+					</div>
 				</div>
 			</div>
 		</main>
@@ -278,6 +395,17 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
+		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
+			checkbox.addEventListener("change", () => {
+				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+				if (checkbox.checked) {
+					TABLE.getColumn(field)?.show();
+				} else {
+					TABLE.getColumn(field)?.hide();
+				}
+			});
+		});
+
 		function changeFilter() {
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
@@ -298,6 +426,14 @@
 			params.set("game", game);
 			params.set("book", book);
 			params.set("prop", prop);
+
+
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			
+			if (!RES) {
+				return;
+			}
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -358,8 +494,8 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
+
+			
 			//TABLE.setData(RES.data);
 
 			const filters = [];
@@ -496,6 +632,7 @@
 			}).catch(err => console.log(err));
 		}
 
+		let loaded = false;
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
@@ -618,9 +755,9 @@
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 60, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false, formatter: evOddsFormatter},
 					{title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
@@ -640,6 +777,14 @@
 					{field: "game", visible: false},
 					{field: "pos", visible: false}
 				]
+			});
+
+			TABLE.on("dataLoaded", function(data) {
+				showHideUserTable(loaded);
+				if (!loaded) {
+					changeFilter();
+				}
+				loaded = true;
 			});
 		}
 

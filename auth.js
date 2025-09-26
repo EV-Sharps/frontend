@@ -138,8 +138,12 @@ async function saveTableSettings() {
 
 	const fields = {};
 	fields[PAGE] = [];
-	fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
-	fields[`${PAGE}-filter`] = document.querySelector("#filter-select").value;
+	if (document.querySelector("#sort-select")) {
+		fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
+	}
+	if (document.querySelector("#filter-select")) {
+		fields[`${PAGE}-filter`] = document.querySelector("#filter-select").value;
+	}
 	fields[`${PAGE}-devig`] = document.querySelector("#custom-devig-select").value;
 	document.querySelectorAll('#items input[type="checkbox"]:checked').forEach((input) => {
 		const key = input.id.replace(/^custom_/, '');

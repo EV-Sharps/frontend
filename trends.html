@@ -216,7 +216,7 @@
 				let yVals = [];
 				let yValsMA = [];
 				Object.keys(res[year]).forEach(month => {
-					if (!["04", "05", "06", "07", "08", "09"].includes(month)) {
+					if (!["04", "05", "06", "07", "08", "09", "10"].includes(month)) {
 						return;
 					}
 					const data = res[year][month];
@@ -263,7 +263,7 @@
 				let firstY = yValsMA[0];
 				let lastY = yValsMA[yValsMA.length - 1];
 				lineIdx += 1;
-				if (regression || (true && ![].includes(year) && year != currentYear)) {
+				if (regression || (![].includes(year) && year != currentYear)) {
 					traces.push(reg);
 					firstY = regY[0];
 					lastY = regY[regY.length-1];

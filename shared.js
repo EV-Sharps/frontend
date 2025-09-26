@@ -1803,8 +1803,8 @@ const DEFAULT_FIELDS_ALL = [
 ];
 
 const DEFAULT_FIELDS = {
-	tds: ["ev", "book", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
-	nfl: ["ev", "book", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"]
+	tds: ["ev", "book", "player", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
+	nfl: ["ev", "book", "player", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"]
 };
 
 function getNestedFields(defs, out = []) {

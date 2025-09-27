@@ -409,27 +409,27 @@
 							let gameContainer = getGameImgs(data, {sport: SPORT}).join("");
 							let ou = data.under ? "u" : "o";
 							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
-							if (data.prop == "ml") {
+							if (data.prop.includes("ml")) {
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ML ${ah} ${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
+										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${data.prop.toUpperCase()}
 									</div>
 								`;
-							} else if (data.prop == "spread") {
+							} else if (data.prop.includes("spread")) {
+								let prefix = data.prop.includes("_") ? data.prop.split("_")[0] : "";
 								return `
 									<div style="display:flex;gap: 3px;">
 										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()}
 
 										${data.handicap > 0 ? `+${data.handicap}` : data.handicap}
-										${ah}
-
-										${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
+										${data.prop.replace("spread", "").split("_")[0]}
 									</div>
 								`;
-							} else if (data.prop == "away_total" || data.prop == "home_total") {
+							} else if (data.prop.includes("away_total") || data.prop.includes("home_total")) {
+								let prefix = data.prop.replace("away_total", "").replace("home_total", "").includes("_") ? data.prop.split("_")[0]+"_TT" : "TT";
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${ou}${data.handicap} TT
+										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${ou}${data.handicap} ${prefix}
 								</div>`;
 							}
 							
@@ -439,20 +439,21 @@
 							</div>`;
 						},
 						hozAlign: "left",
-						width: 150,
+						width: 130,
 						frozen: true
 					},
 					{
 						title: "Opp", field: "opp",
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
+							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
 							return `
 								<div style="display:flex;gap: 3px;">
-									${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
+									${ah} ${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
 								</div>
 							`;
 						},
-						visible: false
+						visible: true
 					},
 					{
 						title: "Line",

@@ -664,7 +664,7 @@
 					},
 					{
 						title: "Player",
-						field: "player",
+						field: "game",
 						headerFilter: "input",
 						formatter: playerFormatter,
 						width: MOBILE || LAST ? 100 : 140,
@@ -679,10 +679,13 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
+							if (["ml", "attd", "1h_ml", "2h_ml"].includes(prop)) {
 								return "";
 							}
 							let ou = data.under ? "u" : "o";
+							if (prop.includes("spread")) {
+								return cell.getValue();
+							}
 							return `${ou}${cell.getValue()}`;
 						}
 					},

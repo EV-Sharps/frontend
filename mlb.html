@@ -307,7 +307,7 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NFL. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</main>
 	<script type="text/javascript" src="shared.js"></script>
@@ -598,6 +598,7 @@
 				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
+				propSel.innerHTML = `<option value="" selected>All</option>`;
 				data.props.forEach(prop => {
 					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
 						return;
@@ -607,6 +608,7 @@
 					option.textContent = prop.toUpperCase();
 					propSel.appendChild(option);
 				});
+				propSel.value = PROP;
 
 				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
@@ -747,19 +749,19 @@
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 60, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", visible: NO365 == undefined ? true : false, formatter: evOddsFormatter},
-					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{field: "game", visible: false}
 				]

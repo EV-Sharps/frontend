@@ -1810,7 +1810,8 @@ const DEFAULT_FIELDS_ALL = [
 const DEFAULT_FIELDS = {
 	tds: ["ev", "book", "player", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
 	nfl: ["ev", "book", "player", "handicap", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
-	strikeouts: ["ev", "book", "player", "handicap", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol"]
+	strikeouts: ["ev", "book", "player", "handicap", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol"],
+	mlb: ["ev", "book", "player", "prop", "handicap", "fairVal", "implied", "kelly", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol"]
 };
 
 function getNestedFields(defs, out = []) {
@@ -1850,7 +1851,7 @@ function showHideUserTable(loaded) {
 
 		nestedFields.forEach(field => {
 			const metaKey = field.replace(/\./g, "_");
-			if (!allowed.has(metaKey) && metaKey != "handicap") {
+			if (!allowed.has(metaKey) && metaKey != "handicap" && metaKey != "prop") {
 				TABLE.getColumn(field)?.hide();
 			} else {
 				TABLE.getColumn(field)?.show();

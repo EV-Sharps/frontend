@@ -604,6 +604,7 @@
 				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
+				propSel.innerHTML = `<option value="" selected>All</option>`;
 				data.props.forEach(prop => {
 					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
 						return;
@@ -624,10 +625,10 @@
 
 				setTimeout(function() {
 					updateTimes();
+					changeFilter();
 					if (PRETTY != undefined) {
 						pretty_();
 					}
-					changeFilter();
 				}, 500);
 			}).catch(err => console.log(err));
 		}

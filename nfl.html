@@ -602,6 +602,7 @@
 				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
+				propSel.innerHTML = `<option value="" selected>All</option>`;
 				data.props.forEach(prop => {
 					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
 						return;
@@ -611,6 +612,7 @@
 					option.textContent = prop.toUpperCase();
 					propSel.appendChild(option);
 				});
+				propSel.value = PROP;
 
 				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";

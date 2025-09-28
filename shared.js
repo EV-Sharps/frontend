@@ -30,7 +30,8 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
 	<option value="feed">📡 Feed</option>
-	<option value="strikeouts">💨 Strikeouts (Sharps)</option>
+	<option value="mlb">🎯 Props (Sharps)</option>
+	<!-- <option value="strikeouts">💨 Strikeouts (Sharps)</option> -->
 	<option value="main">🏆 Main (Sharps)</option>
 	<option value="bets">🎟️ Bets (Sharps)</option>
 	<option value="movement">📉 Movement (Sharps)</option>
@@ -38,8 +39,7 @@ let PAGE_DROPDOWN = `
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels</option>
 	<option value="trends">📈 Trends</option>
-	<!--<option value="mlb">🎯 Props</option>
-	 <option value="bases">⬜ Total Bases</option>
+	<!-- <option value="bases">⬜ Total Bases</option>
 	<option value="sb">⬜ Stolen Bases</option> -->
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
@@ -96,7 +96,7 @@ function changePage(page) {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
 		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (["mlb", "nba", "nhl"].includes(page)) {
+	} else if (["nba", "nhl"].includes(page)) {
 		window.location.href = `./props${HTML}?sport=${page}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;

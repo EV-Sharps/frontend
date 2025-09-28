@@ -365,13 +365,13 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "strikeouts") {
-		fetchStrikeouts();
+	} else if (PAGE == "mlb") {
+		fetchProps();
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
 			if (document.hasFocus()) {
-				fetchStrikeouts();
+				fetchProps();
 			}
 		}, 30 * 1000);
 	} else if (PAGE == "main") {

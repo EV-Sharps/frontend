@@ -604,7 +604,10 @@
 				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option>`;
+				propSel.innerHTML = `<option value="" selected>All</option><option value="attd">ATTD</option>
+						<option value="2+td">2+ TD</option>
+						<option value="ftd">FTD</option>
+						<option value="ltd">LTD</option>`;
 				data.props.forEach(prop => {
 					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
 						return;

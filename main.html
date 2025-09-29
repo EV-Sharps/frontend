@@ -409,6 +409,7 @@
 							let gameContainer = getGameImgs(data, {sport: SPORT}).join("");
 							let ou = data.under ? "u" : "o";
 							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
+
 							if (data.prop.includes("ml")) {
 								return `
 									<div style="display:flex;gap: 3px;">
@@ -433,9 +434,10 @@
 								</div>`;
 							}
 							
+							let prefix = data.prop.includes("_") ? data.prop.split("_")[0] : "";
 							return `
 								<div style="display:flex;gap: 3px;">
-									${gameContainer} ${ou}${data.handicap}
+									${gameContainer} ${ou}${data.handicap} ${prefix}
 							</div>`;
 						},
 						hozAlign: "left",

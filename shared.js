@@ -27,6 +27,14 @@ function getToday() {
 	*/
 let PAGE_DROPDOWN = `
 
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
+	<option value="tds">🏈 TDs</option>
+	<option value="nfl">🎯 Props (Sharps)</option>
+	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
+	<option value="backfields">🏈 Backfields</option>
+	<option value="ranks">📋 Fantasy Ranks</option>
+	<option value="futures">🔮 Futures</option>
+	
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
 	<option value="feed">📡 Feed</option>
@@ -43,13 +51,7 @@ let PAGE_DROPDOWN = `
 	<option value="sb">⬜ Stolen Bases</option> -->
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
-	<option value="tds">🏈 TDs</option>
-	<option value="nfl">🎯 Props (Sharps)</option>
-	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
-	<option value="backfields">🏈 Backfields</option>
-	<option value="ranks">📋 Fantasy Ranks</option>
-	<option value="futures">🔮 Futures</option>
+	
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<option value="golf">⛳ GOLF Props</option>
 	<option value="nhl">🏒 NHL Props</option>

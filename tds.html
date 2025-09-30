@@ -411,7 +411,7 @@
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
-			let prop = document.getElementById("prop-select").value;
+			PROP = document.getElementById("prop-select").value;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
@@ -425,7 +425,7 @@
 			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
-			params.set("prop", prop);
+			params.set("prop", PROP);
 
 
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
@@ -503,8 +503,8 @@
 			if (game) {
 				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
 			}
-			if (prop) {
-				filters.push({field:"prop", type:"=", value: prop});
+			if (PROP) {
+				filters.push({field:"prop", type:"=", value: PROP});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
@@ -617,6 +617,7 @@
 					option.textContent = prop.toUpperCase();
 					propSel.appendChild(option);
 				});
+				propSel.value = PROP;
 
 				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";

@@ -127,6 +127,15 @@
 			       placeholder="Custom %"
 			       style="display:none; width:7ch;" />
 				<div class="select-wrapper">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
+						<option value="" selected>All</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
 						<option value="" selected>All</option>
@@ -215,7 +224,7 @@
 		let HISTORICAL = URLParams.get("historical");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game");
+		let GAME = URLParams.get("game") || "";
 		TEAM = URLParams.get("team");
 		let DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
@@ -223,6 +232,7 @@
 		let NOBR = URLParams.get("noBR");
 		let BOOST = URLParams.get("boost");
 		let DEVIG = URLParams.get("devig");
+		let PROP = URLParams.get("prop") || "";
 
 		if (GAME) {
 			GAME = GAME.replaceAll("-gm2", "_gm2");
@@ -295,6 +305,7 @@
 		function parseData(data) {
 			UPDATED[PAGE] = data["updated"];
 			const games = data["games"];
+			const props = data["props"];
 			data = data["data"];
 
 			if (PLAYER) {
@@ -314,6 +325,16 @@
 				});
 			}
 			gameSel.value = GAME;
+
+			const propSel = document.getElementById("prop-select");
+			propSel.innerHTML = `<option value="" selected>All</option>`;
+			props.forEach(prop => {
+				const option = document.createElement("option");
+				option.value = prop;
+				option.textContent = prop.toUpperCase();
+				propSel.appendChild(option);
+			});
+			propSel.value = PROP;
 		}
 
 		async function fetchMain() {
@@ -441,6 +462,19 @@
 							</div>`;
 						},
 						hozAlign: "left",
+						editor:"input", headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
 						width: 130,
 						frozen: true
 					},
@@ -574,11 +608,24 @@
 			changeFilter();
 		});
 
+		document.querySelector("#prop-select").value = PROP || "";
+		document.querySelector("#prop-select").addEventListener("change", (event) => {
+			PROP = event.target.value;
+			const params = new URLSearchParams(window.location.search);
+			params.set("prop", PROP);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			changeFilter();
+		});
+
 		function changeFilter() {
 			let devigBook = document.getElementById("devig-select")?.value;
 			let boost = document.getElementById("boost-select")?.value;
-			let game = document.getElementById("game-select")?.value;
+			GAME = document.getElementById("game-select")?.value;
+			let game = GAME;
 			let book = document.getElementById("book-select")?.value;
+			PROP = document.getElementById("prop-select").value;
+			let prop = PROP;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
@@ -591,6 +638,7 @@
 			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
+			params.set("prop", PROP);
 
 			RES.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -661,6 +709,9 @@
 				game = `${a} @ ${h}`;
 				game = game.replaceAll("_gm2", "-gm2");
 				filters.push({field:"game", type:"=", value: game});
+			}
+			if (prop) {
+				filters.push({field:"prop", type:"=", value: prop});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);

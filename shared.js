@@ -55,6 +55,7 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<option value="golf">⛳ GOLF Props</option>
 	<option value="nhl">🏒 NHL Props</option>
+	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="nba">🏀 NBA Props</option>
 	<option value="ncaab">🏀 CBB Props</option>
 	<option value="ncaaf">🏈 CFB Props</option>
@@ -84,6 +85,8 @@ setTimeout(() => {
 		select.value = "kambi";
 	} else if (PAGE == "main" && SPORT === "nfl") {
 		select.value = "main?sport=nfl";
+	} else if (PAGE == "main" && SPORT === "nhl") {
+		select.value = "main?sport=nhl";
 	} else {
 		select.value = PAGE;
 	}

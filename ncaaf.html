@@ -493,7 +493,6 @@
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setData(RES.data);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
 			]);
@@ -508,7 +507,7 @@
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
-			TABLE.setData(RES.data);
+			TABLE.replaceData(RES.data);
 			//TABLE.redraw(true);
 		}
 

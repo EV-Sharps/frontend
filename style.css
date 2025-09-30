@@ -1002,6 +1002,12 @@ nav {
 	color: #aaa;
 }
 
+#page-select {
+	width: 110px;
+}
+#boost-select {
+	width: 60px;
+}
 #sport-select {
 	min-width: 120px;
 }

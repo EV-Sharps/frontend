@@ -496,7 +496,7 @@
 			});
 
 			
-			//TABLE.setData(RES.data);
+			//TABLE.blockRedraw();
 
 			const filters = [];
 			TABLE.clearFilter();
@@ -510,8 +510,8 @@
 				TABLE.setFilter(filters);
 			}
 
-			TABLE.setData(RES.data);
-			//TABLE.redraw(true);
+			//TABLE.setData(RES.data);
+			TABLE.replaceData(RES.data);
 			if (TABLE.getSorters().length == 0) {
 				TABLE.setSort([{column: "ev", dir: "desc"}]);
 			}

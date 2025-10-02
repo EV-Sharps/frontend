@@ -328,12 +328,14 @@
 
 			const propSel = document.getElementById("prop-select");
 			propSel.innerHTML = `<option value="" selected>All</option>`;
-			props.forEach(prop => {
-				const option = document.createElement("option");
-				option.value = prop;
-				option.textContent = prop.toUpperCase();
-				propSel.appendChild(option);
-			});
+			if (props && props.length > 0) {
+				props.forEach(prop => {
+					const option = document.createElement("option");
+					option.value = prop;
+					option.textContent = prop.toUpperCase();
+					propSel.appendChild(option);
+				});
+			}
 			propSel.value = PROP;
 		}
 

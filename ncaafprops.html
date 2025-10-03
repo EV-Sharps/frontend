@@ -581,7 +581,7 @@
 		}
 
 		function fetchNFLProps() {
-			fetch(API_BASE+`/api/ncaaf`, {
+			fetch(API_BASE+`/api/ncaaf?props=true`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

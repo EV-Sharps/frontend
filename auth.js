@@ -383,7 +383,7 @@ async function handleSession() {
 				fetchMain();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "nfl" || PAGE == "ncaaf") {
+	} else if (PAGE == "nfl" || PAGE == "ncaaf" || PAGE == "ncaafprops") {
 		fetchNFLProps();
 		initExcluded();
 		renderTable([]);

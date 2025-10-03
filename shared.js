@@ -31,6 +31,7 @@ let PAGE_DROPDOWN = `
 	<option value="tds">🏈 TDs</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
+	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
 	<option value="backfields">🏈 Backfields</option>
 	<option value="ranks">📋 Fantasy Ranks</option>
 	<option value="futures">🔮 Futures</option>
@@ -58,7 +59,8 @@ let PAGE_DROPDOWN = `
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="nba">🏀 NBA Props</option>
 	<option value="ncaab">🏀 CBB Props</option>
-	<option value="ncaaf">🏈 CFB Props</option>
+	<option value="ncaafprops">🏈 CFB Props</option>
+	<option value="ncaaf">🏈 CFB Main</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -83,6 +85,8 @@ setTimeout(() => {
 		select.value = SPORT;
 	} else if (PAGE == "dingers" && KAMBI) {
 		select.value = "kambi";
+	} else if (PAGE == "bets" && SPORT === "nfl") {
+		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
 		select.value = "main?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nhl") {

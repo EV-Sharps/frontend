@@ -658,6 +658,10 @@
 				//let ou = avg.avgAmerican.toString();
 
 				if (!isFinite(highest.value)) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				if (row.under) {

@@ -440,6 +440,10 @@
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				if (!isFinite(highest.value)) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				let ou = avg.avgAmerican.toString();

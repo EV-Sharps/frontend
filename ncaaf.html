@@ -443,6 +443,13 @@
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				let ou = avg.avgAmerican.toString();
+				if (!isFinite(highest.value)) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
 				if (row.under) {
 				    // If under, swap priority
 				    if (devigBook === "pn+circa") {

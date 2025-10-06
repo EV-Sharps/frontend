@@ -107,6 +107,9 @@ function changePage(page) {
 		window.location.href = `./dingers${HTML}?kambi=true`;
 	} else if (["nba"].includes(page)) {
 		window.location.href = `./props${HTML}?sport=${page}`;
+	} else if (page.includes("main")) { 
+		let sport = !page.includes("?sport=") ? "mlb" : page.split("?sport=")[1];
+		window.location.href = `./main${HTML}?sport=${sport}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}

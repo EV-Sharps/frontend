@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>⚾ Props</title>
+	<title>🏒 Props</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -439,6 +439,9 @@
 					ex.push(devigBook);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
+				if (!isFinite(highest.value)) {
+					return;
+				}
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
 				    // If under, swap priority
@@ -762,6 +765,7 @@
 					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{field: "game", visible: false}
 				]
 			});

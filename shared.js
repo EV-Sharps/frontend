@@ -105,7 +105,7 @@ function changePage(page) {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
 		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (["nba", "nhl"].includes(page)) {
+	} else if (["nba"].includes(page)) {
 		window.location.href = `./props${HTML}?sport=${page}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
@@ -733,7 +733,7 @@ const oppFormatter = function(cell, params, rendered) {
 		${data.game.split(" @ ")[0] != cell.getValue() ? "@" : "v"}
 	</span>`;
 	let team = data.oppId || data.opp;
-	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf") {
+	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf" || SPORT == "nhl") {
 		return `<div class="opp-cell">
 			${ah}
 			${getTeamImg(SPORT, team)}

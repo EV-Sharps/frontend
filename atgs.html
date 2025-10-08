@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏒 Props</title>
+	<title>🏒 Goals</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -316,7 +316,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "nhl";
+		PAGE = "atgs";
 		let RES, TABLE, LAST, NO365, KAMBI;
 		let HISTORICAL = {};
 		let url = "";
@@ -593,7 +593,7 @@
 		}
 
 		function fetchProps() {
-			fetch(API_BASE+`/api/nhl`, {
+			fetch(API_BASE+`/api/atgs`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

@@ -1008,6 +1008,9 @@ nav {
 #boost-select {
 	width: 60px;
 }
+#devig-select {
+	max-width: 110px;
+}
 #sport-select {
 	min-width: 120px;
 }

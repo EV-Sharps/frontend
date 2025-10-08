@@ -365,7 +365,7 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "mlb" || PAGE == "nhl") {
+	} else if (PAGE == "mlb" || PAGE == "nhl" || PAGE == "atgs") {
 		fetchProps();
 		initExcluded();
 		renderTable([]);

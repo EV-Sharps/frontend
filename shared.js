@@ -56,7 +56,7 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<option value="golf">⛳ GOLF Props</option>
 	<option value="atgs">🏒 Goals</option>
-	<option value="nhl">🏒 NHL Props</option>
+	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="nba">🏀 NBA Props</option>
 	<option value="ncaab">🏀 CBB Props</option>

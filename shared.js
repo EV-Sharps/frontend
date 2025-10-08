@@ -2088,6 +2088,43 @@ function getKelly(finalOdds, ev) {
   return ev / Math.abs(p) / 4;
 }
 
+function averageCustomSharps(bookOdds, devigBook, isUnder = false) {
+	let pn = bookOdds.pn;
+	let circa = bookOdds.circa;
+	let overs = [];
+	let unders = [];
+
+	for (book of devigBook.split("+")) {
+		let odds = bookOdds[book];
+		if (!odds) {
+			continue;
+		}
+		if (odds.includes("/")) {
+			let [o,u] = odds.split("/");
+			overs.push(americanToImplied(o));
+			unders.push(americanToImplied(u));
+		} else {
+			overs.push(americanToImplied(odds));
+		}
+	}
+	
+	if (overs && overs.length > 0) {
+		overs = overs.reduce((sum, val) => sum + val, 0) / overs.length;
+		overs = impliedToAmerican(overs);
+
+		if (unders && unders.length > 0) {
+			unders = unders.reduce((sum, val) => sum + val, 0) / unders.length;
+			unders = impliedToAmerican(unders);
+		}
+		if (unders) {
+			return isUnder ? `${unders}/${overs}` : `${overs}/${unders}`;
+		} else {
+			return unders;
+		}
+	}
+	return "";
+}
+
 function averageSharps(bookOdds, isUnder = false) {
 	let pn = bookOdds.pn;
 	let circa = bookOdds.circa;

@@ -137,8 +137,8 @@
 				       placeholder="Custom %"
 				       style="display:none; width:7ch; margin-left:.5rem;" />
 				<div class="select-wrapper">
-					<label for="game-select" class="select-label">Game</label>
-					<select id="game-select">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
 						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -146,8 +146,19 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
 						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -333,6 +344,7 @@
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
 		let BOOK = URLParams.get("book");
+		let OU = URLParams.get("ou") || "ou";
 		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
@@ -413,12 +425,14 @@
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
 			let prop = document.getElementById("prop-select").value;
+			let ou = document.getElementById("ou-select").value;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
 			BOOK = book;
 			GAME = game;
+			OU = ou;
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
 			params.set("boost", boost);
@@ -426,6 +440,7 @@
 			params.set("game", game);
 			params.set("book", book);
 			params.set("prop", prop);
+			params.set("ou", ou);
 
 			if (!RES) {
 				return;
@@ -516,6 +531,9 @@
 			if (prop) {
 				filters.push({field:"prop", type:"=", value: prop});
 			}
+			if (ou != "ou") {
+				filters.push({field: "under", type: "=", value: ou == "u" ? true : false});
+			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
@@ -543,6 +561,11 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
+			changeFilter();
+		});
+
+		document.querySelector("#ou-select").value = OU;
+		document.querySelector("#ou-select").addEventListener("change", (event) => {
 			changeFilter();
 		});
 

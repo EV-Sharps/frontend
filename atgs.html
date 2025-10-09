@@ -202,6 +202,9 @@
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
+				<div id="right-body" class="body">
+					<div id="chart"></div>
+				</div>
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
@@ -820,8 +823,19 @@
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "Last Goal (Due)", columns: [
+						{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},
+						{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},
+						{title: "Z", field: "due.g.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Avg", field: "due.g.avg", width: 40, formatter: homerLogFormatter, visible: false},
+						{title: "Z", field: "due.g.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},
+					]},
 					{field: "game", visible: false}
 				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
 			});
 
 			TABLE.on("dataLoaded", function(data) {
@@ -831,6 +845,32 @@
 				}
 				loaded = true;
 			});
+		}
+
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				right.style.display = "none";
+				left.style.width = "100%";
+				table.style.width = "100%";
+				setTimeout(() => {
+					table.style.width = "100%";
+					tableContainer.style.width = "100%";
+				}, 40);
+			} else {
+				row.select();
+				left.style.width = MOBILE ? "100%" : "50%";
+				right.style.display = "flex";
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+				plotHRGap();
+			}
 		}
 
 		function groupByGame() {
@@ -845,7 +885,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRateLYR", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

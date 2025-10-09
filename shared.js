@@ -1671,7 +1671,8 @@ function renderFeedTable(data) {
 
 function plotHRGap(showGames = false) {
 	const data = TABLE.getSelectedData()[0];
-	const abBtwn = data.homerLogs.pa.btwn;
+	let dueData = PAGE == "atgs" ? data.due.g : data.homerLogs.pa;
+	const abBtwn = PAGE == "atgs" ? data.due.g.btwn : data.homerLogs.pa.btwn;
 	const maxAB = Math.max(...abBtwn);
 	const counts = {};
 	abBtwn.forEach(ab => {
@@ -1682,7 +1683,7 @@ function plotHRGap(showGames = false) {
 		arr[ab] = counts[ab];
 	});
 
-	let x = Array.from({length: arr.length}, (_, i) => i+1);
+	let x = Array.from({length: arr.length}, (_, i) => PAGE == "atgs" ? i : i+1);
 	let y = arr;
 
 	if (false) {
@@ -1697,10 +1698,16 @@ function plotHRGap(showGames = false) {
 		type: "bar",
 		//orientation: "h"
 	};
+	let t = `${title(data.player)} Career PA Btwn HR`;
+	let xAxisTitle = "PA btwn HR";
+	if (PAGE == "atgs") {
+		t = `${title(data.player)} Career Gm Btwn Goals`;
+		xAxisTitle = "Gm btwn Goals"
+	}
 	let layout = {
-		title: `${title(data.player)} Career PA Btwn HR`,
+		title: t,
 		title: {
-			text: `${title(data.player)} Career PA Btwn HR`,
+			text: t,
 		},
 		autosize: true,
 		showlegend: false,
@@ -1714,11 +1721,11 @@ function plotHRGap(showGames = false) {
 		dragmode: MOBILE ? 'pan' : "",
 		margin: { l: 40, r: 0, t: 40, b: 40 },
 		xaxis: {
-			title: "PA btwn HR",
+			title: xAxisTitle,
 			showgrid: false,
 			//range: [0, 50],
 			title: {
-				text: "PA Between HR"
+				text: xAxisTitle
 			}
 		},
 		yaxis: {
@@ -1734,8 +1741,8 @@ function plotHRGap(showGames = false) {
 		shapes: [
 			{
 				type: "line",
-				x0: data.homerLogs.pa.streak,
-				x1: data.homerLogs.pa.streak,
+				x0: dueData.streak,
+				x1: dueData.streak,
 				y0: 0, y1: Math.max(...arr),
 				line: {
 					color: "#c388ff",
@@ -1744,8 +1751,8 @@ function plotHRGap(showGames = false) {
 			},
 			{
 				type: "line",
-				x0: data.homerLogs.pa.med,
-				x1: data.homerLogs.pa.med,
+				x0: dueData.med,
+				x1: dueData.med,
 				y0: 0, y1: Math.max(...arr) / 2,
 				line: {
 					color: "#ffcc00",
@@ -1754,8 +1761,8 @@ function plotHRGap(showGames = false) {
 			},
 			{
 				type: "line",
-				x0: data.homerLogs.pa.avg,
-				x1: data.homerLogs.pa.avg,
+				x0: dueData.avg,
+				x1: dueData.avg,
 				y0: 0, y1: Math.max(...arr) / 2,
 				line: {
 					color: "#ffcc00",
@@ -1765,23 +1772,23 @@ function plotHRGap(showGames = false) {
 		],
 		annotations: [
 			{
-				x: data.homerLogs.pa.streak,
+				x: dueData.streak,
 				y: Math.max(...arr),
-				text: `${data.homerLogs.pa.streak} PA`,
+				text: `${dueData.streak} ${PAGE == "atgs" ? "GM" : "PA"}`,
 				showarrow: false,
 				xanchor: "left"
 			},
 			{
-				x: data.homerLogs.pa.med,
+				x: dueData.med,
 				y: Math.max(...arr) / 2,
-				text: `${data.homerLogs.pa.med} Median`,
+				text: `${dueData.med} Median`,
 				showarrow: false,
 				xanchor: "left"
 			},
 			{
-				x: data.homerLogs.pa.avg,
+				x: dueData.avg,
 				y: Math.max(...arr) / 4,
-				text: `${data.homerLogs.pa.avg} Avg`,
+				text: `${dueData.avg} Avg`,
 				showarrow: false,
 				xanchor: "left"
 			}

@@ -177,9 +177,13 @@
 		}
 
 		function renderTable(data) {
+			let ph = "Data Loading...";
+			if (data.length == 0) {
+				ph = "No Bets (yet)";
+			}
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
+    			placeholder: ph,
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,

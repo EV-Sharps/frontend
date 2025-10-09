@@ -732,7 +732,7 @@
 							let ou = data.under ? "u" : "o";
 							return `${ou}${cell.getValue()}`;
 						},
-						editor:"input", headerFilter:"list",
+						headerFilter:"list",
 						headerFilterParams:{
 							valuesLookup: true,
 							clearable: true,
@@ -744,7 +744,8 @@
 								return true;
 							}
 							return rowValue === headerValue;
-						}
+						},
+						width: 60
 					},
 					{
 						title: "Prop",
@@ -760,7 +761,7 @@
 							//line = parseFloat(line) + 0.5;
 							return `o${line} ${cell.getValue()}`;
 						},
-						editor:"input", headerFilter:"list",
+						headerFilter:"list",
 						headerFilterParams:{
 							valuesLookup: true,
 							clearable: true,
@@ -772,7 +773,8 @@
 								return true;
 							}
 							return rowValue === headerValue;
-						}
+						},
+						width: 50
 					},
 					
 					{
@@ -823,6 +825,7 @@
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Last Goal (Due)", columns: [
 						{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},
 						{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},
@@ -885,7 +888,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRateLYR", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
@@ -923,7 +926,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR", "hitRateCareer"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>

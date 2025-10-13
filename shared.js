@@ -109,7 +109,7 @@ function changePage(page) {
 	} else if (["nba"].includes(page)) {
 		window.location.href = `./props${HTML}?sport=${page}`;
 	} else if (page.includes("main")) { 
-		let sport = !page.includes("?sport=") ? "mlb" : page.split("?sport=")[1];
+		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./main${HTML}?sport=${sport}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
@@ -1402,7 +1402,7 @@ function getGameImgs(data, params) {
 		homeAlt = title(homeAlt);
 	}
 	let sport = params.sport || data.sport;
-	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab");
+	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("atgs", "nhl");
 	return [
 		`<img class='game-img away' src='logos/${sport}/${away}.png' alt='${awayAlt}' title='${awayAlt}' />`,
 		`<img class='game-img home' src='logos/${sport}/${home}.png' alt='${homeAlt}' title='${homeAlt}' />`
@@ -1411,7 +1411,6 @@ function getGameImgs(data, params) {
 
 const gameFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	if (data.prop == "separator") return "";
 	if (!data.game) {
 		return "";
 	}

@@ -21,7 +21,7 @@
 		#table {
 			width: auto;
 		}
-		@media (max-width: 1750px) {
+		@media (max-width: 1950px) {
 			#table {
 				width: 100%;
 			}
@@ -796,6 +796,17 @@
 					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{
+						title: "Game Logs<br> ➡️ Most Recent",
+						field: "logs",
+						width: 160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
+					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					//{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{field: "game", visible: false}
 				]

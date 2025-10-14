@@ -19,7 +19,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
 		#table {
-			width: auto;
+			width: 100%;
 		}
 		@media (max-width: 1750px) {
 			#table {
@@ -828,8 +828,18 @@
 					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					{
+						title: "Game Logs",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
 					{title: "Last Goal (Due)", columns: [
 						{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},
 						{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},

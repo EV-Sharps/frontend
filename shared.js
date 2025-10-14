@@ -33,8 +33,8 @@ let PAGE_DROPDOWN = `
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
 	<option value="backfields">🏈 Backfields</option>
-	<option value="ranks">📋 Fantasy Ranks</option>
-	<option value="futures">🔮 Futures</option>
+	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
+	<!-- <option value="futures">🔮 Futures</option> -->
 	
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
@@ -47,19 +47,19 @@ let PAGE_DROPDOWN = `
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels</option>
-	<option value="trends">📈 Trends</option>
+	<!-- <option value="trends">📈 Trends</option> -->
 	<!-- <option value="bases">⬜ Total Bases</option>
 	<option value="sb">⬜ Stolen Bases</option> -->
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
-	<option value="golf">⛳ GOLF Props</option>
+	<!-- <option value="golf">⛳ GOLF Props</option> -->
 	<option value="atgs">🏒 Goals</option>
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="nba">🏀 NBA Props</option>
-	<option value="ncaab">🏀 CBB Props</option>
+	<!-- <option value="ncaab">🏀 CBB Props</option> -->
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
@@ -1826,12 +1826,17 @@ const DEFAULT_FIELDS_ALL = [
 	"stadiumRank", "stadiumRankLeft", "stadiumRankRight", "batter_percs_hr_pa", "batter_percs_home_run"
 ];
 
+const DEFAULT_SHARED = [
+	"ev", "book", "player", "fairVal", "implied", "kelly", "opp",
+	"bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"
+]
 const DEFAULT_FIELDS = {
-	tds: ["ev", "book", "player", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
-	atgs: ["ev", "book", "player", "line", "prop", "fairVal", "implied", "kelly", "opp", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR", "hitRateCareer"],
-	nfl: ["ev", "book", "player", "handicap", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"],
-	strikeouts: ["ev", "book", "player", "handicap", "fairVal", "implied", "kelly", "opp", "oppRank", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol"],
-	mlb: ["ev", "book", "player", "prop", "handicap", "fairVal", "implied", "kelly", "bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol"]
+	tds: [...DEFAULT_SHARED, "oppRank"],
+	atgs: [...DEFAULT_SHARED, "hitRateCareer"],
+	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	nhl: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	mlb: [...DEFAULT_SHARED, "handicap"],
 };
 
 function getNestedFields(defs, out = []) {
@@ -1898,7 +1903,7 @@ function openOverlay() {
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
-		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_FIELDS_ALL;
+		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_FIELDS_SHARED;
 		if (MOBILE) {
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");

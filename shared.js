@@ -38,7 +38,7 @@ let PAGE_DROPDOWN = `
 	
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
-	<option value="feed">📡 Feed</option>
+	<!-- <option value="feed">📡 Feed</option> -->
 	<option value="mlb">🎯 Props (Sharps)</option>
 	<!-- <option value="strikeouts">💨 Strikeouts (Sharps)</option> -->
 	<option value="main">🏆 Main (Sharps)</option>
@@ -59,6 +59,7 @@ let PAGE_DROPDOWN = `
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="nba">🏀 NBA Props</option>
+	<option value="main?sport=nba">🏀 Main (Sharps)</option>
 	<!-- <option value="ncaab">🏀 CBB Props</option> -->
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main</option>
@@ -92,6 +93,8 @@ setTimeout(() => {
 		select.value = "main?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nhl") {
 		select.value = "main?sport=nhl";
+	} else if (PAGE == "main" && SPORT === "nba") {
+		select.value = "main?sport=nba";
 	} else {
 		select.value = PAGE;
 	}
@@ -106,8 +109,6 @@ function changePage(page) {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
 		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (["nba"].includes(page)) {
-		window.location.href = `./props${HTML}?sport=${page}`;
 	} else if (page.includes("main")) { 
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./main${HTML}?sport=${sport}`;

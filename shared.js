@@ -112,6 +112,9 @@ function changePage(page) {
 	} else if (page.includes("main")) { 
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./main${HTML}?sport=${sport}`;
+	} else if (page.includes("bets")) { 
+		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
+		window.location.href = `./bets${HTML}?sport=${sport}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}
@@ -946,6 +949,8 @@ const rankingFormatter = function(cell, params, rendered) {
 			} else {
 				value = value[params.key]["rank"];	
 			}
+			color = getTDsOppRankColor(value);
+		} else if (SPORT == "nhl") {
 			color = getTDsOppRankColor(value);
 		} else {
 			color = getOppRankColor(value);

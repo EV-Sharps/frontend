@@ -1,0 +1,203 @@
+
+.mobile-only { display: none; }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+}
+
+/* Collapsed: sidebar shrinks, content widens */
+.app-shell.collapsed {
+  grid-template-columns: 56px 1fr;
+}
+
+/* Sidebar frame */
+.sidebar {
+  grid-row: 1 / span 2;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+/* Top row: brand + dots button */
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin: 4px 6px 12px;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: .3px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Minimal icon button (“⋮”) */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  color: var(--text);
+  background: #1b1f26;
+  border: 1px solid #2f3642;
+  cursor: pointer;
+}
+.icon-btn:hover { background: #222a35; }
+
+/* Nav sections */
+.nav-section { margin: 8px 0 14px; }
+.nav-title {
+  font-size: .72rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: .08em;
+  margin: 10px 8px 6px;
+}
+.nav-link {
+  display: block;
+  padding: 8px 10px;
+  margin: 4px 6px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background .15s ease, border-color .15s ease;
+  white-space: nowrap;
+}
+.nav-link:hover { background: #1b2230; border-color: #2f3c52; }
+.nav-link.active { background: #223049; border-color: #3b4c6c; color: #fff; }
+
+/* ---- Collapsed visuals ---- */
+.app-shell.collapsed .brand { display: none; }          /* hide text logo */
+.app-shell.collapsed .nav-title { display: none; }      /* hide group titles */
+/* Hide text in collapsed mode, show emojis */
+.app-shell.collapsed .nav-link {
+  font-size: 0;
+  padding: 0.5rem 0;
+}
+
+.app-shell.collapsed .nav-link::before {
+  font-size: 18px;
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Emoji per sport */
+.app-shell.collapsed .nav-main::before { content: "🏆"; }
+.app-shell.collapsed .nav-attd::before { content: "🏈"; }
+.app-shell.collapsed .nav-props::before { content: "🎽"; }
+.app-shell.collapsed .nav-mlb::before { content: "⚾"; }
+.app-shell.collapsed .nav-nhl::before { content: "🏒"; }
+.app-shell.collapsed .nav-nba::before { content: "🏀"; }
+.app-shell.collapsed .nav-cfb::before { content: "🎓"; } /* or 📰🏈🔍 */
+.app-shell.collapsed .nav-mix::before { content: "🔍"; }
+.app-shell.collapsed .nav-preview::before { content: "📰"; }
+.app-shell.collapsed .nav-bvp::before { content: "🆚"; }
+.app-shell.collapsed .nav-golf::before { content: "⛳"; }
+.app-shell.collapsed .nav-soccer::before { content: "⚽"; }
+.app-shell.collapsed .nav-sharps::before { content: "🎯"; }
+.app-shell.collapsed .nav-bets::before { content: "🎟️"; }
+.app-shell.collapsed .nav-stats::before { content: "📊"; }
+.app-shell.collapsed .nav-movement::before { content: "📉"; }
+.app-shell.collapsed .nav-barrels::before { content: "🏏"; }
+.app-shell.collapsed .nav-profile::before { content: "👤"; }
+.app-shell.collapsed .nav-pricing::before { content: "💳"; }
+
+/* Main column wraps your existing header + content */
+.main-col { display: flex; flex-direction: column; min-width: 0; }
+
+@media (max-width: 1400px) {
+  .app-shell:not(.force-expanded) {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .app-shell:not(.force-expanded) .brand,
+  .app-shell:not(.force-expanded) .nav-title {
+    font-size: 0;
+  }
+
+  .app-shell:not(.force-expanded) .nav-link {
+    font-size: 0;           /* hide text */
+    padding: 0.5rem 0;
+  }
+
+  /* <-- this is the key change: target not(.force-expanded), not .collapsed */
+  .app-shell:not(.force-expanded) .nav-link::before {
+    font-size: 18px;        /* make emoji visible */
+    line-height: 1;
+    display: inline-block;
+  }
+
+  .app-shell:not(.force-expanded) .nav-main::before { content: "🏆"; }
+	.app-shell:not(.force-expanded) .nav-attd::before { content: "🏈"; }
+	.app-shell:not(.force-expanded) .nav-props::before { content: "🎽"; }
+	.app-shell:not(.force-expanded) .nav-mlb::before { content: "⚾"; }
+	.app-shell:not(.force-expanded) .nav-nhl::before { content: "🏒"; }
+	.app-shell:not(.force-expanded) .nav-nba::before { content: "🏀"; }
+	.app-shell:not(.force-expanded) .nav-cfb::before { content: "🎓"; }
+	.app-shell:not(.force-expanded) .nav-mix::before { content: "🔍"; }
+	.app-shell:not(.force-expanded) .nav-preview::before { content: "📰"; }
+	.app-shell:not(.force-expanded) .nav-bvp::before { content: "🆚"; }
+	.app-shell:not(.force-expanded) .nav-golf::before { content: "⛳"; }
+	.app-shell:not(.force-expanded) .nav-soccer::before { content: "⚽"; }
+	.app-shell:not(.force-expanded) .nav-sharps::before { content: "🎯"; }
+	.app-shell:not(.force-expanded) .nav-bets::before { content: "🎟️"; }
+	.app-shell:not(.force-expanded) .nav-stats::before { content: "📊"; }
+	.app-shell:not(.force-expanded) .nav-movement::before { content: "📉"; }
+	.app-shell:not(.force-expanded) .nav-barrels::before { content: "🏏"; }
+	.app-shell:not(.force-expanded) .nav-profile::before { content: "👤"; }
+	.app-shell:not(.force-expanded) .nav-pricing::before { content: "💳"; }
+}
+
+@media (max-width: 768px) {
+  /* show hamburger on mobile */
+  .mobile-only { display: inline-flex; }
+
+  /* turn sidebar into drawer */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    width: 84vw;             /* comfy width */
+    max-width: 320px;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  /* when open */
+  .sidebar.open { transform: translateX(0); }
+
+  /* backdrop */
+  .backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 900;
+  }
+  .backdrop[hidden] { display: none; }
+
+  /* main content shouldn't shift layout on mobile;
+     keep your .app-shell grid but ignore sidebar column */
+  .app-shell {
+    grid-template-columns: 1fr; /* main fills screen */
+  }
+}
+
+/* prevent background scroll when drawer is open */
+.body-lock {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* small tweak: larger tap targets on mobile */
+@media (max-width: 768px) {
+  .nav-link { padding: 12px 14px; }
+}

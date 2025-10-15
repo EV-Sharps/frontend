@@ -1882,7 +1882,7 @@ function showHideUserTable(loaded) {
 
 		nestedFields.forEach(field => {
 			const metaKey = field.replace(/\./g, "_");
-			if (!allowed.has(metaKey) && metaKey != "handicap" && metaKey != "prop") {
+			if (!allowed.has(metaKey) && metaKey != "handicap" && metaKey != "prop" && !metaKey.includes("due")) {
 				TABLE.getColumn(field)?.hide();
 			} else {
 				TABLE.getColumn(field)?.show();

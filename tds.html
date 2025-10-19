@@ -299,6 +299,26 @@
 								<label for="custom_bookOdds_circa">Circa</label>
 							</div>
 						</div>
+
+						<div>
+							<h3>Stats</h3>
+							<div>
+								<input id="custom_oppRank" type="checkbox">
+								<label for="custom_oppRank">Opp Rank</label>
+							</div>
+							<div>
+								<input id="custom_hitRate" type="checkbox">
+								<label for="custom_hitRate">Hit Rate</label>
+							</div>
+							<div>
+								<input id="custom_hitRateLYR" type="checkbox">
+								<label for="custom_hitRateLYR">Hit Rate LYR</label>
+							</div>
+							<div>
+								<input id="custom_logs" type="checkbox">
+								<label for="custom_logs">Logs</label>
+							</div>
+						</div>
 					</div>
 					<div class="loggedOut">
 						<div style="padding: 0.5rem;text-align: center;">
@@ -335,6 +355,7 @@
 		let DEVIG = URLParams.get("devig");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
+		let IMP = URLParams.get("imp");
 		let BOOK = URLParams.get("book");
 		let PROP = URLParams.get("prop");
 		TEAM = URLParams.get("team") || "det";
@@ -644,6 +665,9 @@
 					if (PRETTY != undefined) {
 						pretty_();
 					}
+					if (IMP != undefined) {
+						implied();
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}
@@ -780,7 +804,7 @@
 					//{title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{
-						title: "Game Logs",
+						title: "Game Logs<br> ➡️ Most Recent",
 						field: "logs",
 						width:160,
 						formatter: chartFormatter,
@@ -818,6 +842,44 @@
 			});
 			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
+		}
+
+		function implied() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "opp"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+			TABLE.setSort([
+				{column: "implied", dir: "desc"}
+			]);
+			TABLE.setFilter([
+				{field: "prop", type: "=", value: "attd"},
+				{field: "under", type:"=", value: false}
+			]);
+
+			const rows = TABLE.getData("active");
+			const tweet = [];
+
+			let currentRank = 1;
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+
+				// If not first, and impliedMut differs from previous, increment rank
+				if (i > 0 && row["implied"] !== prev["implied"]) {
+					currentRank++;
+				}
+
+				if (currentRank > 10) {
+					continue;
+				}
+
+				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
+			}
+			const today = new Date();
+			let header = `🏈 Implied Anytime Touchdown Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 
+			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 	</script>
 </body>

@@ -741,7 +741,7 @@ const oppFormatter = function(cell, params, rendered) {
 		${data.game.split(" @ ")[0] != cell.getValue() ? "@" : "v"}
 	</span>`;
 	let team = data.oppId || data.opp;
-	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf" || SPORT == "nhl") {
+	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf" || SPORT == "nhl" || SPORT == "nba") {
 		return `<div class="opp-cell">
 			${ah}
 			${getTeamImg(SPORT, team)}

@@ -1909,7 +1909,7 @@ function openOverlay() {
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
-		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_FIELDS_SHARED;
+		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_SHARED;
 		if (MOBILE) {
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");

@@ -950,7 +950,7 @@ const rankingFormatter = function(cell, params, rendered) {
 				value = value[params.key]["rank"];	
 			}
 			color = getTDsOppRankColor(value);
-		} else if (SPORT == "nhl") {
+		} else if (["nhl", "nba"].includes(SPORT)) {
 			color = getTDsOppRankColor(value);
 		} else {
 			color = getOppRankColor(value);

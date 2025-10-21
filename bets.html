@@ -47,6 +47,7 @@
 				</div>
 				<div class="select-wrapper">
 					<select id="sport-select">
+						<option value="nba">NBA</option>
 						<option value="mlb">MLB</option>
 						<option value="k">Ks</option>
 						<option value="atgs">ATGS</option>
@@ -156,6 +157,8 @@
 
 			if (SPORT == "nfl") {
 				document.querySelector("#record-today strong").textContent = "Week:"
+			} else {
+				document.querySelector("#record-today strong").textContent = "Today:"
 			}
 			if (SPORT != "MLB") {
 				document.querySelector("#record-all").style.display = "none";

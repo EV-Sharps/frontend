@@ -724,15 +724,7 @@
 						title: "Prop",
 						field: "prop",
 						formatter: function(cell) {
-							return cell.getValue();
-							const data = cell.getRow().getData();
-							let line = data.handicap;
-							let prop = cell.getValue();
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return prop;
-							}
-							//line = parseFloat(line) + 0.5;
-							return `o${line} ${cell.getValue()}`;
+							return cell.getValue().replace("pts+reb+ast", "p+r+a");
 						},
 						headerFilter:"list",
 						headerFilterParams:{
@@ -781,6 +773,7 @@
 						visible: MOBILE ? false : true
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},

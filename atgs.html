@@ -562,8 +562,8 @@
 			if (prop) {
 				filters.push({field:"prop", type:"=", value: prop});
 			}
-			if (ou != "ou") {
-				filters.push({field: "under", type: "=", value: ou == "u" ? true : false});
+			if (OU != "ou") {
+				filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);

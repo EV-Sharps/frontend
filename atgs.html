@@ -374,6 +374,7 @@
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
+		let DUE = URLParams.get("due");
 		let BOOK = URLParams.get("book");
 		let OU = URLParams.get("ou") || "ou";
 		let PROP = URLParams.get("prop") || "";
@@ -693,6 +694,9 @@
 					if (IMP != undefined) {
 						implied();
 					}
+					if (DUE != undefined) {
+						due();
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}
@@ -927,7 +931,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
@@ -959,6 +963,23 @@
 			const today = new Date();
 			let header = `🏒 Implied Anytime Goalscorer Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
+		}
+
+		function due() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`ev`, "fairVal", "implied", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.espn", "bookOdds.pn", "hitRate", "hitRateLYR", "hitRateCareer", "logs", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+
+			TABLE.setSort([
+				{column: "due.g.z_median", dir: "desc"}
+			]);
+			TABLE.setFilter([
+				{field: "prop", type: "=", value: "atgs"},
+				{field: "under", type:"=", value: false},
+				{field: "handicap", type:"=", value: 0.5},
+			]);
 		}
 
 		function pretty_() {

@@ -46,7 +46,7 @@ let PAGE_DROPDOWN = `
 	<option value="movement">📉 Movement (Sharps)</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
-	<option value="barrels">🏏 Barrels</option>
+	<option value="barrels">🏏 Barrels (due)</option>
 	<!-- <option value="trends">📈 Trends</option> -->
 	<!-- <option value="bases">⬜ Total Bases</option>
 	<option value="sb">⬜ Stolen Bases</option> -->
@@ -1410,6 +1410,9 @@ function getGameImgs(data, params) {
 	}
 	let sport = params.sport || data.sport;
 	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("atgs", "nhl");
+	if (sport == "props") {
+		sport = "nfl";
+	}
 	return [
 		`<img class='game-img away' src='logos/${sport}/${away}.png' alt='${awayAlt}' title='${awayAlt}' />`,
 		`<img class='game-img home' src='logos/${sport}/${home}.png' alt='${homeAlt}' title='${homeAlt}' />`

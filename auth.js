@@ -365,7 +365,7 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "nhl", "atgs", "nba", "pts"].includes(PAGE)) {
+	} else if (["mlb", "nhl", "atgs", "atgs2", "nba", "pts"].includes(PAGE)) {
 		fetchProps();
 		initExcluded();
 		renderTable([]);

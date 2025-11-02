@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏒 Goals</title>
+	<title>🏒 2+ Goals</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -364,7 +364,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "atgs";
+		PAGE = "atgs2";
 		let RES, TABLE, LAST, NO365, KAMBI;
 		let HISTORICAL = {};
 		let url = "";
@@ -669,6 +669,7 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
+				RES.data = RES.data.filter(r => r.handicap == "1.5" && !r.under);
 				UPDATED[PAGE] = data["updated"];
 
 				const gameSel = document.getElementById("game-select");
@@ -753,6 +754,25 @@
 						responsive: 0
 					},
 					{
+						title: "Δ vs Avg",
+						field: "outlier",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						mutator: function(value, rowData) {
+						    const s = computeOutlierFromBookOdds(rowData);
+						    rowData.outlierBook = s.book;
+						    rowData.outlierPct  = s.pct;
+						    //return s.deviation;
+						    return s.pct;
+						  },
+						  formatter: function(cell) {
+						    const row = cell.getRow().getData();
+						    const dev = cell.getValue();
+						    return `${row.outlierPct.toFixed(1)}%`;
+						},
+						responsive: 0
+					},
+					{
 						title: "EV Book", field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
@@ -770,63 +790,6 @@
 						responsive: 0,
 						frozen: true
 					},
-					{
-						title: "Line",
-						field: "handicap",
-						formatter: function(cell) {
-							const data = cell.getRow().getData();
-							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return "";
-							}
-							let ou = data.under ? "u" : "o";
-							return `${ou}${cell.getValue()}`;
-						},
-						headerFilter:"list",
-						headerFilterParams:{
-							valuesLookup: true,
-							clearable: true,
-							placeholder: "All Props",
-							sort: "asc"
-						},
-						headerFilterFunc: function(headerValue, rowValue) {
-							if (headerValue == "All") {
-								return true;
-							}
-							return rowValue === headerValue;
-						},
-						width: 60
-					},
-					{
-						title: "Prop",
-						field: "prop",
-						formatter: function(cell) {
-							return cell.getValue();
-							const data = cell.getRow().getData();
-							let line = data.handicap;
-							let prop = cell.getValue();
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return prop;
-							}
-							//line = parseFloat(line) + 0.5;
-							return `o${line} ${cell.getValue()}`;
-						},
-						headerFilter:"list",
-						headerFilterParams:{
-							valuesLookup: true,
-							clearable: true,
-							placeholder: "All Props",
-							sort: "asc"
-						},
-						headerFilterFunc: function(headerValue, rowValue) {
-							if (headerValue == "All") {
-								return true;
-							}
-							return rowValue === headerValue;
-						},
-						width: 50
-					},
-					
 					{
 						title: "Fair<br>Value",
 						field: "fairVal",
@@ -862,7 +825,7 @@
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
+					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},

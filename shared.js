@@ -35,27 +35,24 @@ let PAGE_DROPDOWN = `
 	<option value="backfields">🏈 Backfields</option>
 	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
 	<!-- <option value="futures">🔮 Futures</option> -->
-	
+	<!--
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
-	<!-- <option value="feed">📡 Feed</option> -->
+	 <option value="feed">📡 Feed</option>
 	<option value="mlb">🎯 Props (Sharps)</option>
-	<!-- <option value="strikeouts">💨 Strikeouts (Sharps)</option> -->
 	<option value="main">🏆 Main (Sharps)</option>
 	<option value="bets">🎟️ Bets (Sharps)</option>
 	<option value="movement">📉 Movement (Sharps)</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels (due)</option>
-	<!-- <option value="trends">📈 Trends</option> -->
-	<!-- <option value="bases">⬜ Total Bases</option>
-	<option value="sb">⬜ Stolen Bases</option> -->
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
-	
+	-->
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<!-- <option value="golf">⛳ GOLF Props</option> -->
 	<option value="atgs">🏒 Goals</option>
+	<option value="atgs2">🏒 2+ Goals</option>
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="pts">🏀 PTS</option>
@@ -1366,6 +1363,8 @@ const playerFormatter = function(cell, params, rendered) {
 	let bats = data.bats?.replace("B", "S") || "";
 	if (["pitcher_mix", "preview"].includes(PAGE)) {
 		bats = data.pitch_hand;
+	} else if (PAGE == "nba") {
+		bats = data.pos;
 	}
 	return `
 		<div class="player-cell">
@@ -1956,6 +1955,33 @@ function fetchUpdated(repo="props", render=true) {
 	}).catch(err => console.log(err));
 }
 
+function computeOutlierFromBookOdds(rowData) {
+  const bookOdds = rowData.bookOdds;
+  if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
+
+  // Convert to [book, numericValue] pairs and filter valid ones
+  const entries = Object.entries(bookOdds)
+    .map(([book, val]) => [book, Number(val)])
+    .filter(([, num]) => !isNaN(num));
+
+  if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
+
+  const values = entries.map(([, v]) => v);
+  let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
+
+  entries.forEach(([book, value], i) => {
+    const others = values.slice(0, i).concat(values.slice(i + 1));
+    const avg = others.reduce((a, b) => a + b, 0) / others.length;
+    const dev = Math.abs(value - avg);
+    const pct = avg !== 0 ? Math.abs((value - avg) / avg) : 0;
+
+    if (dev > best.deviation) {
+      best = { book, value, deviation: dev, pct };
+    }
+  });
+  return best;
+}
+
 function devig(ou, finalOdds, promo, isUnder = false) {
 	const parts = String(ou).split("/");
 	if (!parts[0]) return;
@@ -1971,7 +1997,10 @@ function devig(ou, finalOdds, promo, isUnder = false) {
 
 	let under;
 	if (ou.indexOf("/") === -1 || parts.length < 2 || parts[1] === "") {
-		const vig = (promo == "vs-fd") ? 0.05 : 0.07;
+		let vig = (promo == "vs-fd") ? 0.05 : 0.07;
+		if (PAGE == "atgs2") {
+			vig = 0;
+		}
 		const u = 1 + vig - impliedOver;
 		if (u >= 1) return;
 

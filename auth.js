@@ -374,7 +374,7 @@ async function handleSession() {
 				fetchProps();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "main") {
+	} else if (PAGE == "main" || PAGE == "soccer") {
 		fetchMain();
 		initExcluded();
 		renderTable([]);

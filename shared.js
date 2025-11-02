@@ -32,6 +32,7 @@ let PAGE_DROPDOWN = `
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
+	<option value="movement?sport=nfl">📉 Movement (Sharps)</option>
 	<option value="backfields">🏈 Backfields</option>
 	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
 	<!-- <option value="futures">🔮 Futures</option> -->

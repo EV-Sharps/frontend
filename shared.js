@@ -29,7 +29,7 @@ let PAGE_DROPDOWN = `
 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs</option>
-	<option value="live">🏈 Live</option>
+	<option value="live">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
@@ -63,6 +63,7 @@ let PAGE_DROPDOWN = `
 	<!-- <option value="ncaab">🏀 CBB Props</option> -->
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
+	<option value="main?sport=ncaab">🏀 CBB Main (Sharps)</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>

@@ -441,18 +441,19 @@
 							let gameContainer = getGameImgs(data, {sport: SPORT}).join("");
 							let ou = data.under ? "u" : "o";
 							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
+							let team = data.teamId || data.team;
 
 							if (data.prop.includes("ml")) {
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${data.prop.toUpperCase()}
+										${getTeamImg(SPORT, team)} ${team.toUpperCase()} ${data.prop.toUpperCase()}
 									</div>
 								`;
 							} else if (data.prop.includes("spread")) {
 								let prefix = data.prop.includes("_") ? data.prop.split("_")[0] : "";
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()}
+										${getTeamImg(SPORT, team)} ${team.toUpperCase()}
 
 										${data.handicap > 0 ? `+${data.handicap}` : data.handicap}
 										${data.prop.replace("spread", "").split("_")[0]}
@@ -462,7 +463,7 @@
 								let prefix = data.prop.replace("away_total", "").replace("home_total", "").includes("_") ? data.prop.split("_")[0]+"_TT" : "TT";
 								return `
 									<div style="display:flex;gap: 3px;">
-										${getTeamImg(SPORT, data.team)} ${data.team.toUpperCase()} ${ou}${data.handicap} ${prefix}
+										${getTeamImg(SPORT, team)} ${team.toUpperCase()} ${ou}${data.handicap} ${prefix}
 								</div>`;
 							}
 							
@@ -494,12 +495,14 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							let ah = data.team == data.game.split(" @ ")[0] ? "@" : "v";
+							let opp = data.oppId || data.opp;
 							return `
 								<div style="display:flex;gap: 3px;">
-									${ah} ${getTeamImg(SPORT, data.opp)} ${data.opp.toUpperCase()}
+									${ah} ${getTeamImg(SPORT, opp)} ${opp.toUpperCase()}
 								</div>
 							`;
 						},
+						width: 100,
 						visible: true
 					},
 					{

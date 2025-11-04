@@ -228,6 +228,13 @@ function fillProfile(data, discordUsername, tier, session) {
 		let d = new Date(data.next_renewal);
 		const options = {year: 'numeric', month: 'short', day: 'numeric'};
 		document.querySelector("#next-renewal").innerText = d.toLocaleDateString("en-US", options);
+
+	}
+
+	if (data.metadata && data.metadata?.canceled) {
+		document.querySelector("#next-renewal-label").innerText = "Canceling:";
+	} else {
+		document.querySelector("#next-renewal-label").innerText = "Next Renewal:";
 	}
 }
 

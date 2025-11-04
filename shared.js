@@ -1849,6 +1849,7 @@ const DEFAULT_FIELDS = {
 	nhl: [...DEFAULT_SHARED, "handicap", "oppRank"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank"],
 	mlb: [...DEFAULT_SHARED, "handicap"],
+	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]
 };
 
 function getNestedFields(defs, out = []) {

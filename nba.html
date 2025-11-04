@@ -315,6 +315,10 @@
 									<label for="custom_oppRank">Opp Rank</label>
 								</div>
 								<div>
+									<input id="custom_oppPosRank" type="checkbox">
+									<label for="custom_oppPosRank">Opp Pos Rank</label>
+								</div>
+								<div>
 									<input id="custom_hitRate" type="checkbox">
 									<label for="custom_hitRate">Hit Rate</label>
 								</div>
@@ -819,6 +823,7 @@
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
+					{title: "Opp<br>Pos Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},

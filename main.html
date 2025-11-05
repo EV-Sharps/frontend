@@ -550,7 +550,7 @@
 					},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter
 					},
-					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
@@ -563,9 +563,6 @@
 					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true, formatter: evOddsFormatter},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
-					{title: "Game", field: "game", visible: false},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
 					{title: "Start", field: "start", visible: false},
 				]
@@ -719,9 +716,6 @@
 
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -738,6 +732,9 @@
 				TABLE.setFilter(filters);
 			}
 			TABLE.replaceData(RES);
+			if (TABLE.getSorters().length == 0) {
+				TABLE.setSort([{column: "ev", dir: "desc"}]);
+			}
 		}
 	</script>
 </body>

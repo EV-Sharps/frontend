@@ -220,7 +220,7 @@
 		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = URLParams.get("sport") || "mlb";
+		let SPORT = "soccer";
 		let KAMBI = URLParams.get("kambi");
 		let MARK = URLParams.get("mark");
 		let BPP = URLParams.get("bpp") != undefined;
@@ -436,6 +436,17 @@
 						title: "Game", field: "game",
 						vertAlign:"bottom",
 						responsive: 0
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: true
 					},
 					{
 						title: "Line",

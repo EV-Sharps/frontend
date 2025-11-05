@@ -96,6 +96,8 @@ setTimeout(() => {
 		select.value = "main?sport=nhl";
 	} else if (PAGE == "main" && SPORT === "nba") {
 		select.value = "main?sport=nba";
+	} else if (PAGE == "main" && SPORT === "ncaab") {
+		select.value = "main?sport=ncaab";
 	} else {
 		select.value = PAGE;
 	}

@@ -58,7 +58,7 @@
 						<option value="" selected>All</option>
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
-						<!-- <option value="b365">B365</option> -->
+						<option value="b365">B365</option>
 						<option value="mgm">MGM</option>
 						<option value="espn">ESPN</option>
 						<option value="cz">CZ</option>
@@ -73,31 +73,31 @@
 					</svg>
 				</div>
 				<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude <span class="count" aria-hidden="true"></span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> FD</label>
-				      <label><input type="checkbox" value="dk"> DK</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> CZ</label>
-				      <label><input type="checkbox" value="fn"> FN</label>
-				      <label><input type="checkbox" value="br"> BR</label>
-				      <label><input type="checkbox" value="bv"> BV</label>
-				      <label><input type="checkbox" value="hr"> HR</label>
-				      <label><input type="checkbox" value="kambi"> Kambi</label>
-				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude <span class="count" aria-hidden="true"></span>
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+					  <label><input type="checkbox" value="fd"> FD</label>
+					  <label><input type="checkbox" value="dk"> DK</label>
+					  <label><input type="checkbox" value="b365"> B365</label>
+					  <label><input type="checkbox" value="mgm"> MGM</label>
+					  <label><input type="checkbox" value="espn"> ESPN</label>
+					  <label><input type="checkbox" value="cz"> CZ</label>
+					  <label><input type="checkbox" value="fn"> FN</label>
+					  <label><input type="checkbox" value="br"> BR</label>
+					  <label><input type="checkbox" value="bv"> BV</label>
+					  <label><input type="checkbox" value="hr"> HR</label>
+					  <label><input type="checkbox" value="kambi"> Kambi</label>
+					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <div class="chkdd-actions">
+						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					  </div>
+					  <div>
+						<span id="exclude-status"></span>
+					  </div>
+					</div>
 				  </div>
 				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
@@ -124,6 +124,7 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
+						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
@@ -135,9 +136,9 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-				       type="number" min="0" step="5"
-				       placeholder="Custom %"
-				       style="display:none; width:7ch; margin-left:.5rem;" />
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
 				<div class="select-wrapper">
 					<label for="prop-select" class="select-label">Prop</label>
 					<select id="prop-select">
@@ -403,7 +404,7 @@
 			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
 			e.stopPropagation();
 			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
+			open ? closeMenu() : openMenu();
 		});
 		document.addEventListener('click', (e) => {
 			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
@@ -488,7 +489,9 @@
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg || (devigBook == "only+espn+pn+circa" && (!bookOdds["espn"] || !bookOdds["pn"] || !bookOdds["circa"]))) {
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
 					row["ev"] = "";
 					row["fairVal"] = "";
 					row["implied"] = "";
@@ -510,29 +513,29 @@
 				}
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook.includes("+")) {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageCustomSharps(bookOdds, devigBook, row.under); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else {
-				    	ou = buildOU(bookOdds, row.under);
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under); // pass true for under-side avg if supported
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    // Normal over-first logic
-				    if (devigBook.includes("+")) {
-				        ou = averageCustomSharps(bookOdds, devigBook);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -600,7 +603,7 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			if (DEVIG == "custom") {
+			if (event.target.value == "custom") {
 				openCustomDevig();
 			} else {
 				changeFilter();
@@ -608,7 +611,74 @@
 		});
 
 		function openCustomDevig() {
+			// Available books (keep in sync with your data keys)
+			const ALL_BOOKS = ["fd","dk","b365","mgm","espn","cz","fn","br","bv","hr","kambi","bol","pn","circa"];
 
+			// build lightweight modal
+			const wrap = document.createElement('div');
+			wrap.id = 'custom-devig-modal';
+			wrap.style.cssText = `
+			position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+			background:rgba(0,0,0,.45);z-index:9999;
+			`;
+			const card = document.createElement('div');
+			card.style.cssText = `
+			background:#111; color:#eee; border:1px solid #333; border-radius:10px;
+			width:min(560px,92vw); max-height:80vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+			`;
+			card.innerHTML = `
+			<h3 style="margin:0 0 8px">Custom Devig</h3>
+			<p style="margin:0 0 12px; color:#c8c3bc">Pick books to average against. Choose “Only” to require all selected books to be present.</p>
+
+			<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="cd-books"></div>
+
+			<div style="display:flex;gap:16px;align-items:center;margin:6px 0 14px">
+			  <label><input type="radio" name="cd-mode" value="avg" checked> Average selected (<code>fd+dk+circa</code>)</label>
+			  <label><input type="radio" name="cd-mode" value="only"> Only selected (<code>only+fd+dk+circa</code>)</label>
+			</div>
+
+			<div style="display:flex;gap:8px;justify-content:flex-end">
+			  <button id="cd-cancel">Cancel</button>
+			  <button id="cd-apply">Apply</button>
+			</div>
+			`;
+			wrap.appendChild(card);
+			document.body.appendChild(wrap);
+
+			// populate checkboxes
+			const boxHost = card.querySelector('#cd-books');
+			ALL_BOOKS.forEach(b => {
+				const label = document.createElement('label');
+				label.style.cssText = 'border:1px solid #3a3a3a;border-radius:8px;padding:6px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer;';
+				label.innerHTML = `<input type="checkbox" value="${b}"> ${b.toUpperCase()}`;
+				boxHost.appendChild(label);
+			});
+
+			function closeModal() {
+				wrap.remove();
+				document.querySelector("#devig-select").value = DEVIG;
+				changeFilter();
+			}
+
+			card.querySelector('#cd-cancel').onclick = closeModal;
+
+			card.querySelector('#cd-apply').onclick = () => {
+				const sel = [...boxHost.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
+				if (sel.length === 0) { alert('Pick at least one book'); return; }
+				const mode = card.querySelector('input[name="cd-mode"]:checked').value;
+				DEVIG = (mode === 'only' ? 'only+' : '') + sel.join('+');
+
+				// set value, persist to URL like the others, and recalc
+				const devigSel = document.getElementById('devig-select');
+				devigSel.innerHTML += `<option value='${DEVIG}'>${DEVIG}</option>`;
+				devigSel.value = DEVIG;
+
+				const params = new URLSearchParams(window.location.search);
+				params.set('devig', DEVIG);
+				history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+
+				closeModal();
+			};
 		}
 
 		document.querySelector("#ou-select").value = OU;
@@ -724,7 +794,7 @@
 			const allProps = [...new Set(data.map(row => row.prop))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
+				placeholder:"Data Loading...",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,

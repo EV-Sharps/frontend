@@ -1403,6 +1403,10 @@ const trendFormatter = function(cell, params, rendered) {
 function getGameImgs(data, params) {
 	let away = data.awayTeamId || data.game.split(" @ ")[0];
 	let home = data.homeTeamId || data.game.split(" @ ")[1];
+	if (PAGE == "soccer") {
+		away = data.awayEspn.short;
+		home = data.homeEspn.short;
+	}
 	if (!data.game) {
 		return "";
 	}

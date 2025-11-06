@@ -105,9 +105,11 @@
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
 						<option value="dk">vs DK</option>
+						<option value="bol">vs BOL</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -441,6 +443,9 @@
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
+			if (devigBook == "custom") {
+				devigBook = DEVIG;
+			}
 			BOOK = book;
 			GAME = game;
 			let url = new URL(window.location.href);
@@ -463,7 +468,14 @@
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				const ex = excluded;
@@ -482,9 +494,9 @@
 				}
 				if (row.under) {
 				    // If under, swap priority
-				    if (devigBook === "pn+circa") {
+				    if (devigBook.includes("+")) {
 				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
+				        ou = averageCustomSharps(bookOdds, devigBook, row.under);
 				    } else if (devigBook) {
 				        // Use the book's under odds if available
 				        const val = bookOdds[devigBook];
@@ -493,13 +505,14 @@
 				        	let [o,u] = String(val).split("/");
 				        	ou = `${u}/${o}`;
 				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+				    } else {
+				    	ou = buildOU(bookOdds, row.under);
 				    }
 				} else {
 				    // Normal over-first logic
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
+				    if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
 				        ou = bookOdds[devigBook];
 				    }
 				}
@@ -528,8 +541,6 @@
 			});
 
 			
-			//TABLE.blockRedraw();
-
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -567,7 +578,11 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
+			if (event.target.value == "custom") {
+				openCustomDevig();
+			} else {
+				changeFilter();
+			}
 		});
 
 		document.querySelector("#prop-select").value = PROP || "";
@@ -721,20 +736,6 @@
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true
-					},
-					{
-						title: "Line",
-						field: "handicap",
-						formatter: function(cell) {
-							const data = cell.getRow().getData();
-							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return "";
-							}
-							let ou = data.under ? "u" : "o";
-							return `${ou}${cell.getValue()}`;
-						},
-						visible: false
 					},
 					{
 						title: "Prop",

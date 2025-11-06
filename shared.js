@@ -1950,6 +1950,78 @@ function openOverlay() {
 	document.querySelector("#custom-devig-select").value = metadata[`${PAGE}-devig`] || "";
 }
 
+function openCustomDevig() {
+	// Available books (keep in sync with your data keys)
+	const ALL_BOOKS = ["fd","dk","b365","mgm","espn","cz","fn","br","bv","hr","kambi","bol","pn","circa"];
+
+	// build lightweight modal
+	const wrap = document.createElement('div');
+	wrap.id = 'custom-devig-modal';
+	wrap.style.cssText = `
+	position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+	background:rgba(0,0,0,.45);z-index:9999;
+	`;
+	const card = document.createElement('div');
+	card.style.cssText = `
+	background:#111; color:#eee; border:1px solid #333; border-radius:10px;
+	width:min(560px,92vw); max-height:80vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+	`;
+	card.innerHTML = `
+	<h3 style="margin:0 0 8px">Custom Devig</h3>
+	<p style="margin:0 0 12px; color:#c8c3bc">Pick books to average against. Choose “Only” to require all selected books to be present.</p>
+
+	<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="cd-books"></div>
+
+	<div style="display:flex;gap:16px;align-items:center;margin:6px 0 14px">
+	  <label><input type="radio" name="cd-mode" value="avg" checked> Average selected (<code>fd+dk+circa</code>)</label>
+	  <label><input type="radio" name="cd-mode" value="only"> Only selected (<code>only+fd+dk+circa</code>)</label>
+	</div>
+
+	<div style="display:flex;gap:8px;justify-content:flex-end">
+	  <button id="cd-cancel">Cancel</button>
+	  <button id="cd-apply">Apply</button>
+	</div>
+	`;
+	wrap.appendChild(card);
+	document.body.appendChild(wrap);
+
+	// populate checkboxes
+	const boxHost = card.querySelector('#cd-books');
+	ALL_BOOKS.forEach(b => {
+		const label = document.createElement('label');
+		label.style.cssText = 'border:1px solid #3a3a3a;border-radius:8px;padding:6px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer;';
+		label.innerHTML = `<input type="checkbox" value="${b}"> ${b.toUpperCase()}`;
+		boxHost.appendChild(label);
+	});
+
+	function closeModal() {
+		wrap.remove();
+		document.querySelector("#devig-select").value = DEVIG;
+		changeFilter();
+	}
+
+	card.querySelector('#cd-cancel').onclick = closeModal;
+
+	card.querySelector('#cd-apply').onclick = () => {
+		const sel = [...boxHost.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
+		if (sel.length === 0) { alert('Pick at least one book'); return; }
+		const mode = card.querySelector('input[name="cd-mode"]:checked').value;
+		DEVIG = (mode === 'only' ? 'only+' : '') + sel.join('+');
+
+		// set value, persist to URL like the others, and recalc
+		const devigSel = document.getElementById('devig-select');
+		devigSel.innerHTML += `<option value='${DEVIG}'>${DEVIG}</option>`;
+		devigSel.value = DEVIG;
+
+		const params = new URLSearchParams(window.location.search);
+		params.set('devig', DEVIG);
+		history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+
+		saveCustomDevigs();
+		closeModal();
+	};
+}
+
 function fetchUpdated(repo="props", render=true) {
 	const url = `https://api.github.com/repos/dailyev/${repo}/contents/updated.json`;
 	fetch(url, {

@@ -114,6 +114,7 @@
 						<option value="espn+pn+circa">ESPN & PN & Circa</option>
 						<option value="fd+pn+circa">FD & PN & Circa</option>
 						<option value="pn+circa">PN & Circa</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -457,6 +458,9 @@
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
+			if (devigBook == "custom") {
+				devigBook = DEVIG;
+			}
 			BOOK = book;
 			GAME = game;
 			OU = ou;
@@ -476,7 +480,9 @@
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
 					row["ev"] = "";
 					row["fairVal"] = "";
 					row["implied"] = "";
@@ -547,9 +553,7 @@
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
+
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -565,10 +569,10 @@
 				TABLE.setFilter(filters);
 			}
 			TABLE.replaceData(RES.data);
-			//TABLE.redraw(true);
+			if (TABLE.getSorters().length == 0) {
+				TABLE.setSort([{column: "ev", dir: "desc"}]);
+			}
 		}
-
-
 
 		const boostSel = document.getElementById('boost-select');
 		const boostCustom = document.getElementById('boost-custom');
@@ -588,7 +592,11 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
+			if (event.target.value == "custom") {
+				openCustomDevig();
+			} else {
+				changeFilter();
+			}
 		});
 
 		document.querySelector("#ou-select").value = OU;

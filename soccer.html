@@ -60,6 +60,8 @@
 						<option value="cz">CZ</option>
 						<option value="fn">FN</option>
 						<option value="br">BR</option>
+						<option value="mb">MB</option>
+						<option value="fl">FL</option>
 						<option value="hr">HR</option>
 						<option value="bv">BV</option>
 						<option value="kambi">Kambi</option>
@@ -85,6 +87,8 @@
 				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
 				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
 				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
+				      <label><input type="checkbox" value="mb"> Matchbook (MB)</label>
+				      <label><input type="checkbox" value="mb"> Fliff (FL)</label>
 				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
 				      <div class="chkdd-actions">
 				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
@@ -105,6 +109,8 @@
 						<option value="dk">vs DK</option>
 						<option value="espn">vs ESPN</option>
 						<option value="bol">vs BOL</option>
+						<option value="mb">vs MB</option>
+						<option value="fl">vs FL</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
@@ -426,7 +432,7 @@
 						responsive: 0
 					},
 					{
-						title: "EV Book", field: "book",
+						title: "Best Book", field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
@@ -435,7 +441,8 @@
 					{
 						title: "Game", field: "game",
 						vertAlign:"bottom", hozAlign: "left",
-						responsive: 0
+						responsive: 0,
+						width: 150
 					},
 					{
 						title: "Player",
@@ -454,10 +461,12 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return "";
-							}
 							let ou = data.under ? "u" : "o";
+							if (["atgs"].includes(prop)) {
+								return cell.getValue();
+							} else if (prop.includes("btts")) {
+								return ou == "o" ? "Yes" : "No";
+							}
 							return `${ou}${cell.getValue()}`;
 						},
 						headerFilter:"list",
@@ -544,17 +553,19 @@
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
-					{title: `ESPN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `BB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `ESPN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter, visible: false},
+					{title: `BB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter, visible: false},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter, visible: false},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `MB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mb"], short=true)}`, field: "bookOdds.mb",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? false : true, formatter: evOddsFormatter},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter, visible: false},
 					{title: "Game", field: "game", visible: false},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
 					{title: "Start", field: "start", visible: false},

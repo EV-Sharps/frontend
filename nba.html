@@ -105,6 +105,7 @@
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
 						<option value="dk">vs DK</option>
+						<option value="mgm">vs MGM</option>
 						<option value="espn">vs ESPN</option>
 						<option value="bol">vs BOL</option>
 						<option value="pn">vs PN</option>
@@ -726,7 +727,7 @@
 						responsive: 0
 					},
 					{
-						title: "EV Book", field: "book",
+						title: "Best Book", field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
@@ -882,7 +883,7 @@
 				{column: "implied", dir: "desc"}
 			]);
 			TABLE.setFilter([
-				{field: "prop", type: "=", value: "atgs"},
+				{field: "prop", type: "=", value: "dd"},
 				{field: "under", type:"=", value: false}
 			]);
 

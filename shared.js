@@ -64,6 +64,7 @@ let PAGE_DROPDOWN = `
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	<option value="main?sport=ncaab">🏀 CBB Main (Sharps)</option>
+	<option value="soccer">⚽ Soccer</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -1336,6 +1337,8 @@ const playerFormatter = function(cell, params, rendered) {
 			player = `${team.toUpperCase()} ${data.prop.replace("home_", "").replace("away_", "").toUpperCase()}`;
 		} else if (data.prop.includes("spread")) {
 			player = `${team.toUpperCase()} ${data.prop.toUpperCase()}`;
+		} else if (data.prop.includes("corners")) {
+			player = `${data.prop.toUpperCase()}`;
 		} else if (["rfi", "gift"].includes(data.prop)) {
 			player = "";
 		}
@@ -2389,7 +2392,7 @@ function buildTourSteps() {
 
 	if (book) steps.push({
 		element: book,
-		title: "EV Book",
+		title: "Best Book",
 		intro: "Which sportsbook price is driving the EV. Use it to know where to place the bet.",
 		position: "right"
 	});

@@ -1910,11 +1910,9 @@ function showHideUserTable(loaded) {
 		if (!loaded) {
 			DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
 			const devigSel = document.getElementById("devig-select");
-			/*
-			for (customDevig of CURR_USER.metadata["custom_devigs"]) {
+			for (customDevig of (CURR_USER.metadata["custom_devigs"] || [])) {
 				devigSel.innerHTML += `<option value='${customDevig}'>${customDevig}</option>`;
 			}
-			*/
 			devigSel.value = DEVIG;
 		}
 	}

@@ -1909,7 +1909,11 @@ function showHideUserTable(loaded) {
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
 		if (!loaded) {
 			DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
-			document.getElementById("devig-select").value = DEVIG;
+			const devigSel = document.getElementById("devig-select");
+			for (customDevig of CURR_USER.metadata["custom_devigs"]) {
+				devigSel.innerHTML += `<option value='${customDevig}'>${customDevig}</option>`;
+			}
+			devigSel.value = DEVIG;
 		}
 	}
 }

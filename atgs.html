@@ -470,6 +470,7 @@
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
+			console.log(game);
 			BOOK = book;
 			GAME = game;
 			OU = ou;
@@ -677,6 +678,7 @@
 				params.set('devig', DEVIG);
 				history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
 
+				saveCustomDevigs();
 				closeModal();
 			};
 		}
@@ -696,6 +698,7 @@
 			changeFilter();
 		});
 
+		document.querySelector("#game-select").value = GAME || "";
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
 			const params = new URLSearchParams(window.location.search);

@@ -125,6 +125,25 @@ function fillPricing(tier) {
 	});
 }
 
+async function saveCustomDevigs() {
+	if (!CURR_USER) {
+		return;
+	}
+	const metadata = CURR_USER?.metadata || {};
+	if (!metadata["custom_devigs"]) {
+		metadata["custom_devigs"] = [];
+	}
+	if (!metadata["custom_devigs"].includes(DEVIG)) {
+		metadata["custom_devigs"].push(DEVIG);
+	}
+	console.log(metadata);
+	const { error: updateError } = await SB.from('profiles')
+		.update({
+			metadata: metadata
+		})
+		.eq('id', CURR_SESSION.user.id);
+}
+
 async function saveTableSettings() {
 	const saveBtn = document.querySelector("#save-table");
 	const saveStatus = document.querySelector("#save-status");

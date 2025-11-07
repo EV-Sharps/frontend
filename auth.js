@@ -214,10 +214,8 @@ async function saveExcludeHelper(key) {
 	const excluded = getExcludedBooks();
 
 	if (key == "all") {
-		for (k of CURR_USER.metadata) {
-			if (k.includes("-exclude")) {
-				data[k] = excluded;
-			}
+		for (k of ["atgs", "atgs2", "dingers", "live", "main", "mlb", "nba", "ncaaf", "ncaafprops", "nhl", "pts", "soccer", "tds"]) {
+			data[`${k}-exclude`] = excluded;
 		}
 	} else {
 		data[`${key}-exclude`] = excluded;

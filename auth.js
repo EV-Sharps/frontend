@@ -199,7 +199,7 @@ function initExcluded() {
 	});
 }
 
-async function saveExcludeBooks() {
+async function saveExcludeHelper(key) {
 	if (!CURR_USER) {
 		return;
 	}
@@ -211,7 +211,17 @@ async function saveExcludeBooks() {
 	saveBtn.disabled = true;
 
 	const data = {};
-	data[`${PAGE}-exclude`] = getExcludedBooks();
+	const excluded = getExcludedBooks();
+
+	if (key == "all") {
+		for (k of CURR_USER.metadata) {
+			if (k.includes("-exclude")) {
+				data[k] = excluded;
+			}
+		}
+	} else {
+		data[`${key}-exclude`] = excluded;
+	}
 	const newData = { ...CURR_USER.metadata, ...data };
 	const { error: updateError } = await SB.from('profiles')
 		.update({
@@ -231,6 +241,14 @@ async function saveExcludeBooks() {
     saveStatus.textContent = '';
     saveBtn.disabled = false;
   }, 3000);
+} 
+
+async function saveAllExcludeBooks() {
+	saveExcludeHelper("all");
+}
+
+async function saveExcludeBooks() {
+	saveExcludeHelper(PAGE);
 }
 
 function fillProfile(data, discordUsername, tier, session) {

@@ -115,6 +115,7 @@
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -139,6 +140,17 @@
 				       type="number" min="0" step="5"
 				       placeholder="Custom %"
 				       style="display:none; width:7ch; margin-left:.5rem;" />
+				<div class="select-wrapper">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 				<div class="select-wrapper">
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
@@ -313,7 +325,7 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NCAAF. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</main>
 	<script type="text/javascript" src="shared.js"></script>
@@ -336,6 +348,7 @@
 		let PRETTY = URLParams.get("pretty");
 		let BOOK = URLParams.get("book");
 		let PROP = URLParams.get("prop");
+		let OU = URLParams.get("ou") || "ou";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
@@ -415,12 +428,17 @@
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
 			let prop = document.getElementById("prop-select").value;
+			let ou = document.getElementById("ou-select").value;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
+			if (devigBook == "custom") {
+				devigBook = DEVIG;
+			}
 			BOOK = book;
 			GAME = game;
+			OU = ou;
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
 			params.set("boost", boost);
@@ -436,7 +454,13 @@
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				const ex = excluded;
@@ -447,29 +471,29 @@
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else {
-				    	ou = buildOU(bookOdds, true);
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under);
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    // Normal over-first logic
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -496,9 +520,6 @@
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -507,11 +528,16 @@
 			if (prop) {
 				filters.push({field:"prop", type:"=", value: prop});
 			}
+			if (OU != "ou") {
+				filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
+			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
 			TABLE.replaceData(RES.data);
-			//TABLE.redraw(true);
+			if (TABLE.getSorters().length == 0) {
+				TABLE.setSort([{column: "ev", dir: "desc"}]);
+			}
 		}
 
 
@@ -534,6 +560,15 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
+			if (event.target.value == "custom") {
+				openCustomDevig();
+			} else {
+				changeFilter();
+			}
+		});
+
+		document.querySelector("#ou-select").value = OU;
+		document.querySelector("#ou-select").addEventListener("change", (event) => {
 			changeFilter();
 		});
 

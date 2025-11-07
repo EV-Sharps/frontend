@@ -91,6 +91,9 @@
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
 				      </div>
+				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
+				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+				      </div>
 				      <div>
 				      	<span id="exclude-status"></span>
 				      </div>
@@ -108,6 +111,7 @@
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -139,6 +143,17 @@
 					<label for="prop-select" class="select-label">Prop</label>
 					<select id="prop-select">
 						<option value="" selected>All</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -241,6 +256,7 @@
 		let NOBR = URLParams.get("noBR");
 		let BOOST = URLParams.get("boost");
 		let DEVIG = URLParams.get("devig");
+		let OU = URLParams.get("ou") || "ou";
 		let PROP = URLParams.get("prop") || "";
 
 		if (GAME) {
@@ -548,10 +564,9 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter
 					},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
@@ -563,6 +578,7 @@
 					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
 					{title: "Start", field: "start", visible: false},
 				]
@@ -599,9 +615,18 @@
 			changeFilter();
 		});
 
+		document.querySelector("#ou-select").value = OU;
+		document.querySelector("#ou-select").addEventListener("change", (event) => {
+			changeFilter();
+		});
+
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
+			if (event.target.value == "custom") {
+				openCustomDevig();
+			} else {
+				changeFilter();
+			}
 		});
 
 		if (GAME) {
@@ -636,11 +661,17 @@
 			let game = GAME;
 			let book = document.getElementById("book-select")?.value;
 			PROP = document.getElementById("prop-select").value;
+			let ou = document.getElementById("ou-select").value;
 			let prop = PROP;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
+			if (devigBook == "custom") {
+				devigBook = DEVIG;
+			}
+
+			OU = ou;
 
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
@@ -650,12 +681,18 @@
 			params.set("game", game);
 			params.set("book", book);
 			params.set("prop", PROP);
+			params.set("ou", ou);
 
 			RES.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
-				//let avg = getAverageImplied(bookOdds, row.under);
-				let ou = buildOU(bookOdds, row.under);
-				if (!ou) {
+				let avg = getAverageImplied(bookOdds, row.under);
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				const ex = excluded;
@@ -664,7 +701,6 @@
 					ex.push(devigBook);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				//let ou = avg.avgAmerican.toString();
 
 				if (!isFinite(highest.value)) {
 					row["ev"] = "";
@@ -673,22 +709,31 @@
 					row["kelly"] = "";
 					return;
 				}
+				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under);
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -727,6 +772,9 @@
 			}
 			if (prop) {
 				filters.push({field:"prop", type:"=", value: prop});
+			}
+			if (OU != "ou") {
+				filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);

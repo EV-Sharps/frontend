@@ -147,6 +147,9 @@
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
 				      </div>
+				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
+				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+				      </div>
 				      <div>
 				      	<span id="exclude-status"></span>
 				      </div>
@@ -161,6 +164,7 @@
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
 						<option value="pn+circa">PN & Circa</option>
+						<option value="custom">Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>

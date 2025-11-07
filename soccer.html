@@ -95,6 +95,9 @@
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
 				      </div>
+				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
+				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+				      </div>
 				      <div>
 				      	<span id="exclude-status"></span>
 				      </div>
@@ -605,7 +608,11 @@
 
 		document.querySelector("#devig-select").value = DEVIG || "";
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
+			if (event.target.value == "custom") {
+				openCustomDevig();
+			} else {
+				changeFilter();
+			}
 		});
 
 		if (GAME) {
@@ -658,8 +665,14 @@
 			RES.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
 				//let avg = getAverageImplied(bookOdds, row.under);
-				let ou = buildOU(bookOdds, row.under);
-				if (!ou) {
+				let avg = getAverageImplied(bookOdds, row.under);
+				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
+				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
+				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
+					row["ev"] = "";
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
 					return;
 				}
 				const ex = excluded;
@@ -668,8 +681,6 @@
 					ex.push(devigBook);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				//let ou = avg.avgAmerican.toString();
-
 				if (!isFinite(highest.value)) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -677,22 +688,31 @@
 					row["kelly"] = "";
 					return;
 				}
+				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under);
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -702,7 +722,7 @@
 					return;
 				}
 
-				let d = devig(ou, highest.value, boost);
+				let d = devig(ou, highest.value, boost, row.under);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";
@@ -720,9 +740,6 @@
 
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
 			const filters = [];
 			TABLE.clearFilter();
 			if (game) {
@@ -739,6 +756,9 @@
 				TABLE.setFilter(filters);
 			}
 			TABLE.replaceData(RES);
+			if (TABLE.getSorters().length == 0) {
+				TABLE.setSort([{column: "ev", dir: "desc"}]);
+			}
 		}
 	</script>
 </body>

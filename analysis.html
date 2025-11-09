@@ -385,6 +385,8 @@
 		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
+		let MIN = URLParams.get("min") || "";
+		let MAX = URLParams.get("max") || "";
 
 		// Exclude
 		const dd = document.getElementById('exclude-dd');
@@ -505,7 +507,7 @@
 					ex.push(devigBook);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				if (!isFinite(highest.value)) {
+				if (!isFinite(highest.value) || (MIN && highest.value < MIN) || (MAX && highest.value > MAX)) {
 					row["ev"] = "";
 					row["fairVal"] = "";
 					row["implied"] = "";

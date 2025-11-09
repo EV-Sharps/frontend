@@ -407,15 +407,17 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "nhl", "atgs", "atgs2", "nba", "pts"].includes(PAGE)) {
+	} else if (["mlb", "nhl", "atgs", "atgs2", "nba", "pts", "analysis"].includes(PAGE)) {
 		fetchProps();
 		initExcluded();
 		renderTable([]);
-		setInterval(() => {
-			if (document.hasFocus()) {
-				fetchProps();
-			}
-		}, 30 * 1000);
+		if (PAGE != "analysis") {
+			setInterval(() => {
+				if (document.hasFocus()) {
+					fetchProps();
+				}
+			}, 30 * 1000);
+		}
 	} else if (PAGE == "main" || PAGE == "soccer") {
 		fetchMain();
 		initExcluded();

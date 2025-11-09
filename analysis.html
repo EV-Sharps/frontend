@@ -206,7 +206,7 @@
 				<div style="margin: 1rem 0;">
 					<div>
 						<span id="wins"></span>W-<span id="losses"></span>L
-						Profit: (<span id="profit"></span>u)
+						Profit: (<span id="profit"></span>u, <span id="kelly"></span>u QK)
 					</div>
 				</div>
 				<div id="table">
@@ -457,7 +457,7 @@
 		});
 
 		function changeFilter() {
-			let [w,l,profit] = [0,0,0];
+			let [w,l,profit,kellyProfit] = [0,0,0,0];
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
@@ -561,13 +561,16 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 
-				if (d.ev >= 0 && row.result) {
+				if (d.ev >= 0 && row.result && (!PROP || row.prop == PROP)) {
 					if (row["hit"]) {
 						w += 1;
-						profit += Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
+						let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
+						profit += dec;
+						kellyProfit += dec * parseFloat(row["kelly"]);
 					} else {
 						l += 1;
 						profit -= 1;
+						kellyProfit -= parseFloat(row["kelly"]);
 					}
 				}
 			});
@@ -575,6 +578,7 @@
 			document.getElementById("wins").textContent = w;
 			document.getElementById("losses").textContent = l;
 			document.getElementById("profit").textContent = profit.toFixed(2);
+			document.getElementById("kelly").textContent = kellyProfit.toFixed(2);
 
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
@@ -682,6 +686,17 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
+
+				const props = new Set(RES.map(r => r.prop));
+				const propSel = document.getElementById("prop-select");
+				propSel.innerHTML = `<option value="" selected>All</option>`;
+				props.forEach(prop => {
+					const option = document.createElement("option");
+					option.value = prop;
+					option.textContent = prop.toUpperCase();
+					propSel.appendChild(option);
+				});
+				propSel.value = PROP;
 
 				if (data.length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";

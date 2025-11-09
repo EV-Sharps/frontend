@@ -60,7 +60,7 @@ let PAGE_DROPDOWN = `
 	<option value="pts">🏀 PTS</option>
 	<option value="nba">🏀 NBA Props (Sharps)</option>
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
-	<option value="results">🏀 Results</option>
+	<option value="analysis">🏀 Results</option>
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	<option value="main?sport=ncaab">🏀 CBB Main (Sharps)</option>

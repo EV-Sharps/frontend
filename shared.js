@@ -2090,6 +2090,7 @@ function devig(ou, finalOdds, promo, isUnder = false) {
 		if (PAGE == "atgs2") {
 			vig = 0;
 		}
+		//vig = 0;
 		const u = 1 + vig - impliedOver;
 		if (u >= 1) return;
 

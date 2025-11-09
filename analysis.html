@@ -561,7 +561,7 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 
-				if (d.ev >= 0 && row.result && (!PROP || row.prop == PROP)) {
+				if (d.ev >= 0 && row.result != undefined && (!PROP || row.prop == PROP)) {
 					if (row["hit"]) {
 						w += 1;
 						let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);

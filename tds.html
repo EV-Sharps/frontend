@@ -481,10 +481,13 @@
 					row["kelly"] = "";
 					return;
 				}
-				const ex = excluded;
+				let ex = excluded;
 				ex.push("pn"); ex.push("circa");
 				if (devigBook) {
 					ex.push(devigBook);
+				}
+				if (ex.includes(book)) {
+					ex = ex.filter(b => b != book);
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				let ou = avg.avgAmerican.toString();

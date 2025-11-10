@@ -1373,6 +1373,8 @@ const playerFormatter = function(cell, params, rendered) {
 		bats = data.pitch_hand;
 	} else if (PAGE == "nba") {
 		bats = data.pos;
+	} else if (PAGE == "atgs") {
+		bats = data.avgTOI;
 	}
 	return `
 		<div class="player-cell">

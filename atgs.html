@@ -387,6 +387,7 @@
 		let DUE = URLParams.get("due");
 		let CSV = URLParams.get("csv");
 		let BOOK = URLParams.get("book");
+		let VIG = URLParams.get("vig") || "";
 		let OU = URLParams.get("ou") || "ou";
 		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
@@ -551,7 +552,7 @@
 					return;
 				}
 
-				let d = devig(ou, highest.value, boost, row.under);
+				let d = devig(ou, highest.value, boost, row.under, VIG);
 				if (!d) {
 					row["ev"] = "";
 					row["fairVal"] = "";

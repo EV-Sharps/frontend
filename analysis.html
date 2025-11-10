@@ -110,6 +110,7 @@
 						<option value="dk">vs DK</option>
 						<option value="mgm">vs MGM</option>
 						<option value="espn">vs ESPN</option>
+						<option value="bv">vs BV</option>
 						<option value="bol">vs BOL</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
@@ -563,7 +564,7 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 
-				if (d.ev >= 0 && row.result != undefined && (!PROP || row.prop == PROP)) {
+				if (d.ev >= 0 && row.result != undefined && (!PROP || row.prop == PROP) && (OU == "ou" || OU == (row.under ? "u" : "o"))) {
 					if (row["hit"]) {
 						w += 1;
 						let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);

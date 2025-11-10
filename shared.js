@@ -2071,7 +2071,7 @@ function computeOutlierFromBookOdds(rowData) {
   return best;
 }
 
-function devig(ou, finalOdds, promo, isUnder = false) {
+function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 	const parts = String(ou).split("/");
 	if (!parts[0]) return;
 
@@ -2090,7 +2090,9 @@ function devig(ou, finalOdds, promo, isUnder = false) {
 		if (PAGE == "atgs2") {
 			vig = 0;
 		}
-		//vig = 0;
+		if (manualVig != "") {
+			vig = parseInt(manualVig);
+		}
 		const u = 1 + vig - impliedOver;
 		if (u >= 1) return;
 

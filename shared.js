@@ -1372,12 +1372,12 @@ const playerFormatter = function(cell, params, rendered) {
 	if (["pitcher_mix", "preview"].includes(PAGE)) {
 		bats = data.pitch_hand;
 	} else if (PAGE == "nba") {
-		bats = data.pos;
+		bats = data.avgMin;
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
 	}
 	let pos = "";
-	if (PAGE == "atgs") {
+	if (["nba", "atgs"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	return `

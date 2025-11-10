@@ -1376,11 +1376,16 @@ const playerFormatter = function(cell, params, rendered) {
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
 	}
+	let pos = "";
+	if (PAGE == "atgs") {
+		pos = data.pos;
+	}
 	return `
 		<div class="player-cell">
 			<div class='game-container'>${gameContainer}</div>
 			${p} ${prop}
 			<div class="bats">${bats}</div>
+			<div class="pos">${pos}</div>
 		</div>
 	`
 }

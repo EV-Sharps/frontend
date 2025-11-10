@@ -564,7 +564,7 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 
-				if (d.ev >= 0 && row.result != undefined && (!PROP || row.prop == PROP) && (OU == "ou" || OU == (row.under ? "u" : "o"))) {
+				if (d.ev >= 0 && row.result != undefined && (!prop || row.prop == prop) && (OU == "ou" || OU == (row.under ? "u" : "o"))) {
 					if (row["hit"]) {
 						w += 1;
 						let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
@@ -951,6 +951,29 @@
 			});
 			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
+		}
+
+		function calcProfit() {
+			for (box of boxes) {
+				if (["br", "bv", "hr", "kambi", "bol"].includes(box.value)) {
+					box.checked = true;
+				}
+			}
+			let old_devig = DEVIG;
+			for (d of ["fd", "dk", "circa", "pn", "bol", "espn"]) {
+				document.getElementById("devig-select").value = d;
+
+				//for (prop of ["pts", "reb", "ast", "3ptm", "dd", "td", "blk", "stl", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"]) {
+				for (prop of ["pts", "reb"]) {
+					document.getElementById("prop-select").value = prop;
+					changeFilter();
+					const w = document.getElementById("wins").textContent;
+					const l = document.getElementById("losses").textContent;
+					const p = document.getElementById("profit").textContent;
+					console.log(d, prop, w, l, p);
+				}
+			}
+			DEVIG = old_devig;
 		}
 	</script>
 </body>

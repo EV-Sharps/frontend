@@ -375,7 +375,7 @@
 		let MARK = URLParams.get("mark");
 		let GAME = URLParams.get("game") || "";
 		let TODAY = getToday();
-		let SPORT = "nba";
+		let SPORT = URLParams.get("sport") || "nba";
 		let PLAYER = URLParams.get("player");
 		let DEVIG = URLParams.get("devig");
 		let BOOST = URLParams.get("boost");
@@ -459,7 +459,7 @@
 			});
 		});
 
-		function changeFilter() {
+		function changeFilter(render = true) {
 			let [w,l,profit,kellyProfit] = [0,0,0,0];
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
@@ -583,6 +583,10 @@
 			document.getElementById("profit").textContent = profit.toFixed(2);
 			document.getElementById("kelly").textContent = kellyProfit.toFixed(2);
 
+			if (!render) {
+				return;
+			}
+
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
 
@@ -683,7 +687,7 @@
 		}
 
 		function fetchProps() {
-			fetch(API_BASE+`/api/analysis`, {
+			fetch(API_BASE+`/api/analysis?sport=${SPORT}`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -959,21 +963,33 @@
 					box.checked = true;
 				}
 			}
+			const data = {};
 			let old_devig = DEVIG;
 			for (d of ["fd", "dk", "circa", "pn", "bol", "espn"]) {
+			//for (d of ["fd"]) {
 				document.getElementById("devig-select").value = d;
 
-				//for (prop of ["pts", "reb", "ast", "3ptm", "dd", "td", "blk", "stl", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"]) {
-				for (prop of ["pts", "reb"]) {
+				let props = ["", "pts", "reb", "ast", "3ptm", "stl", "blk", "dd", "td", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
+				if (SPORT == "nhl") {
+					props = ["", "atgs", "sog", "pts", "ast", "bs", "sv"];
+				}
+				for (prop of props) {
+				//for (prop of ["pts", "reb"]) {
 					document.getElementById("prop-select").value = prop;
-					changeFilter();
+					changeFilter(render=false);
 					const w = document.getElementById("wins").textContent;
 					const l = document.getElementById("losses").textContent;
 					const p = document.getElementById("profit").textContent;
-					console.log(d, prop, w, l, p);
+
+					if (w == "0" && l == "0") {
+						data[`${prop || "all"}-vs-${d}`] = [0,0,0];
+					} else {
+						data[`${prop || "all"}-vs-${d}`] = [w,l,p];
+					}
 				}
 			}
 			DEVIG = old_devig;
+			console.log(data);
 		}
 	</script>
 </body>

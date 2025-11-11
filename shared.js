@@ -2056,25 +2056,30 @@ function computeOutlierFromBookOdds(rowData) {
   if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
 
   // Convert to [book, numericValue] pairs and filter valid ones
-  const entries = Object.entries(bookOdds)
-    .map(([book, val]) => [book, Number(val)])
+  let i = rowData.under ? 1 : 0;
+  let entries = Object.entries(bookOdds)
+    .map(([book, val]) => [book, Number(String(val).split('/')[i])])
     .filter(([, num]) => !isNaN(num));
 
   if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
 
   const values = entries.map(([, v]) => v);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
   let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
-  entries.forEach(([book, value], i) => {
-    const others = values.slice(0, i).concat(values.slice(i + 1));
-    const avg = others.reduce((a, b) => a + b, 0) / others.length;
-    const dev = Math.abs(value - avg);
-    const pct = avg !== 0 ? Math.abs((value - avg) / avg) : 0;
-
+  entries.forEach(([book, value]) => {
+    const dev = value - avg; // only positive direction (higher odds)
     if (dev > best.deviation) {
-      best = { book, value, deviation: dev, pct };
+      best = {
+        book,
+        value,
+        deviation: dev,
+        pct: avg !== 0 ? dev / Math.abs(avg) : 0,
+      };
     }
   });
+
   return best;
 }
 

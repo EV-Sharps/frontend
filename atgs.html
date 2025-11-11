@@ -499,7 +499,7 @@
 				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
 				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
 				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -512,7 +512,7 @@
 				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
 				if (!isFinite(highest.value)) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -545,7 +545,7 @@
 					}
 				}
 				if (!ou) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -554,7 +554,7 @@
 
 				let d = devig(ou, highest.value, boost, row.under, VIG);
 				if (!d) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -570,7 +570,7 @@
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
 			const filters = [
-				//{field: "ev", type: "!=", value: ""}
+				{field: "ev", type: "!=", value: undefined}
 			];
 			TABLE.clearFilter();
 			if (game) {
@@ -586,8 +586,15 @@
 				TABLE.setFilter(filters);
 			}
 			TABLE.replaceData(RES.data);
-			if (TABLE.getSorters().length == 0) {
-				TABLE.setSort([{column: "ev", dir: "desc"}]);
+
+			if (VIG == "0") {
+				TABLE.hideColumn("ev");
+				TABLE.showColumn("outlier");
+				TABLE.setSort([{column: "outlier", dir: "desc"}]);
+			} else {
+				if (TABLE.getSorters().length == 0) {
+					TABLE.setSort([{column: "ev", dir: "desc"}]);
+				}
 			}
 		}
 
@@ -757,6 +764,26 @@
 						sorter: "number",
 						formatter: evFormatter,
 						responsive: 0
+					},
+					{
+						title: "Δ vs Avg",
+						field: "outlier",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						mutator: function(value, rowData) {
+						    const s = computeOutlierFromBookOdds(rowData);
+						    rowData.outlierBook = s.book;
+						    rowData.outlierPct  = s.pct;
+						    //return s.deviation;
+						    return s.pct;
+						  },
+						  formatter: function(cell) {
+						    const row = cell.getRow().getData();
+						    const dev = cell.getValue();
+						    return `${row.outlierPct.toFixed(1)}%`;
+						},
+						responsive: 0,
+						visible: false
 					},
 					{
 						title: "Best Book", field: "book",

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏈 Touchdowns</title>
+	<title>Outliers</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -19,7 +19,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
 		#table {
-			width: auto;
+			width: 100%;
 		}
 		@media (max-width: 1750px) {
 			#table {
@@ -73,34 +73,34 @@
 					</svg>
 				</div>
 				<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude <span class="count" aria-hidden="true"></span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> FD</label>
-				      <label><input type="checkbox" value="dk"> DK</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> CZ</label>
-				      <label><input type="checkbox" value="fn"> FN</label>
-				      <label><input type="checkbox" value="br"> BR</label>
-				      <label><input type="checkbox" value="bv"> BV</label>
-				      <label><input type="checkbox" value="hr"> HR</label>
-				      <label><input type="checkbox" value="kambi"> Kambi</label>
-				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude <span class="count" aria-hidden="true"></span>
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+					  <label><input type="checkbox" value="fd"> FD</label>
+					  <label><input type="checkbox" value="dk"> DK</label>
+					  <label><input type="checkbox" value="b365"> B365</label>
+					  <label><input type="checkbox" value="mgm"> MGM</label>
+					  <label><input type="checkbox" value="espn"> ESPN</label>
+					  <label><input type="checkbox" value="cz"> CZ</label>
+					  <label><input type="checkbox" value="fn"> FN</label>
+					  <label><input type="checkbox" value="br"> BR</label>
+					  <label><input type="checkbox" value="bv"> BV</label>
+					  <label><input type="checkbox" value="hr"> HR</label>
+					  <label><input type="checkbox" value="kambi"> Kambi</label>
+					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <div class="chkdd-actions">
+						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					  </div>
+					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
 				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
 				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
+					  <div>
+						<span id="exclude-status"></span>
+					  </div>
+					</div>
 				  </div>
 				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
@@ -108,9 +108,13 @@
 						<option value="" selected>Market Avg</option>
 						<option value="fd">vs FD</option>
 						<option value="dk">vs DK</option>
+						<option value="espn">vs ESPN</option>
 						<option value="bol">vs BOL</option>
 						<option value="pn">vs PN</option>
 						<option value="circa">vs Circa</option>
+						<option value="espn+pn">ESPN & PN</option>
+						<option value="espn+pn+circa">Avg ESPN/PN/Circa</option>
+						<option value="only+espn+pn+circa">Only ESPN+PN+Circa</option>
 						<option value="pn+circa">PN & Circa</option>
 						<option value="custom">Custom...</option>
 					</select>
@@ -123,6 +127,7 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
+						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
@@ -134,12 +139,12 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-				       type="number" min="0" step="5"
-				       placeholder="Custom %"
-				       style="display:none; width:7ch; margin-left:.5rem;" />
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
 				<div class="select-wrapper">
-					<label for="game-select" class="select-label">Game</label>
-					<select id="game-select">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
 						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -147,13 +152,20 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
 						<option value="" selected>All</option>
-						<option value="attd">ATTD</option>
-						<option value="2+td">2+ TD</option>
-						<option value="ftd">FTD</option>
-						<option value="ltd">LTD</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -196,6 +208,9 @@
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
+				<div id="right-body" class="body">
+					<div id="chart"></div>
+				</div>
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
@@ -209,6 +224,10 @@
 									<option value="fd">vs FD</option>
 									<option value="pn">vs PN</option>
 									<option value="circa">vs Circa</option>
+									<option value="espn+pn">ESPN & PN</option>
+									<option value="espn+pn+circa">Avg ESPN/PN/Circa</option>
+									<option value="only+espn+pn+circa">Only ESPN+PN+Circa</option>
+									<option value="pn+circa">PN & Circa</option>
 								</select>
 								<svg class="select-arrow" viewBox="0 0 20 20">
 									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -252,7 +271,7 @@
 								<label for="custom_bookOdds_fd">Fanduel</label>
 							</div>
 							<div>
-								<input id="custom_bookOdds_b365" type="checkbox" checked>
+								<input id="custom_bookOdds_b365" type="checkbox">
 								<label for="custom_bookOdds_b365">B365</label>
 							</div>
 							<div>
@@ -304,7 +323,7 @@
 								<label for="custom_bookOdds_circa">Circa</label>
 							</div>
 						</div>
-
+						<!-- ETC -->
 						<div>
 							<h3>Stats</h3>
 							<div>
@@ -318,6 +337,10 @@
 							<div>
 								<input id="custom_hitRateLYR" type="checkbox">
 								<label for="custom_hitRateLYR">Hit Rate LYR</label>
+							</div>
+							<div>
+								<input id="custom_hitRateCareer" type="checkbox">
+								<label for="custom_hitRateCareer">Hit Rate Career</label>
 							</div>
 							<div>
 								<input id="custom_logs" type="checkbox">
@@ -339,13 +362,13 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NFL. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NHL. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</main>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "tds";
+		PAGE = "outliers";
 		let RES, TABLE, LAST, NO365, KAMBI;
 		let HISTORICAL = {};
 		let url = "";
@@ -355,15 +378,18 @@
 		let MARK = URLParams.get("mark");
 		let GAME = URLParams.get("game") || "";
 		let TODAY = getToday();
-		let SPORT = "nfl";
+		let SPORT = "nhl";
 		let PLAYER = URLParams.get("player");
 		let DEVIG = URLParams.get("devig");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
-		let VIG = URLParams.get("vig") || "";
+		let DUE = URLParams.get("due");
+		let CSV = URLParams.get("csv");
 		let BOOK = URLParams.get("book");
-		let PROP = URLParams.get("prop");
+		let VIG = "0";
+		let OU = URLParams.get("ou") || "ou";
+		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
@@ -382,7 +408,7 @@
 			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
 			e.stopPropagation();
 			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
+			open ? closeMenu() : openMenu();
 		});
 		document.addEventListener('click', (e) => {
 			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
@@ -442,7 +468,8 @@
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
-			PROP = document.getElementById("prop-select").value;
+			let prop = document.getElementById("prop-select").value;
+			let ou = document.getElementById("ou-select").value;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
@@ -452,19 +479,16 @@
 			}
 			BOOK = book;
 			GAME = game;
+			OU = ou;
 			let url = new URL(window.location.href);
-
 			const params = new URLSearchParams(window.location.search);
 			params.set("boost", boost);
 			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
-			params.set("prop", PROP);
+			params.set("prop", prop);
+			params.set("ou", ou);
 
-
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			
 			if (!RES) {
 				return;
 			}
@@ -474,57 +498,54 @@
 				let avg = getAverageImplied(bookOdds, row.under);
 				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
 				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
-
 				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
 					return;
 				}
-				let ex = excluded;
+				const ex = excluded;
 				ex.push("pn"); ex.push("circa");
 				if (devigBook) {
 					ex.push(devigBook);
 				}
-				if (ex.includes(book)) {
-					ex = ex.filter(b => b != book);
-				}
 				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				let ou = avg.avgAmerican.toString();
 				if (!isFinite(highest.value)) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
 					return;
 				}
+				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook.includes("+")) {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageCustomSharps(bookOdds, devigBook, row.under);
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				    } else {
-				    	ou = buildOU(bookOdds, row.under);
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under);
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    // Normal over-first logic
-				    if (devigBook.includes("+")) {
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
 						ou = averageCustomSharps(bookOdds, devigBook);
 					} else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -533,7 +554,7 @@
 
 				let d = devig(ou, highest.value, boost, row.under, VIG);
 				if (!d) {
-					row["ev"] = "";
+					row["ev"] = undefined;
 					row["fairVal"] = "";
 					row["implied"] = "";
 					row["kelly"] = "";
@@ -546,24 +567,34 @@
 				row["implied"] = d.implied;
 				row["kelly"] = d.kelly;
 			});
-
-			
-			const filters = [];
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+			const filters = [
+				{field: "ev", type: "!=", value: undefined}
+			];
 			TABLE.clearFilter();
 			if (game) {
 				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
 			}
-			if (PROP) {
-				filters.push({field:"prop", type:"=", value: PROP});
+			if (prop) {
+				filters.push({field:"prop", type:"=", value: prop});
+			}
+			if (OU != "ou") {
+				filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
 			}
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
-
-			//TABLE.setData(RES.data);
 			TABLE.replaceData(RES.data);
-			if (TABLE.getSorters().length == 0) {
-				TABLE.setSort([{column: "ev", dir: "desc"}]);
+
+			if (VIG == "0") {
+				TABLE.hideColumn("ev");
+				TABLE.showColumn("outlier");
+				TABLE.setSort([{column: "outlier", dir: "desc"}]);
+			} else {
+				if (TABLE.getSorters().length == 0) {
+					TABLE.setSort([{column: "ev", dir: "desc"}]);
+				}
 			}
 		}
 
@@ -592,6 +623,11 @@
 			}
 		});
 
+		document.querySelector("#ou-select").value = OU;
+		document.querySelector("#ou-select").addEventListener("change", (event) => {
+			changeFilter();
+		});
+
 		document.querySelector("#prop-select").value = PROP || "";
 		document.querySelector("#prop-select").addEventListener("change", (event) => {
 			PROP = event.target.value;
@@ -602,6 +638,7 @@
 			changeFilter();
 		});
 
+		document.querySelector("#game-select").value = GAME || "";
 		document.querySelector("#game-select").addEventListener("change", (event) => {
 			GAME = event.target.value;
 			const params = new URLSearchParams(window.location.search);
@@ -638,30 +675,16 @@
 			}
 		}
 
-		function fetchTuddys() {
-			fetch(API_BASE+`/api/tds`, {
+		function fetchProps() {
+			fetch(API_BASE+`/api/outliers`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
-				UPDATED[PAGE] = data["updated"];
-
-				const gameSel = document.getElementById("game-select");
-				gameSel.innerHTML = `<option value="" selected>All</option>`;
-				data.games.forEach(game => {
-					const option = document.createElement("option");
-					option.value = game.replace(" @ ", "-");
-					option.textContent = game.toUpperCase();
-					gameSel.appendChild(option);
-				});
-				gameSel.value = GAME;
 
 				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option><option value="attd">ATTD</option>
-						<option value="2+td">2+ TD</option>
-						<option value="ftd">FTD</option>
-						<option value="ltd">LTD</option>`;
+				propSel.innerHTML = `<option value="" selected>All</option>`;
 				data.props.forEach(prop => {
 					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
 						return;
@@ -679,8 +702,6 @@
 					return;
 				}
 
-				//renderTable(data.data);
-
 				setTimeout(function() {
 					updateTimes();
 					changeFilter();
@@ -690,15 +711,22 @@
 					if (IMP != undefined) {
 						implied();
 					}
+					if (DUE != undefined) {
+						due();
+					}
+					if (CSV != undefined) {
+						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}
 
 		let loaded = false;
 		function renderTable(data) {
+			const allProps = [...new Set(data.map(row => row.prop))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
+				placeholder:"Data Loading...",
 				layout: "fitDataFill",
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
@@ -759,10 +787,37 @@
 						headerFilter: "input",
 						formatter: playerFormatter,
 						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						formatterParams:{ noProp: true, fullName: true, lastName: LAST },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true
+					},
+					{
+						title: "Line",
+						field: "handicap",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							const prop = data.prop;
+							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
+								return "";
+							}
+							let ou = data.under ? "u" : "o";
+							return `${ou}${cell.getValue()}`;
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
+						width: 60
 					},
 					{
 						title: "Prop",
@@ -777,7 +832,21 @@
 							}
 							//line = parseFloat(line) + 0.5;
 							return `o${line} ${cell.getValue()}`;
-						}
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
+						width: 50
 					},
 					
 					{
@@ -811,26 +880,26 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					
-					
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 60, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					//{title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					//{title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{
 						title: "Game Logs<br> ➡️ Most Recent",
 						field: "logs",
@@ -840,11 +909,19 @@
 						responsive: 3,
 						visible: MOBILE ? false : true
 					},
-					{title: "Season", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
-					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "game", visible: false},
-					{field: "pos", visible: false}
+					{title: "Last Goal (Due)", columns: [
+						{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},
+						{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},
+						{title: "Z", field: "due.g.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						//{title: "Avg", field: "due.g.avg", width: 40, formatter: homerLogFormatter, visible: false},
+						//{title: "Z", field: "due.g.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},
+					]},
+					{field: "game", visible: false}
 				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
 			});
 
 			TABLE.on("dataLoaded", function(data) {
@@ -856,6 +933,32 @@
 			});
 		}
 
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				right.style.display = "none";
+				left.style.width = "100%";
+				table.style.width = "100%";
+				setTimeout(() => {
+					table.style.width = "100%";
+					tableContainer.style.width = "100%";
+				}, 40);
+			} else {
+				row.select();
+				left.style.width = MOBILE ? "100%" : "50%";
+				right.style.display = "flex";
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+				plotHRGap();
+			}
+		}
+
 		function groupByGame() {
 			if (!TABLE.options.groupBy) {
 				TABLE.setGroupBy("game");
@@ -864,25 +967,17 @@
 			}
 		}
 
-		function pretty_() {
-			TABLE.getColumns().map(c => {
-				c.hide()
-			});
-			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
-			document.querySelector("#table").style.width = "max-content";
-		}
-
 		function implied() {
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "opp"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
 			]);
 			TABLE.setFilter([
-				{field: "prop", type: "=", value: "attd"},
+				{field: "prop", type: "=", value: "atgs"},
 				{field: "under", type:"=", value: false}
 			]);
 
@@ -903,11 +998,36 @@
 					continue;
 				}
 
-				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
+				tweet.push(`${currentRank}. ${title(row.player)} - ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} - ${row["implied"]}%`);
 			}
 			const today = new Date();
-			let header = `🏈 Implied Anytime Touchdown Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🏒 Implied Anytime Goalscorer Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
+		}
+
+		function due() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`ev`, "fairVal", "implied", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.espn", "bookOdds.pn", "hitRate", "hitRateLYR", "hitRateCareer", "logs", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+
+			TABLE.setSort([
+				{column: "due.g.z_median", dir: "desc"}
+			]);
+			TABLE.setFilter([
+				{field: "prop", type: "=", value: "atgs"},
+				{field: "under", type:"=", value: false},
+				{field: "handicap", type:"=", value: 0.5},
+			]);
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR", "hitRateCareer"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>
 </body>

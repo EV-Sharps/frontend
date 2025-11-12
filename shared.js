@@ -63,7 +63,7 @@ let PAGE_DROPDOWN = `
 	<option value="analysis">🏀 Results</option>
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
-	<option value="main?sport=ncaab">🏀 CBB Main (Sharps)</option>
+	<option value="ncaab">🏀 CBB (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
 	<option value="outliers">Outliers</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
@@ -2104,12 +2104,15 @@ function computeOutlierFromBookOddsLow(rowData) {
   // Parse selected leg and convert to implied probability
   const entries = Object.entries(bookOdds)
     .map(([book, val]) => {
-      const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-      const american = Number(token);
-      const p = americanToImplied(american);
-      return [book, american, p]; // [book, american, impliedProb]
+		if (rowData.under && !String(val).includes("/")) {
+			return null;
+		}
+		const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+		const american = Number(token);
+		const p = americanToImplied(american);
+    	return isNaN(american) || p == null ? null : [book, american, p];
     })
-    .filter(([, american, p]) => !isNaN(american) && p != null);
+    .filter(Boolean);
 
   if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0, refBook: null, refValue: null };
 
@@ -2121,12 +2124,12 @@ function computeOutlierFromBookOddsLow(rowData) {
   // Deviation from the lowest book: gap = p - refP (in probability points)
   // Return the book with the *largest* gap (worst vs. best).
   let worst = { book: null, value: null, deviation: -Infinity, pct: 0, refBook, refValue: refAmerican };
+  if (rowData.player == "mason marchment" && rowData.handicap == "0.5" && rowData.prop == "atgs" && rowData.under) {
+    	console.log(entries);
+    }
   for (const [book, american, p] of entries) {
     const gap = p - refP;                    // ≥ 0; 0 for the best itself
     const pct = refP !== 0 ? gap / refP : 0; // relative to best's implied prob
-    if (rowData.player == "denton mateychuk" && rowData.handicap == "1.5") {
-    	console.log(book, american, p, gap, pct);
-    }
     if (gap > worst.deviation) {
       worst = { book, value: american, deviation: gap, pct, refBook, refValue: refAmerican };
     }

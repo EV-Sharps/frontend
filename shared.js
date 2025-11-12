@@ -65,6 +65,7 @@ let PAGE_DROPDOWN = `
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	<option value="main?sport=ncaab">🏀 CBB Main (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
+	<option value="outliers">Outliers</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -745,10 +746,11 @@ const oppFormatter = function(cell, params, rendered) {
 		${data.game.split(" @ ")[0] != cell.getValue() ? "@" : "v"}
 	</span>`;
 	let team = data.oppId || data.opp;
-	if (params.prop == "k" || params.is_pitcher || SPORT == "ncaaf" || SPORT == "nhl" || SPORT == "nba") {
+	let sport = data.sport || SPORT;
+	if (params.prop == "k" || params.is_pitcher || sport == "ncaaf" || sport == "nhl" || sport == "nba") {
 		return `<div class="opp-cell">
 			${ah}
-			${getTeamImg(SPORT, team)}
+			${getTeamImg(sport, team)}
 			${team.toUpperCase()}
 		</div>`;
 	}
@@ -762,7 +764,7 @@ const oppFormatter = function(cell, params, rendered) {
 	}
 	const badge = data.doubleheader || data.team?.includes("gm2") ? 
 		"<span class='dbl-badge'>2</span>" : "";
-	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(SPORT, team)}</div>` : `${getTeamImg(SPORT, team)}`;
+	const gameContainer = badge ? `<div style='position:relative;'>${badge}${getTeamImg(sport, team)}</div>` : `${getTeamImg(sport, team)}`;
 	let pitcherLR = data.pitcherLR || "";
 	return `
 		<div class="opp-cell" aria-label="${data.pitcherSummary}">
@@ -2055,32 +2057,82 @@ function computeOutlierFromBookOdds(rowData) {
   const bookOdds = rowData.bookOdds;
   if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
 
-  // Convert to [book, numericValue] pairs and filter valid ones
-  let i = rowData.under ? 1 : 0;
-  let entries = Object.entries(bookOdds)
-    .map(([book, val]) => [book, Number(String(val).split('/')[i])])
-    .filter(([, num]) => !isNaN(num));
+  // pick Over (index 0) or Under (index 1) leg from "a/b" strings
+  const legIndex = rowData.under ? 1 : 0;
+
+  // Parse selected leg and convert to implied probability
+  const entries = Object.entries(bookOdds)
+    .map(([book, val]) => {
+      const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+      const num = Number(token);
+      const p = americanToImplied(num);
+      return [book, num, p]; // [book, american, impliedProb]
+    })
+    .filter(([, num, p]) => !isNaN(num) && p != null);
 
   if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
 
-  const values = entries.map(([, v]) => v);
-  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  // Average implied probability across books
+  const avgP = entries.reduce((a, [, , p]) => a + p, 0) / entries.length;
 
+  // For OVER rows (rowData.under === false): best price = lowest implied probability (highest payout)
+  // For UNDER rows (rowData.under === true): same principle—best price for that side = lowest implied probability
+  // => pick the minimum p, then deviation is (avgP - p) in probability points.
   let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
-  entries.forEach(([book, value]) => {
-    const dev = value - avg; // only positive direction (higher odds)
+  entries.forEach(([book, american, p]) => {
+    const dev = avgP - p;                 // positive if this book is better (lower p) than average
+    const pct = avgP !== 0 ? dev / avgP : 0;
     if (dev > best.deviation) {
-      best = {
-        book,
-        value,
-        deviation: dev,
-        pct: avg !== 0 ? dev / Math.abs(avg) : 0,
-      };
+      best = { book, value: american, deviation: dev, pct };
     }
   });
 
-  return best;
+  // If nothing is above-average, return neutral
+  if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+
+  return best; // deviation is in probability points; pct is relative to avg implied prob
+}
+
+function computeOutlierFromBookOddsLow(rowData) {
+  const bookOdds = rowData.bookOdds;
+  if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0, refBook: null, refValue: null };
+
+  // pick Over (index 0) or Under (index 1) leg from "a/b" strings
+  const legIndex = rowData.under ? 1 : 0;
+
+  // Parse selected leg and convert to implied probability
+  const entries = Object.entries(bookOdds)
+    .map(([book, val]) => {
+      const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+      const american = Number(token);
+      const p = americanToImplied(american);
+      return [book, american, p]; // [book, american, impliedProb]
+    })
+    .filter(([, american, p]) => !isNaN(american) && p != null);
+
+  if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0, refBook: null, refValue: null };
+
+  // Find the best (lowest implied probability) — our reference
+  let best = entries[0];
+  for (const e of entries) if (e[2] < best[2]) best = e; // compare by implied prob
+  const [refBook, refAmerican, refP] = best;
+
+  // Deviation from the lowest book: gap = p - refP (in probability points)
+  // Return the book with the *largest* gap (worst vs. best).
+  let worst = { book: null, value: null, deviation: -Infinity, pct: 0, refBook, refValue: refAmerican };
+  for (const [book, american, p] of entries) {
+    const gap = p - refP;                    // ≥ 0; 0 for the best itself
+    const pct = refP !== 0 ? gap / refP : 0; // relative to best's implied prob
+    if (rowData.player == "denton mateychuk" && rowData.handicap == "1.5") {
+    	console.log(book, american, p, gap, pct);
+    }
+    if (gap > worst.deviation) {
+      worst = { book, value: american, deviation: gap, pct, refBook, refValue: refAmerican };
+    }
+  }
+
+  return worst; // 'deviation' is the gap vs. the best (lowest implied prob)
 }
 
 function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {

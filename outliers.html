@@ -590,7 +590,8 @@
 			if (VIG == "0") {
 				TABLE.hideColumn("ev");
 				TABLE.showColumn("outlier");
-				TABLE.setSort([{column: "outlier", dir: "desc"}]);
+				TABLE.showColumn("outlierLow");
+				TABLE.setSort([{column: "outlierLow", dir: "desc"}]);
 			} else {
 				if (TABLE.getSorters().length == 0) {
 					TABLE.setSort([{column: "ev", dir: "desc"}]);
@@ -775,6 +776,26 @@
 						visible: false
 					},
 					{
+						title: "Δ vs Low",
+						field: "outlierLow",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						mutator: function(value, rowData) {
+						    const s = computeOutlierFromBookOddsLow(rowData);
+						    rowData.outlierBookLow = s.book;
+						    rowData.outlierPctLow  = s.pct;
+						    //return s.deviation;
+						    return s.pct;
+						  },
+						  formatter: function(cell) {
+						    const row = cell.getRow().getData();
+						    const dev = cell.getValue();
+						    return `${row.outlierPctLow.toFixed(1)}%`;
+						},
+						responsive: 0,
+						visible: false
+					},
+					{
 						title: "Best Book", field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
@@ -863,20 +884,6 @@
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: impliedFormatter,
-						responsive: 0,
-						visible: MOBILE ? false : true
-					},
-					{
-						title: "¼ Kelly",
-						field: "kelly",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						formatter: function(cell) {
-							if (!cell.getValue()) {
-								return "";
-							}
-							return `${cell.getValue().toFixed(2)}u`;
-						},
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},

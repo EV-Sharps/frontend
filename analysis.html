@@ -991,6 +991,26 @@
 			DEVIG = old_devig;
 			console.log(data);
 		}
+
+		function fgs() {
+			const players = [
+				"pavel zacha",
+				"josh anderson",
+				"drake batherson",
+				"brandon duhaime",
+				"dylan holloway",
+				"matt boldy",
+				"artturi lehkonen",
+				"jonathan toews",
+				"ryan winterton"
+			];
+
+			TABLE.setFilter([
+				{field: "player", type: "in", value: players},
+				{field: "prop", type: "=", value: "fgs"},
+				{field: "book", type: "!=", value: ""}
+			])
+		}
 	</script>
 </body>
 </html>

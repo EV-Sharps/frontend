@@ -387,6 +387,8 @@
 		let OU = URLParams.get("ou") || "ou";
 		let VIG = URLParams.get("vig") || "";
 		let PROP = URLParams.get("prop") || "";
+		let MIN = URLParams.get("min") || "";
+		let MAX = URLParams.get("max") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
 
@@ -616,7 +618,9 @@
 		});
 
 		const debouncedChangeFilter = debounce(changeFilter, 400);
+		document.getElementById("min-odds").value = MIN;
 		document.getElementById("min-odds").addEventListener("input", debouncedChangeFilter);
+		document.getElementById("max-odds").value = MAX;
 		document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
 
 		document.querySelector("#devig-select").value = DEVIG || "";

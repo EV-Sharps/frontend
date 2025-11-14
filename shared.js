@@ -747,7 +747,7 @@ const oppFormatter = function(cell, params, rendered) {
 	</span>`;
 	let team = data.oppId || data.opp;
 	let sport = data.sport || SPORT;
-	if (params.prop == "k" || params.is_pitcher || sport == "ncaaf" || sport == "nhl" || sport == "nba") {
+	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba") {
 		return `<div class="opp-cell">
 			${ah}
 			${getTeamImg(sport, team)}
@@ -920,7 +920,7 @@ const rankingFormatter = function(cell, params, rendered) {
 	if (!data.game || !cell.getValue()) {
 		return "";
 	}
-	if (field == "oppRank" || ["nba"].includes(SPORT)) {
+	if (field == "oppRank" || ["nba", "nhl"].includes(SPORT)) {
 		let cls;
 		//cls = data.oppRankClass;
 		if (data.blurred) {

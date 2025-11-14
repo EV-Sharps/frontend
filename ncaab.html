@@ -761,10 +761,16 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return "";
-							}
 							let ou = data.under ? "u" : "o";
+
+							if (prop.includes("spread")) {
+								let line = parseFloat(cell.getValue());
+								if (data.under) {
+									line *= -1;
+								}
+								let pre = line > 0 ? "+" : "";
+								return `${pre}${line}`;
+							}
 							return `${ou}${cell.getValue()}`;
 						},
 						headerFilter:"list",

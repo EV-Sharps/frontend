@@ -570,7 +570,7 @@
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
 			const filters = [
-				{field: "ev", type: "!=", value: undefined}
+				//{field: "ev", type: "!=", value: undefined}
 			];
 			TABLE.clearFilter();
 			if (game) {

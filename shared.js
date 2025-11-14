@@ -1862,9 +1862,9 @@ const DEFAULT_SHARED = [
 ]
 const DEFAULT_FIELDS = {
 	tds: [...DEFAULT_SHARED, "oppRank"],
-	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank"],
+	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank"],
 	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
-	nhl: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank"],
 	mlb: [...DEFAULT_SHARED, "handicap"],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]

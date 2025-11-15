@@ -2517,22 +2517,26 @@ function buildTourSteps() {
 
 	const evEl = colHeader("ev");
 	const book = colHeader("book");
+	const bookSel = document.getElementById("book-select");
+	const devigSel = document.getElementById("devig-select");
+	const exclude = document.getElementById("exclude-dd");
 	const fv = colHeader("fairVal");
 	const implied = colHeader("implied");
 	const kelly = colHeader("kelly");
 	const hr_pa = colHeader("percs.hr_pa");
+	const fd = colHeader("bookOdds.fd");
 
 	steps.push({
 		element: document.querySelector("#table"),
 		title: "How to use this table",
-		intro: "This is a +EV Home Run value finder.",
+		intro: "This is a +Expected Value (+EV) odds finder.",
 		position: "right"
 	});
 
 	if (evEl) steps.push({
 		element: evEl,
 		title: "Expected Value (EV%)",
-		intro: "Your edge vs the market based on our projection & current best line. Green = positive edge. Start here",
+		intro: "Your edge vs the market based on sportsbook's projections & current best line. Green = positive edge. Start here",
 		position: "right"
 	});
 
@@ -2541,6 +2545,27 @@ function buildTourSteps() {
 		title: "Best Book",
 		intro: "Which sportsbook price is driving the EV. Use it to know where to place the bet.",
 		position: "right"
+	});
+
+	if (bookSel) steps.push({
+		element: bookSel,
+		title: "Book Filter",
+		intro: "Show prices from one book only.",
+		position: "bottom"
+	});
+
+	if (exclude) steps.push({
+		element: exclude,
+		title: "Exclude Books",
+		intro: "Remove books you don't have access to for this table or all tables.",
+		position: "bottom"
+	});
+
+	if (devigSel) steps.push({
+		element: devigSel,
+		title: "Devig Filter",
+		intro: "Choose the sharp sportsbooks (devig books) you trust to set the most accurate odds and remove the vigorish (vig) and determine the true 'Fair Value' line.<br>Circa and Pinnacle are a good start.",
+		position: "bottom"
 	});
 
 	if (fv) steps.push({
@@ -2561,6 +2586,13 @@ function buildTourSteps() {
 		element: kelly,
 		title: "¼ Kelly (QK)",
 		intro: "Stake sizing with 25% Kelly for steadier growth and lower variance.",
+		position: "right"
+	});
+
+	if (fd) steps.push({
+		element: fd,
+		title: "Odds",
+		intro: "Formatted as over/under. Highlighted in green indicates a +EV line.",
 		position: "right"
 	});
 

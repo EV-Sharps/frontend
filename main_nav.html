@@ -135,7 +135,7 @@
 					<div style="flex: 0 0 auto;">
 						<div class="chkdd" id="exclude-dd">
 					    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-					      Exclude <span class="count" aria-hidden="true"></span>
+					      Exclude</span>
 					    </button>
 					    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
 					      <label><input type="checkbox" value="fd"> Fanduel (FD)</label>
@@ -449,7 +449,6 @@
 		const excludeBtn = dd.querySelector('.chkdd-btn');
 		let menu = dd.querySelector('.chkdd-menu');
 		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
-		const countEl = dd.querySelector('.count');
 
 		function getExcludedBooks() {
 		  return boxes.filter(b => b.checked).map(b => b.value);

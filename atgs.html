@@ -142,6 +142,7 @@
 		.all-books-row {
 			display: flex;
 			overflow-x: scroll; /* Enable horizontal scrolling */
+			-webkit-overflow-scrolling: touch;
 			padding: 8px 10px;
 			background-color: #121212;
 			border-bottom: none; /* Last row, no separator needed */
@@ -600,7 +601,6 @@
 		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
-		let CURRENT_VIEW = "table";
 		
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";

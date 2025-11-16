@@ -2,6 +2,7 @@ let TOGGLE_PERCENTILE;
 let HTML = "";
 let TEAM = "";
 let PAGE = "";
+let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";

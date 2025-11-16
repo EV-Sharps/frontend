@@ -74,6 +74,12 @@ boostCustom.addEventListener("input", () => {
 	changeFilter();
 });
 
+const debouncedChangeFilter = debounce(changeFilter, 400);
+document.getElementById("min-odds").value = MIN;
+document.getElementById("min-odds").addEventListener("input", debouncedChangeFilter);
+document.getElementById("max-odds").value = MAX;
+document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
+
 document.querySelector("#devig-select").value = DEVIG || "";
 document.querySelector("#devig-select").addEventListener("change", (event) => {
 	if (event.target.value == "custom") {
@@ -141,6 +147,8 @@ function changeFilter() {
 	let book = document.getElementById("book-select").value;
 	let prop = document.getElementById("prop-select").value;
 	let ou = document.getElementById("ou-select").value;
+	let minOdds = document.getElementById("min-odds").value;
+  let maxOdds = document.getElementById("max-odds").value;
 	let excluded = getExcludedBooks();
 	if (boost === "custom") {
 		boost = boostCustom.value;
@@ -151,6 +159,8 @@ function changeFilter() {
 	BOOK = book;
 	GAME = game;
 	OU = ou;
+	MIN = minOdds;
+	MAX = maxOdds;
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);
 	params.set("boost", boost);
@@ -159,6 +169,8 @@ function changeFilter() {
 	params.set("book", book);
 	params.set("prop", prop);
 	params.set("ou", ou);
+	params.set("min", MIN);
+	params.set("max", MAX);
 
 	if (!RES) {
 		return;
@@ -264,6 +276,12 @@ function changeFilter() {
 	if (OU != "ou") {
 		filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
 		data = data.filter(r => r.under == (OU == "u") ? true : false);
+	}
+	if (minOdds) {
+		filters.push({field: "line", type: ">", value: parseInt(minOdds)})
+	}
+	if (maxOdds) {
+		filters.push({field: "line", type: "<", value: parseInt(maxOdds)})
 	}
 	if (filters.length > 0) {
 		TABLE.setFilter(filters);

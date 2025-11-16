@@ -1240,7 +1240,9 @@ button#logout:hover {
 	.dropdown select {
 		width: 100%;
 	}
-
+	#title {
+		align-items: center;
+	}
 	#title h1 {
 		font-size: 1.25rem;
 	}

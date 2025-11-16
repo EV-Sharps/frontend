@@ -2,7 +2,8 @@ let TOGGLE_PERCENTILE;
 let HTML = "";
 let TEAM = "";
 let PAGE = "";
-let MOBILE = window.innerWidth <= 600;
+const MOBILE_BREAKPOINT = 600;
+let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
 let API_BASE = "http://localhost:5000";
 let UPDATED = {};
@@ -1836,6 +1837,13 @@ const ecrFormatter = function(cell) {
 		return data.ecr.pos_rank;	
 	}
 	return data.pos_rank;
+}
+
+const plusFormatter = function(value) {
+	if (value > 0 && !String(value).includes("+")) {
+		return `+${value}`;
+	}
+	return value;
 }
 
 const diffFormatter = function(cell) {

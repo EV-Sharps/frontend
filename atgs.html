@@ -24,9 +24,190 @@
 		#table {
 			width: 100%;
 		}
+		#view-toggle-container {
+			font-size: 0.8rem;
+			position: absolute;
+			top: 0.75rem;
+			right: 1rem;
+			display: none;
+		}
+		#view-toggle {
+			background: #007bff;
+			color: #fff;
+			border: 1px solid #666;
+			border-radius: 6px;
+			padding: 8px 15px;
+			cursor: pointer;
+			font-size: 0.9em;
+			transition: background-color 0.2s;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+		#card-container {
+			display: grid;
+			gap: 10px;
+			padding: 10px;
+			grid-template-columns: 1fr; 
+			width: 100%;
+			box-sizing: border-box;
+			display: none;
+		}
+
+		/* Card Styling */
+		.data-card {
+			border-radius: 8px;
+			overflow: hidden;
+			transition: transform 0.1s ease;
+			background-color: #1e1e1e;
+			border: 1px solid #333;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+		}
+
+		.data-card:active {
+			transform: scale(0.99);
+		}
+		
+		.card-header {
+			display: flex;
+			flex-direction: column;
+			padding: 0;
+			font-weight: normal;
+			border-bottom: 1px solid #333;
+			cursor: pointer;
+			min-height: auto;
+		}
+
+		.card-row {
+			width: 100%;
+			padding: 6px 10px;
+			box-sizing: border-box;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		}
+
+		.player-prop-row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-weight: bold;
+			background-color: #2a2a2a;
+		}
+		.player-content-stack {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 1.1em;
+		}
+		.prop-content-stack {
+			font-size: 1.0em;
+			white-space: nowrap;
+		}
+
+		/* 2. EV and Best Book Row (Middle Focus Row) */
+		.ev-book-row {
+			display: flex;
+			justify-content: space-between; 
+			align-items: center;
+			padding: 10px;
+		}
+
+		/* EV Styling */
+		.ev-section {
+			display: flex;
+			align-items: baseline;
+			font-weight: bold;
+		}
+		.ev-value {
+			font-size: 1.3em; /* Make the EV pop! */
+			font-weight: bold;
+			margin-right: 5px;
+		}
+
+		/* Best Book Odds & Logo Styling */
+		.best-book-section {
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+		.book-img-large {
+			height: 24px; 
+			width: auto;
+		}
+		.evbook-odds-large {
+			font-size: 1.2em;
+			font-weight: bold;
+		}
+
+		/* 3. All Books Row (Bottom Visible Row) */
+		.all-books-row {
+			display: flex;
+			overflow-x: scroll; /* Enable horizontal scrolling */
+			padding: 8px 10px;
+			background-color: #121212;
+			border-bottom: none; /* Last row, no separator needed */
+		}
+		.all-books-row::-webkit-scrollbar {
+			height: 4px; /* Make scrollbar tiny */
+		}
+		.all-books-row::-webkit-scrollbar-thumb {
+			background: #444;
+			border-radius: 2px;
+		}
+
+		.book-odd-item {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 0 10px;
+			flex-shrink: 0; /* Important: prevents items from shrinking */
+		}
+
+		.book-logo-small {
+			height: 18px;
+		}
+		.book-odd-value {
+			font-size: 0.8em;
+			font-weight: normal;
+			margin-top: 2px;
+		}
+		.book-odd-item.is-best-book {
+			/* Highlight the best odds in this row, maybe a bold white */
+			border-bottom: 2px solid #64b5f6; 
+		}
+		.book-odd-value.is-best-book {
+			font-weight: bold;
+			color: #e0e0e0;
+		}
+		
+		/* Collapsed Body (Stats Row) */
+		.card-body-collapsed {
+			display: none; 
+			padding: 8px 10px;
+			font-size: 0.9em;
+			background-color: #252525;
+			border-top: 1px solid #333;
+		}
+
+		.card-body-collapsed.visible {
+			display: flex; 
+			justify-content: space-around;
+			font-weight: bold;
+		}
 		@media (max-width: 1750px) {
 			#table {
 				width: 100%;
+			}
+		}
+		@media (max-width: 600px) {
+			#table-container {
+				justify-content: normal;
+				overflow: scroll;
+			}
+			#card-container {
+				
+			}
+			#view-toggle-container {
+				display: flex;
 			}
 		}
 	</style>
@@ -47,12 +228,24 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 				<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
-			      <!-- Icon -->
-			      <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-			        <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
-			      </svg>
-			      <span class="help-label">Help</span>
-			    </button>
+				  <!-- Icon -->
+				  <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+					<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
+				  </svg>
+				  <span class="help-label">Help</span>
+				</button>
+			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -84,7 +277,7 @@
 				</div>
 				<div class="chkdd" id="exclude-dd">
 					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-					  Exclude <span class="count" aria-hidden="true"></span>
+					  Exclude
 					</button>
 					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
 					  <label><input type="checkbox" value="fd"> FD</label>
@@ -105,8 +298,8 @@
 						<button type="button" data-act="none">None</button>
 					  </div>
 					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
+						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+					  </div>
 					  <div>
 						<span id="exclude-status"></span>
 					  </div>
@@ -215,6 +408,7 @@
 			<div id="table-container">
 				<div id="table">
 				</div>
+				<div id="card-container"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
@@ -406,55 +600,7 @@
 		let PROP = URLParams.get("prop") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
-
-		// Exclude
-		const dd = document.getElementById('exclude-dd');
-		const excludeBtn = dd.querySelector('.chkdd-btn');
-		let menu = dd.querySelector('.chkdd-menu');
-		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
-		const countEl = dd.querySelector('.count');
-
-		function getExcludedBooks() {
-		  return boxes.filter(b => b.checked).map(b => b.value);
-		}
-		excludeBtn.addEventListener("click", (e) => {
-			//const open = dd.classList.toggle("open");
-			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
-			e.stopPropagation();
-			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-			open ? closeMenu() : openMenu();
-		});
-		document.addEventListener('click', (e) => {
-			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
-		});
-		boxes.forEach(b => b.addEventListener('change', () => {
-		  changeFilter();
-		}));
-
-		menu.addEventListener('click', (e) => {
-		  const act = e.target?.dataset?.act;
-		  if (!act) return;
-		  const state = act === 'all';
-		  boxes.forEach(b => b.checked = state);
-		  changeFilter();
-		});
-
-		function openMenu() {
-		  const r = excludeBtn.getBoundingClientRect();
-		  menu.style.position = 'fixed';
-		  menu.style.top = `${r.bottom + 6}px`;
-		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-		  menu.style.right = 'auto';
-		  document.body.appendChild(menu);       // move out of the scroller
-		  menu.style.display = 'block';
-		  excludeBtn.setAttribute('aria-expanded','true');
-		}
-
-		function closeMenu() {
-		  menu.style.display = 'none';
-		  dd.appendChild(menu);                  // put it back (optional)
-		  excludeBtn.setAttribute('aria-expanded','false');
-		}
+		let CURRENT_VIEW = "table";
 		
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
@@ -464,209 +610,6 @@
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
-		});
-
-		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
-			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
-				if (checkbox.checked) {
-					TABLE.getColumn(field)?.show();
-				} else {
-					TABLE.getColumn(field)?.hide();
-				}
-			});
-		});
-
-		function changeFilter() {
-			let devigBook = document.getElementById("devig-select").value;
-			let boost = document.getElementById("boost-select").value;
-			let game = document.getElementById("game-select").value;
-			let book = document.getElementById("book-select").value;
-			let prop = document.getElementById("prop-select").value;
-			let ou = document.getElementById("ou-select").value;
-			let excluded = getExcludedBooks();
-			if (boost === "custom") {
-				boost = boostCustom.value;
-			}
-			if (devigBook == "custom") {
-				devigBook = DEVIG;
-			}
-			BOOK = book;
-			GAME = game;
-			OU = ou;
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-			params.set("boost", boost);
-			params.set("devig", devigBook);
-			params.set("game", game);
-			params.set("book", book);
-			params.set("prop", prop);
-			params.set("ou", ou);
-
-			if (!RES) {
-				return;
-			}
-
-			RES.data.forEach(row => {
-				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds, row.under);
-				const isOnlyCombo = devigBook && devigBook.startsWith("only+");
-				const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
-				if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
-					row["ev"] = undefined;
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				const ex = excluded;
-				ex.push("pn"); ex.push("circa");
-				if (devigBook) {
-					ex.push(devigBook);
-				}
-				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				if (!isFinite(highest.value)) {
-					row["ev"] = undefined;
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				let ou = avg.avgAmerican.toString();
-				if (row.under) {
-					// If under, swap priority
-					if (devigBook.includes("+")) {
-						// Fallback to averageSharps for unders if combining books
-						ou = averageCustomSharps(bookOdds, devigBook, row.under);
-					} else if (devigBook) {
-						// Use the book's under odds if available
-						const val = bookOdds[devigBook];
-						ou = val;
-						if (val && String(val).includes("/")) {
-							let [o,u] = String(val).split("/");
-							ou = `${u}/${o}`;
-						}
-						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-					} else {
-						ou = buildOU(bookOdds, row.under);
-					}
-				} else {
-					// Normal over-first logic
-					if (devigBook.includes("+")) {
-						ou = averageCustomSharps(bookOdds, devigBook);
-					} else if (devigBook) {
-						ou = bookOdds[devigBook];
-					}
-				}
-				if (!ou) {
-					row["ev"] = undefined;
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-
-				let d = devig(ou, highest.value, boost, row.under, VIG);
-				if (!d) {
-					row["ev"] = undefined;
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				row["book"] = highest.book;
-				row["line"] = highest.value;
-				row["ev"] = d.ev;
-				row["fairVal"] = d.fairVal;
-				row["implied"] = d.implied;
-				row["kelly"] = d.kelly;
-			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			const filters = [
-				//{field: "ev", type: "!=", value: undefined}
-			];
-			TABLE.clearFilter();
-			if (game) {
-				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
-			}
-			if (prop) {
-				filters.push({field:"prop", type:"=", value: prop});
-			}
-			if (OU != "ou") {
-				filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
-			}
-			if (filters.length > 0) {
-				TABLE.setFilter(filters);
-			}
-			TABLE.replaceData(RES.data);
-
-			if (VIG == "0") {
-				TABLE.hideColumn("ev");
-				TABLE.showColumn("outlier");
-				TABLE.setSort([{column: "outlier", dir: "desc"}]);
-			} else {
-				if (TABLE.getSorters().length == 0) {
-					TABLE.setSort([{column: "ev", dir: "desc"}]);
-				}
-			}
-		}
-
-		const boostSel = document.getElementById('boost-select');
-		const boostCustom = document.getElementById('boost-custom');
-
-		boostSel.value = BOOST || 0;
-		if (BOOST == "custom") {
-			boostCustom.style.display = "";
-		}
-		boostSel.addEventListener("change", (event) => {
-			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-			changeFilter();
-		});
-
-		boostCustom.addEventListener("input", () => {
-			changeFilter();
-		});
-
-		document.querySelector("#devig-select").value = DEVIG || "";
-		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			if (event.target.value == "custom") {
-				openCustomDevig();
-			} else {
-				changeFilter();
-			}
-		});
-
-		document.querySelector("#ou-select").value = OU;
-		document.querySelector("#ou-select").addEventListener("change", (event) => {
-			changeFilter();
-		});
-
-		document.querySelector("#prop-select").value = PROP || "";
-		document.querySelector("#prop-select").addEventListener("change", (event) => {
-			PROP = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("prop", PROP);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			changeFilter();
-		});
-
-		document.querySelector("#game-select").value = GAME || "";
-		document.querySelector("#game-select").addEventListener("change", (event) => {
-			GAME = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("game", GAME);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.clearFilter();
-			changeFilter();
-		});
-
-		document.querySelector("#book-select").value = BOOK || "";
-		document.querySelector("#book-select").addEventListener("change", (event) => {
-			BOOK = event.target.value;
-			changeFilter();
 		});
 
 		handleSession();
@@ -785,16 +728,16 @@
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						mutator: function(value, rowData) {
-						    const s = computeOutlierFromBookOdds(rowData);
-						    rowData.outlierBook = s.book;
-						    rowData.outlierPct  = s.pct;
-						    //return s.deviation;
-						    return s.pct;
+							const s = computeOutlierFromBookOdds(rowData);
+							rowData.outlierBook = s.book;
+							rowData.outlierPct  = s.pct;
+							//return s.deviation;
+							return s.pct;
 						  },
 						  formatter: function(cell) {
-						    const row = cell.getRow().getData();
-						    const dev = cell.getValue();
-						    return `${row.outlierPct.toFixed(1)}%`;
+							const row = cell.getRow().getData();
+							const dev = cell.getValue();
+							return `${row.outlierPct.toFixed(1)}%`;
 						},
 						responsive: 0,
 						visible: false
@@ -947,7 +890,9 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
-				rowClick(row);
+				if (!MOBILE) {
+					rowClick(row);
+				}
 			});
 
 			TABLE.on("dataLoaded", function(data) {
@@ -1055,6 +1000,193 @@
 			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR", "hitRateCareer"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
+
+		function plays() {
+			const out = [];
+			TABLE.getRows("active").forEach(row => {
+				const data = row.getData();
+				if (data.ev >= 0) {
+					out.push([data.player, data.book, data.line])
+				}
+			});
+			console.log(out);
+		}
+
+		function plusMinusCardFormatter(cell) {
+			let value = cell.getValue();
+			let colorClass = "negative";
+			if (value >= 0) {
+				colorClass = "positive";
+				value = `+${value}`;
+			}
+			return `<span class="${colorClass}">${value}</span>`;
+		}
+
+		function evCardFormatter(cell) {
+			let value = cell.getValue();
+			let colorClass = "negative";
+			if (value >= 0) {
+				colorClass = "positive";
+				value = `+${value}`;
+			}
+			return `<span class="ev-value ${colorClass}">${value}%</span><span style="">EV</span>`;
+		}
+
+		function bookContent(cell) {
+			const value = cell.getValue();
+			return `<span></span>`;
+		}
+
+		let PREVIOUS_DATA = [];
+
+		function createNewCard(rowData, uniqueId) {
+			const card = document.createElement('div');
+			card.className = 'data-card';
+			card.dataset.uniqueId = uniqueId;
+
+			const header = document.createElement('div');
+			header.className = 'card-header';
+			card.appendChild(header);
+
+			const collapsedBody = document.createElement('div');
+			collapsedBody.className = 'card-body-collapsed';
+			card.appendChild(collapsedBody);
+			
+			// Add click handler to toggle the collapsed body
+			header.addEventListener('click', () => {
+				collapsedBody.classList.toggle('visible');
+			});
+
+			// Run the update logic to populate the content
+			updateExistingCard(card, rowData);
+
+			return card;
+		}
+
+		function renderAllBooks(bookOdds, bestBook) {
+			const orderedKeys = [
+				'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365', 
+				'cz', 'fn', 'hr', 'bv', 'kambi', 'bol'
+			];
+
+			let html = '';
+			
+			if (!bookOdds || typeof bookOdds !== 'object') {
+				return '';
+			}
+
+			for (const bookKey of orderedKeys) {
+				const odds = bookOdds[bookKey];
+				// Only render if the odds are available (not null, undefined, or empty string)
+				if (odds !== null && odds !== undefined && odds !== "") {
+					const isBest = bookKey === bestBook ? 'is-best-book' : '';
+					html += `
+						<div class="book-odd-item ${isBest}">
+							<img class="book-logo-small" src='logos/${bookKey}.png' alt='${bookKey}' title='${bookKey}' />
+							<span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>
+						</div>
+					`;
+				}
+			}
+			
+			return html;
+		}
+
+		function updateExistingCard(card, rowData) {
+			const header = card.querySelector('.card-header');
+			const collapsedBody = card.querySelector('.card-body-collapsed');
+
+			const book = rowData.book;
+			const evCell = { getValue: () => rowData.ev };
+			const pre = rowData.ouIdx == 1 ? "u" : "o";
+
+			const evContent = evCardFormatter(evCell);
+			const playerRowContent = `
+				<div class="player-content-stack">
+					${getTeamImg(SPORT, rowData.team)}
+					<span class="player-name">${title(rowData.player)}</span>
+				</div>
+				<div class="prop-content-stack">
+					<span class="prop-line">${pre}${rowData.handicap}</span>
+					<span class="prop-type">${rowData.prop.toUpperCase()}</span>
+				</div>
+			`;
+			
+			const evBookRowContent = `
+				<div class="ev-section">${evContent}</div>
+				<div class="best-book-section">
+					<img class="book-img-large" src='logos/${book}.png' alt='${book}' title='${book}' />
+					<span class='evbook-odds-large'>${plusFormatter(rowData.line)}</span>
+				</div>
+			`;
+
+			const allBooksHtml = renderAllBooks(rowData.bookOdds, book);
+
+			header.innerHTML = `
+				<div class="card-row player-prop-row">${playerRowContent}</div>
+				<div class="card-row ev-book-row">${evBookRowContent}</div>
+				<div class="card-row all-books-row">${allBooksHtml}</div>
+			`;
+			
+			collapsedBody.innerHTML = `
+				<div style="color:${getTDsOppRankColor(rowData.oppRank)}">Opp Rank: ${addSuffix(rowData.oppRank)}</div>
+				<div style="color:${getTDsOppRankColor(rowData.dvpRank)}">DvP Rank: ${addSuffix(rowData.dvpRank)}</div>
+			`;
+			
+			const previousRow = PREVIOUS_DATA.find(d => `${d.player}-${d.prop}-${d.line}` === card.dataset.uniqueId);
+			if (previousRow && previousRow.ev !== rowData.ev) {
+				card.style.transition = 'none';
+				card.style.backgroundColor = 'rgba(100, 181, 246, 0.3)'; // Light flash color
+				setTimeout(() => {
+					card.style.transition = 'background-color 1s ease-out, transform 0.1s ease';
+					card.style.backgroundColor = ''; // Revert to CSS defined color
+				}, 50);
+			}
+		}
+
+		function renderCards(data) {
+			data = data.filter(r => r.ev != "" && r.ev != null).sort((a,b) => {
+				return parseFloat(b.ev) - parseFloat(a.ev);
+			});
+
+			const container = document.getElementById("card-container");
+
+			const existingCards = {};
+			container.querySelectorAll('.data-card').forEach(card => {
+				const uniqueId = card.dataset.uniqueId;
+				existingCards[uniqueId] = card;
+			});
+
+			const newContainerContent = document.createDocumentFragment();
+			const newUniqueIds = new Set();
+
+			data.forEach(rowData => {
+				const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`; 
+				newUniqueIds.add(uniqueId);
+				
+				const existingCard = existingCards[uniqueId];
+				
+				if (existingCard) {
+					updateExistingCard(existingCard, rowData);
+					newContainerContent.appendChild(existingCard);
+					delete existingCards[uniqueId]; // Mark as processed
+				} else {
+					const newCard = createNewCard(rowData, uniqueId);
+					newContainerContent.appendChild(newCard);
+				}
+			});
+
+			for (const id in existingCards) {
+				existingCards[id].remove();
+			}
+
+			// Clear any previous content
+			container.innerHTML = '';
+			container.appendChild(newContainerContent);
+
+			PREVIOUS_DATA = data;
+		}
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
 </body>
 </html>

@@ -2094,7 +2094,7 @@ function computeOutlierFromBookOdds(rowData) {
 		Object.entries(bookOdds)
 			.filter(([book]) => book !== DEVIG && !excluded.includes(book))
 			.forEach(([book, val]) => {
-				if (rowData.under && !val.includes("/")) {
+				if (!val || (rowData.under && !val.includes("/"))) {
 					return;
 				}
 				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);

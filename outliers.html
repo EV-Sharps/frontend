@@ -95,8 +95,8 @@
 						<button type="button" data-act="none">None</button>
 					  </div>
 					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
+						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+					  </div>
 					  <div>
 						<span id="exclude-status"></span>
 					  </div>
@@ -481,7 +481,7 @@
 			let prop = document.getElementById("prop-select").value;
 			let ou = document.getElementById("ou-select").value;
 			let minOdds = document.getElementById("min-odds").value;
-  			let maxOdds = document.getElementById("max-odds").value;
+			let maxOdds = document.getElementById("max-odds").value;
 			let excluded = getExcludedBooks();
 			if (boost === "custom") {
 				boost = boostCustom.value;
@@ -492,6 +492,7 @@
 			BOOK = book;
 			GAME = game;
 			OU = ou;
+			DEVIG = devigBook;
 			let url = new URL(window.location.href);
 			const params = new URLSearchParams(window.location.search);
 			params.set("boost", boost);
@@ -611,7 +612,13 @@
 				TABLE.hideColumn("ev");
 				TABLE.showColumn("outlier");
 				TABLE.showColumn("outlierLow");
-				TABLE.setSort([{column: "outlierLow", dir: "desc"}]);
+				if (devigBook) {
+					TABLE.setSort([
+						{column: "outlier", dir: "desc"}
+					]);
+				} else {
+					TABLE.setSort([{column: "outlierLow", dir: "desc"}]);
+				}
 			} else {
 				if (TABLE.getSorters().length == 0) {
 					TABLE.setSort([{column: "ev", dir: "desc"}]);
@@ -782,21 +789,20 @@
 						responsive: 0
 					},
 					{
-						title: "Δ vs Avg",
+						title: "Δ vs Devig",
 						field: "outlier",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						mutator: function(value, rowData) {
-						    const s = computeOutlierFromBookOdds(rowData);
-						    rowData.outlierBook = s.book;
-						    rowData.outlierPct  = s.pct;
-						    //return s.deviation;
-						    return s.pct;
+							const s = computeOutlierFromBookOdds(rowData);
+							rowData.outlierBook = s.book;
+							rowData.outlierPct  = s.pct;
+							return s.pct;
 						  },
 						  formatter: function(cell) {
-						    const row = cell.getRow().getData();
-						    const dev = cell.getValue();
-						    return `${row.outlierPct.toFixed(1)}%`;
+							const row = cell.getRow().getData();
+							const dev = cell.getValue();
+							return `${row.outlierPct.toFixed(1)}%`;
 						},
 						responsive: 0,
 						visible: false
@@ -807,16 +813,16 @@
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						mutator: function(value, rowData) {
-						    const s = computeOutlierFromBookOddsLow(rowData);
-						    rowData.outlierBookLow = s.book;
-						    rowData.outlierPctLow  = s.pct;
-						    //return s.deviation;
-						    return s.pct;
-						  },
-						  formatter: function(cell) {
-						    const row = cell.getRow().getData();
-						    const dev = cell.getValue();
-						    return `${row.outlierPctLow.toFixed(1)}%`;
+							const s = computeOutlierFromBookOddsLow(rowData);
+							rowData.outlierBookLow = s.book;
+							rowData.outlierPctLow  = s.pct;
+							//return s.deviation;
+							return s.pct;
+						},
+						formatter: function(cell) {
+							const row = cell.getRow().getData();
+							const dev = cell.getValue();
+							return `${row.outlierPctLow.toFixed(1)}%`;
 						},
 						responsive: 0,
 						visible: false
@@ -826,6 +832,23 @@
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{
+						title: "Devig Book", field: "devig",
+						vertAlign:"bottom", width: MOBILE ? 75 : 75,
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+						    let devigBook = data.bookOdds[DEVIG];
+						    if (!devigBook) {
+						    	devigBook = data.fairVal;
+						    	return `${devigBook}`;
+						    }
+						    return `
+						    	${devigBook}
+						    	<img class='book-img' src='logos/${DEVIG}.png' alt='${DEVIG}' title='${DEVIG}' />
+						    `;
+						},
 						responsive: 0
 					},
 					{

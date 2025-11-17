@@ -12,15 +12,18 @@
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<script type="text/javascript" src="flatpickr.min.js"></script>
-	<script type="text/javascript" src="test.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
-		#table {
-			width: auto;
+		#tables {
+			display: flex;
+			flex-wrap: wrap;
+		}
+		#table-container {
+			justify-content: normal;
 		}
 		@media (max-width: 1950px) {
 			#table {
@@ -205,13 +208,7 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div style="margin: 1rem 0;">
-					<div>
-						<span id="wins"></span>W-<span id="losses"></span>L
-						Profit: (<span id="profit"></span>u, <span id="kelly"></span>u QK)
-					</div>
-				</div>
-				<div id="table">
+				<div id="tables">
 				</div>
 				<div id="watermark">
 					<img src="logos/logo.png">
@@ -364,6 +361,7 @@
 		</footer>
 	</main>
 	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript" src="test.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "analysis";
@@ -667,39 +665,94 @@
 		});
 
 		function fetchData() {
-			for (book of ["fd", "dk", "circa", "pn", "bol", "espn"]) {
-				
-				RES = data;
+			RES = TEST;
+			for (prop of ["pts", "reb", "ast", "3ptm", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"]) {
+				const barColors = [];
+				const profits = [];
+				const bookNames = [];
+				const annotations = [];
+				const traces = [];
+				for (book of ["fd", "dk", "circa", "pn", "bol", "espn"]) {
+					const key = `${prop}-vs-${book}`;
+					if (!TEST[key]) {
+						continue;
+					}
 
-				const props = new Set(RES.map(r => r.prop));
-				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option>`;
-				props.forEach(prop => {
-					const option = document.createElement("option");
-					option.value = prop;
-					option.textContent = prop.toUpperCase();
-					propSel.appendChild(option);
-				});
-				propSel.value = PROP;
+					const wins = TEST[key]["2025-11-16"]["wins"];
+					const losses = TEST[key]["2025-11-16"]["losses"];
+					const profit = TEST[key]["2025-11-16"]["profit"];
 
-				if (data.length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
+					const bookName = `vs ${book.toUpperCase()}`;
+					bookNames.push(bookName);
+					profits.push(profit);
+
+					if (profit > 0) {
+						barColors.push('rgba(65, 131, 215, 0.8)');
+					} else if (profit < 0) {
+						barColors.push('rgba(242, 120, 75, 0.8)');
+					} else {
+						barColors.push('rgba(149, 165, 166, 0.8)')
+					}
+
+					annotations.push({
+						x: bookName,
+						y: profit,
+						text: `${wins}W-${losses}L (${profit.toFixed(1)}u)`,
+						showarrow: false,
+						yshift: 50
+					});
 				}
 
-				setTimeout(function() {
-					updateTimes();
-					changeFilter();
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (IMP != undefined) {
-						implied();
-					}
-				}, 500);
+				const trace = {
+					x: bookNames,
+				    y: profits,
+				    type: 'bar',
+				    marker: {
+				        color: barColors
+				    },
+				    hoverinfo: 'x+y',
+				    name: 'Profit/Loss'
+				};
+
+				
+				const layout = {
+					plot_bgcolor: '#181a1b',
+					paper_bgcolor: "#181a1b",
+				    title: {
+				    	text: `Profit/Loss for ${prop.toUpperCase()} Devigged to Book`
+				    },
+				    xaxis: {
+				        title: {
+				        	text: 'Bookmaker'
+				        },
+				        automargin: true // Adjust margins for long labels
+				    },
+				    yaxis: {
+				        title: {
+				        	text: 'Profit (Units)'
+				        },
+				        zeroline: true,
+				        zerolinecolor: '#969696',
+				        zerolinewidth: 1
+				    },
+				    font: {
+				        color: "#e8e6e3"
+				    },
+				    margin: {
+				        l: 50, r: 50, b: 100, t: 80, pad: 4
+				    },
+				    annotations: annotations,
+				    showlegend: false
+				};
+
+				const div = document.createElement("div");
+				div.id = prop;
+				document.getElementById("tables").appendChild(div);
+				Plotly.newPlot(prop, [trace], layout, {displayModeBar: false});
 			}
 		}
+
+		fetchData()
 	</script>
 </body>
 </html>

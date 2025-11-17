@@ -2063,44 +2063,86 @@ function fetchUpdated(repo="props", render=true) {
 }
 
 function computeOutlierFromBookOdds(rowData) {
-  const bookOdds = rowData.bookOdds;
-  if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
+	const bookOdds = rowData.bookOdds;
+	if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
 
-  // pick Over (index 0) or Under (index 1) leg from "a/b" strings
-  const legIndex = rowData.under ? 1 : 0;
+	// pick Over (index 0) or Under (index 1) leg from "a/b" strings
+	const legIndex = rowData.under ? 1 : 0;
 
-  // Parse selected leg and convert to implied probability
-  const entries = Object.entries(bookOdds)
-    .map(([book, val]) => {
-      const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-      const num = Number(token);
-      const p = americanToImplied(num);
-      return [book, num, p]; // [book, american, impliedProb]
-    })
-    .filter(([, num, p]) => !isNaN(num) && p != null);
+	// Parse selected leg and convert to implied probability
+	let entries, avgP;
 
-  if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
+	if (DEVIG) {
+		const devigVal = bookOdds[DEVIG];
+		if (!devigVal || (rowData.under && !String(devigVal).includes("/") && !rowData.prop.includes("vs-"))) {
+			return { book: null, value: null, deviation: 0, pct: 0 };
+		}
 
-  // Average implied probability across books
-  const avgP = entries.reduce((a, [, , p]) => a + p, 0) / entries.length;
+		const devigToken = String(devigVal).includes('/') ? String(devigVal).split('/')[legIndex] : String(devigVal);
+		const devigNum = Number(devigToken);
+		const p_devig = americanToImplied(devigNum);
 
-  // For OVER rows (rowData.under === false): best price = lowest implied probability (highest payout)
-  // For UNDER rows (rowData.under === true): same principle—best price for that side = lowest implied probability
-  // => pick the minimum p, then deviation is (avgP - p) in probability points.
-  let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
+		if (isNaN(devigNum) || p_devig == null) {
+			return { book: null, value: null, deviation: 0, pct: 0 };
+		}
 
-  entries.forEach(([book, american, p]) => {
-    const dev = avgP - p;                 // positive if this book is better (lower p) than average
-    const pct = avgP !== 0 ? dev / avgP : 0;
-    if (dev > best.deviation) {
-      best = { book, value: american, deviation: dev, pct };
-    }
-  });
+		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
-  // If nothing is above-average, return neutral
-  if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+		let excluded = getExcludedBooks();
+		excluded.push("pn"); excluded.push("circa");
 
-  return best; // deviation is in probability points; pct is relative to avg implied prob
+		Object.entries(bookOdds)
+			.filter(([book]) => book !== DEVIG && !excluded.includes(book))
+			.forEach(([book, val]) => {
+				if (rowData.under && !val.includes("/")) {
+					return;
+				}
+				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+                const num = Number(token);
+                const p = americanToImplied(num);
+
+                if (!isNaN(num) && p != null) {
+                    const dev = p_devig - p;
+                    const pct = p_devig !== 0 ? dev / p_devig : 0; 
+
+                    if (dev > best.deviation) {
+                        best = { book, value: num, deviation: dev, pct };
+                    }
+                }
+			});
+
+		if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+
+		return best;
+	} else {
+		entries = Object.entries(bookOdds)
+		.map(([book, val]) => {
+		  const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+		  const num = Number(token);
+		  const p = americanToImplied(num);
+		  return [book, num, p]; // [book, american, impliedProb]
+		})
+		.filter(([, num, p]) => !isNaN(num) && p != null);
+
+		if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
+
+		// Average implied probability across books
+		avgP = entries.reduce((a, [, , p]) => a + p, 0) / entries.length;
+
+		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
+
+		entries.forEach(([book, american, p]) => {
+			const dev = avgP - p;
+			const pct = avgP !== 0 ? dev / avgP : 0;
+			if (dev > best.deviation) {
+			  best = { book, value: american, deviation: dev, pct };
+			}
+		});
+
+		if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+
+		return best;
+	}
 }
 
 function computeOutlierFromBookOddsLow(rowData) {
@@ -2112,16 +2154,16 @@ function computeOutlierFromBookOddsLow(rowData) {
 
   // Parse selected leg and convert to implied probability
   const entries = Object.entries(bookOdds)
-    .map(([book, val]) => {
+	.map(([book, val]) => {
 		if (rowData.under && !String(val).includes("/")) {
 			return null;
 		}
 		const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
 		const american = Number(token);
 		const p = americanToImplied(american);
-    	return isNaN(american) || p == null ? null : [book, american, p];
-    })
-    .filter(Boolean);
+		return isNaN(american) || p == null ? null : [book, american, p];
+	})
+	.filter(Boolean);
 
   if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0, refBook: null, refValue: null };
 
@@ -2134,14 +2176,14 @@ function computeOutlierFromBookOddsLow(rowData) {
   // Return the book with the *largest* gap (worst vs. best).
   let worst = { book: null, value: null, deviation: -Infinity, pct: 0, refBook, refValue: refAmerican };
   if (rowData.player == "mason marchment" && rowData.handicap == "0.5" && rowData.prop == "atgs" && rowData.under) {
-    	console.log(entries);
-    }
+		console.log(entries);
+	}
   for (const [book, american, p] of entries) {
-    const gap = p - refP;                    // ≥ 0; 0 for the best itself
-    const pct = refP !== 0 ? gap / refP : 0; // relative to best's implied prob
-    if (gap > worst.deviation) {
-      worst = { book, value: american, deviation: gap, pct, refBook, refValue: refAmerican };
-    }
+	const gap = p - refP;                    // ≥ 0; 0 for the best itself
+	const pct = refP !== 0 ? gap / refP : 0; // relative to best's implied prob
+	if (gap > worst.deviation) {
+	  worst = { book, value: american, deviation: gap, pct, refBook, refValue: refAmerican };
+	}
   }
 
   return worst; // 'deviation' is the gap vs. the best (lowest implied prob)
@@ -2408,16 +2450,16 @@ function decimalToAmerican(d) {
 function getAverageImplied(books, under) {
 	const skipUnder = new Set(["kambi", "espn"]);
   const impliedProbs = Object.entries(books)
-  	.filter(([book, val]) => {
-  		if (val === null || val === "") return false;
-  		const hasSlash = String(val).includes("/");
+	.filter(([book, val]) => {
+		if (val === null || val === "") return false;
+		const hasSlash = String(val).includes("/");
 
-  		if (under) {
-  			if (skipUnder.has(book)) return false;
-  			if (!hasSlash) return false;
-  		}
-  		return true;
-  	})
+		if (under) {
+			if (skipUnder.has(book)) return false;
+			if (!hasSlash) return false;
+		}
+		return true;
+	})
 	.map(([b, val]) => {
 	  // Handle "over/under" format like "200/-250"
 	  const parts = String(val).split("/");
@@ -2631,7 +2673,7 @@ function startHelpTour() {
 function debounce(fn, delay = 400) {
   let timeout;
   return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), delay);
+	clearTimeout(timeout);
+	timeout = setTimeout(() => fn(...args), delay);
   };
 }

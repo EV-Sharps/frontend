@@ -1926,7 +1926,7 @@ function showHideUserTable(loaded) {
 		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
 		if (!loaded) {
-			DEVIG = CURR_USER.metadata[`${PAGE}-devig`] || "";
+			DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 			const devigSel = document.getElementById("devig-select");
 			for (customDevig of (CURR_USER.metadata["custom_devigs"] || [])) {
 				devigSel.innerHTML += `<option value='${customDevig}'>${customDevig}</option>`;

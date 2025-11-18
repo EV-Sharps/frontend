@@ -1089,7 +1089,7 @@
 				}
 			};
 			const layout = {
-				title: "Game Logs",
+				height: 120,
 				autosize: true,
 				showlegend: false,
 				responsive: true,
@@ -1139,13 +1139,10 @@
 				]
 			};
 
-			/*
-			Plotly.newPlot(`card-chart-${uniqueId}`, [tableData], layout, { responsive: true});
+			//Plotly.newPlot(`card-chart-${uniqueId}`, [tableData], layout, { responsive: true});
 			setTimeout(() => {
-				Plotly.Plots.resize(`card-chart-${uniqueId}`)
+				//Plotly.Plots.resize(`card-chart-${uniqueId}`)
 			}, 100);
-			*/
-		    
 		}
 
 		function createNewCard(rowData, uniqueId) {
@@ -1222,9 +1219,14 @@
 			const pre = rowData.ouIdx == 1 ? "u" : "o";
 
 			const evContent = evCardFormatter(evCell);
+			const avgMin = SPORT == "nhl" ? rowData.avgTOI : rowData.avgMin;
 			const playerRowContent = `
 				<div class="player-content-stack">
 					${getTeamImg(SPORT, rowData.team)}
+					<div style="font-size: 0.7rem;display:flex;flex-direction:column;text-align:center;">
+						<span class="pos">${rowData.pos}</span>
+						<span class="bats">${avgMin}</span>
+					</div>
 					<span class="player-name">${title(rowData.player)}</span>
 				</div>
 				<div class="prop-content-stack">
@@ -1250,12 +1252,16 @@
 			`;
 			
 			collapsedBody.innerHTML = `
-				<div>
-					<div style="color:${getTDsOppRankColor(rowData.oppRank)}">Opp Rank: ${addSuffix(rowData.oppRank)}</div>
-					<div style="color:${getTDsOppRankColor(rowData.dvpRank)}">DvP Rank: ${addSuffix(rowData.dvpRank)}</div>
+				<div style="display:flex;justify-content: space-evenly;">
+					<div>${rowData.fairVal} Fair Val</div>
+					<div>${rowData.implied}% Implied</div>
 				</div>
-				<div>
-				
+				<div style="display:flex;justify-content: center; gap: 10px;">
+					<div style="color:${getTDsOppRankColor(rowData.oppRank)}">${addSuffix(rowData.oppRank)} Opp Rank</div>
+					<div style="color:${getTDsOppRankColor(rowData.dvpRank)}">${addSuffix(rowData.dvpRank)} DvP Rank</div>
+				</div>
+				<div id="card-chart-${uniqueId}" style="height: 120px">
+
 				</div>
 			`;
 

@@ -672,15 +672,16 @@
 				const bookNames = [];
 				const annotations = [];
 				const traces = [];
-				for (book of ["fd", "dk", "circa", "pn", "bol", "espn"]) {
+				for (book of ["fd", "dk", "circa", "pn", "bol", "espn", "mgm"]) {
 					const key = `${prop}-vs-${book}`;
 					if (!TEST[key]) {
 						continue;
 					}
 
-					const wins = TEST[key]["2025-11-16"]["wins"];
-					const losses = TEST[key]["2025-11-16"]["losses"];
-					const profit = TEST[key]["2025-11-16"]["profit"];
+					const d = "all";
+					const wins = TEST[key][d]["wins"];
+					const losses = TEST[key][d]["losses"];
+					const profit = TEST[key][d]["profit"];
 
 					const bookName = `vs ${book.toUpperCase()}`;
 					bookNames.push(bookName);

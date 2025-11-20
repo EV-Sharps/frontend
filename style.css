@@ -63,6 +63,178 @@ body::before {
 	height: 100%;
 	overflow: hidden;
 }
+#view-toggle-container {
+	font-size: 0.8rem;
+	position: absolute;
+	top: 0.75rem;
+	right: 1rem;
+	display: none;
+}
+#view-toggle {
+	background: #007bff;
+	color: #fff;
+	border: 1px solid #666;
+	border-radius: 6px;
+	padding: 8px 15px;
+	cursor: pointer;
+	font-size: 0.9em;
+	transition: background-color 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+#card-container {
+	display: grid;
+	gap: 10px;
+	padding: 10px;
+	grid-template-columns: 1fr; 
+	width: 100%;
+	box-sizing: border-box;
+	display: none;
+}
+
+/* Card Styling */
+.data-card {
+	border-radius: 8px;
+	overflow: hidden;
+	transition: transform 0.1s ease;
+	background-color: #1e1e1e;
+	border: 1px solid #333;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.data-card:active {
+	transform: scale(0.99);
+}
+
+.card-header {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	font-weight: normal;
+	border-bottom: 1px solid #333;
+	cursor: pointer;
+	min-height: auto;
+}
+
+.card-row {
+	width: 100%;
+	padding: 6px 10px;
+	box-sizing: border-box;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.player-prop-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-weight: bold;
+	background-color: #2a2a2a;
+}
+.player-content-stack {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 1.1em;
+}
+.prop-content-stack {
+	font-size: 1.0em;
+	white-space: nowrap;
+}
+
+/* 2. EV and Best Book Row (Middle Focus Row) */
+.ev-book-row {
+	display: flex;
+	justify-content: space-between; 
+	align-items: center;
+	padding: 10px;
+}
+
+/* EV Styling */
+.ev-section {
+	display: flex;
+	align-items: baseline;
+	font-weight: bold;
+}
+.ev-value {
+	font-size: 1.3em; /* Make the EV pop! */
+	font-weight: bold;
+	margin-right: 5px;
+}
+
+/* Best Book Odds & Logo Styling */
+.best-book-section {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+.book-img-large {
+	height: 24px; 
+	width: auto;
+}
+.evbook-odds-large {
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+/* 3. All Books Row (Bottom Visible Row) */
+.all-books-row {
+	display: flex;
+	overflow-x: scroll;
+	-webkit-overflow-scrolling: touch;
+	padding: 8px 10px;
+	background-color: #121212;
+	border-bottom: none;
+	touch-action: pan-x;
+}
+.all-books-row::-webkit-scrollbar {
+	height: 4px; /* Make scrollbar tiny */
+}
+.all-books-row::-webkit-scrollbar-thumb {
+	background: #444;
+	border-radius: 2px;
+}
+
+.book-odd-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 0 10px;
+	flex-shrink: 0; /* Important: prevents items from shrinking */
+}
+
+.book-logo-small {
+	height: 18px;
+}
+.book-odd-value {
+	font-size: 0.8em;
+	font-weight: normal;
+	margin-top: 2px;
+}
+.book-odd-item.is-best-book {
+	/* Highlight the best odds in this row, maybe a bold white */
+	border-bottom: 2px solid #64b5f6; 
+}
+.book-odd-value.is-best-book {
+	font-weight: bold;
+	color: #e0e0e0;
+}
+
+/* Collapsed Body (Stats Row) */
+.card-body-collapsed {
+	display: none; 
+	padding: 8px 10px;
+	font-size: 0.9em;
+	background-color: #252525;
+	border-top: 1px solid #333;
+}
+
+.card-body-collapsed.visible {
+	display: flex; 
+	flex-direction: column;
+	justify-content: space-around;
+	font-weight: bold;
+}
 .help-btn {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 12px;

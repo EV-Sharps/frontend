@@ -156,6 +156,7 @@ function changeFilter() {
 	if (devigBook == "custom") {
 		devigBook = DEVIG;
 	}
+	DEVIG = devigBook;
 	BOOK = book;
 	GAME = game;
 	OU = ou;

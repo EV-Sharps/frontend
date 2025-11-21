@@ -1927,10 +1927,17 @@ function showHideUserTable(loaded) {
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
 		if (!loaded) {
 			DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
+			const customOption = document.getElementById("custom-devig-option");
 			const devigSel = document.getElementById("devig-select");
+			const fragment = document.createDocumentFragment();
+
 			for (customDevig of (CURR_USER.metadata["custom_devigs"] || [])) {
-				devigSel.innerHTML += `<option value='${customDevig}'>${customDevig}</option>`;
+				const newOption = document.createElement("option");
+				newOption.value = customDevig;
+				newOption.textContent = customDevig;
+				fragment.appendChild(newOption);
 			}
+			devigSel.insertBefore(fragment, customOption);
 			devigSel.value = DEVIG;
 		}
 	}
@@ -2175,9 +2182,6 @@ function computeOutlierFromBookOddsLow(rowData) {
   // Deviation from the lowest book: gap = p - refP (in probability points)
   // Return the book with the *largest* gap (worst vs. best).
   let worst = { book: null, value: null, deviation: -Infinity, pct: 0, refBook, refValue: refAmerican };
-  if (rowData.player == "mason marchment" && rowData.handicap == "0.5" && rowData.prop == "atgs" && rowData.under) {
-		console.log(entries);
-	}
   for (const [book, american, p] of entries) {
 	const gap = p - refP;                    // ≥ 0; 0 for the best itself
 	const pct = refP !== 0 ? gap / refP : 0; // relative to best's implied prob

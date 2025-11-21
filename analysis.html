@@ -990,10 +990,23 @@
 					box.checked = true;
 				}
 			}
+			const devigSel = document.getElementById("devig-select");
 			const data = {};
 			let old_devig = DEVIG;
-			for (d of ["fd", "dk", "circa", "pn", "bol", "espn", "mgm"]) {
-			//for (d of ["fd"]) {
+			for (d of ["fd", "dk", "circa", "pn", "bol", "espn", "mgm", "only+fd+dk"]) {
+				let optionExists = false;
+				for (i = 0; i < devigSel.options.length; ++i) {
+					if (devigSel.options[i].value == d) {
+						optionExists = true;
+						break;
+					}
+				}
+				if (!optionExists) {
+					const newOption = document.createElement("option");
+					newOption.value = d;
+					newOption.text = d;
+					devigSel.appendChild(newOption);
+				}
 				document.getElementById("devig-select").value = d;
 
 				let props = ["", "pts", "reb", "ast", "3ptm", "stl", "blk", "dd", "td", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];

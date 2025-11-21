@@ -84,6 +84,8 @@ document.querySelector("#devig-select").value = DEVIG || "";
 document.querySelector("#devig-select").addEventListener("change", (event) => {
 	if (event.target.value == "custom") {
 		openCustomDevig();
+	} else if (event.target.value == "delete") {
+		openDeleteCustomDevigOverlay();
 	} else {
 		changeFilter();
 	}
@@ -140,6 +142,90 @@ document.querySelector("#view-select").addEventListener("change", (event) => {
 	changeView(event.target.value);
 });
 
+function getCustomDevigs() {
+	const meta = CURR_USER?.metadata || {};
+	return meta["custom_devigs"] || [];
+}
+
+function populateCustomDevigSelect() {
+    const devigSelect = document.getElementById("custom-devig-select");
+    const customDevigs = getCustomDevigs();
+    
+    // Clear old options (you need to decide which options are always present)
+    // For this example, we'll assume the select is only for custom devigs + 'delete'
+    // You'd need to re-add your default options (Market Avg, vs FD, etc.) here.
+    
+    // Example: Reloading based on what's in local storage
+    // *** NOTE: You need to adapt this to your existing code ***
+    // For now, we'll skip the actual repopulation of the main devig select.
+}
+
+
+// Function to open the deletion modal
+function openDeleteCustomDevigOverlay() {
+    // 1. Show the overlay
+    document.getElementById("delete-custom-devig-overlay").style.display = "flex";
+    
+    // 2. Render the list of deletable items
+    renderCustomDevigList();
+    
+    // 3. Reset the main custom select to the default option after triggering
+    document.getElementById("custom-devig-select").value = "";
+}
+
+// Function to close the deletion modal
+function closeDeleteCustomDevigOverlay() {
+    document.getElementById("delete-custom-devig-overlay").style.display = "none";
+    document.getElementById("devig-select").value = DEVIG;
+}
+
+// Function to render the list inside the deletion modal
+function renderCustomDevigList() {
+    const container = document.getElementById("custom-devig-list-container");
+    const devigs = getCustomDevigs();
+
+    if (devigs.length === 0) {
+        container.innerHTML = "<p>No custom devig settings found.</p>";
+        return;
+    }
+
+    container.innerHTML = devigs.map(key => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
+            <span style="font-weight: bold;">${key}</span>
+            <button 
+                onclick="deleteDevig('${key}')" 
+                style="background-color: #f44336; color: white; border: none; 
+                       padding: 4px 8px; cursor: pointer; border-radius: 4px; 
+                       font-weight: bold; line-height: 1;">
+                &times;
+            </button>
+        </div>
+    `).join('');
+}
+
+// Function to handle the actual deletion of a custom devig
+async function deleteDevig(keyToDelete) {
+	const meta = CURR_USER?.metadata || {};
+	const customDevigs = meta["custom_devigs"] || [];
+
+	const newDevigs = customDevigs.filter(devig => devig != keyToDelete);
+	if (newDevigs.length == customDevigs.length) return;
+
+	if (!CURR_USER) return
+	if (!CURR_USER.metadata) CURR_USER.metadata = {};
+
+	CURR_USER.metadata["custom_devigs"] = newDevigs;
+
+	const { error: updateError } = await SB.from('profiles')
+		.update({
+			metadata: CURR_USER.metadata
+		})
+		.eq('id', CURR_SESSION.user.id);
+
+	document.querySelector(`option[value='${keyToDelete}']`)?.remove();
+	renderCustomDevigList();
+}
+
 function changeFilter() {
 	let devigBook = document.getElementById("devig-select").value;
 	let boost = document.getElementById("boost-select").value;
@@ -153,7 +239,7 @@ function changeFilter() {
 	if (boost === "custom") {
 		boost = boostCustom.value;
 	}
-	if (devigBook == "custom") {
+	if (["custom", "delete"].includes(devigBook)) {
 		devigBook = DEVIG;
 	}
 	DEVIG = devigBook;

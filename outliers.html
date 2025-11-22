@@ -422,7 +422,7 @@
 		let MARK = URLParams.get("mark");
 		let GAME = URLParams.get("game") || "";
 		let TODAY = getToday();
-		let SPORT = "nhl";
+		let SPORT = URLParams.get("sport") || "nba";
 		let PLAYER = URLParams.get("player");
 		let DEVIG = URLParams.get("devig");
 		let BOOST = URLParams.get("boost");
@@ -470,7 +470,7 @@
 		}
 
 		function fetchProps() {
-			fetch(API_BASE+`/api/outliers`, {
+			fetch(API_BASE+`/api/outliers?sport=${SPORT}`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

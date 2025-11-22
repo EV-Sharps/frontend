@@ -67,7 +67,9 @@ let PAGE_DROPDOWN = `
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	<option value="ncaab">🏀 CBB (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
-	<option value="outliers">Outliers</option>
+	<option value="outliers?sport=nba">🏀 Outliers</option>
+	<option value="outliers?sport=nfl">🏈 Outliers</option>
+	<option value="outliers?sport=nhl">🏒 Outliers</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -92,6 +94,8 @@ setTimeout(() => {
 		select.value = SPORT;
 	} else if (PAGE == "dingers" && KAMBI) {
 		select.value = "kambi";
+	} else if (PAGE == "outliers") {
+		select.value = `outliers?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
@@ -122,6 +126,9 @@ function changePage(page) {
 	} else if (page.includes("bets")) { 
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./bets${HTML}?sport=${sport}`;
+	} else if (page.includes("outliers")) {
+		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
+		window.location.href = `./outliers${HTML}?sport=${sport}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}

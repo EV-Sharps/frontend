@@ -1980,6 +1980,9 @@ function openOverlay() {
 	}
 
 	document.querySelector("#custom-devig-select").value = metadata[`${PAGE}-devig`] || "";
+	if (typeof renderWeightSettings === "function") {
+		renderWeightSettings();
+	}
 }
 
 function openCustomDevig() {
@@ -2112,17 +2115,17 @@ function computeOutlierFromBookOdds(rowData) {
 					return;
 				}
 				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-                const num = Number(token);
-                const p = americanToImplied(num);
+				const num = Number(token);
+				const p = americanToImplied(num);
 
-                if (!isNaN(num) && p != null) {
-                    const dev = p_devig - p;
-                    const pct = p_devig !== 0 ? dev / p_devig : 0; 
+				if (!isNaN(num) && p != null) {
+					const dev = p_devig - p;
+					const pct = p_devig !== 0 ? dev / p_devig : 0; 
 
-                    if (dev > best.deviation) {
-                        best = { book, value: num, deviation: dev, pct };
-                    }
-                }
+					if (dev > best.deviation) {
+						best = { book, value: num, deviation: dev, pct };
+					}
+				}
 			});
 
 		if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
@@ -2265,7 +2268,7 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 	// EV via each method, take the minimum (your approach)
 	const methods = [x, mult, add];
 
-	let fairVal  = Math.min(...methods);
+	let fairVal = Math.min(...methods);
 	const dec = 1 / fairVal;
 	if (dec >= 2) {
 		fairVal = Math.round((dec - 1) * 100);
@@ -2459,34 +2462,34 @@ function decimalToAmerican(d) {
 }
 
 function getAverageImplied(books, under) {
-	const skipUnder = new Set(["kambi", "espn"]);
-  const impliedProbs = Object.entries(books)
-	.filter(([book, val]) => {
-		if (val === null || val === "") return false;
-		const hasSlash = String(val).includes("/");
+	const skipUnder = new Set(["kambi"]);
+  	const impliedProbs = Object.entries(books)
+		.filter(([book, val]) => {
+			if (val === null || val === "") return false;
+			const hasSlash = String(val).includes("/");
 
-		if (under) {
-			if (skipUnder.has(book)) return false;
-			if (!hasSlash) return false;
-		}
-		return true;
-	})
-	.map(([b, val]) => {
-	  // Handle "over/under" format like "200/-250"
-	  const parts = String(val).split("/");
-	  const odd = under ? parts[parts.length - 1] : parts[0];
-	  const num = parseInt(odd, 10);
-	  if (Number.isNaN(num)) return null;
-	  return americanToImplied(odd);
-	})
-	.filter((p) => p != null);
+			if (under) {
+				if (skipUnder.has(book)) return false;
+				if (!hasSlash) return false;
+			}
+			return true;
+		})
+		.map(([b, val]) => {
+		  // Handle "over/under" format like "200/-250"
+		  const parts = String(val).split("/");
+		  const odd = under ? parts[parts.length - 1] : parts[0];
+		  const num = parseInt(odd, 10);
+		  if (Number.isNaN(num)) return null;
+		  return americanToImplied(odd);
+		})
+		.filter((p) => p != null);
 
-  if (impliedProbs.length === 0) return null;
+	if (impliedProbs.length === 0) return null;
 
-  const avgProb = impliedProbs.reduce((a, b) => a + b, 0) / impliedProbs.length;
-  const avgAmerican = impliedToAmerican(avgProb);
+	const avgProb = impliedProbs.reduce((a, b) => a + b, 0) / impliedProbs.length;
+	const avgAmerican = impliedToAmerican(avgProb);
 
-  return { avgProb, avgAmerican };
+	return { avgProb, avgAmerican };
 }
 
 function buildOU(books, isUnder) {
@@ -2504,6 +2507,36 @@ function buildOU(books, isUnder) {
 		ou = ou.split("/")[0];
 	}
 	return ou;
+}
+
+const BOOK_WEIGHTS = {
+	"pn": 0.30,
+	"circa": 0.50,
+	"fd": 0.10,
+	"dk": 0.10
+}
+
+function averageDevigs(bookOdds, highest, isUnder) {
+	let totalWeight = 0;
+	let fairVals = 0;
+	const devigBooks = DEVIG.split("+");
+	Object.entries(bookOdds)
+		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
+		.forEach(([book, val]) => {
+			const fv = getFairValue(val);
+			const weight = BOOK_WEIGHTS[book] || 0;
+
+			if (weight) {
+				totalWeight += weight;
+				fairVals += weight * fv;
+				//fairVals += fv;
+			}
+		});
+
+	if (totalWeight == 0) return NaN;
+
+	return fairVals / totalWeight;
+	//return fairVals / totBooks;
 }
 
 function applyProfitBoost(american, boost) {

@@ -1,3 +1,64 @@
+let ALL_CARD_DATA = [];
+let CURRENT_CARD_INDEX = 0;
+const CARDS_PER_LOAD = 20;
+// Flag to prevent loading multiple batches simultaneously
+let IS_LOADING_CARDS = false;
+
+function loadMoreCards() {
+    if (IS_LOADING_CARDS) return;
+    
+    const container = document.getElementById("card-container");
+    const data = ALL_CARD_DATA;
+    
+    // Determine the slice for the next batch
+    const endIndex = Math.min(CURRENT_CARD_INDEX + CARDS_PER_LOAD, data.length);
+    
+    if (CURRENT_CARD_INDEX >= data.length) {
+        // All data has been loaded
+        return;
+    }
+    
+    IS_LOADING_CARDS = true;
+    
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = CURRENT_CARD_INDEX; i < endIndex; i++) {
+        const rowData = data[i];
+        const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`;
+        
+        // Use the existing function to create the card
+        const newCard = createNewCard(rowData, uniqueId);
+        fragment.appendChild(newCard);
+    }
+    
+    container.appendChild(fragment);
+    
+    // Update the index and loading flag
+    CURRENT_CARD_INDEX = endIndex;
+    IS_LOADING_CARDS = false;
+    
+    // Edge case: If the loaded cards don't fill the container (e.g., on a large monitor), 
+    // immediately load the next batch until the container is full or all data is loaded.
+    if (container.scrollHeight <= container.clientHeight && CURRENT_CARD_INDEX < data.length) {
+        loadMoreCards();
+    }
+}
+
+/**
+ * Handles scrolling of the card container to trigger loading of more cards.
+ */
+function handleScroll() {
+    const container = document.getElementById("card-container");
+    
+    // Check if the user has scrolled within 200px of the bottom
+    const scrollTriggerDistance = 200;
+    const scrolledNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - scrollTriggerDistance;
+
+    if (scrolledNearBottom && !IS_LOADING_CARDS && CURRENT_CARD_INDEX < ALL_CARD_DATA.length) {
+        loadMoreCards();
+    }
+}
+
 function plusMinusCardFormatter(cell) {
 	let value = cell.getValue();
 	let colorClass = "negative";
@@ -193,7 +254,7 @@ function updateExistingCard(card, rowData) {
 
 	const evContent = evCardFormatter(evCell);
 	const sport = rowData.sport || SPORT || "nba";
-	const avgMin = sport == "nhl" ? rowData.avgTOI : rowData.avgMin;
+	const avgMin = PAGE == "nhl" ? rowData.avgTOI : rowData.avgMin;
 	const playerRowContent = `
 		<div class="player-content-stack">
 			${getTeamImg(sport, rowData.team)}
@@ -260,39 +321,16 @@ function renderCards(data) {
 	});
 
 	const container = document.getElementById("card-container");
+	container.innerHTML = "";
 
-	const existingCards = {};
-	container.querySelectorAll('.data-card').forEach(card => {
-		const uniqueId = card.dataset.uniqueId;
-		existingCards[uniqueId] = card;
-	});
-
-	const newContainerContent = document.createDocumentFragment();
-	const newUniqueIds = new Set();
-
-	data.forEach(rowData => {
-		const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`; 
-		newUniqueIds.add(uniqueId);
-		
-		const existingCard = existingCards[uniqueId];
-		
-		if (existingCard) {
-			updateExistingCard(existingCard, rowData);
-			newContainerContent.appendChild(existingCard);
-			delete existingCards[uniqueId]; // Mark as processed
-		} else {
-			const newCard = createNewCard(rowData, uniqueId);
-			newContainerContent.appendChild(newCard);
-		}
-	});
-
-	for (const id in existingCards) {
-		existingCards[id].remove();
-	}
-
-	// Clear any previous content
-	container.innerHTML = '';
-	container.appendChild(newContainerContent);
-
+	ALL_CARD_DATA = data;
 	PREVIOUS_DATA = data;
+	CURRENT_CARD_INDEX = 0;
+
+	loadMoreCards();
+
+	if (!container.dataset.scrollListenerAdded) {
+        container.addEventListener('scroll', handleScroll);
+        container.dataset.scrollListenerAdded = 'true';
+    }
 }

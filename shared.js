@@ -2233,7 +2233,6 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 		} else {
 			under = Math.trunc((100 - 100 * u) / u);
 		}
-		//console.log(isUnder, over, under);
 		if (isUnder) {
 			let tmpUnder = under;
 			under = over;
@@ -2519,24 +2518,23 @@ const BOOK_WEIGHTS = {
 function averageDevigs(bookOdds, highest, isUnder) {
 	let totalWeight = 0;
 	let fairVals = 0;
-	const devigBooks = DEVIG.split("+");
+	const devigBooks = DEVIG.replace("only+", "").split("+");
+	let bookWeights = SESSION_WEIGHTS[`${PAGE}-${DEVIG || "mkt"}`] || getDefaultWeights(devigBooks);
 	Object.entries(bookOdds)
 		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			const fv = getFairValue(val);
-			const weight = BOOK_WEIGHTS[book] || 0;
+			const weight = bookWeights[book] || 0;
 
 			if (weight) {
 				totalWeight += weight;
 				fairVals += weight * fv;
-				//fairVals += fv;
 			}
 		});
 
 	if (totalWeight == 0) return NaN;
 
 	return fairVals / totalWeight;
-	//return fairVals / totBooks;
 }
 
 function applyProfitBoost(american, boost) {

@@ -5,10 +5,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>🏈 Touchdowns</title>
 
-	<!--
-	<script type="text/javascript" src="test.js"></script>
-	-->
-
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<script type="text/javascript" src="flatpickr.min.js"></script>
@@ -242,8 +238,10 @@
 					<div id="book-weight-inputs"></div>
 				</div>
 
-				<button id="save-weights" onclick="saveWeights()">Save</button>
-				<button id="close-weights" onclick="closeWeights()">Close</button>
+				<div style="display: flex">
+					<button id="save-weights" onclick="saveWeights()">Save</button>
+					<button id="close-weights" onclick="closeWeights()">Close</button>
+				</div>
 			</div>
 		</div>
 		<div id="overlay">
@@ -721,59 +719,63 @@
 			}
 		}
 
+		function updateDropdowns(data) {
+			RES = data;
+			UPDATED[PAGE] = data["updated"];
+
+			const gameSel = document.getElementById("game-select");
+			gameSel.innerHTML = `<option value="" selected>All</option>`;
+			data.games.forEach(game => {
+				const option = document.createElement("option");
+				option.value = game.replace(" @ ", "-");
+				option.textContent = game.toUpperCase();
+				gameSel.appendChild(option);
+			});
+			gameSel.value = GAME;
+
+			const propSel = document.getElementById("prop-select");
+			propSel.innerHTML = `<option value="" selected>All</option><option value="attd">ATTD</option>
+					<option value="2+td">2+ TD</option>
+					<option value="ftd">FTD</option>
+					<option value="ltd">LTD</option>`;
+			data.props.forEach(prop => {
+				if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
+					return;
+				}
+				const option = document.createElement("option");
+				option.value = prop;
+				option.textContent = prop.toUpperCase();
+				propSel.appendChild(option);
+			});
+			propSel.value = PROP;
+
+			if (data["data"].length == 0) {
+				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+				TABLE.redraw(true);
+				return;
+			}
+
+			//renderTable(data.data);
+
+			setTimeout(function() {
+				updateTimes();
+				changeFilter();
+				if (PRETTY != undefined) {
+					pretty_();
+				}
+				if (IMP != undefined) {
+					implied();
+				}
+			}, 500);
+		}
+
 		function fetchTuddys() {
 			fetch(API_BASE+`/api/tds`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(response => response.json()).then(data => {
-				RES = data;
-				UPDATED[PAGE] = data["updated"];
-
-				const gameSel = document.getElementById("game-select");
-				gameSel.innerHTML = `<option value="" selected>All</option>`;
-				data.games.forEach(game => {
-					const option = document.createElement("option");
-					option.value = game.replace(" @ ", "-");
-					option.textContent = game.toUpperCase();
-					gameSel.appendChild(option);
-				});
-				gameSel.value = GAME;
-
-				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option><option value="attd">ATTD</option>
-						<option value="2+td">2+ TD</option>
-						<option value="ftd">FTD</option>
-						<option value="ltd">LTD</option>`;
-				data.props.forEach(prop => {
-					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
-						return;
-					}
-					const option = document.createElement("option");
-					option.value = prop;
-					option.textContent = prop.toUpperCase();
-					propSel.appendChild(option);
-				});
-				propSel.value = PROP;
-
-				if (data["data"].length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
-				}
-
-				//renderTable(data.data);
-
-				setTimeout(function() {
-					updateTimes();
-					changeFilter();
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (IMP != undefined) {
-						implied();
-					}
-				}, 500);
+				updateDropdowns(data);
 			}).catch(err => console.log(err));
 		}
 
@@ -993,5 +995,6 @@
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 	</script>
+	<script type="text/javascript" src="test.js"></script>
 </body>
 </html>

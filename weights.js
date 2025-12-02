@@ -6,14 +6,20 @@ const SESSION_WEIGHTS = {
 		circa: .5,
 		fd: .15,
 		dk: .15
+	},
+	"tds-only+pn+circa": {
+		pn: .5,
+		circa: .5
 	}
 }
 
-function getDefaultWeights() {
-	const books = ALL_WEIGHTABLE_BOOKS.slice(0, 4); // Use first 4 books
-	const defaultWeight = Math.floor(100 / books.length);
+function getDefaultWeights(books) {
+	if (!books) {
+		books = ALL_WEIGHTABLE_BOOKS.slice(0, 4);
+	}
+	const defaultWeight = parseFloat((1 / books.length).toFixed(2));
 	const weights = {};
-	let remainder = 100;
+	let remainder = 1;
 	
 	books.forEach(book => {
 		weights[book] = defaultWeight;
@@ -29,11 +35,14 @@ function getDefaultWeights() {
 function renderWeightSettings() {
 	const inputsDiv = document.getElementById('book-weight-inputs');
 
-	// Create a key based on the current page (e.g., "nba-devigs")
-	const currentDevigKey = `${PAGE}-${DEVIG || 'mkt'}`;
+	const devig = DEVIG || 'mkt';
+	const currentDevigKey = `${PAGE}-${devig}`;
+	const includedDevigs = devig.replace("only+", "").split("+");
 
-	// Get the current weights for this market, or the defaults if not set
-	const marketWeights = SESSION_WEIGHTS[currentDevigKey] || {};
+	// distribute weights evenly if nothing set
+	let marketWeights = SESSION_WEIGHTS[currentDevigKey] || getDefaultWeights(includedDevigs);
+
+	SESSION_WEIGHTS[currentDevigKey] = marketWeights;
 	
 	if (!inputsDiv) return;
 
@@ -52,12 +61,16 @@ function renderWeightSettings() {
 	renderWeightPieChart();
 	
 	bookWeightArray.forEach(({ book, weight: weightValue }) => {
+		if (devig != "mkt" && !includedDevigs.includes(book)) {
+			return;
+		}
 		const inputHtml = `
-			<div class="weight-item" style="display:flex; justify-content:space-between; flex-direction: column; margin-bottom: 12px; color: #fff;">
+			<div class="weight-item" style="margin-bottom: 12px; color: #fff;">
 				<label for="weight-${book}" style="justify-content: space-between;width: 120px;">
 					<span>${book.toUpperCase()}:</span>
 					<span id="display-${book}" class="weight-display">${weightValue * 100}%</span>
 				</label>
+
 				<input 
 					type="range" 
 					id="weight-${book}" 

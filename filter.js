@@ -330,6 +330,9 @@ function changeFilter() {
 		}
 
 		let d = devig(ou, highest.value, boost, row.under, VIG);
+		if (row.player == "josh hart" && row.prop == "td") {
+			console.log(ou, highest.value, row.under, d);
+		}
 		if (!d) {
 			row["ev"] = "";
 			row["fairVal"] = "";

@@ -2134,10 +2134,13 @@ function computeOutlierFromBookOdds(rowData) {
 	} else {
 		entries = Object.entries(bookOdds)
 		.map(([book, val]) => {
-		  const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-		  const num = Number(token);
-		  const p = americanToImplied(num);
-		  return [book, num, p]; // [book, american, impliedProb]
+			if (!String(val).includes("/") && legIndex == 1) {
+				return [null, null, null];
+			}
+			const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+			const num = Number(token);
+			const p = americanToImplied(num);
+			return [book, num, p]; // [book, american, impliedProb]
 		})
 		.filter(([, num, p]) => !isNaN(num) && p != null);
 

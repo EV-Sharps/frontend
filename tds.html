@@ -225,6 +225,9 @@
 		<div id="weight-overlay">
 			<div id="weighting-container">
 				<h3 style="margin:0;">Book Weights</h3>
+				<div>
+					<button id="split-equal" onclick="splitEqual();">Split Equally</button>
+				</div>
 				<div style="display:flex;gap: 20px;">
 					<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
 						<div style="font-weight: bold;">
@@ -480,6 +483,17 @@
 			});
 		});
 
+		function updateWeightHeader() {
+			const weights = getUserWeights();
+
+			Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
+				hdr.textContent = "";
+			});
+			Object.entries(weights).forEach(([book, weight]) => {
+				document.getElementById(`${book}-weight-hdr`).textContent = `⚖️${weight * 100}%`;
+			});
+		}
+
 		function changeFilter() {
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
@@ -490,7 +504,7 @@
 			if (boost === "custom") {
 				boost = boostCustom.value;
 			}
-			if (devigBook == "custom") {
+			if (devigBook == "custom" || devigBook == "delete") {
 				devigBook = DEVIG;
 			}
 			BOOK = book;
@@ -565,9 +579,6 @@
 					row["fairVal"] = Math.round(-100 / (dec - 1));
 				}
 
-				if (row.player == "javonte williams" && !row.under && row.prop == "attd") {
-					console.log(avgDevig);
-				}
 				row["book"] = highest.book;
 				row["line"] = highest.value;
 				row["ev"] = ev.toFixed(1);
@@ -644,6 +655,7 @@
 			if (TABLE.getSorters().length == 0) {
 				TABLE.setSort([{column: "ev", dir: "desc"}]);
 			}
+			updateWeightHeader();
 		}
 
 		const boostSel = document.getElementById('boost-select');
@@ -714,8 +726,21 @@
 				if (!TABLE.getColumn(`bookOdds.${book}`)) {
 					continue;
 				}
+
+				let html = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' />`;
+
+				let ta = timeAgo(UPDATED[PAGE][book], short=true);
+				if (ta) {
+					html += `<br><span style='font-size:0.7rem;'>${ta}</span>`;
+				}
+				let w = SESSION_WEIGHTS[`${PAGE}-${DEVIG || "mkt"}`];
+				html += `<br><span id='${book}-weight-hdr' class='weight-hdrs' style='font-size:0.7rem;'>`;
+				if (w && w[book]) {
+					html += `⚖️ ${w[book] * 100}%`;
+				}
+				html += '</span>';
 				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
+				el.querySelector(".tabulator-col-title").innerHTML = html;
 			}
 		}
 

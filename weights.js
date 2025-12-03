@@ -32,6 +32,26 @@ function getDefaultWeights(books) {
 	return weights;
 }
 
+function splitEqual() {
+	const liveWeights = Object.entries(getLiveWeights());
+	const defaultWeight = parseFloat((100 / liveWeights.length).toFixed(2));
+
+	liveWeights.forEach(([book, weight]) => {
+		document.getElementById(`display-${book}`).textContent = `${defaultWeight}%`;
+		document.getElementById(`weight-${book}`).value = defaultWeight;
+	});
+	updateWeightTotal();
+}
+
+function getUserWeights() {
+	const devig = DEVIG || 'mkt';
+	const currentDevigKey = `${PAGE}-${devig}`;
+	const includedDevigs = devig.replace("only+", "").split("+");
+
+	let marketWeights = SESSION_WEIGHTS[currentDevigKey] || getDefaultWeights(includedDevigs);
+	return marketWeights;
+}
+
 function renderWeightSettings() {
 	const inputsDiv = document.getElementById('book-weight-inputs');
 
@@ -69,6 +89,8 @@ function renderWeightSettings() {
 				<label for="weight-${book}" style="justify-content: space-between;width: 120px;">
 					<span>${book.toUpperCase()}:</span>
 					<span id="display-${book}" class="weight-display">${weightValue * 100}%</span>
+
+					<button style="padding:1px 4px;" onclick="fillRemaining('${book}');">...</button>
 				</label>
 
 				<input 
@@ -99,25 +121,55 @@ function renderWeightSettings() {
 	});
 }
 
+function fillRemaining(book) {
+
+	const inputsDiv = document.getElementById('book-weight-inputs');
+
+	let total = 0;
+	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
+		const weight = parseFloat(input.value) || 0;
+		if (input.dataset.book != book) {
+			total += weight;
+		}
+	});
+
+	const newWeight = 100 - total;
+	document.getElementById(`display-${book}`).textContent = `${newWeight}%`;
+	document.getElementById(`weight-${book}`).value = newWeight;
+	updateWeightTotal();
+}
+
+function getLiveWeights() {
+	const inputsDiv = document.getElementById('book-weight-inputs');
+	const liveWeights = {};
+
+	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
+		const weight = parseFloat(input.value) || 0;
+		liveWeights[input.dataset.book] = weight / 100;
+	});
+
+	return liveWeights;
+}
+
 function updateWeightTotal() {
 	const inputsDiv = document.getElementById('book-weight-inputs');
 	let total = 0;
 	const liveWeights = {};
 
 	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
-		const weight = parseInt(input.value) || 0;
+		const weight = parseFloat(input.value) || 0;
 		total += weight;
 		liveWeights[input.dataset.book] = weight;
 	});
 
-	renderWeightPieChart()
+	renderWeightPieChart();
 	const totalEl = document.getElementById('weight-total');
 	const statusEl = document.getElementById('weight-status');
 	const saveBtn = document.getElementById('save-weights');
 	
-	totalEl.textContent = `${total}%`;
+	totalEl.textContent = `${Math.round(total)}%`;
 
-	if (total === 100) {
+	if (Math.round(total) === 100) {
 		statusEl.textContent = '✅';
 		totalEl.style.color = "#00e676";
 		saveBtn.disabled = false;
@@ -182,7 +234,13 @@ function openWeights() {
 }
 
 function saveWeights() {
+	const devig = DEVIG || 'mkt';
+	const currentDevigKey = `${PAGE}-${devig}`;
 
+	SESSION_WEIGHTS[currentDevigKey] = getLiveWeights();
+	updateHeaders();
+	changeFilter();
+	closeWeights();
 }
 
 function closeWeights() {

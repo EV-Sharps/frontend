@@ -2512,7 +2512,7 @@ function buildOU(books, isUnder) {
 	return ou;
 }
 
-function averageDevigs(bookOdds, highest, isUnder) {
+function averageDevigs(bookOdds, highest, isUnder, weights) {
 	let totalWeight = 0;
 	let fairVals = 0;
 	const devigBooks = DEVIG.replace("only+", "").split("+");
@@ -2520,7 +2520,7 @@ function averageDevigs(bookOdds, highest, isUnder) {
 		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			const fv = getFairValue(val);
-			const weight = WEIGHTS[book] || 0;
+			const weight = weights[book] || 0;
 
 			if (weight) {
 				totalWeight += weight;

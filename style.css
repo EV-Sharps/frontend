@@ -113,7 +113,13 @@ body::before {
 	grid-template-columns: 1fr 1fr;
 	gap: 15px 20px;
 }
-.weight-item {
+.weight-item input {
+	width: 30px;
+	width: 30px;
+  padding: 2px;
+  font-weight: bold;
+  text-align: left;
+  border-radius: 4px;
 }
 #view-toggle-container {
 	font-size: 0.8rem;
@@ -346,7 +352,7 @@ body::before {
 	gap: 1rem;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
-#overlay button, #save-weights, #close-weights, #split-equal {
+#overlay button, #save-weights, #close-weights, #clear-weights {
 	padding: 0.5rem 1rem;
 	border: none;
 	background: #007bff;

@@ -6,7 +6,9 @@ const SESSION_WEIGHTS = {
 		circa: 0.6
 	}
 }
+let TMP_WEIGHTS = {};
 WEIGHTS = getDefaultWeights((DEVIG || "").replace("only+", "").split("+"));
+let WEIGHT_LOADED = false;
 
 function getDefaultWeights(books) {
 	if (!books || books.includes("mkt") || books.includes("")) {
@@ -27,26 +29,31 @@ function getDefaultWeights(books) {
 	return weights;
 }
 
-function splitEqual() {
-	const liveWeights = Object.entries(WEIGHTS);
-	const defaultWeight = parseFloat((100 / liveWeights.length).toFixed(2));
-
-	liveWeights.forEach(([book, weight]) => {
-		document.getElementById(`display-${book}`).textContent = `${defaultWeight}%`;
-		document.getElementById(`weight-${book}`).value = defaultWeight;
-		WEIGHTS[book] = defaultWeight / 100;
-	});
-	updateWeightTotal();
-}
-
 function getUserWeights() {
 	const devig = DEVIG || 'mkt';
 	const currentDevigKey = `${PAGE}-${devig}`;
 	const includedDevigs = devig.replace("only+", "").split("+");
 
-	let weights = CURR_USER?.metadata?.weights?.[currentDevigKey] || {};
+	let weights = CURR_USER?.metadata?.weights || TMP_WEIGHTS;
 	let marketWeights = weights[currentDevigKey] || getDefaultWeights(includedDevigs);
 	return marketWeights || {};
+}
+
+function parseBook(book) {
+	let conv = {
+		PN: "Pinnacle",
+		B365: "Bet365",
+		BOL: "BetOnline",
+		BV: "Bovada",
+		CZ: "Caesars",
+		DK: "Draftkings",
+		FD: "Fanduel",
+		FN: "Fanatics",
+		HR: "Hardrock",
+		MGM: "BetMGM",
+		BR: "BetRivers"
+	}
+	return conv[book.toUpperCase()] || title(book);
 }
 
 function renderWeightSettings() {
@@ -63,67 +70,30 @@ function renderWeightSettings() {
 
 	inputsDiv.innerHTML = '';
 
-	const bookWeightArray = ALL_WEIGHTABLE_BOOKS.map(book => {
-		if (WEIGHTS[book] == undefined) return;
-		const weight = WEIGHTS[book] || 0;
-		return { book, weight };
-	});
-
-	bookWeightArray.sort((a,b) => {
-		if (b.weight != a.weight) return b.weight - a.weight;
-		return a.book.localeCompare(b.book);
-	})
-
 	renderWeightPieChart();
 	
-	bookWeightArray.forEach(({ book, weight: weightValue }) => {
-		if (devig != "mkt" && !includedDevigs.includes(book)) {
-			return;
-		}
-
+	ALL_WEIGHTABLE_BOOKS.forEach(book => {
 		const inputHtml = `
-			<div class="weight-item" style="margin-bottom: 12px; color: #fff;">
-				<label for="weight-${book}" style="">
-					<div style="display:flex;gap:4px;align-items:center;">
-						<img class='book-img' style="width:16px;height:16px;" src='logos/${book}.png' alt='${book}' title='${book}' />
-						<span>${book.toUpperCase()}:</span>
-						<span id="display-${book}" class="weight-display">${(weightValue * 100).toFixed(2)}%</span>
+			<div class="weight-item" style="margin-bottom: 10px; color: #fff;">
+				<div style="display:flex;gap:8px;align-items:end;">
+					<img class='book-img' style="width:32px;height:32px;" src='logos/${book}.png' alt='${book}' title='${book}' />
+					<div style="display:flex;flex-direction:column;">
+						<span style="font-size:0.7rem;">${parseBook(book)}</span>
+						<input 
+							type="text" 
+							id="weight-${book}" 
+							data-book="${book}" 
+							value="" 
+						>
 					</div>
-
-					<div style="display:flex;gap:4px;">
-						<button class="fill-button" style="padding:2px 6px;" onclick="fillRemaining('${book}');">Fill</button>
-						<button class="remove-weight" onclick="removeWeight('${book}');">X</button>
-					</div>
-				</label>
-
-				<input 
-					type="range" 
-					id="weight-${book}" 
-					data-book="${book}" 
-					value="${weightValue * 100}" 
-					min="0" 
-					max="100"
-					step="5" 
-					style="width: 100%; margin-top: 5px;"
-				>
+				</div>
 			</div>
 		`;
 		inputsDiv.insertAdjacentHTML('beforeend', inputHtml);
 	});
 
-	// Update the total and status display
-	updateWeightTotal();
-
-	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
-		// Handle slider movement (input event fires continuously)
-		input.addEventListener('input', (e) => {
-			// Update the adjacent percentage display in real-time
-			const book = e.target.dataset.book;
-			const val = e.target.value;
-			WEIGHTS[book] = parseFloat(val) / 100;
-			document.getElementById(`display-${book}`).textContent = `${val}%`;
-			updateWeightTotal();
-		});
+	inputsDiv.querySelectorAll('.weight-item input').forEach(input => {
+		input.addEventListener("input", debouncedWeightTotal);
 	});
 }
 
@@ -158,41 +128,34 @@ function getLiveWeights() {
 }
 
 function updateWeightTotal() {
-	const fills = Array.from(document.getElementsByClassName('fill-button'));
 	let total = 0;
-	Object.entries(WEIGHTS).forEach(([book, weight]) => {
-		total += weight * 100;
+	let weights = {};
+	let inputs = document.querySelectorAll('.weight-item input');
+	inputs.forEach(input => {
+		let weight = parseInt(input.value || 0);
+		weights[input.dataset.book] = weight;
+		total += weight;
 	});
 
-	renderWeightPieChart();
-	const totalEl = document.getElementById('weight-total');
-	const statusEl = document.getElementById('weight-status');
-	const saveBtn = document.getElementById('save-weights');
-	
-	totalEl.textContent = `${Math.round(total)}%`;
-
-	if (Math.round(total) === 100) {
-		statusEl.textContent = '✅';
-		totalEl.style.color = "#00e676";
-		saveBtn.disabled = false;
-		fills.forEach(el => el.disabled = true);
-	} else {
-		statusEl.textContent = `⚠️ Adjust!`;
-		statusEl.style.color = 'yellow';
-		totalEl.style.color = "yellow";
-		saveBtn.disabled = true;
-		if (total < 100) {
-			fills.forEach(el => el.disabled = false);
+	for (book in weights) {
+		if (!total) {
+			weights[book] = 1 / inputs.length;
+		} else {
+			weights[book] = weights[book] / total;
 		}
 	}
+	WEIGHTS = weights;
+
+	renderWeightPieChart();
 }
+
+const debouncedWeightTotal = debounce(updateWeightTotal, 400);
 
 function renderWeightPieChart() {
 	const labels = [];
 	const values = [];
 
 	Object.entries(WEIGHTS).forEach(([book, weight]) => {
-
 		if (weight > 0) {
 			labels.push(book.toUpperCase());
 			values.push(weight * 100);
@@ -231,16 +194,13 @@ function renderWeightPieChart() {
 	Plotly.newPlot('weight-pie-chart', data, layout, {displayModeBar: false});
 }
 
-function removeWeight(book) {
-	document.getElementById(`weight-${book}`).parentElement.remove();
-	delete WEIGHTS[book];
-	updateWeightTotal();
-}
-
 function openWeights() {
 	const weightDiv = document.getElementById("weight-overlay");
 	weightDiv.style.display = "flex";
-	renderWeightSettings();
+	if (!WEIGHT_LOADED) {
+		renderWeightSettings();
+	}
+	WEIGHT_LOADED = true;
 }
 
 async function saveWeights() {
@@ -255,10 +215,19 @@ async function saveWeights() {
 		const { error: updateError } = await SB.from('profiles')
 			.update({metadata: metadata})
 			.eq('id', CURR_SESSION.user.id);
+	} else {
+		TMP_WEIGHTS = metadata["weights"];
 	}
 	updateHeaders();
 	changeFilter();
 	closeWeights();
+}
+
+function clearWeights() {
+	Array.from(document.querySelectorAll(".weight-item input")).forEach(input => {
+		input.value = "";
+	});
+	updateWeightTotal();
 }
 
 function closeWeights() {

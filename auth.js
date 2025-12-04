@@ -397,7 +397,7 @@ async function handleSession() {
 				fetchPlays();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "tds" || PAGE == "live") {
+	} else if (PAGE == "tds" || PAGE == "tds2" || PAGE == "live") {
 		fetchTuddys();
 		initExcluded();
 		renderTable([]);

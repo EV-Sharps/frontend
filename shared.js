@@ -32,6 +32,7 @@ let PAGE_DROPDOWN = `
 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs</option>
+	<option value="tds2">🏈 TDs (New)</option>
 	<option value="live">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
@@ -281,7 +282,7 @@ const sportFormatter = function(cell) {
 
 const percentFormatter = function(cell, params, rendered) {
 	if (!cell.getValue()) {
-		if (["tds", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
+		if (["tds", "tds2", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
 			return "0%";
 		}
 		return "";
@@ -767,7 +768,7 @@ const oppFormatter = function(cell, params, rendered) {
 	let pitcher = "";
 	if (PAGE == "preview") {
 		pitcher = cell.getValue().toUpperCase();
-	} else if (PAGE == "tds" || PAGE == "nfl") {
+	} else if (PAGE == "tds" || PAGE == "tds2" || PAGE == "nfl") {
 		pitcher = data.opp.toUpperCase();
 	} else if (data.pitcher) {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
@@ -955,7 +956,7 @@ const rankingFormatter = function(cell, params, rendered) {
 			}
 			value = value[key]["rank"];
 			color = getTDsOppRankColor(value);
-		} else if (PAGE == "tds") {
+		} else if (PAGE == "tds" || PAGE == "tds2") {
 			if (value[params.key] === undefined || data.player.includes("d/st")) {
 				return "";
 			}

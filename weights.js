@@ -64,7 +64,7 @@ function renderWeightSettings() {
 	const includedDevigs = devig.replace("only+", "").split("+");
 
 	let marketWeights = getUserWeights();
-	SESSION_WEIGHTS[currentDevigKey] = marketWeights;
+	WEIGHTS = marketWeights;
 	
 	if (!inputsDiv) return;
 

@@ -83,7 +83,7 @@ function renderWeightSettings() {
 							type="text" 
 							id="weight-${book}" 
 							data-book="${book}" 
-							value="" 
+							value="${WEIGHTS[book] || ''}" 
 						>
 					</div>
 				</div>

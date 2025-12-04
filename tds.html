@@ -25,6 +25,18 @@
 				width: 100%;
 			}
 		}
+		@media (max-width: 600px) {
+			#weighting-body {
+				flex-direction: column;
+				overflow: scroll;
+			}
+			#weighting-container {
+				padding: 0.5rem;
+			}
+			#weight-pie-chart {
+				display: none;
+			}
+		}
 	</style>
 </head>
 
@@ -225,10 +237,16 @@
 		<div id="weight-overlay">
 			<div id="weighting-container">
 				<h3 style="margin:0;">Book Weights</h3>
-				<div>
-					<button id="split-equal" onclick="splitEqual();">Split Equally</button>
+				<div class="select-wrapper">
+					<select id="weight-select">
+						<option value="">Presets</option>
+						<option value="">Presets</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
-				<div style="display:flex;gap: 20px;">
+				<div id="weighting-body" style="display:flex;gap: 20px;">
 					<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
 						<div style="font-weight: bold;">
 							Total: <span id="weight-total" style="color:#00e676;">0%</span>
@@ -243,6 +261,7 @@
 
 				<div style="display: flex">
 					<button id="save-weights" onclick="saveWeights()">Save</button>
+					<button id="split-equal" onclick="splitEqual();">Split Equally</button>
 					<button id="close-weights" onclick="closeWeights()">Close</button>
 				</div>
 			</div>
@@ -388,7 +407,6 @@
 			</div>
 		</div>
 	</main>
-	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -484,13 +502,14 @@
 		});
 
 		function updateWeightHeader() {
-			const weights = getUserWeights();
-
 			Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
 				hdr.textContent = "";
 			});
-			Object.entries(weights).forEach(([book, weight]) => {
-				document.getElementById(`${book}-weight-hdr`).textContent = `⚖️${weight * 100}%`;
+			Object.entries(WEIGHTS).forEach(([book, weight]) => {
+				const el = document.getElementById(`${book}-weight-hdr`);
+				if (el) {
+					el.innerHTML = `⚖️<br>${(weight * 100).toFixed(1)}%`;
+				}
 			});
 		}
 
@@ -731,16 +750,17 @@
 
 				let ta = timeAgo(UPDATED[PAGE][book], short=true);
 				if (ta) {
-					html += `<br><span style='font-size:0.7rem;'>${ta}</span>`;
+					html += `<span class='time-hdrs' style='font-size:0.7rem;'>${ta.replace(" ago", "")}</span>`;
 				}
-				let w = SESSION_WEIGHTS[`${PAGE}-${DEVIG || "mkt"}`];
-				html += `<br><span id='${book}-weight-hdr' class='weight-hdrs' style='font-size:0.7rem;'>`;
-				if (w && w[book]) {
-					html += `⚖️ ${w[book] * 100}%`;
+				html += `<span id='${book}-weight-hdr' class='weight-hdrs' style='font-size:0.7rem;'>`;
+				if (WEIGHTS[book]) {
+					html += `⚖️<br>${Math.round(WEIGHTS[book] * 100)}%`;
 				}
 				html += '</span>';
 				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = html;
+				let title = el.querySelector(".tabulator-col-title");
+				title.style.height = "48px";
+				title.innerHTML = html;
 			}
 		}
 
@@ -1021,5 +1041,6 @@
 		}
 	</script>
 	<script type="text/javascript" src="test.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

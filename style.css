@@ -50,6 +50,16 @@ body::before {
 	flex-direction: column;
 	height: 100vh;
 }
+.time-hdrs {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+.weight-hdrs {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+}
 #table-container {
 	flex: 1 1 auto;
 	display: flex;
@@ -63,7 +73,11 @@ body::before {
 	height: 100%;
 	overflow: hidden;
 }
-#save-weights:disabled {
+.remove-weight {
+	padding: 2px 6px;
+	background-color: #E83333;
+}
+#save-weights:disabled,.fill-button:disabled {
 	background-color: #6c757d !important;
 	color: #cccccc !important;
 	cursor: not-allowed !important;
@@ -332,7 +346,7 @@ body::before {
 	gap: 1rem;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
-#overlay button, #save-weights, #close-weights {
+#overlay button, #save-weights, #close-weights, #split-equal {
 	padding: 0.5rem 1rem;
 	border: none;
 	background: #007bff;
@@ -1008,8 +1022,14 @@ h1 {
 	height: 16px; width: 16px;
 	margin-left: 0.5rem;
 }
+.tabulator .tabulator-col-title .book-img {
+	margin-left: 4px;
+}
 .tabulator-cell {
 	height: 24px;
+}
+.tabulator-col-title,.tabulator-col-title-holder,.tabulator-col-content {
+	
 }
 h2 {
 	display: flex;

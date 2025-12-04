@@ -8,6 +8,7 @@ let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
 let API_BASE = "http://localhost:5000";
 let UPDATED = {};
+let WEIGHTS = {};
 let TEST;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
@@ -2511,23 +2512,15 @@ function buildOU(books, isUnder) {
 	return ou;
 }
 
-const BOOK_WEIGHTS = {
-	"pn": 0.30,
-	"circa": 0.50,
-	"fd": 0.10,
-	"dk": 0.10
-}
-
 function averageDevigs(bookOdds, highest, isUnder) {
 	let totalWeight = 0;
 	let fairVals = 0;
 	const devigBooks = DEVIG.replace("only+", "").split("+");
-	let bookWeights = SESSION_WEIGHTS[`${PAGE}-${DEVIG || "mkt"}`] || getDefaultWeights(devigBooks);
 	Object.entries(bookOdds)
 		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			const fv = getFairValue(val);
-			const weight = bookWeights[book] || 0;
+			const weight = WEIGHTS[book] || 0;
 
 			if (weight) {
 				totalWeight += weight;

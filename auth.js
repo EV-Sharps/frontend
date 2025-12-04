@@ -136,7 +136,6 @@ async function saveCustomDevigs() {
 	if (!metadata["custom_devigs"].includes(DEVIG)) {
 		metadata["custom_devigs"].push(DEVIG);
 	}
-	console.log(metadata);
 	const { error: updateError } = await SB.from('profiles')
 		.update({
 			metadata: metadata

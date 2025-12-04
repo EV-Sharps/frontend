@@ -1,23 +1,18 @@
 
-const ALL_WEIGHTABLE_BOOKS = ["pn", "circa", "fd", "dk", "espn", "mgm", "bol", "fn", "hr", "bv", "br", "cz"];
+const ALL_WEIGHTABLE_BOOKS = ["pn", "circa", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "br", "cz"];
 const SESSION_WEIGHTS = {
-	'tds-mkt': {
-		pn: 0.2,
-		circa: .5,
-		fd: .15,
-		dk: .15
-	},
 	"tds-only+pn+circa": {
-		pn: .5,
-		circa: .5
+		pn: 0.4,
+		circa: 0.6
 	}
 }
+WEIGHTS = getDefaultWeights((DEVIG || "").replace("only+", "").split("+"));
 
 function getDefaultWeights(books) {
-	if (!books) {
-		books = ALL_WEIGHTABLE_BOOKS.slice(0, 4);
+	if (!books || books.includes("mkt") || books.includes("")) {
+		books = ALL_WEIGHTABLE_BOOKS;
 	}
-	const defaultWeight = parseFloat((1 / books.length).toFixed(2));
+	const defaultWeight = parseFloat((1 / books.length).toFixed(4));
 	const weights = {};
 	let remainder = 1;
 	
@@ -27,18 +22,19 @@ function getDefaultWeights(books) {
 	});
 	// Add any remainder to the first book to ensure it sums to 100%
 	if (books.length > 0) {
-		weights[books[0]] += remainder; 
+		//weights[books[0]] += remainder;
 	}
 	return weights;
 }
 
 function splitEqual() {
-	const liveWeights = Object.entries(getLiveWeights());
+	const liveWeights = Object.entries(WEIGHTS);
 	const defaultWeight = parseFloat((100 / liveWeights.length).toFixed(2));
 
 	liveWeights.forEach(([book, weight]) => {
 		document.getElementById(`display-${book}`).textContent = `${defaultWeight}%`;
 		document.getElementById(`weight-${book}`).value = defaultWeight;
+		WEIGHTS[book] = defaultWeight / 100;
 	});
 	updateWeightTotal();
 }
@@ -48,8 +44,9 @@ function getUserWeights() {
 	const currentDevigKey = `${PAGE}-${devig}`;
 	const includedDevigs = devig.replace("only+", "").split("+");
 
-	let marketWeights = SESSION_WEIGHTS[currentDevigKey] || getDefaultWeights(includedDevigs);
-	return marketWeights;
+	let weights = CURR_USER?.metadata?.weights?.[currentDevigKey] || {};
+	let marketWeights = weights[currentDevigKey] || getDefaultWeights(includedDevigs);
+	return marketWeights || {};
 }
 
 function renderWeightSettings() {
@@ -59,9 +56,7 @@ function renderWeightSettings() {
 	const currentDevigKey = `${PAGE}-${devig}`;
 	const includedDevigs = devig.replace("only+", "").split("+");
 
-	// distribute weights evenly if nothing set
-	let marketWeights = SESSION_WEIGHTS[currentDevigKey] || getDefaultWeights(includedDevigs);
-
+	let marketWeights = getUserWeights();
 	SESSION_WEIGHTS[currentDevigKey] = marketWeights;
 	
 	if (!inputsDiv) return;
@@ -69,7 +64,8 @@ function renderWeightSettings() {
 	inputsDiv.innerHTML = '';
 
 	const bookWeightArray = ALL_WEIGHTABLE_BOOKS.map(book => {
-		const weight = marketWeights[book] || 0;
+		if (WEIGHTS[book] == undefined) return;
+		const weight = WEIGHTS[book] || 0;
 		return { book, weight };
 	});
 
@@ -84,13 +80,20 @@ function renderWeightSettings() {
 		if (devig != "mkt" && !includedDevigs.includes(book)) {
 			return;
 		}
+
 		const inputHtml = `
 			<div class="weight-item" style="margin-bottom: 12px; color: #fff;">
-				<label for="weight-${book}" style="justify-content: space-between;width: 120px;">
-					<span>${book.toUpperCase()}:</span>
-					<span id="display-${book}" class="weight-display">${weightValue * 100}%</span>
+				<label for="weight-${book}" style="">
+					<div style="display:flex;gap:4px;align-items:center;">
+						<img class='book-img' style="width:16px;height:16px;" src='logos/${book}.png' alt='${book}' title='${book}' />
+						<span>${book.toUpperCase()}:</span>
+						<span id="display-${book}" class="weight-display">${(weightValue * 100).toFixed(2)}%</span>
+					</div>
 
-					<button style="padding:1px 4px;" onclick="fillRemaining('${book}');">...</button>
+					<div style="display:flex;gap:4px;">
+						<button class="fill-button" style="padding:2px 6px;" onclick="fillRemaining('${book}');">Fill</button>
+						<button class="remove-weight" onclick="removeWeight('${book}');">X</button>
+					</div>
 				</label>
 
 				<input 
@@ -115,8 +118,11 @@ function renderWeightSettings() {
 		// Handle slider movement (input event fires continuously)
 		input.addEventListener('input', (e) => {
 			// Update the adjacent percentage display in real-time
-			document.getElementById(`display-${e.target.dataset.book}`).textContent = `${e.target.value}%`;
-			updateWeightTotal(); // Check total validity
+			const book = e.target.dataset.book;
+			const val = e.target.value;
+			WEIGHTS[book] = parseFloat(val) / 100;
+			document.getElementById(`display-${book}`).textContent = `${val}%`;
+			updateWeightTotal();
 		});
 	});
 }
@@ -152,14 +158,10 @@ function getLiveWeights() {
 }
 
 function updateWeightTotal() {
-	const inputsDiv = document.getElementById('book-weight-inputs');
+	const fills = Array.from(document.getElementsByClassName('fill-button'));
 	let total = 0;
-	const liveWeights = {};
-
-	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
-		const weight = parseFloat(input.value) || 0;
-		total += weight;
-		liveWeights[input.dataset.book] = weight;
+	Object.entries(WEIGHTS).forEach(([book, weight]) => {
+		total += weight * 100;
 	});
 
 	renderWeightPieChart();
@@ -173,25 +175,27 @@ function updateWeightTotal() {
 		statusEl.textContent = '✅';
 		totalEl.style.color = "#00e676";
 		saveBtn.disabled = false;
+		fills.forEach(el => el.disabled = true);
 	} else {
 		statusEl.textContent = `⚠️ Adjust!`;
 		statusEl.style.color = 'yellow';
 		totalEl.style.color = "yellow";
 		saveBtn.disabled = true;
+		if (total < 100) {
+			fills.forEach(el => el.disabled = false);
+		}
 	}
 }
 
 function renderWeightPieChart() {
-
 	const labels = [];
 	const values = [];
 
-	const inputsDiv = document.getElementById('book-weight-inputs');
-	inputsDiv.querySelectorAll('input[type="range"]').forEach(input => {
-		const weight = parseInt(input.value) || 0;
+	Object.entries(WEIGHTS).forEach(([book, weight]) => {
+
 		if (weight > 0) {
-			labels.push(input.dataset.book.toUpperCase());
-			values.push(weight);
+			labels.push(book.toUpperCase());
+			values.push(weight * 100);
 		}
 	});
 
@@ -213,8 +217,8 @@ function renderWeightPieChart() {
 	}];
 
 	const layout = {
-		height: 250,
-		width: 250,
+		height: MOBILE ? 230 : 250,
+		width: MOBILE ? 230 : 250,
 		margin: { t: 0, b: 0, l: 0, r: 0 },
 		showlegend: false,
 		paper_bgcolor: 'rgba(0,0,0,0)',
@@ -227,17 +231,31 @@ function renderWeightPieChart() {
 	Plotly.newPlot('weight-pie-chart', data, layout, {displayModeBar: false});
 }
 
+function removeWeight(book) {
+	document.getElementById(`weight-${book}`).parentElement.remove();
+	delete WEIGHTS[book];
+	updateWeightTotal();
+}
+
 function openWeights() {
 	const weightDiv = document.getElementById("weight-overlay");
 	weightDiv.style.display = "flex";
 	renderWeightSettings();
 }
 
-function saveWeights() {
-	const devig = DEVIG || 'mkt';
-	const currentDevigKey = `${PAGE}-${devig}`;
+async function saveWeights() {
+	const currentDevigKey = `${PAGE}-${DEVIG || 'mkt'}`;
 
-	SESSION_WEIGHTS[currentDevigKey] = getLiveWeights();
+	const metadata = CURR_USER?.metadata || {};
+	if (!metadata["weights"]) {
+		metadata["weights"] = {};
+	}
+	metadata["weights"][currentDevigKey] = WEIGHTS;
+	if (CURR_USER) {
+		const { error: updateError } = await SB.from('profiles')
+			.update({metadata: metadata})
+			.eq('id', CURR_SESSION.user.id);
+	}
 	updateHeaders();
 	changeFilter();
 	closeWeights();

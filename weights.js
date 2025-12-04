@@ -180,8 +180,8 @@ function renderWeightPieChart() {
 	}];
 
 	const layout = {
-		height: MOBILE ? 230 : 250,
-		width: MOBILE ? 230 : 250,
+		height: MOBILE ? 250 : 250,
+		width: MOBILE ? 250 : 250,
 		margin: { t: 0, b: 0, l: 0, r: 0 },
 		showlegend: false,
 		paper_bgcolor: 'rgba(0,0,0,0)',

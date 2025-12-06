@@ -1901,7 +1901,7 @@ function getNestedFields(defs, out = []) {
 
 function loadWeights() {
 
-	if (Array.isArray(CURR_USER.metadata["weights"])) {
+	if (!Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
 	}
 	const customOption = document.getElementById("custom-devig-option");

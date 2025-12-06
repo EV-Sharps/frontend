@@ -1917,6 +1917,8 @@ function loadWeights() {
 		}
 	}
 
+	delete CURR_USER.metadata["custom_devigs"];
+
 	const customOption = document.getElementById("custom-devig-option");
 	const devigSel = document.getElementById("devig-select");
 	const fragment = document.createDocumentFragment();

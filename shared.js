@@ -1899,6 +1899,23 @@ function getNestedFields(defs, out = []) {
 	return out;
 }
 
+function loadWeights() {
+
+	if (Array.isArray(CURR_USER.metadata["weights"])) {
+		CURR_USER.metadata["weights"] = [];
+	}
+	const customOption = document.getElementById("custom-devig-option");
+	const devigSel = document.getElementById("devig-select");
+	const fragment = document.createDocumentFragment();
+	for (weight of CURR_USER.metadata["weights"]) {
+		const newOption = document.createElement("option");
+		newOption.value = weight;
+		newOption.textContent = parseWeightKey(weight);
+		fragment.appendChild(newOption);
+	}
+	devigSel.insertBefore(fragment, customOption);
+}
+
 function showHideUserTable(loaded) {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
 		if (!loaded && CURR_USER.metadata["weights"]) {

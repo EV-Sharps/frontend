@@ -1900,7 +1900,8 @@ function getNestedFields(defs, out = []) {
 }
 
 function loadWeights() {
-
+	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
+	
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
 	}
@@ -1963,27 +1964,6 @@ function showHideUserTable(loaded) {
 				TABLE.getColumn(field)?.show();
 			}
 		});
-
-		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
-		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
-		if (!loaded) {
-			DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
-			const customOption = document.getElementById("custom-devig-option");
-			const devigSel = document.getElementById("devig-select");
-			const fragment = document.createDocumentFragment();
-
-			let devigs = CURR_USER.metadata["custom_devigs"];
-
-			for (customDevig of (devigs || [])) {
-				const newOption = document.createElement("option");
-				newOption.value = customDevig;
-				newOption.textContent = customDevig;
-				fragment.appendChild(newOption);
-			}
-			devigSel.insertBefore(fragment, customOption);
-			devigSel.value = DEVIG;
-		}
-	}
 }
 
 function closeOverlay() {

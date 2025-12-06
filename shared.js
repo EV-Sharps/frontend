@@ -1918,7 +1918,7 @@ function loadWeights() {
 
 function showHideUserTable(loaded) {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
-		if (!loaded && CURR_USER.metadata["weights"]) {
+		if (!loaded && CURR_USER.metadata["weights"] && typeof parseWeightKey === 'function') {
 			loadWeights();
 		}
 		if (!CURR_USER.metadata[PAGE]) {

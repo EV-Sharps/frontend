@@ -307,7 +307,7 @@ async function saveWeights() {
 	if (!weightText) return;
 	DEVIG = bookKey;
 	WEIGHT = weightKey;
-	metadata["weights"].push(DEVIG);
+	metadata["weights"].push(`${DEVIG};${WEIGHT}`);
 
 	const devigSel = document.getElementById("devig-select");
 	const customOption = document.getElementById("custom-devig-option");

@@ -116,18 +116,16 @@
 					  </div>
 					</div>
 				  </div>
-
-				<button id="weights" onclick="openWeights()">⚖️ Weights</button>
-				<div class="select-wrapper" style="display:none;">
+				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="dk">vs DK</option>
-						<option value="bol">vs BOL</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="pn+circa">PN & Circa</option>
+						<option value="fd" data-weight="1">vs FD</option>
+						<option value="dk" data-weight="1">vs DK</option>
+						<option value="bol" data-weight="1">vs BOL</option>
+						<option value="pn" data-weight="1">vs PN</option>
+						<option value="circa" data-weight="1">vs Circa</option>
+						<option value="circa+pn" data-weight="1+1">Circa/PN 50% Equal</option>
 						<option id="custom-devig-option" value="custom">Add Custom...</option>
 						<option value="delete">Delete Custom...</option>
 					</select>
@@ -231,25 +229,6 @@
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NFL. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
-		<div id="weight-overlay">
-			<div id="weighting-container">
-				<h3 style="margin:0;">Book Weights</h3>
-				<div id="weighting-body" style="display:flex;gap: 20px;">
-					<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
-						<div id="weight-chart-section" style="display: flex; justify-content: center;">
-							<div id="weight-pie-chart" style="width:250px; height:250px;"></div>
-						</div>
-					</div>
-					<div id="book-weight-inputs"></div>
-				</div>
-
-				<div style="display: flex">
-					<button id="save-weights" onclick="saveWeights()">Save</button>
-					<button id="clear-weights" onclick="clearWeights()">Clear</button>
-					<button id="close-weights" onclick="closeWeights()">Close</button>
-				</div>
-			</div>
-		</div>
 		<div id="overlay">
 			<div class="overlay-content">
 				<div><h2 style="justify-content: center;">Customize</h2></div>
@@ -406,7 +385,8 @@
 		let TODAY = getToday();
 		let SPORT = "nfl";
 		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
+		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
@@ -486,21 +466,23 @@
 		});
 
 		function updateWeightHeader() {
-			const weights = getUserWeights();
+			const weights = getPercentWeights();
 			Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
 				hdr.textContent = "";
 			});
 			Object.entries(weights).forEach(([book, weight]) => {
 				const el = document.getElementById(`${book}-weight-hdr`);
 				if (el && weight) {
-					el.innerHTML = `⚖️<br>${Math.round(weight * 100)}%`;
+					el.innerHTML = `⚖️<br>${weight}%`;
 				}
 			});
 		}
 
 		function changeFilter() {
-			const weights = getUserWeights();
 			let devigBook = document.getElementById("devig-select").value;
+			if (devigBook.includes(";")) {
+				[devigBook, WEIGHT] = devigBook.split(";");
+			}
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
 			let book = document.getElementById("book-select").value;
@@ -518,8 +500,9 @@
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
+			params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
+			params.set("weight", WEIGHT.replaceAll("+", "-"));
 			params.set("boost", boost);
-			params.set("devig", devigBook);
 			params.set("game", game);
 			params.set("book", book);
 			params.set("prop", PROP);
@@ -531,6 +514,8 @@
 			if (!RES) {
 				return;
 			}
+
+			const weights = getUserWeights();
 
 			RES.data.forEach(row => {
 				const bookOdds = { ...row.bookOdds };
@@ -679,13 +664,15 @@
 			changeFilter();
 		});
 
-		document.querySelector("#devig-select").value = DEVIG || "";
+		document.querySelector("#devig-select").value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
 		document.querySelector("#devig-select").addEventListener("change", (event) => {
 			if (event.target.value == "custom") {
 				openCustomDevig();
 			} else if (event.target.value == "delete") {
 				openDeleteCustomDevigOverlay();
 			} else {
+				const selectedOption = event.target.options[event.target.selectedIndex];
+				WEIGHT = selectedOption.dataset.weight || "";
 				changeFilter();
 			}
 		});
@@ -723,7 +710,7 @@
 		}
 
 		function updateHeaders() {
-			const weights = getUserWeights();
+			const weights = getPercentWeights();
 			for (book in UPDATED[PAGE]) {
 				if (!UPDATED[PAGE][book]) {
 					continue;
@@ -741,7 +728,7 @@
 				}
 				html += `<span id='${book}-weight-hdr' class='weight-hdrs' style='font-size:0.7rem;'>`;
 				if (weights[book]) {
-					html += `⚖️<br>${Math.round(weights[book] * 100)}%`;
+					html += `⚖️<br>${Math.round(weights[book])}%`;
 				}
 				html += '</span>';
 				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();

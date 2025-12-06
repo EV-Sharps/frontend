@@ -1901,6 +1901,9 @@ function getNestedFields(defs, out = []) {
 
 function showHideUserTable(loaded) {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
+		if (!loaded && CURR_USER.metadata["weights"]) {
+			loadWeights();
+		}
 		if (!CURR_USER.metadata[PAGE]) {
 			return;
 		}
@@ -1934,16 +1937,22 @@ function showHideUserTable(loaded) {
 
 		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
-		if (!loaded) {
+		if (!loaded && PAGE != "tds2") {
 			DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 			const customOption = document.getElementById("custom-devig-option");
 			const devigSel = document.getElementById("devig-select");
 			const fragment = document.createDocumentFragment();
 
-			for (customDevig of (CURR_USER.metadata["custom_devigs"] || [])) {
+			let devigs = CURR_USER.metadata["custom_devigs"];
+
+			for (customDevig of (devigs || [])) {
 				const newOption = document.createElement("option");
 				newOption.value = customDevig;
-				newOption.textContent = customDevig;
+				if (PAGE == "td2") {
+					newOption.textContent = parseWeightKey(customDevig);
+				} else {
+					newOption.textContent = customDevig;
+				}
 				fragment.appendChild(newOption);
 			}
 			devigSel.insertBefore(fragment, customOption);
@@ -1999,37 +2008,39 @@ function openCustomDevig() {
 	background:rgba(0,0,0,.45);z-index:9999;
 	`;
 	const card = document.createElement('div');
+	card.id = "custom-devig-card";
 	card.style.cssText = `
 	background:#111; color:#eee; border:1px solid #333; border-radius:10px;
 	width:min(560px,92vw); max-height:80vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
 	`;
 	card.innerHTML = `
 	<h3 style="margin:0 0 8px">Custom Devig</h3>
-	<p style="margin:0 0 12px; color:#c8c3bc">Pick books to average against. Choose “Only” to require all selected books to be present.</p>
-
-	<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="cd-books"></div>
+	<p style="margin:0 0 12px; color:#c8c3bc">Pick books to average against. Choose "Only" to require all selected books to be present.</p>
 
 	<div style="display:flex;gap:16px;align-items:center;margin:6px 0 14px">
 	  <label><input type="radio" name="cd-mode" value="avg" checked> Average selected (<code>fd+dk+circa</code>)</label>
 	  <label><input type="radio" name="cd-mode" value="only"> Only selected (<code>only+fd+dk+circa</code>)</label>
 	</div>
 
+	<div id="weighting-body" style="display:flex;gap: 20px;">
+		<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
+			<div id="weight-chart-section" style="display: flex; justify-content: center;">
+				<div id="weight-pie-chart" style="width:250px; height:250px;"></div>
+			</div>
+		</div>
+		<div id="book-weight-inputs"></div>
+	</div>
+
 	<div style="display:flex;gap:8px;justify-content:flex-end">
-	  <button id="cd-cancel">Cancel</button>
-	  <button id="cd-apply">Apply</button>
+		<button id="cd-apply">Add Devig</button>
+		<button id="cd-clear">Clear</button>
+		<button id="cd-cancel">Close</button>
 	</div>
 	`;
 	wrap.appendChild(card);
 	document.body.appendChild(wrap);
 
-	// populate checkboxes
-	const boxHost = card.querySelector('#cd-books');
-	ALL_BOOKS.forEach(b => {
-		const label = document.createElement('label');
-		label.style.cssText = 'border:1px solid #3a3a3a;border-radius:8px;padding:6px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer;';
-		label.innerHTML = `<input type="checkbox" value="${b}"> ${b.toUpperCase()}`;
-		boxHost.appendChild(label);
-	});
+	renderWeightSettings();
 
 	function closeModal() {
 		wrap.remove();
@@ -2039,24 +2050,11 @@ function openCustomDevig() {
 
 	card.querySelector('#cd-cancel').onclick = closeModal;
 
-	card.querySelector('#cd-apply').onclick = () => {
-		const sel = [...boxHost.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
-		if (sel.length === 0) { alert('Pick at least one book'); return; }
-		const mode = card.querySelector('input[name="cd-mode"]:checked').value;
-		DEVIG = (mode === 'only' ? 'only+' : '') + sel.join('+');
+	card.querySelector("#cd-clear").onclick = () => {
+		clearWeights();
+	}
 
-		// set value, persist to URL like the others, and recalc
-		const devigSel = document.getElementById('devig-select');
-		devigSel.innerHTML += `<option value='${DEVIG}'>${DEVIG}</option>`;
-		devigSel.value = DEVIG;
-
-		const params = new URLSearchParams(window.location.search);
-		params.set('devig', DEVIG);
-		history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-
-		saveCustomDevigs();
-		closeModal();
-	};
+	card.querySelector('#cd-apply').onclick = saveWeights;
 }
 
 function fetchUpdated(repo="props", render=true) {

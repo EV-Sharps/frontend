@@ -1905,6 +1905,10 @@ function loadWeights() {
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
 	}
+
+	// legacy remove any old weights
+	CURR_USER.metadata["weights"] = CURR_USER.metadata["weights"].filter(x => x.includes(";"));
+
 	let userWeights = CURR_USER.metadata["weights"];
 
 	// legacy to grab old saved devigs

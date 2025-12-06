@@ -2037,10 +2037,13 @@ function openCustomDevig() {
 		<button id="cd-cancel">Close</button>
 	</div>
 	`;
+
 	wrap.appendChild(card);
 	document.body.appendChild(wrap);
 
-	renderWeightSettings();
+	if (PAGE == "td2") {
+		renderWeightSettings();
+	}
 
 	function closeModal() {
 		wrap.remove();
@@ -2054,7 +2057,9 @@ function openCustomDevig() {
 		clearWeights();
 	}
 
-	card.querySelector('#cd-apply').onclick = saveWeights;
+	if (PAGE == "td2") {
+		card.querySelector('#cd-apply').onclick = saveWeights;
+	}
 }
 
 function fetchUpdated(repo="props", render=true) {

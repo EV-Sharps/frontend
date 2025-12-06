@@ -1965,11 +1965,7 @@ function showHideUserTable(loaded) {
 			for (customDevig of (devigs || [])) {
 				const newOption = document.createElement("option");
 				newOption.value = customDevig;
-				if (PAGE == "td2") {
-					newOption.textContent = parseWeightKey(customDevig);
-				} else {
-					newOption.textContent = customDevig;
-				}
+				newOption.textContent = customDevig;
 				fragment.appendChild(newOption);
 			}
 			devigSel.insertBefore(fragment, customOption);
@@ -2058,7 +2054,7 @@ function openCustomDevig() {
 	wrap.appendChild(card);
 	document.body.appendChild(wrap);
 
-	if (PAGE == "td2") {
+	if (PAGE == "tds2") {
 		renderWeightSettings();
 	}
 
@@ -2074,7 +2070,7 @@ function openCustomDevig() {
 		clearWeights();
 	}
 
-	if (PAGE == "td2") {
+	if (PAGE == "tds2") {
 		card.querySelector('#cd-apply').onclick = saveWeights;
 	}
 }

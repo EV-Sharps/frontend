@@ -1901,7 +1901,7 @@ function getNestedFields(defs, out = []) {
 
 function loadWeights() {
 	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
-	
+
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
 	}
@@ -1964,6 +1964,7 @@ function showHideUserTable(loaded) {
 				TABLE.getColumn(field)?.show();
 			}
 		});
+	}
 }
 
 function closeOverlay() {

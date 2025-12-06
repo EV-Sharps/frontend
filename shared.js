@@ -1904,10 +1904,22 @@ function loadWeights() {
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
 	}
+	let userWeights = CURR_USER.metadata["weights"];
+
+	// legacy to grab old saved devigs
+	for (devig of (CURR_USER.metadata["custom_devigs"] || [])) {
+		if (devig) {
+			let newDevig = `${devig}${repeatOnes(devig)}`;
+			if (!userWeights.includes(newDevig)) {
+				userWeights.push(newDevig);
+			}
+		}
+	}
+
 	const customOption = document.getElementById("custom-devig-option");
 	const devigSel = document.getElementById("devig-select");
 	const fragment = document.createDocumentFragment();
-	for (weight of CURR_USER.metadata["weights"]) {
+	for (weight of userWeights) {
 		const newOption = document.createElement("option");
 		newOption.value = weight;
 		newOption.textContent = parseWeightKey(weight);
@@ -1954,7 +1966,7 @@ function showHideUserTable(loaded) {
 
 		const savedSort = CURR_USER.metadata[`${PAGE}-sort`];
 		//TABLE.setSort([{column: savedSort, dir: "desc"}]);
-		if (!loaded && PAGE != "tds2") {
+		if (!loaded) {
 			DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 			const customOption = document.getElementById("custom-devig-option");
 			const devigSel = document.getElementById("devig-select");
@@ -2003,10 +2015,30 @@ function openOverlay() {
 		}
 	}
 
-	document.querySelector("#custom-devig-select").value = metadata[`${PAGE}-devig`] || "";
+	let customDevigSel = document.getElementById("custom-devig-select");
+	customDevigSel.innerHTML = "";
+
+	let devigSel = document.getElementById("devig-select");
+	for (option of devigSel) {
+		let o = option.cloneNode(true);
+		customDevigSel.appendChild(o);
+	}
+
+	// legacy to transform saved devigs to new weighted
+	// fd+circa -> fd+circa;1+1
+	let oldCustomDevig = metadata[`${PAGE}-devig`] || "";
+	if (oldCustomDevig && !oldCustomDevig.includes(";")) {
+		oldCustomDevig += repeatOnes(oldCustomDevig);
+	}
+	customDevigSel.value = oldCustomDevig;
 	if (typeof renderWeightSettings === "function") {
 		renderWeightSettings();
 	}
+}
+
+function repeatOnes(customDevig) {
+	let repeat = "+1".repeat(customDevig.replace("only+", "").split("+").length - 1);
+	return ";1"+repeat
 }
 
 function openCustomDevig() {
@@ -2054,7 +2086,7 @@ function openCustomDevig() {
 	wrap.appendChild(card);
 	document.body.appendChild(wrap);
 
-	if (PAGE == "tds2") {
+	if (typeof renderWeightSettings === 'function') {
 		renderWeightSettings();
 	}
 
@@ -2070,7 +2102,7 @@ function openCustomDevig() {
 		clearWeights();
 	}
 
-	if (PAGE == "tds2") {
+	if (typeof saveWeights === 'function') {
 		card.querySelector('#cd-apply').onclick = saveWeights;
 	}
 }
@@ -2536,7 +2568,19 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 	Object.entries(bookOdds)
 		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
-			const fv = getFairValue(val);
+			let fv;
+			if (isUnder) {
+				if (val.includes("/")) {
+					let [o,u] = val.split("/");
+					val = `${u}/${o}`;
+					fv = getFairValue(val);
+				} else {
+					val = getFairValue(val);
+					val = 1 - val;
+				}
+			} else {
+				fv = getFairValue(val);
+			}
 			const weight = weights[book] || 0;
 
 			if (weight) {

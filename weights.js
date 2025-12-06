@@ -217,10 +217,13 @@ function parseWeightKey(key) {
 		percs.push(Math.round(weight * 100 / totalWeight));
 	});
 
-	const books = bookKey.split("+");
-	let text;
+	let text = "";
+	if (bookKey.includes("only")) {
+		text = "Only ";
+	}
 
-	text = `${books.map(book => book.toUpperCase()).join("/").replace("ONLY/", "Only ")}`;
+	const books = bookKey.replace("only+", "").split("+");
+	text += `${books.map(book => book.toUpperCase()).join("/")}`;
 	if (raw.length > 1 && rawSet.size == 1) {
 		text += ` ${Math.round(100 / books.length)}% Equal`;
 	} else {
@@ -314,7 +317,6 @@ async function saveWeights() {
 	const fragment = document.createDocumentFragment();
 	const option = document.createElement("option");
 	option.value = `${DEVIG};${WEIGHT}`;
-	option.dataset.weight = weightKey;
 	option.textContent = weightText;
 	fragment.appendChild(option);
 	devigSel.insertBefore(fragment, customOption);

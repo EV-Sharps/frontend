@@ -137,17 +137,14 @@
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="dk">vs DK</option>
-						<option value="mgm">vs MGM</option>
-						<option value="espn">vs ESPN</option>
-						<option value="bol">vs BOL</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="espn+pn">ESPN & PN</option>
-						<option value="espn+pn+circa">ESPN & PN & Circa</option>
-						<option value="fd+pn+circa">FD & PN & Circa</option>
-						<option value="pn+circa">PN & Circa</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="espn;1">vs ESPN</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="pn+circa;1+1">PN/Circa 50% Equal</option>
+						<option value="only+fd+dk;1+1">Only FD/DK 50% Equal</option>
 						<option id="custom-devig-option" value="custom">Add Custom...</option>
 						<option value="delete">Delete Custom...</option>
 					</select>
@@ -175,8 +172,8 @@
 				       placeholder="Custom %"
 				       style="display:none; width:7ch; margin-left:.5rem;" />
 				<div class="select-wrapper">
-					<label for="game-select" class="select-label">Game</label>
-					<select id="game-select">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
 						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -195,8 +192,8 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select">
 						<option value="" selected>All</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
@@ -244,8 +241,7 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div id="table">
-				</div>
+				<div id="table"></div>
 				<div id="card-container"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
@@ -255,7 +251,7 @@
 				 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
 				 background-color: rgba(0, 0, 0, 0.7); z-index: 1001;
 				 justify-content: center; align-items: center;">
-				<div class="overlay-content" style="max-width: 400px; background: white; padding: 20px; border-radius: 8px;">
+				<div class="overlay-content" style="max-width: 400px; padding: 20px; border-radius: 8px;">
 					<h2>Delete Custom Devigs</h2>
 					<div id="custom-devig-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
 						</div>
@@ -425,7 +421,8 @@
 		let TODAY = getToday();
 		let SPORT = "nba";
 		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
+		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
@@ -443,24 +440,6 @@
 		});
 
 		handleSession();
-
-		function updateTimes() {
-			updateHeaders();
-		}
-
-		function updateHeaders() {
-			for (book in UPDATED[PAGE]) {
-				if (!UPDATED[PAGE][book]) {
-					continue;
-				}
-
-				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
-					continue;
-				}
-				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
-			}
-		}
 
 		function fetchProps() {
 			fetch(API_BASE+`/api/nba`, {
@@ -501,7 +480,7 @@
 				}
 
 				setTimeout(function() {
-					updateTimes();
+					updateHeaders();
 					changeFilter();
 					if (PRETTY != undefined) {
 						pretty_();
@@ -741,5 +720,6 @@
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

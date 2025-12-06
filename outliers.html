@@ -424,7 +424,8 @@
 		let TODAY = getToday();
 		let SPORT = URLParams.get("sport") || "nba";
 		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
+		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
@@ -450,24 +451,6 @@
 		});
 
 		handleSession();
-
-		function updateTimes() {
-			updateHeaders();
-		}
-
-		function updateHeaders() {
-			for (book in UPDATED[PAGE]) {
-				if (!UPDATED[PAGE][book]) {
-					continue;
-				}
-
-				if (!TABLE.getColumn(`bookOdds.${book}`)) {
-					continue;
-				}
-				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
-			}
-		}
 
 		function fetchProps() {
 			fetch(API_BASE+`/api/outliers?sport=${SPORT}`, {
@@ -497,7 +480,7 @@
 				}
 
 				setTimeout(function() {
-					updateTimes();
+					updateHeaders();
 					changeFilter();
 					if (PRETTY != undefined) {
 						pretty_();
@@ -848,5 +831,6 @@
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

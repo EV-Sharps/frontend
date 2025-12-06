@@ -1,4 +1,45 @@
 
+function updateHeaders() {
+	const weights = getPercentWeights();
+	for (book in UPDATED[PAGE]) {
+		if (!UPDATED[PAGE][book]) {
+			continue;
+		}
+
+		if (!TABLE.getColumn(`bookOdds.${book}`)) {
+			continue;
+		}
+		let html = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' />`;
+
+		let ta = timeAgo(UPDATED[PAGE][book], short=true);
+		if (ta) {
+			html += `<span class='time-hdrs' style='font-size:0.7rem;'>${ta.replace(" ago", "")}</span>`;
+		}
+		html += `<span id='${book}-weight-hdr' class='weight-hdrs' style='font-size:0.7rem;'>`;
+		if (weights[book]) {
+			html += `⚖️<br>${Math.round(weights[book])}%`;
+		}
+		html += '</span>';
+		let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
+		let title = el.querySelector(".tabulator-col-title");
+		title.style.height = "48px";
+		title.innerHTML = html;
+	}
+}
+
+function updateWeightHeader() {
+	const weights = getPercentWeights();
+	Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
+		hdr.textContent = "";
+	});
+	Object.entries(weights).forEach(([book, weight]) => {
+		const el = document.getElementById(`${book}-weight-hdr`);
+		if (el && weight) {
+			el.innerHTML = `⚖️<br>${weight}%`;
+		}
+	});
+}
+
 // Exclude
 const dd = document.getElementById('exclude-dd');
 const excludeBtn = dd.querySelector('.chkdd-btn');
@@ -80,13 +121,18 @@ document.getElementById("min-odds").addEventListener("input", debouncedChangeFil
 document.getElementById("max-odds").value = MAX;
 document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
 
-document.querySelector("#devig-select").value = DEVIG || "";
+document.querySelector("#devig-select").value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
 document.querySelector("#devig-select").addEventListener("change", (event) => {
 	if (event.target.value == "custom") {
 		openCustomDevig();
 	} else if (event.target.value == "delete") {
 		openDeleteCustomDevigOverlay();
 	} else {
+		let books;
+		[books, WEIGHT] = event.target.value.split(";");
+		if (!books.includes("+")) {
+			WEIGHT = "1";
+		}
 		changeFilter();
 	}
 });
@@ -144,69 +190,55 @@ document.querySelector("#view-select").addEventListener("change", (event) => {
 
 function getCustomDevigs() {
 	const meta = CURR_USER?.metadata || {};
-	return meta["custom_devigs"] || [];
+	return meta["weights"] || [];
 }
 
 function populateCustomDevigSelect() {
-    const devigSelect = document.getElementById("custom-devig-select");
-    const customDevigs = getCustomDevigs();
-    
-    // Clear old options (you need to decide which options are always present)
-    // For this example, we'll assume the select is only for custom devigs + 'delete'
-    // You'd need to re-add your default options (Market Avg, vs FD, etc.) here.
-    
-    // Example: Reloading based on what's in local storage
-    // *** NOTE: You need to adapt this to your existing code ***
-    // For now, we'll skip the actual repopulation of the main devig select.
+	const devigSelect = document.getElementById("custom-devig-select");
+	const customDevigs = getCustomDevigs();
 }
-
 
 // Function to open the deletion modal
 function openDeleteCustomDevigOverlay() {
-    // 1. Show the overlay
-    document.getElementById("delete-custom-devig-overlay").style.display = "flex";
-    
-    // 2. Render the list of deletable items
-    renderCustomDevigList();
-    
-    // 3. Reset the main custom select to the default option after triggering
-    document.getElementById("custom-devig-select").value = "";
+	document.getElementById("delete-custom-devig-overlay").style.display = "flex";
+	renderCustomDevigList();
+	document.getElementById("custom-devig-select").value = "";
 }
 
 // Function to close the deletion modal
 function closeDeleteCustomDevigOverlay() {
-    document.getElementById("delete-custom-devig-overlay").style.display = "none";
-    document.getElementById("devig-select").value = DEVIG;
+	document.getElementById("delete-custom-devig-overlay").style.display = "none";
+	document.getElementById("devig-select").value = DEVIG;
 }
 
 // Function to render the list inside the deletion modal
 function renderCustomDevigList() {
-    const container = document.getElementById("custom-devig-list-container");
-    const devigs = getCustomDevigs();
+	const container = document.getElementById("custom-devig-list-container");
+	const devigs = getCustomDevigs();
 
-    if (devigs.length === 0) {
-        container.innerHTML = "<p>No custom devig settings found.</p>";
-        return;
-    }
+	if (devigs.length === 0) {
+		container.innerHTML = "<p>No custom devig settings found.</p>";
+		return;
+	}
 
-    container.innerHTML = devigs.map(key => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
-            <span style="font-weight: bold;">${key}</span>
-            <button 
-                onclick="deleteDevig('${key}')" 
-                style="background-color: #f44336; color: white; border: none; 
-                       padding: 4px 8px; cursor: pointer; border-radius: 4px; 
-                       font-weight: bold; line-height: 1;">
-                &times;
-            </button>
-        </div>
-    `).join('');
+	container.innerHTML = devigs.map(key => `
+		<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
+			<span style="font-weight: bold;">${parseWeightKey(key)}</span>
+			<button 
+				onclick="deleteDevig('${key}')" 
+				style="background-color: #f44336; color: white; border: none; 
+					   padding: 4px 8px; cursor: pointer; border-radius: 4px; 
+					   font-weight: bold; line-height: 1;">
+				&times;
+			</button>
+		</div>
+	`).join('');
 }
 
 // Function to handle the actual deletion of a custom devig
 async function deleteDevig(keyToDelete) {
 	const meta = CURR_USER?.metadata || {};
-	const customDevigs = meta["custom_devigs"] || [];
+	const customDevigs = meta["weights"] || [];
 
 	const newDevigs = customDevigs.filter(devig => devig != keyToDelete);
 	if (newDevigs.length == customDevigs.length) return;
@@ -214,7 +246,7 @@ async function deleteDevig(keyToDelete) {
 	if (!CURR_USER) return
 	if (!CURR_USER.metadata) CURR_USER.metadata = {};
 
-	CURR_USER.metadata["custom_devigs"] = newDevigs;
+	CURR_USER.metadata["weights"] = newDevigs;
 
 	const { error: updateError } = await SB.from('profiles')
 		.update({
@@ -228,13 +260,16 @@ async function deleteDevig(keyToDelete) {
 
 function changeFilter() {
 	let devigBook = document.getElementById("devig-select").value;
+	if (devigBook.includes(";")) {
+		[devigBook, WEIGHT] = devigBook.split(";");
+	}
 	let boost = document.getElementById("boost-select").value;
 	let game = document.getElementById("game-select").value;
 	let book = document.getElementById("book-select").value;
 	let prop = document.getElementById("prop-select").value;
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
-  let maxOdds = document.getElementById("max-odds").value;
+	let maxOdds = document.getElementById("max-odds").value;
 	let excluded = getExcludedBooks();
 	if (boost === "custom") {
 		boost = boostCustom.value;
@@ -248,10 +283,12 @@ function changeFilter() {
 	OU = ou;
 	MIN = minOdds;
 	MAX = maxOdds;
+
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);
 	params.set("boost", boost);
-	params.set("devig", devigBook);
+	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
+	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", game);
 	params.set("book", book);
 	params.set("prop", prop);
@@ -263,6 +300,7 @@ function changeFilter() {
 		return;
 	}
 
+	const weights = getUserWeights();
 	RES.data.forEach(row => {
 		const bookOdds = { ...row.bookOdds };
 		let avg = getAverageImplied(bookOdds, row.under);
@@ -295,33 +333,11 @@ function changeFilter() {
 			row["kelly"] = "";
 			return;
 		}
+
 		let ou = avg.avgAmerican.toString();
-		if (row.under) {
-			// If under, swap priority
-			if (devigBook.includes("+")) {
-				// Fallback to averageSharps for unders if combining books
-				ou = averageCustomSharps(bookOdds, devigBook, row.under);
-			} else if (devigBook) {
-				// Use the book's under odds if available
-				const val = bookOdds[devigBook];
-				ou = val;
-				if (val && String(val).includes("/")) {
-					let [o,u] = String(val).split("/");
-					ou = `${u}/${o}`;
-				}
-				//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-			} else {
-				ou = buildOU(bookOdds, row.under);
-			}
-		} else {
-			// Normal over-first logic
-			if (devigBook.includes("+")) {
-				ou = averageCustomSharps(bookOdds, devigBook);
-			} else if (devigBook) {
-				ou = bookOdds[devigBook];
-			}
-		}
-		if (!ou) {
+		let avgDevig = averageDevigs(bookOdds, highest.book, row.under, weights);
+
+		if (!isFinite(avgDevig)) {
 			row["ev"] = "";
 			row["fairVal"] = "";
 			row["implied"] = "";
@@ -329,21 +345,23 @@ function changeFilter() {
 			return;
 		}
 
-		let d = devig(ou, highest.value, boost, row.under, VIG);
-		if (!d) {
-			row["ev"] = "";
-			row["fairVal"] = "";
-			row["implied"] = "";
-			row["kelly"] = "";
-			return;
+		let line = highest.value >= 0 ? highest.value : 10000 / Math.abs(highest.value);
+		let ev = avgDevig * line + (1 - avgDevig) * -100;
+		let fairVal;
+		const dec = 1 / avgDevig;
+		if (dec >= 2) {
+			row["fairVal"] = Math.round((dec - 1) * 100);
+		} else {
+			row["fairVal"] = Math.round(-100 / (dec - 1));
 		}
+
 		row["book"] = highest.book;
 		row["line"] = highest.value;
-		row["ev"] = d.ev;
-		row["fairVal"] = d.fairVal;
-		row["implied"] = d.implied;
-		row["kelly"] = d.kelly;
+		row["ev"] = ev.toFixed(1);
+		row["implied"] = round2(avgDevig * 100);
+		row["kelly"] = getKelly(highest.value, ev);
 	});
+
 	const newUrl = `${window.location.pathname}?${params.toString()}`;
 	history.pushState({}, '', newUrl);
 	const filters = [
@@ -389,4 +407,6 @@ function changeFilter() {
 			TABLE.setSort([{column: "ev", dir: "desc"}]);
 		}
 	}
+
+	updateWeightHeader();
 }

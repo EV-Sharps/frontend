@@ -25,14 +25,6 @@
 				width: 100%;
 			}
 		}
-		@media (max-width: 600px) {
-			#weighting-body {
-				flex-direction: column;
-				overflow: scroll;
-			}
-			#weighting-container {
-			}
-		}
 	</style>
 </head>
 
@@ -120,12 +112,12 @@
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd" data-weight="1">vs FD</option>
-						<option value="dk" data-weight="1">vs DK</option>
-						<option value="bol" data-weight="1">vs BOL</option>
-						<option value="pn" data-weight="1">vs PN</option>
-						<option value="circa" data-weight="1">vs Circa</option>
-						<option value="circa+pn" data-weight="1+1">Circa/PN 50% Equal</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="circa+pn;1+1">Circa/PN 50% Equal</option>
 						<option id="custom-devig-option" value="custom">Add Custom...</option>
 						<option value="delete">Delete Custom...</option>
 					</select>
@@ -465,19 +457,6 @@
 			});
 		});
 
-		function updateWeightHeader() {
-			const weights = getPercentWeights();
-			Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
-				hdr.textContent = "";
-			});
-			Object.entries(weights).forEach(([book, weight]) => {
-				const el = document.getElementById(`${book}-weight-hdr`);
-				if (el && weight) {
-					el.innerHTML = `⚖️<br>${weight}%`;
-				}
-			});
-		}
-
 		function changeFilter() {
 			let devigBook = document.getElementById("devig-select").value;
 			if (devigBook.includes(";")) {
@@ -671,8 +650,11 @@
 			} else if (event.target.value == "delete") {
 				openDeleteCustomDevigOverlay();
 			} else {
-				const selectedOption = event.target.options[event.target.selectedIndex];
-				WEIGHT = selectedOption.dataset.weight || "";
+				let books;
+				[books, WEIGHT] = event.target.value.split(";");
+				if (!books.includes("+")) {
+					WEIGHT = "1";
+				}
 				changeFilter();
 			}
 		});
@@ -705,8 +687,17 @@
 
 		handleSession();
 
-		function updateTimes() {
-			updateHeaders();
+		function updateWeightHeader() {
+			const weights = getPercentWeights();
+			Array.from(document.getElementsByClassName("weight-hdrs")).forEach(hdr => {
+				hdr.textContent = "";
+			});
+			Object.entries(weights).forEach(([book, weight]) => {
+				const el = document.getElementById(`${book}-weight-hdr`);
+				if (el && weight) {
+					el.innerHTML = `⚖️<br>${weight}%`;
+				}
+			});
 		}
 
 		function updateHeaders() {
@@ -777,7 +768,7 @@
 			//renderTable(data.data);
 
 			setTimeout(function() {
-				updateTimes();
+				updateHeaders();
 				changeFilter();
 				if (PRETTY != undefined) {
 					pretty_();

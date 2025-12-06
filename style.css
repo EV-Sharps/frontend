@@ -1443,6 +1443,10 @@ button#logout:hover {
 	h1, h2 {
 		font-size: 1.25rem;
 	}
+	#weighting-body {
+		flex-direction: column;
+		overflow: scroll;
+	}
 	.profile-container {
 		padding: 1rem;
 	}

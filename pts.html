@@ -44,6 +44,18 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<label for="page-select" class="select-label">Page</label>
@@ -106,15 +118,14 @@
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="dk">vs DK</option>
-						<option value="espn">vs ESPN</option>
-						<option value="bol">vs BOL</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="espn+pn">ESPN & PN</option>
-						<option value="espn+pn+circa">ESPN & PN & Circa</option>
-						<option value="pn+circa">PN & Circa</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="espn;1">vs ESPN</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="pn+circa;1+1">PN/Circa 50% Equal</option>
+						<option value="only+fd+dk;1+1">Only 
 						<option id="custom-devig-option" value="custom">Add Custom...</option>
 						<option value="delete">Delete Custom...</option>
 					</select>
@@ -127,6 +138,7 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
+						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
@@ -141,6 +153,27 @@
 				       type="number" min="0" step="5"
 				       placeholder="Custom %"
 				       style="display:none; width:7ch; margin-left:.5rem;" />
+				
+				<div class="select-wrapper">
+					<label for="prop-select" class="select-label">Prop</label>
+					<select id="prop-select">
+						<option value="" selected>All</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper" style="display: none;">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 				<div class="select-wrapper">
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
@@ -151,13 +184,12 @@
 					</svg>
 				</div>
 				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
-						<option value="" selected>All</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
+				  <label for="min-odds" class="select-label">Min</label>
+				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+				<div class="select-wrapper">
+				  <label for="max-odds" class="select-label">Max</label>
+				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
@@ -191,8 +223,8 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div id="table">
-				</div>
+				<div id="table"></div>
+				<div id="card-container"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
@@ -201,7 +233,7 @@
 				 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
 				 background-color: rgba(0, 0, 0, 0.7); z-index: 1001;
 				 justify-content: center; align-items: center;">
-				<div class="overlay-content" style="max-width: 400px; background: white; padding: 20px; border-radius: 8px;">
+				<div class="overlay-content" style="max-width: 400px; padding: 20px; border-radius: 8px;">
 					<h2>Delete Custom Devigs</h2>
 					<div id="custom-devig-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
 						</div>
@@ -371,268 +403,25 @@
 		let TODAY = getToday();
 		let SPORT = "nba";
 		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
+		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
 		let BOOST = URLParams.get("boost");
 		let PRETTY = URLParams.get("pretty");
 		let IMP = URLParams.get("imp");
+		let VIG = URLParams.get("vig") || "";
+		let OU = URLParams.get("ou") || "ou";
 		let BOOK = URLParams.get("book");
 		let PROP = URLParams.get("prop") || "";
+		let MIN = URLParams.get("min") || "";
+		let MAX = URLParams.get("max") || "";
 		TEAM = URLParams.get("team") || "det";
 		let SIDE = URLParams.get("side") ?? "both";
-
-		// Exclude
-		const dd = document.getElementById('exclude-dd');
-		const excludeBtn = dd.querySelector('.chkdd-btn');
-		let menu = dd.querySelector('.chkdd-menu');
-		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
-
-		function getExcludedBooks() {
-		  return boxes.filter(b => b.checked).map(b => b.value);
-		}
-		excludeBtn.addEventListener("click", (e) => {
-			//const open = dd.classList.toggle("open");
-			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
-			e.stopPropagation();
-			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
-		});
-		document.addEventListener('click', (e) => {
-			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
-		});
-		boxes.forEach(b => b.addEventListener('change', () => {
-		  changeFilter();
-		}));
-
-		menu.addEventListener('click', (e) => {
-		  const act = e.target?.dataset?.act;
-		  if (!act) return;
-		  const state = act === 'all';
-		  boxes.forEach(b => b.checked = state);
-		  changeFilter();
-		});
-
-		function openMenu() {
-		  const r = excludeBtn.getBoundingClientRect();
-		  menu.style.position = 'fixed';
-		  menu.style.top = `${r.bottom + 6}px`;
-		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-		  menu.style.right = 'auto';
-		  document.body.appendChild(menu);       // move out of the scroller
-		  menu.style.display = 'block';
-		  excludeBtn.setAttribute('aria-expanded','true');
-		}
-
-		function closeMenu() {
-		  menu.style.display = 'none';
-		  dd.appendChild(menu);                  // put it back (optional)
-		  excludeBtn.setAttribute('aria-expanded','false');
-		}
-		
-		if (MARK != undefined) {
-			document.querySelector("#watermark").style.display = "initial";
-			document.querySelector("#table-container").style["max-height"] = "initial";
-			document.querySelector("#watermark").style.width = "20%";
-		}
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
-			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
-				if (checkbox.checked) {
-					TABLE.getColumn(field)?.show();
-				} else {
-					TABLE.getColumn(field)?.hide();
-				}
-			});
-		});
-
-		function changeFilter() {
-			let devigBook = document.getElementById("devig-select").value;
-			let boost = document.getElementById("boost-select").value;
-			let game = document.getElementById("game-select").value;
-			let book = document.getElementById("book-select").value;
-			let prop = document.getElementById("prop-select").value;
-			let excluded = getExcludedBooks();
-			if (boost === "custom") {
-				boost = boostCustom.value;
-			}
-			BOOK = book;
-			GAME = game;
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-			params.set("boost", boost);
-			params.set("devig", devigBook);
-			params.set("game", game);
-			params.set("book", book);
-			params.set("prop", prop);
-
-			if (!RES) {
-				return;
-			}
-
-			RES.data.forEach(row => {
-				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				const ex = excluded;
-				ex.push("pn"); ex.push("circa");
-				if (devigBook) {
-					ex.push(devigBook);
-				}
-				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				if (!isFinite(highest.value)) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				let ou = avg.avgAmerican.toString();
-				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook.includes("+")) {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageCustomSharps(bookOdds, devigBook, row.under); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else {
-				    	ou = buildOU(bookOdds, row.under);
-				    }
-				} else {
-				    // Normal over-first logic
-				    if (devigBook.includes("+")) {
-				        ou = averageCustomSharps(bookOdds, devigBook);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
-				}
-				if (!ou) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-
-				let d = devig(ou, highest.value, boost, row.under);
-				if (!d) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				row["book"] = highest.book;
-				row["line"] = highest.value;
-				row["ev"] = d.ev;
-				row["fairVal"] = d.fairVal;
-				row["implied"] = d.implied;
-				row["kelly"] = d.kelly;
-			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
-			const filters = [];
-			TABLE.clearFilter();
-			if (game) {
-				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
-			}
-			if (prop) {
-				filters.push({field:"prop", type:"=", value: prop});
-			}
-			if (filters.length > 0) {
-				TABLE.setFilter(filters);
-			}
-			TABLE.replaceData(RES.data);
-			//TABLE.redraw(true);
-		}
-
-
-
-		const boostSel = document.getElementById('boost-select');
-		const boostCustom = document.getElementById('boost-custom');
-
-		boostSel.value = BOOST || 0;
-		if (BOOST == "custom") {
-			boostCustom.style.display = "";
-		}
-		boostSel.addEventListener("change", (event) => {
-			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-			changeFilter();
-		});
-
-		boostCustom.addEventListener("input", () => {
-			changeFilter();
-		});
-
-		document.querySelector("#devig-select").value = DEVIG || "";
-		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
-		});
-
-		document.querySelector("#prop-select").value = PROP || "";
-		document.querySelector("#prop-select").addEventListener("change", (event) => {
-			PROP = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("prop", PROP);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			changeFilter();
-		});
-
-		document.querySelector("#game-select").addEventListener("change", (event) => {
-			GAME = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("game", GAME);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.clearFilter();
-			changeFilter();
-		});
-
-		document.querySelector("#book-select").value = BOOK || "";
-		document.querySelector("#book-select").addEventListener("change", (event) => {
-			BOOK = event.target.value;
-			changeFilter();
-		});
-
 		handleSession();
-
-		function updateTimes() {
-			updateHeaders();
-		}
-
-		function updateHeaders() {
-			for (book in UPDATED[PAGE]) {
-				if (!UPDATED[PAGE][book]) {
-					continue;
-				}
-
-				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
-					continue;
-				}
-				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
-			}
-		}
 
 		function fetchProps() {
 			fetch(API_BASE+`/api/pts`, {
@@ -673,7 +462,7 @@
 				}
 
 				setTimeout(function() {
-					updateTimes();
+					updateHeaders();
 					changeFilter();
 					if (PRETTY != undefined) {
 						pretty_();
@@ -856,14 +645,6 @@
 			});
 		}
 
-		function groupByGame() {
-			if (!TABLE.options.groupBy) {
-				TABLE.setGroupBy("game");
-			} else {
-				TABLE.setGroupBy();
-			}
-		}
-
 		function implied() {
 			TABLE.getColumns().map(c => {
 				c.hide()
@@ -910,5 +691,8 @@
 			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
+	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

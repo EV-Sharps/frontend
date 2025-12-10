@@ -1025,6 +1025,8 @@
 				let props = ["", "pts", "reb", "ast", "3ptm", "stl", "blk", "dd", "td", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
 				if (SPORT == "nhl") {
 					props = ["", "atgs", "sog", "pts", "ast", "bs", "sv"];
+				} else if (SPORT == "nfl") {
+					props = ["", "attd", "rush_yds", "rec_yds", "rec", "rush_att", "pass_td", "pass_yds", "pass_att", "pass_cmp"];
 				}
 				for (prop of props) {
 				//for (prop of ["pts", "reb"]) {

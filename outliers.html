@@ -668,7 +668,8 @@
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						formatter: plusMinusFormatter,
-						responsive: 0
+						responsive: 0,
+						visible: false
 					},
 					{
 						title: "Implied",
@@ -677,7 +678,7 @@
 						sorter: "number",
 						formatter: impliedFormatter,
 						responsive: 0,
-						visible: MOBILE ? false : true
+						visible: false
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: false},

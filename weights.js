@@ -78,6 +78,7 @@ function renderWeightSettings() {
 						<span style="font-size:0.7rem;">${parseBook(book)}</span>
 						<input 
 							type="text" 
+							inputmode="decimal"
 							id="weight-${book}" 
 							data-book="${book}" 
 							value="${WEIGHTS[book] || ''}" 

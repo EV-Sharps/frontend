@@ -260,7 +260,7 @@ function updateExistingCard(card, rowData) {
 			${getTeamImg(sport, rowData.team)}
 			<div style="font-size: 0.7rem;display:flex;flex-direction:column;text-align:center;">
 				<span class="pos">${rowData.pos}</span>
-				<span class="bats">${avgMin}</span>
+				<span class="bats">${avgMin || ""}</span>
 			</div>
 			<span class="player-name">${title(rowData.player)}</span>
 		</div>

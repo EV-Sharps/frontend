@@ -1529,6 +1529,13 @@ button#logout:hover {
 	h1, h2 {
 		font-size: 1.25rem;
 	}
+	#table-container {
+		justify-content: normal;
+		overflow: scroll;
+	}
+	#view-toggle-container {
+		display: flex;
+	}
 	.modal {
 	  justify-content: flex-end;
 	  align-items: initial;

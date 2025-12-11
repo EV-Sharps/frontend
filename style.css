@@ -430,7 +430,7 @@ body::before {
 	text-align: center;
 }
 	
-#boost-custom, .weight-item input{
+#boost-custom, .weight-item input, #devig-search {
 	font-size: 16px;
 }
 #header {

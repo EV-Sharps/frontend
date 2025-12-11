@@ -1960,7 +1960,9 @@ function loadWeights() {
 
 	delete CURR_USER.metadata["custom_devigs"];
 
-	document.getElementById("devig-display-text").textContent = parseWeightKey(`${DEVIG};${WEIGHT}`);
+	if (document.getElementById("devig-display-text")) {
+		document.getElementById("devig-display-text").textContent = parseWeightKey(`${DEVIG};${WEIGHT}`);
+	}
 }
 
 function showHideUserTable(loaded) {

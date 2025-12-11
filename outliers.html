@@ -49,6 +49,26 @@
 </script>
 <body>
 	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Method</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>

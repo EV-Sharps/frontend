@@ -1962,6 +1962,17 @@ function loadWeights() {
 
 	if (document.getElementById("devig-display-text")) {
 		document.getElementById("devig-display-text").textContent = parseWeightKey(`${DEVIG};${WEIGHT}`);
+	} else {
+		const customOption = document.getElementById("custom-devig-option");
+		const devigSel = document.getElementById("devig-select");
+		const fragment = document.createDocumentFragment();
+		for (weight of userWeights) {
+			const newOption = document.createElement("option");
+			newOption.value = weight;
+			newOption.textContent = parseWeightKey(weight);
+			fragment.appendChild(newOption);
+		}
+		devigSel.insertBefore(fragment, customOption);
 	}
 }
 

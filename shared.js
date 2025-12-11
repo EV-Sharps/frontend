@@ -2427,8 +2427,10 @@ function getFV(val, under, method = "") {
 			val = `${u}/${o}`;
 			fv = getFairValue(val);
 		} else {
-			val = getFairValue(val);
-			fv = 1 - val;
+			val = parseInt(val);
+			const implied = (val > 0)
+				? 100 / (val+100) : -val / (-val+100);
+			fv = 1 - implied;
 		}
 	} else {
 		fv = getFairValue(val);
@@ -2669,7 +2671,8 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 					val = parseInt(val);
 					const implied = (val > 0)
 						? 100 / (val+100) : -val / (-val+100);
-					fv = (1.07 - implied) / 1.07;
+					fv = 1 - implied;						
+					//fv = (1.07 - implied) / 1.07;
 				}
 			} else {
 				fv = getFairValue(val);

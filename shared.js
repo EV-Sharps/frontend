@@ -1902,6 +1902,40 @@ function getNestedFields(defs, out = []) {
 	return out;
 }
 
+function parseWeightKey(key) {
+	let [bookKey, weightKey] = key.split(";");
+	if (!weightKey) {
+		return "Market Avg";
+	}
+	let weights = weightKey.split("+");
+
+	let totalWeight = weights.reduce((acc, val) => {
+		return acc + parseFloat(val);
+	}, 0);
+
+
+	let raw = [], rawSet = new Set(), percs = [];
+	weights.map((weight, idx) => {
+		raw.push(weight);
+		rawSet.add(weight);
+		percs.push(Math.round(weight * 100 / totalWeight));
+	});
+
+	let text = "";
+	if (bookKey.includes("only")) {
+		text = "Only ";
+	}
+
+	const books = bookKey.replace("only+", "").split("+");
+	text += `${books.map(book => book.toUpperCase()).join("/")}`;
+	if (raw.length > 1 && rawSet.size == 1) {
+		text += ` ${Math.round(100 / books.length)}% Equal`;
+	} else {
+		text += ` ${percs.map(p => p+"%").join("/")}`;
+	}
+	return text;
+}
+
 function loadWeights() {
 	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 
@@ -1926,16 +1960,7 @@ function loadWeights() {
 
 	delete CURR_USER.metadata["custom_devigs"];
 
-	const customOption = document.getElementById("custom-devig-option");
-	const devigSel = document.getElementById("devig-select");
-	const fragment = document.createDocumentFragment();
-	for (weight of userWeights) {
-		const newOption = document.createElement("option");
-		newOption.value = weight;
-		newOption.textContent = parseWeightKey(weight);
-		fragment.appendChild(newOption);
-	}
-	devigSel.insertBefore(fragment, customOption);
+	document.getElementById("devig-display-text").textContent = parseWeightKey(`${DEVIG};${WEIGHT}`);
 }
 
 function showHideUserTable(loaded) {

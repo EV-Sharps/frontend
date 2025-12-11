@@ -84,6 +84,9 @@ body::before {
 .devig-display-btn {
 	display: flex;
 }
+#devig-display-text {
+	white-space: nowrap;
+}
 #devig-options-container {
 	overflow: auto;
 }
@@ -1534,7 +1537,7 @@ button#logout:hover {
 		padding: 0;
 	}
 	.modal-content.devig-panel {
-	  width: 350px;
+	  width: 100%;
 	  min-height: 100vh;
 	  border-radius: 0; /* No rounding for full side panel */
 	}

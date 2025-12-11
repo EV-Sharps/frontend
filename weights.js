@@ -201,37 +201,6 @@ function openWeights() {
 	WEIGHT_LOADED = true;
 }
 
-function parseWeightKey(key) {
-	let [bookKey, weightKey] = key.split(";");
-	let weights = weightKey.split("+");
-
-	let totalWeight = weights.reduce((acc, val) => {
-		return acc + parseFloat(val);
-	}, 0);
-
-
-	let raw = [], rawSet = new Set(), percs = [];
-	weights.map((weight, idx) => {
-		raw.push(weight);
-		rawSet.add(weight);
-		percs.push(Math.round(weight * 100 / totalWeight));
-	});
-
-	let text = "";
-	if (bookKey.includes("only")) {
-		text = "Only ";
-	}
-
-	const books = bookKey.replace("only+", "").split("+");
-	text += `${books.map(book => book.toUpperCase()).join("/")}`;
-	if (raw.length > 1 && rawSet.size == 1) {
-		text += ` ${Math.round(100 / books.length)}% Equal`;
-	} else {
-		text += ` ${percs.map(p => p+"%").join("/")}`;
-	}
-	return text;
-}
-
 function getWeightKey() {
 	let raw = [], percs = [], books = [];
 	let rawSet = new Set();
@@ -331,7 +300,9 @@ async function saveWeights() {
 
 	updateHeaders();
 	document.getElementById('custom-devig-modal').remove();
-	document.querySelector("#devig-select").value = `${DEVIG};${WEIGHT}`;
+	if (document.getElementById("devig-display-text")) {
+		document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
+	}
 	changeFilter();
 }
 

@@ -125,6 +125,10 @@ document.querySelector("#devig-select").value = DEVIG ? `${DEVIG};${WEIGHT}` : D
 if (!WEIGHT && !DEVIG.includes("+")) {
 	WEIGHT = "1";
 }
+
+if (document.getElementById("devig-display-text") && typeof parseWeightKey === 'function') {
+	document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
+}
 document.querySelector("#devig-select").addEventListener("change", (event) => {
 	if (event.target.value == "custom") {
 		openCustomDevig();
@@ -347,7 +351,7 @@ if (devigDisplay) {
 	if (devig && !devig.includes(";")) {
 		devig += repeatOnes(devig);
 	}
-	devigDisplay.textContent = getDevigNameFromValue(devig);
+	devigDisplay.textContent = parseWeightKey(devig);
 }
 
 function getCustomDevigs() {

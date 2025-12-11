@@ -265,6 +265,7 @@ function renderDevigOptions(searchTerm = "") {
 			const isChecked = (DEVIG === opt.value.split(";")[0] && (WEIGHT || "1") === (opt.value.split(";")[1] || "1"));
 			const item = document.createElement('label');
 			item.classList.add('devig-radio-item');
+			item.id = `devig-label-${opt.value}`;
 			let html = "";
 			if (opt.group == "100% Weight") {
 				item.style.width = "max-content";
@@ -415,8 +416,9 @@ async function deleteDevig(keyToDelete) {
 		})
 		.eq('id', CURR_SESSION.user.id);
 
-	document.querySelector(`option[value='${keyToDelete}']`)?.remove();
-	renderCustomDevigList();
+	document.getElementById(`devig-label-${keyToDelete}`)?.remove();
+	//document.querySelector(`option[value='${keyToDelete}']`)?.remove();
+	//renderCustomDevigList();
 }
 
 function changeFilter() {

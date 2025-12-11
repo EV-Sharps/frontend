@@ -60,6 +60,79 @@ body::before {
 	left: 0;
 	bottom: 0;
 }
+.modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.modal-header button {
+	height: min-content;
+}
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+.devig-display-btn {
+	display: flex;
+}
+#devig-options-container {
+	overflow: auto;
+}
+#devig-search {
+	padding: 5px;
+	width: 300px;
+}
+.modal-content.devig-panel {
+  background: linear-gradient(160deg, #0d3b66 0%, #021526 100%);
+
+  width: 100%;
+  max-width: 500px;
+  min-height: 40%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  padding:12px;
+}
+.options-container {
+  padding: 0 16px 16px 16px;
+  flex-grow: 1; /* Allows the options container to fill space */
+}
+
+.devig-group-header {
+  margin-top: 20px;
+  margin-bottom:0;
+  padding-bottom: 5px;
+}
+
+.devig-radio-item {
+	position: relative;
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.devig-radio-item input[type="radio"] {
+  margin-right: 10px;
+}
+
+.action-footer {
+  padding: 16px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
 #table-container {
 	flex: 1 1 auto;
 	display: flex;
@@ -357,7 +430,7 @@ body::before {
 	text-align: center;
 }
 	
-#boost-custom {
+#boost-custom, .weight-item input{
 	font-size: 16px;
 }
 #header {
@@ -1016,6 +1089,9 @@ h1 {
 	height: 16px; width: 16px;
 	margin-left: 0.5rem;
 }
+.devig-radio-item .book-img {
+	height: 16px; width: 16px;
+}
 .tabulator .tabulator-col-title .book-img {
 	margin-left: 4px;
 }
@@ -1110,6 +1186,9 @@ nav {
 #table-select, #prop-select {
 	width: 100%;
 }
+#prop-select {
+	max-width: 120px;
+}
 #log-chart {
 }
 
@@ -1188,7 +1267,7 @@ nav {
 	position: relative;
 	display: inline-block;
 	width: auto;
-	max-width: 100%;
+	max-width: initial;
 }
 
 .select-label {
@@ -1214,6 +1293,10 @@ nav {
 	border: 1px solid #444;
 	border-radius: 6px;
 	min-width: 10ch;
+}
+
+#devig-button {
+	text-overflow: ellipsis;
 }
 
 .select-wrapper select:hover {
@@ -1442,6 +1525,18 @@ button#logout:hover {
 	}
 	h1, h2 {
 		font-size: 1.25rem;
+	}
+	.modal {
+	  justify-content: flex-end;
+	  align-items: initial;
+	}
+	.options-container {
+		padding: 0;
+	}
+	.modal-content.devig-panel {
+	  width: 350px;
+	  min-height: 100vh;
+	  border-radius: 0; /* No rounding for full side panel */
 	}
 	#weighting-body {
 		flex-direction: column;

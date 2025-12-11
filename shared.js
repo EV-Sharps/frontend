@@ -2119,58 +2119,109 @@ function fetchUpdated(repo="props", render=true) {
 	}).catch(err => console.log(err));
 }
 
+function getImpliedProbabilityFromOddsString(oddsString, legIndex) {
+    if (!oddsString) return null;
+    
+    // Check if it's a split odds string (e.g., "-110/-110")
+    const isSplit = String(oddsString).includes('/');
+    
+    let token;
+    if (isSplit) {
+        token = String(oddsString).split('/')[legIndex];
+    } else {
+        // If not split, we assume it only applies to the 'Over' leg (legIndex 0) 
+        // unless other logic dictates, but based on your original code, 
+        // if legIndex is 1 and it's not split, it would usually be skipped/invalid 
+        // unless rowData.prop includes "vs-"
+        if (legIndex === 1) return null; // Simplified logic, mimicking original's check
+        token = String(oddsString);
+    }
+    
+    const num = Number(token);
+    // Assuming americanToImplied is defined elsewhere (e.g., global or imported)
+    return isNaN(num) ? null : americanToImplied(num); 
+}
+
 function computeOutlierFromBookOdds(rowData) {
 	const bookOdds = rowData.bookOdds;
 	if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
 
-	// pick Over (index 0) or Under (index 1) leg from "a/b" strings
 	const legIndex = rowData.under ? 1 : 0;
 
-	// Parse selected leg and convert to implied probability
 	let entries, avgP;
 
 	if (DEVIG) {
-		const devigVal = bookOdds[DEVIG];
-		if (!devigVal || (rowData.under && !String(devigVal).includes("/") && !rowData.prop.includes("vs-"))) {
-			return { book: null, value: null, deviation: 0, pct: 0 };
-		}
+		let p_devig;
 
-		const devigToken = String(devigVal).includes('/') ? String(devigVal).split('/')[legIndex] : String(devigVal);
-		const devigNum = Number(devigToken);
-		const p_devig = americanToImplied(devigNum);
+		if (DEVIG.includes("+")) {
+			const devigBooks = DEVIG.split("+");
+            let sumImpliedP = 0;
+            let count = 0;
+            
+            for (const book of devigBooks) {
+                const oddsString = bookOdds[book];
+                if (oddsString) {
+                    const p = getImpliedProbabilityFromOddsString(oddsString, legIndex);
+                    if (p != null) {
+                        sumImpliedP += p;
+                        count += 1;
+                    }
+                }
+            }
 
-		if (isNaN(devigNum) || p_devig == null) {
-			return { book: null, value: null, deviation: 0, pct: 0 };
-		}
+            if (count === 0) {
+                return { book: null, value: null, deviation: 0, pct: 0 };
+            }
+            
+            // Average implied probability across the composite books
+            p_devig = sumImpliedP / count;
+		} else {
+            const devigVal = bookOdds[DEVIG];
+            
+            // Check for edge cases where odds are missing or invalid for a single book
+            if (!devigVal || (rowData.under && !String(devigVal).includes("/") && !rowData.prop.includes("vs-"))) {
+                 return { book: null, value: null, deviation: 0, pct: 0 };
+            }
 
-		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
+            p_devig = getImpliedProbabilityFromOddsString(devigVal, legIndex);
+        }
 
-		let excluded = getExcludedBooks();
-		excluded.push("pn"); excluded.push("circa");
+		if (p_devig == null) {
+            return { book: null, value: null, deviation: 0, pct: 0 };
+        }
 
-		Object.entries(bookOdds)
-			.filter(([book]) => book !== DEVIG && !excluded.includes(book))
-			.forEach(([book, val]) => {
-				if (!val || (rowData.under && !val.includes("/"))) {
-					return;
-				}
-				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-				const num = Number(token);
-				const p = americanToImplied(num);
+        let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
+        let excluded = getExcludedBooks();
+        excluded.push("pn"); excluded.push("circa");
 
-				if (!isNaN(num) && p != null) {
-					const dev = p_devig - p;
-					const pct = p_devig !== 0 ? dev / p_devig : 0; 
+        // Add the single book DEVIG to the excluded list to avoid comparing 
+        // a book against itself if DEVIG is a single book.
+        const devigExclusions = String(DEVIG).split("+");
+        devigExclusions.forEach(b => excluded.push(b));
+        
+        Object.entries(bookOdds)
+            // Ensure we don't compare against any books used in the DEVIG calculation
+            .filter(([book]) => !excluded.includes(book)) 
+            .forEach(([book, val]) => {
+                const p = getImpliedProbabilityFromOddsString(val, legIndex);
 
-					if (dev > best.deviation) {
-						best = { book, value: num, deviation: dev, pct };
-					}
-				}
-			});
+                if (p != null) {
+                    const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+                    const num = Number(token); // The American odds value for the return object
+                    
+                    const dev = p_devig - p;
+                    const pct = p_devig !== 0 ? dev / p_devig : 0;  
 
-		if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+                    if (dev > best.deviation) {
+                        // Store the American odds (num) for the outlier book
+                        best = { book, value: num, deviation: dev, pct };
+                    }
+                }
+            });
 
-		return best;
+        if (best.deviation <= 0) return { book: null, value: null, deviation: 0, pct: 0 };
+
+        return best;
 	} else {
 		entries = Object.entries(bookOdds)
 		.map(([book, val]) => {
@@ -2334,6 +2385,23 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 
 	const kelly = getKelly(finalOdds, ev);
 	return { ev, fairVal, implied, kelly };
+}
+
+function getFV(val, under, method = "") {
+	let fv;
+	if (under) {
+		if (val.includes("/")) {
+			let [o,u] = val.split("/");
+			val = `${u}/${o}`;
+			fv = getFairValue(val);
+		} else {
+			val = getFairValue(val);
+			fv = 1 - val;
+		}
+	} else {
+		fv = getFairValue(val);
+	}
+	return fv;
 }
 
 function getFairValue(ou, method = "") {
@@ -2559,6 +2627,7 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			let fv;
+
 			if (isUnder) {
 				if (val.includes("/")) {
 					let [o,u] = val.split("/");
@@ -2566,7 +2635,7 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 					fv = getFairValue(val);
 				} else {
 					val = getFairValue(val);
-					val = 1 - val;
+					fv = 1 - val;
 				}
 			} else {
 				fv = getFairValue(val);

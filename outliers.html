@@ -582,15 +582,39 @@
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
-						    let devigBook = data.bookOdds[DEVIG];
-						    if (!devigBook) {
-						    	devigBook = data.fairVal;
-						    	return `${devigBook}`;
-						    }
-						    return `
-						    	${devigBook}
-						    	<img class='book-img' src='logos/${DEVIG}.png' alt='${DEVIG}' title='${DEVIG}' />
-						    `;
+							let devigBook = data.bookOdds[DEVIG];
+							if (DEVIG.includes("+")) {
+								let fvs = 0, totWeight = 0;
+								for (book of DEVIG.split("+")) {
+									let ou = data.bookOdds[book];
+									if (ou) {
+										fvs += parseInt(ou.split("/")[data.ouIdx]);
+										totWeight += 1;
+									}
+								}
+								let fv = fvs / totWeight;
+								if (!fv) {
+									return "";
+								}
+								return `${fv}`;
+							} else if (!DEVIG) {
+								let fv = 0, totWeight = 0;
+								Object.entries(data.bookOdds).map(([book, ou]) => {
+									if (!ou) return;
+									let o = parseInt(ou.split("/")[data.ouIdx]);
+									fv += o;
+									totWeight += 1;
+								});
+								if (!totWeight) return "";
+								return `${Math.round(fv / totWeight)}`;
+							} else if (!devigBook) {
+								devigBook = data.fairVal;
+								return `${devigBook}`;
+							}
+							return `
+								${devigBook}
+								<img class='book-img' src='logos/${DEVIG}.png' alt='${DEVIG}' title='${DEVIG}' />
+							`;
 						},
 						responsive: 0
 					},

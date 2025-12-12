@@ -130,6 +130,9 @@ function changePage(page) {
 	} else if (page.includes("bets")) { 
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./bets${HTML}?sport=${sport}`;
+	} else if (page.includes("live")) { 
+		let sport = !page.includes("sport=") ? "attd" : page.split("?sport=")[1];
+		window.location.href = `./live${HTML}?sport=${sport}`;
 	} else if (page.includes("outliers")) {
 		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
 		window.location.href = `./outliers${HTML}?sport=${sport}`;

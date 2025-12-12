@@ -321,7 +321,7 @@ function renderDevigOptions(searchTerm = "") {
 				});
 				html += `
 					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<span style="display:flex;gap:5px;align-items:center;">${opt.name} ${booksHTML.join("")}</span>
+					<div class="devig-selection-container">${opt.name} <div>${booksHTML.join("")}</div></div>
 				`;
 			}
 

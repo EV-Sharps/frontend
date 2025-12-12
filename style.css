@@ -118,6 +118,11 @@ body::before {
   padding-bottom: 5px;
 }
 
+.devig-selection-container {
+	display:flex;
+	gap:5px;
+	align-items:center;
+}
 .devig-radio-item {
 	position: relative;
   display: flex;
@@ -1528,6 +1533,10 @@ button#logout:hover {
 	}
 	h1, h2 {
 		font-size: 1.25rem;
+	}
+	.devig-selection-container {
+		flex-direction: column-reverse;
+		align-items:  flex-start;
 	}
 	#table-container {
 		justify-content: normal;

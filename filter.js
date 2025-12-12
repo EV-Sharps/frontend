@@ -227,6 +227,28 @@ function getDevigNameFromValue(value) {
 	return "Market Avg"; // Fallback
 }
 
+const MAX_FAVORITES = 5;
+
+function toggleFavorite(devigKey) {
+	let favorites = getFavoriteDevigs();
+	const index = favorites.indexOf(devigKey);
+
+	if (index > -1) {
+		// unfavorited
+		favorites.splice(index, 1);
+	} else {
+		if (favorites.length < MAX_FAVORITES) {
+			favorites.push(devigKey);
+		} else {
+			alert(`You can only have a maximum of ${MAX_FAVORITES} favorites.`)
+			return;
+		}
+	}
+
+	setFavoriteDevigs(favorites);
+	renderDevigOptions(document.getElementById("devig-search").value);
+}
+
 function renderDevigOptions(searchTerm = "") {
 	const customDevigs = getCustomDevigs().map(key => ({
 		name: parseWeightKey(key),
@@ -234,7 +256,15 @@ function renderDevigOptions(searchTerm = "") {
 		group: "Your Custom Devigs"
 	}));
 
-	const allOptions = [...DEFAULT_DEVIGS, ...customDevigs];
+	const currentFavorites = new Set(getFavoriteDevigs());
+
+	const favorites = getFavoriteDevigs().map(key => ({
+		name: parseWeightKey(key),
+		value: key,
+		group: "Favorites"
+	}));
+
+	const allOptions = [...favorites, ...DEFAULT_DEVIGS, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
 	devigOptionsContainer.innerHTML = ''; // Clear previous content
 
 	const filteredOptions = allOptions.filter(opt => 
@@ -267,9 +297,12 @@ function renderDevigOptions(searchTerm = "") {
 		groupedOptions[group].forEach(opt => {
 			let [books,weight] = opt.value.split(";");
 			const isChecked = (DEVIG === opt.value.split(";")[0] && (WEIGHT || "1") === (opt.value.split(";")[1] || "1"));
+			const isFavorite = currentFavorites.has(opt.value);
+
 			const item = document.createElement('label');
 			item.classList.add('devig-radio-item');
 			item.id = `devig-label-${opt.value}`;
+
 			let html = "";
 			if (opt.group == "100% Weight") {
 				item.style.width = "max-content";
@@ -291,10 +324,27 @@ function renderDevigOptions(searchTerm = "") {
 					<span style="display:flex;gap:5px;align-items:center;">${opt.name} ${booksHTML.join("")}</span>
 				`;
 			}
+
+			if (!["Favorites", "Default", "100% Weight"].includes(group)) {
+                // Use a star icon (★ or ⭐) and assign a dynamic class/style
+                const starColor = isFavorite ? '#FFD700' : '#ccc'; // Gold for favorited, gray for unfavorited
+
+                html += `
+                    <button 
+                        onclick="event.stopPropagation(); toggleFavorite('${opt.value}');" 
+                        style="position:absolute; right: ${opt.group == "Your Custom Devigs" ? '30px' : '0'}; 
+                               background: none; color: ${starColor}; border: none;
+                               padding: 4px 8px; cursor: pointer; font-size: 16px; 
+                               line-height: 1; z-index: 10;">
+                        ${isFavorite ? '★' : '☆'}
+                    </button>
+                `;
+            }
+
 			if (opt.group == "Your Custom Devigs") {
 				html += `
 					<button 
-						onclick="deleteDevig('${opt.value}')" 
+						onclick="event.stopPropagation(); deleteDevig('${opt.value}')" 
 						style="position:absolute;right:0;background-color: #f44336; color: white; border: none; 
 							   padding: 4px 8px; cursor: pointer; border-radius: 4px; 
 							   font-weight: bold; line-height: 1;">
@@ -357,6 +407,22 @@ if (devigDisplay) {
 function getCustomDevigs() {
 	const meta = CURR_USER?.metadata || {};
 	return meta["weights"] || [];
+}
+
+async function setFavoriteDevigs(favorites) {
+	const metadata = CURR_USER?.metadata || {};
+	metadata["favorites"] = favorites;
+
+	if (CURR_USER) {
+		const { error: updateError } = await SB.from('profiles')
+			.update({metadata: metadata})
+			.eq('id', CURR_SESSION.user.id);
+	}
+}
+
+function getFavoriteDevigs() {
+	const meta = CURR_USER?.metadata || {};
+	return meta["favorites"] || [];
 }
 
 function populateCustomDevigSelect() {

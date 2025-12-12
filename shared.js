@@ -32,7 +32,7 @@ let PAGE_DROPDOWN = `
 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs</option>
-	<option value="live">🏈 Live (Sharps)</option>
+	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
@@ -57,6 +57,7 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
 	<!-- <option value="golf">⛳ GOLF Props</option> -->
 	<option value="atgs">🏒 Goals</option>
+	<option value="live?sport=nhl">🏒 Live (Sharps)</option>
 	<option value="atgs2">🏒 2+ Goals</option>
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
@@ -97,6 +98,8 @@ setTimeout(() => {
 		select.value = "kambi";
 	} else if (PAGE == "outliers") {
 		select.value = `outliers?sport=${SPORT}`;
+	} else if (PAGE == "live") {
+		select.value = `live?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {

@@ -491,7 +491,8 @@ async function deleteDevig(keyToDelete) {
 	//renderCustomDevigList();
 }
 
-function changeFilter() {
+function changeFilter(render = true) {
+	let [w,l,profit,kellyProfit] = [0,0,0,0];
 	let devigBook = DEVIG;
 	if (devigBook.includes(";")) {
 		[devigBook, WEIGHT] = devigBook.split(";");
@@ -590,7 +591,31 @@ function changeFilter() {
 		row["ev"] = ev.toFixed(1);
 		row["implied"] = round2(avgDevig * 100);
 		row["kelly"] = getKelly(highest.value, ev);
+
+		if (ev >= 0 && row.result != undefined && (!prop || row.prop == prop) && (OU == "ou" || OU == (row.under ? "u" : "o"))) {
+			if (row["hit"]) {
+				w += 1;
+				let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
+				profit += dec;
+				kellyProfit += dec * parseFloat(row["kelly"]);
+			} else {
+				l += 1;
+				profit -= 1;
+				kellyProfit -= parseFloat(row["kelly"]);
+			}
+		}
 	});
+
+	if (PAGE == "analysis") {
+		document.getElementById("wins").textContent = w;
+		document.getElementById("losses").textContent = l;
+		document.getElementById("profit").textContent = profit.toFixed(2);
+		document.getElementById("kelly").textContent = kellyProfit.toFixed(2);
+
+		if (!render) {
+			return;
+		}
+	}
 
 	const newUrl = `${window.location.pathname}?${params.toString()}`;
 	history.pushState({}, '', newUrl);

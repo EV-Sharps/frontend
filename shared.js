@@ -61,10 +61,11 @@ let PAGE_DROPDOWN = `
 	<option value="atgs2">🏒 2+ Goals</option>
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
+	<option value="analysis?sport=nhl">🏒 Results</option>
 	<option value="pts">🏀 PTS</option>
 	<option value="nba">🏀 NBA Props (Sharps)</option>
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
-	<option value="analysis">🏀 Results</option>
+	<option value="analysis?sport=nba">🏀 Results</option>
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	<option value="ncaab">🏀 CBB (Sharps)</option>
@@ -100,6 +101,8 @@ setTimeout(() => {
 		select.value = `outliers?sport=${SPORT}`;
 	} else if (PAGE == "live") {
 		select.value = `live?sport=${SPORT}`;
+	} else if (PAGE == "analysis") {
+		select.value = `analysis?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
@@ -133,6 +136,9 @@ function changePage(page) {
 	} else if (page.includes("live")) { 
 		let sport = !page.includes("sport=") ? "attd" : page.split("?sport=")[1];
 		window.location.href = `./live${HTML}?sport=${sport}`;
+	} else if (page.includes("analysis")) { 
+		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
+		window.location.href = `./analysis${HTML}?sport=${sport}`;
 	} else if (page.includes("outliers")) {
 		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
 		window.location.href = `./outliers${HTML}?sport=${sport}`;
@@ -2182,7 +2188,8 @@ function getImpliedProbabilityFromOddsString(oddsString, legIndex) {
 
 function computeOutlierFromBookOdds(rowData) {
 	const bookOdds = rowData.bookOdds;
-	if (!bookOdds) return { book: null, value: null, deviation: 0, pct: 0 };
+	let bookFilter = document.getElementById("book-select").value;
+	if (!bookOdds || (bookFilter && !bookOdds[bookFilter])) return { book: null, value: null, deviation: 0, pct: 0 };
 
 	const legIndex = rowData.under ? 1 : 0;
 
@@ -2238,20 +2245,18 @@ function computeOutlierFromBookOdds(rowData) {
 		devigExclusions.forEach(b => excluded.push(b));
 		
 		Object.entries(bookOdds)
-			// Ensure we don't compare against any books used in the DEVIG calculation
-			.filter(([book]) => !excluded.includes(book)) 
+			.filter(([book]) => !excluded.includes(book) && (!bookFilter || bookFilter == book)) 
 			.forEach(([book, val]) => {
 				const p = getImpliedProbabilityFromOddsString(val, legIndex);
 
 				if (p != null) {
 					const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
-					const num = Number(token); // The American odds value for the return object
+					const num = Number(token);
 					
 					const dev = p_devig - p;
 					const pct = p_devig !== 0 ? dev / p_devig : 0;  
 
 					if (dev > best.deviation) {
-						// Store the American odds (num) for the outlier book
 						best = { book, value: num, deviation: dev, pct };
 					}
 				}
@@ -2281,6 +2286,9 @@ function computeOutlierFromBookOdds(rowData) {
 		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
 		entries.forEach(([book, american, p]) => {
+			if (bookFilter && book != bookFilter) {
+				return;
+			}
 			const dev = avgP - p;
 			const pct = avgP !== 0 ? dev / avgP : 0;
 			if (dev > best.deviation) {

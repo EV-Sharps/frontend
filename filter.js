@@ -280,7 +280,7 @@ function renderDevigOptions(searchTerm = "") {
 	for (const group in groupedOptions) {
 		// Create collapsible group header
 		const groupHeader = document.createElement('h4');
-		groupHeader.textContent = group;
+		groupHeader.textContent = group == "Favorites" ? `Favorites (${MAX_FAVORITES} max)` : group;;
 		groupHeader.classList.add('devig-group-header');
 		devigOptionsContainer.appendChild(groupHeader);
 
@@ -325,7 +325,7 @@ function renderDevigOptions(searchTerm = "") {
 				`;
 			}
 
-			if (!["Favorites", "Default", "100% Weight"].includes(group)) {
+			if (!["Default", "100% Weight"].includes(group)) {
                 // Use a star icon (★ or ⭐) and assign a dynamic class/style
                 const starColor = isFavorite ? '#FFD700' : '#ccc'; // Gold for favorited, gray for unfavorited
 

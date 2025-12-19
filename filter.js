@@ -334,10 +334,15 @@ function renderDevigOptions(searchTerm = "") {
 					}
 					return "";
 				});
+				const barHTML = renderWeightBar(books, weight);
 				html += `
 					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
 					<div style="display:flex;flex-direction:column;">
-						<div class="devig-selection-container">${opt.name} <div>${booksHTML.join("")}</div></div>
+						<div class="devig-selection-container">
+							${opt.name}
+							<div>${booksHTML.join("")}</div>
+						</div>
+						${barHTML}
 				`;
 
 				if (!["Default", "100% Weight"].includes(opt.group)) {
@@ -578,25 +583,56 @@ function getFavoriteDevigs() {
 	return meta["favorites"] || [];
 }
 
+function renderWeightBar(books, weights) {
+	const barContainer = document.createElement('div');
+	barContainer.classList.add("book-weight-bar");
+
+	const totalWeight = weights.split("+").reduce((sum, w) => sum + parseInt(w), 0);
+
+	if (totalWeight > 0) {
+		let idx = 0;
+		for (book of books.replace("only+", "").split("+")) {
+			const weight = weights.split("+")[idx];
+			
+			// Skip rendering if the book has 0 weight
+			if (weightValue === 0) continue;
+
+			const percentage = (weightValue / totalWeight) * 100;
+			const bookInfo = BOOK_VISUAL_MAP[bookKey];
+
+			if (bookInfo) {
+				const segment = document.createElement('div');
+				segment.classList.add('book-segment', bookInfo.class);
+				segment.style.width = `${percentage}%`;
+				
+				// Only show the label if the segment is wide enough
+				const displayLabel = percentage > 10 ? `${bookInfo.name} ${weightValue}%` : '';
+
+				segment.textContent = displayLabel;
+				barContainer.appendChild(segment);
+			}
+
+			idx += 1;
+		}
+	}
+}
+
 function populateCustomDevigSelect() {
 	const devigSelect = document.getElementById("custom-devig-select");
 	const customDevigs = getCustomDevigs();
 }
 
-// Function to open the deletion modal
 function openDeleteCustomDevigOverlay() {
 	document.getElementById("delete-custom-devig-overlay").style.display = "flex";
 	renderCustomDevigList();
 	document.getElementById("custom-devig-select").value = "";
 }
 
-// Function to close the deletion modal
 function closeDeleteCustomDevigOverlay() {
 	document.getElementById("delete-custom-devig-overlay").style.display = "none";
 	document.getElementById("devig-select").value = DEVIG;
 }
 
-// Function to render the list inside the deletion modal
 function renderCustomDevigList() {
 	const container = document.getElementById("custom-devig-list-container");
 	const devigs = getCustomDevigs();
@@ -620,7 +656,6 @@ function renderCustomDevigList() {
 	`).join('');
 }
 
-// Function to handle the actual deletion of a custom devig
 async function deleteDevig(keyToDelete) {
 	const meta = CURR_USER?.metadata || {};
 	const customDevigs = meta["weights"] || [];
@@ -640,8 +675,6 @@ async function deleteDevig(keyToDelete) {
 		.eq('id', CURR_SESSION.user.id);
 
 	document.getElementById(`devig-label-${keyToDelete}`)?.remove();
-	//document.querySelector(`option[value='${keyToDelete}']`)?.remove();
-	//renderCustomDevigList();
 }
 
 function changeFilter(render = true) {

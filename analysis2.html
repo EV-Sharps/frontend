@@ -667,14 +667,16 @@
 		function fetchData() {
 			RES = TEST;
 			let props = ["pts", "reb", "ast", "stl", "blk", "dd", "3ptm", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
-			//props = ["atgs", "sog", "pts", "ast", "sv", "bs"];
+			if (RES["atgs-vs-espn"]) {
+				props = ["atgs", "sog", "pts", "ast", "sv", "bs"];
+			}
 			for (prop of props) {
 				const barColors = [];
 				const profits = [];
 				const bookNames = [];
 				const annotations = [];
 				const traces = [];
-				for (book of ["fd", "dk", "circa", "pn", "espn"]) {
+				for (book of ["fd", "dk", "circa", "pn", "espn", "mgm"]) {
 					const key = `${prop}-vs-${book}`;
 					if (!TEST[key]) {
 						continue;

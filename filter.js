@@ -265,11 +265,18 @@ function renderDevigOptions(searchTerm = "") {
 	}));
 
 	const allOptions = [...favorites, ...DEFAULT_DEVIGS, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
-	devigOptionsContainer.innerHTML = ''; // Clear previous content
 
-	const filteredOptions = allOptions.filter(opt => 
-		opt.name.toLowerCase().includes(searchTerm.toLowerCase())
-	);
+	const allLabels = getAllDevigLabels();
+	devigOptionsContainer.innerHTML = '';
+
+	const filteredOptions = allOptions.filter(opt => {
+		const nameMatch = opt.name.toLowerCase().includes(searchTerm.toLowerCase());
+		const devigLabels = allLabels[opt.value] || [];
+		const labelMatch = devigLabels.some(label => 
+			label.toLowerCase().includes(searchTerm.toLowerCase())
+		);
+		return nameMatch || labelMatch;
+	});
 
 	const groupedOptions = filteredOptions.reduce((acc, opt) => {
 		acc[opt.group] = acc[opt.group] || [];
@@ -299,6 +306,14 @@ function renderDevigOptions(searchTerm = "") {
 			const isChecked = (DEVIG === opt.value.split(";")[0] && (WEIGHT || "1") === (opt.value.split(";")[1] || "1"));
 			const isFavorite = currentFavorites.has(opt.value);
 
+			const labels = allLabels[opt.value] || [];
+
+			const labelsHTML = labels.map(label => {
+				const devigSport = getSportFromLabel(label);
+				const sportClass = devigSport ? ` sport-${devigSport}` : '';	
+				return `<span class="devig-label">${parseLabel(label)}</span>`
+			}).join('');
+
 			const item = document.createElement('label');
 			item.classList.add('devig-radio-item');
 			item.id = `devig-label-${opt.value}`;
@@ -321,25 +336,36 @@ function renderDevigOptions(searchTerm = "") {
 				});
 				html += `
 					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<div class="devig-selection-container">${opt.name} <div>${booksHTML.join("")}</div></div>
+					<div style="display:flex;flex-direction:column;">
+						<div class="devig-selection-container">${opt.name} <div>${booksHTML.join("")}</div></div>
 				`;
+
+				if (!["Default", "100% Weight"].includes(opt.group)) {
+					html += `
+					<div class="devig-labels-container">
+						${labelsHTML}
+						<button class="add-prop-btn" title="Add another prop to this devig" data-devig="${opt.value}">+</button>
+					</div>`;
+
+				}
+
+				html += "</div>";
 			}
 
 			if (!["Default", "100% Weight"].includes(group)) {
-                // Use a star icon (★ or ⭐) and assign a dynamic class/style
-                const starColor = isFavorite ? '#FFD700' : '#ccc'; // Gold for favorited, gray for unfavorited
+				const starColor = isFavorite ? '#FFD700' : '#ccc';
 
-                html += `
-                    <button 
-                        onclick="event.stopPropagation(); toggleFavorite('${opt.value}');" 
-                        style="position:absolute; right: ${opt.group == "Your Custom Devigs" ? '30px' : '0'}; 
-                               background: none; color: ${starColor}; border: none;
-                               padding: 4px 8px; cursor: pointer; font-size: 16px; 
-                               line-height: 1; z-index: 10;">
-                        ${isFavorite ? '★' : '☆'}
-                    </button>
-                `;
-            }
+				html += `
+					<button 
+						onclick="event.stopPropagation(); toggleFavorite('${opt.value}');" 
+						style="position:absolute; right: ${opt.group == "Your Custom Devigs" ? '30px' : '0'}; 
+							   background: none; color: ${starColor}; border: none;
+							   padding: 4px 8px; cursor: pointer; font-size: 16px; 
+							   line-height: 1; z-index: 10;">
+						${isFavorite ? '★' : '☆'}
+					</button>
+				`;
+			}
 
 			if (opt.group == "Your Custom Devigs") {
 				html += `
@@ -371,11 +397,110 @@ function renderDevigOptions(searchTerm = "") {
 		
 		devigOptionsContainer.appendChild(groupContainer);
 	}
+
+	Array.from(document.querySelectorAll(".add-prop-btn")).map(btn => {
+		btn.onclick = function(event) {
+			event.stopPropagation();
+			renderPropOptions(btn.dataset.devig);
+			openPropSelectorModal();
+		}
+	});
+}
+
+const propSelectorModal = document.getElementById('prop-selector-modal');
+const propOptionsContainer = document.getElementById('prop-selector-options-container');
+
+function openPropSelectorModal() {
+	propSelectorModal.style.display = 'flex';
+}
+
+function closePropSelectorModal() {
+	propSelectorModal.style.display = 'none';
+}
+
+const AVAILABLE_PROPS = {
+	nba: [
+		"pts", "reb", "ast", "3ptm", "dd", "td", "pa", "pr", "ra", "pra",
+		"main", "ml", "props"
+	],
+	nfl: [
+		"attd",
+		"main", "props"
+	],
+	nhl: [
+		"atgs", "pts", "ast", "sog", "sv", "bs",
+		"main", "ml", "props"
+	]
+}
+
+async function addPropLabel(sport, devig, prop) {
+	const meta = CURR_USER?.metadata || {};
+	if (!meta["tags"]) {
+		meta["tags"] = {};
+	}
+	if (!meta["tags"][devig]) {
+		meta["tags"][devig] = [];
+	}
+
+	if (meta["tags"][devig].includes(`${sport}-${prop}`)) {
+		meta["tags"][devig] = meta["tags"][devig].filter(x => x != `${sport}-${prop}`);
+	} else {
+		meta["tags"][devig].push(`${sport}-${prop}`);
+	}
+
+	closePropSelectorModal();
+	renderDevigOptions();
+
+	if (!CURR_USER) return;
+
+	const { error: updateError } = await SB.from('profiles')
+	.update({
+		metadata: meta
+	})
+	.eq('id', CURR_SESSION.user.id);
+}
+
+function renderPropOptions(devig) {
+	const allTags = getAllDevigLabels();
+	const tags = allTags[devig] || [];
+	const existingTags = new Set(tags);
+
+	document.getElementById("prop-selector-devig").textContent = `Devig: ${parseWeightKey(devig)}`;
+	propOptionsContainer.innerHTML = '';
+
+	Object.entries(AVAILABLE_PROPS).forEach(([sport, props]) => {
+		let logo = "🏈";
+		if (sport == "nhl") logo = "🏒";
+		else if (sport == "nba") logo = "🏀";
+
+		const hdr = document.createElement("h3");
+		hdr.textContent = `${logo} ${sport.toUpperCase()}`;
+		propOptionsContainer.appendChild(hdr);
+
+		const btns = document.createElement("div");
+		btns.classList.add("prop-selector-buttons");
+
+		props.forEach(prop => {
+			const button = document.createElement('button');
+			button.classList.add('prop-select-button');
+			button.innerHTML = prop.toUpperCase();
+
+			const fullTagKey = `${sport}-${prop.toLowerCase()}`;
+			if (existingTags.has(fullTagKey)) {
+				button.classList.add("selected-prop");
+			}
+
+			button.onclick = () => addPropLabel(sport, devig, prop);
+			btns.appendChild(button);
+		});
+
+		propOptionsContainer.appendChild(btns);
+	});
 }
 
 document.getElementById('devig-button')?.addEventListener('click', () => {
-	renderDevigOptions(); // Render the options fresh every time
-	devigModal.style.display = 'flex'; // Use 'flex' for overlay positioning
+	renderDevigOptions();
+	devigModal.style.display = 'flex';
 });
 
 function closeDevig() {
@@ -402,6 +527,34 @@ if (devigDisplay) {
 		devig += repeatOnes(devig);
 	}
 	devigDisplay.textContent = parseWeightKey(devig);
+}
+
+function getSportFromLabel(label) {
+	if (["nba-pts", "nba-ast", "reb", "3ptm", "dd"].includes(label)) {
+		return "nba";
+	} else if (["atgs", "nhl-pts", "nhl-ast", "sog"].includes(label)) {
+		return "nhl";
+	} else if (["attd"].includes(label)) {
+		return "nfl";
+	}
+}
+
+function getDevigLabels(devig) {
+	return ["nba-reb", "nhl-pts", "nba-pts"];
+}
+
+function getAllDevigLabels() {
+	const meta = CURR_USER?.metadata || {};
+	return meta["tags"] || {};
+}
+
+function parseLabel(label) {
+	let [sport, prop] = label.split("-");
+	let sportLogo = "🏈";
+	if (sport == "nhl") sportLogo = "🏒";
+	else if (sport == "nba") sportLogo = "🏀";
+	
+	return `${sportLogo} ${prop.toUpperCase()}`;
 }
 
 function getCustomDevigs() {

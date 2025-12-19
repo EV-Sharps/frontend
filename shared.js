@@ -1327,9 +1327,9 @@ const playerFormatter = function(cell, params, rendered) {
 		player = player.split(" ");
 		if (["Hernandez", "Lowe"].includes(player[player.length-1])) {
 			player = player[0][0] + " " + player[player.length-1];
-		} else if (player == "Jaylin Williams" && data.team == "okc") {
+		} else if (data.player == "jaylin williams" && data.team == "okc") {
 			player = "Jay Williams";
-		} else if (player == "Jalen Williams" && data.team == "okc") {
+		} else if (data.player == "jalen williams" && data.team == "okc") {
 			player = "Jal Williams";
 		} else {
 			player = player[player.length-1];

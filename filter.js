@@ -337,7 +337,7 @@ function renderDevigOptions(searchTerm = "") {
 				const barHTML = renderWeightBar(books, weight);
 				html += `
 					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<div style="display:flex;flex-direction:column;">
+					<div style="display:flex;flex-direction:column;width:75%">
 						<div class="devig-selection-container">
 							${opt.name}
 							<div>${booksHTML.join("")}</div>
@@ -584,37 +584,34 @@ function getFavoriteDevigs() {
 }
 
 function renderWeightBar(books, weights) {
-	const barContainer = document.createElement('div');
-	barContainer.classList.add("book-weight-bar");
+
+	if (!books) return "";
+	let html = "<div class='book-weight-bar'>";
 
 	const totalWeight = weights.split("+").reduce((sum, w) => sum + parseInt(w), 0);
 
 	if (totalWeight > 0) {
 		let idx = 0;
 		for (book of books.replace("only+", "").split("+")) {
-			const weight = weights.split("+")[idx];
+			const weightValue = weights.split("+")[idx];
 			
-			// Skip rendering if the book has 0 weight
 			if (weightValue === 0) continue;
 
 			const percentage = (weightValue / totalWeight) * 100;
-			const bookInfo = BOOK_VISUAL_MAP[bookKey];
+			const bookInfo = book.toUpperCase();
 
 			if (bookInfo) {
-				const segment = document.createElement('div');
-				segment.classList.add('book-segment', bookInfo.class);
-				segment.style.width = `${percentage}%`;
-				
 				// Only show the label if the segment is wide enough
-				const displayLabel = percentage > 10 ? `${bookInfo.name} ${weightValue}%` : '';
+				const displayLabel = percentage > 10 ? `${bookInfo} ${percentage}%` : '';
 
-				segment.textContent = displayLabel;
-				barContainer.appendChild(segment);
+				let div = `<div class='book-segment ${bookInfo}' style='width:${percentage}%'>${displayLabel}</div>`;
+				html += div;
 			}
 
 			idx += 1;
 		}
 	}
+	return html+"</div>";
 }
 
 function populateCustomDevigSelect() {

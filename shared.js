@@ -11,6 +11,7 @@ let UPDATED = {};
 let WEIGHTS = {};
 let TEST;
 let RES, TABLE;
+let CSV_DOWNLOADED = false;
 let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";

@@ -514,6 +514,10 @@
 					if (IMP != undefined) {
 						implied();
 					}
+					if (!CSV_DOWNLOADED && CSV != undefined) {
+						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+						CSV_DOWNLOADED = true;
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}

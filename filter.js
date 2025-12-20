@@ -602,7 +602,7 @@ function renderWeightBar(books, weights) {
 
 			if (bookInfo) {
 				// Only show the label if the segment is wide enough
-				const displayLabel = percentage > 10 ? `${bookInfo} ${percentage}%` : '';
+				const displayLabel = percentage > 10 ? `${bookInfo} ${Math.round(percentage)}%` : '';
 
 				let div = `<div class='book-segment ${bookInfo}' style='width:${percentage}%'>${displayLabel}</div>`;
 				html += div;

@@ -491,6 +491,11 @@
 					if (IMP != undefined) {
 						implied();
 					}
+					if (SPORT == "nhl") {
+						["mgm", "espn", "cz", "br", "hr", "bol"].forEach(book => {
+							TABLE.hideColumn(`bookOdds.${book}`);
+						});
+					}
 				}, 500);
 			}).catch(err => console.log(err));
 		}

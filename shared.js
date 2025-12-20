@@ -1921,7 +1921,7 @@ function getNestedFields(defs, out = []) {
 function parseWeightKey(key) {
 	let [bookKey, weightKey] = key.split(";");
 	if (!weightKey) {
-		return "Market Avg";
+		return "Mkt Avg";
 	}
 	let weights = weightKey.split("+");
 

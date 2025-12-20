@@ -13,7 +13,7 @@ let WEIGHT_LOADED = false;
 
 function getDefaultWeights(books) {
 	if (!books || books.includes("mkt") || books.includes("")) {
-		books = ALL_WEIGHTABLE_BOOKS;
+		books = ALL_WEIGHTABLE_BOOKS.filter(b => !["bv", "bol"].includes(b));
 	}
 	const defaultWeight = parseFloat((1 / books.length).toFixed(4));
 	const weights = {};

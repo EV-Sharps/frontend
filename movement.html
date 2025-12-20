@@ -98,13 +98,8 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript">
-		let TABLE, LAST, PLAYER;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
 		PAGE = "movement";
-		let SPORT = URLParams.get("sport") || "mlb";
-		let BOOK = URLParams.get("book");
+		parseURLParams();
 		let sport_select = document.querySelector("#sport-select");
 		sport_select.value = SPORT;
 
@@ -178,8 +173,8 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: MOBILE ? true : false

@@ -107,6 +107,8 @@ setTimeout(() => {
 		select.value = `live?sport=${SPORT}`;
 	} else if (PAGE == "analysis") {
 		select.value = `analysis?sport=${SPORT}`;
+	} else if (PAGE == "movement") {
+		select.value = `movement?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
@@ -146,6 +148,9 @@ function changePage(page) {
 	} else if (page.includes("outliers")) {
 		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
 		window.location.href = `./outliers${HTML}?sport=${sport}`;
+	} else if (page.includes("movement")) {
+		let sport = !page.includes("sport=") ? "atgs" : page.split("?sport=")[1];
+		window.location.href = `./movement${HTML}?sport=${sport}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}

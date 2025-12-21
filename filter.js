@@ -7,8 +7,9 @@ function renderBookSelect() {
 
 	bookSel.innerHTML = `
 		<option value="" selected>All</option>
-		${books.map(book => `<option value='${book}'>${book.toUpperCase()}</option>`)}
+		${books.map(book => `<option value='${book}'>${book.toUpperCase()}</option>`)};
 	`;
+	bookSel.value = BOOK || "";
 }
 
 function renderFilters() {

@@ -1,5 +1,5 @@
 
-const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz"];
+const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl"];
 const SESSION_WEIGHTS = {
 	"tds-only+pn+circa": {
 		pn: 0.4,
@@ -48,7 +48,9 @@ function parseBook(book) {
 		FN: "Fanatics",
 		HR: "Hardrock",
 		MGM: "BetMGM",
-		BR: "BetRivers"
+		BR: "BetRivers",
+		FL: "Fliff",
+		RE: "ReBet"
 	}
 	return conv[book.toUpperCase()] || title(book);
 }

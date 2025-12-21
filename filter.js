@@ -1,4 +1,20 @@
 
+function renderBookSelect() {
+	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
+	let bookSel = document.getElementById("book-select");
+
+	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "kambi"];
+
+	bookSel.innerHTML = `
+		<option value="" selected>All</option>
+		${books.map(book => `<option value='${book}'>${book.toUpperCase()}</option>`)}
+	`;
+}
+
+function renderFilters() {
+	renderBookSelect();
+}
+
 function updateHeaders() {
 	const weights = getPercentWeights();
 	for (book in UPDATED[PAGE]) {
@@ -83,14 +99,14 @@ document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 });
 
 function openMenu() {
-  const r = excludeBtn.getBoundingClientRect();
-  menu.style.position = 'fixed';
-  menu.style.top = `${r.bottom + 6}px`;
-  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-  menu.style.right = 'auto';
-  document.body.appendChild(menu);       // move out of the scroller
-  menu.style.display = 'block';
-  excludeBtn.setAttribute('aria-expanded','true');
+	const r = excludeBtn.getBoundingClientRect();
+	menu.style.position = 'fixed';
+	menu.style.top = `${r.bottom + 6}px`;
+	menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+	menu.style.right = 'auto';
+	document.body.appendChild(menu);
+	menu.style.display = 'block';
+	excludeBtn.setAttribute('aria-expanded','true');
 }
 
 function closeMenu() {
@@ -227,7 +243,7 @@ function getDevigNameFromValue(value) {
 	return "Market Avg"; // Fallback
 }
 
-const MAX_FAVORITES = 5;
+const MAX_FAVORITES = 7;
 
 function toggleFavorite(devigKey) {
 	let favorites = getFavoriteDevigs();
@@ -264,7 +280,7 @@ function renderDevigOptions(searchTerm = "") {
 		group: "Favorites"
 	}));
 
-	const allOptions = [...favorites, ...DEFAULT_DEVIGS, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
+	const allOptions = [...DEFAULT_DEVIGS, ...favorites, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
 
 	const allLabels = getAllDevigLabels();
 	devigOptionsContainer.innerHTML = '';

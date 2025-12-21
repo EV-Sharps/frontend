@@ -2055,12 +2055,26 @@ function openOverlay() {
 		}
 	}
 
-	let customDevigSel = document.getElementById("custom-devig-select");
-	customDevigSel.innerHTML = "";
+	const currentFavorites = new Set(getFavoriteDevigs());
+	let customDevigs = getCustomDevigs().map(key => ({
+		name: parseWeightKey(key),
+		value: key,
+		group: "custom"
+	}));;
+	let favorites = getFavoriteDevigs().map(key => ({
+		name: parseWeightKey(key),
+		value: key,
+		group: "favorites"
+	}));
+	const allOptions = [...DEFAULT_DEVIGS, ...favorites, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
 
-	let devigSel = document.getElementById("devig-select");
-	for (option of devigSel) {
-		let o = option.cloneNode(true);
+	let customDevigSel = document.getElementById("custom-devig-select");
+	customDevigSel.innerHTML = "<option disabled style='font-weight:bold; color:#ccc;'>Default</option>";
+
+	for (opt of allOptions) {
+		let o = document.createElement("option");
+		o.value = opt.value;
+		o.textContent = opt.name;
 		customDevigSel.appendChild(o);
 	}
 

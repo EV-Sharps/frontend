@@ -392,6 +392,14 @@
 								<label for="custom_bookOdds_bv">Bovada</label>
 							</div>
 							<div>
+								<input id="custom_bookOdds_re" type="checkbox">
+								<label for="custom_bookOdds_re">Rebet</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_fl" type="checkbox">
+								<label for="custom_bookOdds_fl">Fliff</label>
+							</div>
+							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
 								<label for="custom_bookOdds_pn">Pinnacle</label>
 							</div>
@@ -908,6 +916,8 @@
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					

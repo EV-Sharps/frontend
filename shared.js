@@ -34,6 +34,7 @@ let PAGE_DROPDOWN = `
 	<option value="tds">🏈 TDs</option>
 	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
+	<option value="analysis?sport=nfl">🏈 Results</option>
 	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
 	<option value="movement?sport=nfl">📉 Movement (Sharps)</option>

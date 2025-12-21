@@ -1454,7 +1454,7 @@ function getGameImgs(data, params) {
 		awayAlt = title(awayAlt);
 		homeAlt = title(homeAlt);
 	}
-	let sport = params.sport || data.sport;
+	let sport = params.sport || data.sport || SPORT;
 	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("atgs", "nhl");
 	if (sport == "props") {
 		sport = "nfl";

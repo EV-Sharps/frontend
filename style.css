@@ -1663,13 +1663,6 @@ button#logout:hover {
 		flex-direction: column-reverse;
 		align-items:  flex-start;
 	}
-	#table-container {
-		justify-content: normal;
-		overflow: scroll;
-	}
-	#view-toggle-container {
-		display: flex;
-	}
 	.modal {
 		justify-content: flex-end;
 		align-items: initial;
@@ -1853,6 +1846,13 @@ button#logout:hover {
 @media (max-width: 1150px) {
 	.dropdown {
 		flex: 0 0 auto;
+	}
+	#view-toggle-container {
+		display: flex;
+	}
+	#table-container {
+		justify-content: normal;
+		overflow: scroll;
 	}
 	#center-dropdown, #auth-buttons {
 		width: 100%;

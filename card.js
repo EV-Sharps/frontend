@@ -255,14 +255,21 @@ function updateExistingCard(card, rowData) {
 	const evContent = evCardFormatter(evCell);
 	const sport = rowData.sport || SPORT || "nba";
 	const avgMin = PAGE == "nhl" ? rowData.avgTOI : rowData.avgMin;
+	let team = rowData.teamId || rowData.team;
+	let teamImg = getTeamImg(sport, team);
+	let player = title(rowData.player);
+	if (PAGE.includes("ncaa")) {
+		player = rowData.game;
+		teamImg = getGameImgs(rowData, {});
+	}
 	const playerRowContent = `
 		<div class="player-content-stack">
-			${getTeamImg(sport, rowData.team)}
+			${teamImg}
 			<div style="font-size: 0.7rem;display:flex;flex-direction:column;text-align:center;">
-				<span class="pos">${rowData.pos}</span>
+				<span class="pos">${rowData.pos || ""}</span>
 				<span class="bats">${avgMin || ""}</span>
 			</div>
-			<span class="player-name">${title(rowData.player)}</span>
+			<span class="player-name">${player}</span>
 		</div>
 		<div class="prop-content-stack">
 			<span class="prop-line">${pre}${rowData.handicap}</span>

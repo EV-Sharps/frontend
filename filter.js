@@ -211,8 +211,6 @@ document.querySelector("#view-select").addEventListener("change", (event) => {
 });
 
 const DEFAULT_DEVIGS = [
-	{ name: "Market Avg", value: "", group: "Default" },
-
 	{ name: "FD", value: "fd;1", group: "100% Weight" },
 	{ name: "DK", value: "dk;1", group: "100% Weight" },
 	{ name: "PN", value: "pn;1", group: "100% Weight" },
@@ -280,7 +278,12 @@ function renderDevigOptions(searchTerm = "") {
 		group: "Favorites"
 	}));
 
-	const allOptions = [...DEFAULT_DEVIGS, ...favorites, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
+	const allOptions = [
+		{ name: "Market Avg", value: "", group: "Default" },
+		...favorites,
+		...DEFAULT_DEVIGS,
+		...customDevigs.filter(opt => !currentFavorites.has(opt.value))
+	];
 
 	const allLabels = getAllDevigLabels();
 	devigOptionsContainer.innerHTML = '';

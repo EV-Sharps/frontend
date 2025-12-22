@@ -648,7 +648,7 @@
 		function fetchData() {
 			RES = TEST;
 			let props = ["pts", "reb", "ast", "stl", "blk", "dd", "3ptm", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
-			if (RES["atgs-vs-espn"]) {
+			if (RES["atgs-vs-circa"]) {
 				props = ["atgs", "sog", "pts", "ast", "sv", "bs"];
 			}
 			for (prop of props) {
@@ -657,7 +657,7 @@
 				const bookNames = [];
 				const annotations = [];
 				const traces = [];
-				let devigs = ["fd", "dk", "circa", "pn", "espn", "mgm", "hr", "bv", "only+fd+dk", "fd+espn+mgm"];
+				let devigs = ["fd", "dk", "circa", "pn", "espn", "mgm", "hr", "bv", "only+fd+dk", "fd+espn+mgm", "espn+fd+hr", "espn+hr"];
 				if (false) {
 					devigs = devigs.concat(["only+pn+circa", "only+pn+dk", "only+pn+fd", "only+dk+espn"]);
 				}

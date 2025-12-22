@@ -229,7 +229,10 @@ const DEFAULT_DEVIGS = [
 	{ name: "PN", value: "pn;1", group: "100% Weight" },
 	{ name: "Circa", value: "circa;1", group: "100% Weight" },
 	{ name: "ESPN", value: "espn;1", group: "100% Weight" },
+	{ name: "HR", value: "hr;1", group: "100% Weight" },
 	{ name: "MGM", value: "mgm;1", group: "100% Weight" },
+	{ name: "BOL", value: "bol;1", group: "100% Weight" },
+	{ name: "BV", value: "bv;1", group: "100% Weight" },
 
 	{ name: "Only FD/DK 50% Equal", value: "only+fd+dk;1+1", group: "Split Weights" },
 	{ name: "PN/Circa 50% Equal", value: "pn+circa;1+1", group: "Split Weights" },

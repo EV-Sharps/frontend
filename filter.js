@@ -812,7 +812,7 @@ function changeFilter(render = true) {
 		row["implied"] = round2(avgDevig * 100);
 		row["kelly"] = getKelly(highest.value, ev);
 
-		if (ev >= 0 && row.result != undefined && (!prop || row.prop == prop) && (OU == "ou" || OU == (row.under ? "u" : "o"))) {
+		if (ev >= 0 && row.result != undefined && (!prop || row.prop == prop) && (OU == "ou" || OU == (row.under ? "u" : "o")) && (!MIN || highest.value >= parseInt(MIN)) && (!MAX || highest.value <= parseInt(MAX))) {
 			if (row["hit"]) {
 				w += 1;
 				let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);

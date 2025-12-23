@@ -800,6 +800,11 @@ function changeFilter(render = true) {
 		} else {
 			row["fairVal"] = Math.round(-100 / (dec - 1));
 		}
+	
+		if (boost == "no-sweat") {
+			x = 0.70;
+			ev = (100 * (line / 100 + 1)) * avgDevig - 100 + (100 * x);
+		}
 
 		row["book"] = highest.book;
 		row["line"] = highest.value;

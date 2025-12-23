@@ -40,6 +40,42 @@
 </script>
 <body>
 	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Method</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="prop-selector-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Add Prop Tag to Devig</h3>
+					<button onclick="closePropSelectorModal()">x</button>
+				</div>
+				<div>
+					<span id="prop-selector-devig">Devig: Only FD/DK 50% Equal</span>
+				</div>
+				<div id="prop-selector-options-container" class="options-container">
+				</div>
+				<div class="action-footer">
+					<p>Select a stat category to add to the current devig.</p>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
@@ -115,6 +151,13 @@
 				    </div>
 				  </div>
 				<div class="select-wrapper">
+					<label for="devig-button" class="select-label">Devig</label>
+					<button id="devig-button" class="devig-display-btn">
+						<span id="devig-display-text">Market Avg</span>
+						<span class="dropdown-arrow">▼</span>
+					</button>
+				</div>
+				<div class="select-wrapper" style="display:none">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
@@ -400,30 +443,9 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "pts";
-		let RES, TABLE, LAST, NO365, KAMBI;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") || "";
-		let TODAY = getToday();
-		let SPORT = "nba";
-		let PLAYER = URLParams.get("player");
-		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
-		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
-		let BOOST = URLParams.get("boost");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let VIG = URLParams.get("vig") || "";
-		let OU = URLParams.get("ou") || "ou";
-		let BOOK = URLParams.get("book");
-		let PROP = URLParams.get("prop") || "";
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
-		TEAM = URLParams.get("team") || "det";
-		let SIDE = URLParams.get("side") ?? "both";
+		
+		parseURLParams();
+		SPORT = "nba";
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -527,8 +549,8 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true

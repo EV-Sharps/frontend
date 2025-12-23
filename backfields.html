@@ -81,39 +81,16 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript">
 		PAGE = "backfields";
-		let RES = null;
 		let WEEK;
-		let TABLE = null;
-		let HISTORICAL = {};
-		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let TODAY = getToday();
-		let SPORT = "nfl";
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
-		let BVP = URLParams.get("bvp");
-		let PRETTY = URLParams.get("pretty");
 		let FORMAT = URLParams.get("format") || "half";
 		let POS = URLParams.get("pos") || "ALL";
-		//let LAST = URLParams.get("last") != undefined;
-		let LAST = false;
 		let YEAR = new Date();
 		YEAR = YEAR.getFullYear();
 
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-			});
-		});
-
-		if (MARK != undefined) {
-			document.querySelector("#watermark").style.display = "initial";
-		}
-
+		parseURLParams();
+		SPORT = "nfl";
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
@@ -202,5 +179,8 @@
 			//TABLE.redraw(true);
 		});
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
+	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

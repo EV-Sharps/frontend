@@ -355,6 +355,7 @@ body::before {
 	border: 1px solid #333;
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
 	height: 140px;
+	max-width: 500px;
 }
 
 .data-card:active {
@@ -1852,7 +1853,7 @@ button#logout:hover {
 	}
 	#table-container {
 		justify-content: normal;
-		overflow: scroll;
+		overflow-y: scroll;
 	}
 	#center-dropdown, #auth-buttons {
 		width: 100%;

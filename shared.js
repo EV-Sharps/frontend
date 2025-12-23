@@ -10,6 +10,8 @@ let API_BASE = "http://localhost:5000";
 let UPDATED = {};
 let WEIGHTS = {};
 let TEST;
+let RES, TABLE;
+let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -2688,7 +2690,8 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 	let fairVals = 0;
 	const devigBooks = DEVIG.replace("only+", "").split("+");
 	Object.entries(bookOdds)
-		.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
+		//.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
+		.filter(([book, val]) => val && (!DEVIG || (!DEVIG.includes("+") || book != highest) || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			let fv;
 
@@ -2721,14 +2724,14 @@ function averageDevigs(bookOdds, highest, isUnder, weights) {
 }
 
 function applyProfitBoost(american, boost) {
-  const D = americanToDecimal(american);
-  if (D == null) return null;
-  if (boost == "no-sweat") {
-	boost = 0;
-  }
-  boost = boost / 100;
-  const Dp = 1 + (D - 1) * (1 + boost); // boosted decimal
-  return decimalToAmerican(Dp);
+	const D = americanToDecimal(american);
+	if (D == null) return null;
+	if (boost == "no-sweat") {
+		boost = 0;
+	}
+	boost = boost / 100;
+	const Dp = 1 + (D - 1) * (1 + boost);
+	return decimalToAmerican(Dp);
 }
 
 function round2(n) { return Math.round(n * 100) / 100; }
@@ -2896,9 +2899,40 @@ function startHelpTour() {
 }
 
 function debounce(fn, delay = 400) {
-  let timeout;
-  return (...args) => {
-	clearTimeout(timeout);
-	timeout = setTimeout(() => fn(...args), delay);
-  };
+	let timeout;
+	return (...args) => {
+		clearTimeout(timeout);
+		timeout = setTimeout(() => fn(...args), delay);
+	};
+}
+
+
+function parseURLParams() {
+	const windowURL = new URL(window.location.href);
+	const URLParams = new URLSearchParams(windowURL.search);
+
+	PROP = URLParams.get("prop") || "";
+
+	DATE = URLParams.get("date");
+	MARK = URLParams.get("mark");
+	GAME = URLParams.get("game") || "";
+	TODAY = getToday();
+	SPORT = URLParams.get("sport") || "nba";
+	PLAYER = URLParams.get("player");
+	DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+	WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
+	BOOST = URLParams.get("boost");
+	PRETTY = URLParams.get("pretty");
+	IMP = URLParams.get("imp");
+	DUE = URLParams.get("due");
+	CSV = URLParams.get("csv");
+	BOOK = URLParams.get("book");
+	VIG = URLParams.get("vig") || "";
+	MIN = URLParams.get("min") || "";
+	MAX = URLParams.get("max") || "";
+	OU = URLParams.get("ou") || "ou";
+	SIDE = URLParams.get("side") ?? "both";
+
+	CURRENT_VIEW = URLParams.get("view") || "table";
+	TEAM = URLParams.get("team") || "det";
 }

@@ -21,9 +21,11 @@
 		#tables {
 			display: flex;
 			flex-wrap: wrap;
+			flex-direction: column;
 		}
 		#table-container {
 			justify-content: normal;
+			overflow: scroll;
 		}
 		@media (max-width: 1950px) {
 			#table {
@@ -365,28 +367,6 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "analysis";
-		let RES, TABLE, LAST, NO365, KAMBI;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") || "";
-		let TODAY = getToday();
-		let SPORT = URLParams.get("sport") || "nba";
-		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
-		let BOOST = URLParams.get("boost");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let BOOK = URLParams.get("book");
-		let OU = URLParams.get("ou") || "ou";
-		let PROP = URLParams.get("prop") || "";
-		TEAM = URLParams.get("team") || "det";
-		let SIDE = URLParams.get("side") ?? "both";
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
 
 		// Exclude
 		const dd = document.getElementById('exclude-dd');
@@ -442,6 +422,7 @@
 			document.querySelector("#watermark").style.width = "20%";
 		}
 
+		parseURLParams();
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
@@ -676,7 +657,7 @@
 				const bookNames = [];
 				const annotations = [];
 				const traces = [];
-				for (book of ["fd", "dk", "circa", "pn", "espn", "mgm"]) {
+				for (book of ["fd", "dk", "circa", "pn", "espn", "mgm", "hr", "bv", "only+fd+dk", "only+pn+circa", "only+pn+dk", "only+pn+fd", "only+dk+espn"]) {
 					const key = `${prop}-vs-${book}`;
 					if (!TEST[key]) {
 						continue;
@@ -723,6 +704,7 @@
 				const layout = {
 					plot_bgcolor: '#181a1b',
 					paper_bgcolor: "#181a1b",
+					width: 1000,
 				    title: {
 				    	text: `Profit/Loss for ${prop.toUpperCase()} Devigged to Book`
 				    },

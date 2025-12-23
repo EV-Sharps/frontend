@@ -429,29 +429,9 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "ncaaf";
-		let RES, TABLE, LAST, NO365, KAMBI;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") || "";
-		let TODAY = getToday();
-		let SPORT = "ncaaf";
-		let PLAYER = URLParams.get("player");
-		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
-		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
-		let BOOST = URLParams.get("boost");
-		let PRETTY = URLParams.get("pretty");
-		let BOOK = URLParams.get("book");
-		let PROP = URLParams.get("prop");
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
-		let VIG = URLParams.get("vig") || "";
-		let OU = URLParams.get("ou") || "ou";
-		TEAM = URLParams.get("team") || "det";
-		let SIDE = URLParams.get("side") ?? "both";
+		
+		parseURLParams();
+		SPORT = "ncaaf";
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -545,8 +525,8 @@
 						field: "game",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true

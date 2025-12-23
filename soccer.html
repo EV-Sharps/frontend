@@ -29,13 +29,49 @@
 		width: auto;
 	}
 	@media (max-width: 1500px) {
-			#table {
-				width: 100%;
-			}
+		#table {
+			width: 100%;
 		}
+	}
 </style>
 <body>
 	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Method</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="prop-selector-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Add Prop Tag to Devig</h3>
+					<button onclick="closePropSelectorModal()">x</button>
+				</div>
+				<div>
+					<span id="prop-selector-devig">Devig: Only FD/DK 50% Equal</span>
+				</div>
+				<div id="prop-selector-options-container" class="options-container">
+				</div>
+				<div class="action-footer">
+					<p>Select a stat category to add to the current devig.</p>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
@@ -113,6 +149,13 @@
 					</div>
 				  </div>
 				<div class="select-wrapper">
+					<label for="devig-button" class="select-label">Devig</label>
+					<button id="devig-button" class="devig-display-btn">
+						<span id="devig-display-text">Market Avg</span>
+						<span class="dropdown-arrow">▼</span>
+					</button>
+				</div>
+				<div class="select-wrapper" style="display:none">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
@@ -243,35 +286,9 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "soccer";
-		let TABLE, EV_COL, FV_COL, RES;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "soccer";
-		let KAMBI = URLParams.get("kambi");
-		let MARK = URLParams.get("mark");
-		let BPP = URLParams.get("bpp") != undefined;
-		let PH = URLParams.get("ph") != undefined;
-		let SIMPLE = URLParams.get("simple");
-		let PLAYER = URLParams.get("player");
-		let REFRESH = URLParams.get("refresh") || "off";
-		REFRESH = "auto";
-		let BOOK = URLParams.get("book");
-		let HISTORICAL = URLParams.get("historical");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game") || "";
-		TEAM = URLParams.get("team");
-		let DATE = URLParams.get("date");
-		let NOCACHE = URLParams.get("nocache");
-		let BOOST = URLParams.get("boost");
-		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
-		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
-		let PROP = URLParams.get("prop") || "";
-		let VIG = URLParams.get("vig") || "";
-		let OU = URLParams.get("ou") || "ou";
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
+
+		parseURLParams();
+		SPORT = "soccer";
 
 		handleSession();
 
@@ -496,7 +513,7 @@
 					{title: `Circa`, field: "bookOdds.circa",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter, visible: false},

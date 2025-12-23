@@ -305,38 +305,8 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "main";
-		let TABLE, EV_COL, FV_COL, RES;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = URLParams.get("sport") || "mlb";
-		let KAMBI = URLParams.get("kambi");
-		let MARK = URLParams.get("mark");
-		let BPP = URLParams.get("bpp") != undefined;
-		let PH = URLParams.get("ph") != undefined;
-		let SIMPLE = URLParams.get("simple");
-		let PLAYER = URLParams.get("player");
-		let REFRESH = URLParams.get("refresh") || "off";
-		REFRESH = "auto";
-		let BOOK = URLParams.get("book");
-		let HISTORICAL = URLParams.get("historical");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game") || "";
-		TEAM = URLParams.get("team");
-		let DATE = URLParams.get("date");
-		let NOCACHE = URLParams.get("nocache");
-		let NO365 = URLParams.get("no365");
-		let NOBR = URLParams.get("noBR");
-		let BOOST = URLParams.get("boost");
-		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
-		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
-		let VIG = URLParams.get("vig") || "";
-		let OU = URLParams.get("ou") || "ou";
-		let PROP = URLParams.get("prop") || "";
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
 
+		parseURLParams();
 		handleSession();
 
 		window.addEventListener("resize", () => {
@@ -565,15 +535,17 @@
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter
 					},
 					//{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: true},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},

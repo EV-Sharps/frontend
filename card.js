@@ -314,18 +314,24 @@ function updateExistingCard(card, rowData) {
 	const previousRow = PREVIOUS_DATA.find(d => `${d.player}-${d.prop}-${d.line}` === card.dataset.uniqueId);
 	if (previousRow && previousRow.ev !== rowData.ev) {
 		card.style.transition = 'none';
-		card.style.backgroundColor = 'rgba(100, 181, 246, 0.3)'; // Light flash color
+		card.style.backgroundColor = 'rgba(100, 181, 246, 0.3)';
 		setTimeout(() => {
 			card.style.transition = 'background-color 1s ease-out, transform 0.1s ease';
-			card.style.backgroundColor = ''; // Revert to CSS defined color
+			card.style.backgroundColor = '';
 		}, 50);
 	}
 }
 
 function renderCards(data) {
-	data = data.filter(r => r.ev != "" && r.ev != null).sort((a,b) => {
-		return parseFloat(b.ev) - parseFloat(a.ev);
-	});
+	if (PAGE == "outliers") {
+		data = data.sort((a,b) => {
+			return parseFloat(b.outlier) - parseFloat(a.outlier);
+		});
+	} else {
+		data = data.filter(r => r.ev != "" && r.ev != null).sort((a,b) => {
+			return parseFloat(b.ev) - parseFloat(a.ev);
+		});
+	}
 
 	const container = document.getElementById("card-container");
 	container.innerHTML = "";

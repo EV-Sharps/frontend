@@ -59,20 +59,25 @@ function updateWeightHeader() {
 
 // Exclude
 const dd = document.getElementById('exclude-dd');
-const excludeBtn = dd.querySelector('.chkdd-btn');
-let menu = dd.querySelector('.chkdd-menu');
-const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
+const excludeBtn = dd?.querySelector('.chkdd-btn');
+let menu = dd?.querySelector('.chkdd-menu');
+let boxes = [];
+if (dd) {
+	boxes = [...dd.querySelectorAll('input[type="checkbox"]')]
+}
 
 function getExcludedBooks() {
   return boxes.filter(b => b.checked).map(b => b.value);
 }
-excludeBtn.addEventListener("click", (e) => {
-	//const open = dd.classList.toggle("open");
-	//excludeBtn.setAttribute("aria-expanded", open ? true : false);
-	e.stopPropagation();
-	const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-	open ? closeMenu() : openMenu();
-});
+if (excludeBtn) {
+	excludeBtn.addEventListener("click", (e) => {
+		//const open = dd.classList.toggle("open");
+		//excludeBtn.setAttribute("aria-expanded", open ? true : false);
+		e.stopPropagation();
+		const open = excludeBtn.getAttribute('aria-expanded') === 'true';
+		open ? closeMenu() : openMenu();
+	});
+}
 document.addEventListener('click', (e) => {
 	if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
 });
@@ -80,13 +85,15 @@ boxes.forEach(b => b.addEventListener('change', () => {
   changeFilter();
 }));
 
-menu.addEventListener('click', (e) => {
-  const act = e.target?.dataset?.act;
-  if (!act) return;
-  const state = act === 'all';
-  boxes.forEach(b => b.checked = state);
-  changeFilter();
-});
+if (menu) {
+	menu.addEventListener('click', (e) => {
+		const act = e.target?.dataset?.act;
+		if (!act) return;
+		const state = act === 'all';
+		boxes.forEach(b => b.checked = state);
+		changeFilter();
+	});
+}
 
 document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 	checkbox.addEventListener("change", () => {
@@ -206,8 +213,13 @@ function changeView(view) {
 	}
 }
 
+document.querySelector("#view-select").value = CURRENT_VIEW || "";
 document.querySelector("#view-select").addEventListener("change", (event) => {
 	CURRENT_VIEW = event.target.value;
+	const params = new URLSearchParams(window.location.search);
+	params.set("view", CURRENT_VIEW);
+	const newUrl = `${window.location.pathname}?${params.toString()}`;
+	history.pushState({}, '', newUrl);
 	changeView(event.target.value);
 });
 

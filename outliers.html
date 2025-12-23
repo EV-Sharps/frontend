@@ -21,15 +21,9 @@
 		#table {
 			width: 100%;
 		}
-		@media (max-width: 1750px) {
+		@media (max-width: 1950px) {
 			#table {
 				width: 100%;
-			}
-		}
-		@media (max-width: 600px) {
-			#table-container {
-				justify-content: normal;
-				overflow: scroll;
 			}
 		}
 	</style>
@@ -461,33 +455,10 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "outliers";
-		let RES, TABLE, LAST, NO365, KAMBI;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") || "";
-		let TODAY = getToday();
-		let SPORT = URLParams.get("sport") || "nba";
-		let PLAYER = URLParams.get("player");
-		let DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
-		let WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
-		let BOOST = URLParams.get("boost");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let DUE = URLParams.get("due");
-		let CSV = URLParams.get("csv");
-		let BOOK = URLParams.get("book");
-		let VIG = "0";
-		let MIN = URLParams.get("min") || "";
-		let MAX = URLParams.get("max") || "";
-		let OU = URLParams.get("ou") || "ou";
-		let PROP = URLParams.get("prop") || "";
-		TEAM = URLParams.get("team") || "det";
-		let SIDE = URLParams.get("side") ?? "both";
-		
+
+		parseURLParams();
+		VIG = "0";
+
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
 			document.querySelector("#table-container").style["max-height"] = "initial";
@@ -527,6 +498,10 @@
 					return;
 				}
 
+				if (CURRENT_VIEW == "mobile") {
+					changeView(CURRENT_VIEW);
+				}
+
 				setTimeout(function() {
 					updateHeaders();
 					changeFilter();
@@ -557,7 +532,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "ev", dir: "desc"},
+					{column: "outlier", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -671,8 +646,8 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true

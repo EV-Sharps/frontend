@@ -846,7 +846,7 @@ function changeFilter(render = true) {
 		{field: "ev", type: "!=", value: null}
 	];
 
-	let data = MOBILE && CURRENT_VIEW == "mobile" ? [...RES.data] : [];
+	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();
 	if (game) {
 		filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
@@ -870,9 +870,15 @@ function changeFilter(render = true) {
 		TABLE.setFilter(filters);
 	}
 
-	if (MOBILE && CURRENT_VIEW == "mobile") {
+	const table = document.getElementById("table");
+	const cardContainer = document.getElementById("card-container");
+	if (CURRENT_VIEW == "mobile") {
+		table.style.display = "none";
+		cardContainer.style.display = "grid";
 		renderCards(data);
 	} else {
+		table.style.display = "initial";
+		cardContainer.style.display = "none";
 		TABLE.replaceData(RES.data);
 	}
 

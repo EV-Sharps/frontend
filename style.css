@@ -1844,7 +1844,7 @@ button#logout:hover {
 	}
 }
 
-@media (max-width: 1150px) {
+@media (max-width: 1430px) {
 	.dropdown {
 		flex: 0 0 auto;
 	}

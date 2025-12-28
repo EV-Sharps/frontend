@@ -195,8 +195,6 @@ function timeAgo(timestamp, short=false) {
 
 	if (timestamp === 0) {
 		return "";	
-	} else if (!String(timestamp).includes("Z")) {
-		timestamp += " EST";
 	}
 
 	const now = new Date();

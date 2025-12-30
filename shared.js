@@ -2120,7 +2120,7 @@ function openCustomDevig() {
 	card.id = "custom-devig-card";
 	card.style.cssText = `
 	background:#111; color:#eee; border:1px solid #333; border-radius:10px;
-	width:min(560px,92vw); max-height:80vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+	width:min(560px,92vw); max-height:90vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
 	`;
 	card.innerHTML = `
 	<h3 style="margin:0 0 8px">Custom Devig</h3>

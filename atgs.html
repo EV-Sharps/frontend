@@ -79,6 +79,166 @@
 				</div>
 			</div>
 		</div>
+		<div id="overlay">
+			<div class="overlay-content">
+				<div><h2 style="justify-content: center;">Customize</h2></div>
+				<div style="justify-content: center;display: flex;gap: 1rem;">
+					<div class="select-wrapper">
+						<label for="custom-devig-select" class="select-label">Devig</label>
+						<select id="custom-devig-select"></select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+					<div class="select-wrapper">
+						<label for="custom-ou-select" class="select-label">O/U</label>
+						<select id="custom-ou-select">
+							<option value="ou" selected>Both</option>
+							<option value="o">Overs</option>
+							<option value="u">Unders</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+				</div>
+				<div id="items" style="display: flex;">
+					<div>
+						<h3>Expected Value</h3>
+						<div>
+							<input id="custom_ev" type="checkbox">
+							<label for="custom_ev">Expected Value</label>
+						</div>
+						<div>
+							<input id="custom_fairVal" type="checkbox">
+							<label for="custom_fairVal">Fair Value</label>
+						</div>
+						<div>
+							<input id="custom_implied" type="checkbox">
+							<label for="custom_implied">Implied</label>
+						</div>
+						<div>
+							<input id="custom_kelly" type="checkbox">
+							<label for="custom_kelly">¼ Kelly</label>
+						</div>
+					</div>
+					<!-- Player / Odds -->
+					<div>
+						<h3>Player & Odds</h3>
+						<div>
+							<input id="custom_player" type="checkbox" checked disabled>
+							<label for="custom_player">Player</label>
+						</div>
+						<div>
+							<input id="custom_book" type="checkbox" checked disabled>
+							<label for="custom_book">EV Book</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_fd">Fanduel</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_b365" type="checkbox">
+							<label for="custom_bookOdds_b365">B365</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_dk" type="checkbox">
+							<label for="custom_bookOdds_dk">Draftkings</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_mgm" type="checkbox">
+							<label for="custom_bookOdds_mgm">MGM</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_espn" type="checkbox">
+							<label for="custom_bookOdds_espn">ESPN</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_cz" type="checkbox">
+							<label for="custom_bookOdds_cz">Caesars</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fn" type="checkbox">
+							<label for="custom_bookOdds_fn">Fanatics</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_br" type="checkbox">
+							<label for="custom_bookOdds_br">BetRivers</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_hr" type="checkbox">
+							<label for="custom_bookOdds_hr">Hard Rock</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kambi" type="checkbox">
+							<label for="custom_bookOdds_kambi">Kambi (BB)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bv" type="checkbox">
+							<label for="custom_bookOdds_bv">Bovada</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_re" type="checkbox">
+							<label for="custom_bookOdds_re">Rebet</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fl" type="checkbox">
+							<label for="custom_bookOdds_fl">Fliff</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bol" type="checkbox">
+							<label for="custom_bookOdds_bol">Betonline</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_pn" type="checkbox">
+							<label for="custom_bookOdds_pn">Pinnacle</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_circa">Circa</label>
+						</div>
+					</div>
+					<!-- ETC -->
+					<div>
+						<h3>Stats</h3>
+						<div>
+							<input id="custom_oppRank" type="checkbox">
+							<label for="custom_oppRank">Opp Rank</label>
+						</div>
+						<div>
+							<input id="custom_dvpRank" type="checkbox">
+							<label for="custom_dvpRank">DvP Rank</label>
+						</div>
+						<div>
+							<input id="custom_hitRate" type="checkbox">
+							<label for="custom_hitRate">Hit Rate</label>
+						</div>
+						<div>
+							<input id="custom_hitRateLYR" type="checkbox">
+							<label for="custom_hitRateLYR">Hit Rate LYR</label>
+						</div>
+						<div>
+							<input id="custom_hitRateCareer" type="checkbox">
+							<label for="custom_hitRateCareer">Hit Rate Career</label>
+						</div>
+						<div>
+							<input id="custom_logs" type="checkbox">
+							<label for="custom_logs">Logs</label>
+						</div>
+					</div>
+				</div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+					</div>
+				</div>
+				<div style="display: flex;justify-content: center;align-items: center;">
+					<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
+					<span id="save-status" style="margin: 0.5rem 0"></span>
+					<button onclick="closeOverlay();">Close</button>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
@@ -298,166 +458,6 @@
 						</div>
 					<div style="display: flex; justify-content: center;">
 						<button onclick="closeDeleteCustomDevigOverlay()">Close</button>
-					</div>
-				</div>
-			</div>
-			<div id="overlay">
-				<div class="overlay-content">
-					<div><h2 style="justify-content: center;">Customize</h2></div>
-					<div style="justify-content: center;display: flex;gap: 1rem;">
-						<div class="select-wrapper">
-							<label for="custom-devig-select" class="select-label">Devig</label>
-							<select id="custom-devig-select"></select>
-							<svg class="select-arrow" viewBox="0 0 20 20">
-								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-							</svg>
-						</div>
-						<div class="select-wrapper">
-							<label for="custom-ou-select" class="select-label">O/U</label>
-							<select id="custom-ou-select">
-								<option value="ou" selected>Both</option>
-								<option value="o">Overs</option>
-								<option value="u">Unders</option>
-							</select>
-							<svg class="select-arrow" viewBox="0 0 20 20">
-								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-							</svg>
-						</div>
-					</div>
-					<div id="items" style="display: flex;">
-						<div>
-							<h3>Expected Value</h3>
-							<div>
-								<input id="custom_ev" type="checkbox">
-								<label for="custom_ev">Expected Value</label>
-							</div>
-							<div>
-								<input id="custom_fairVal" type="checkbox">
-								<label for="custom_fairVal">Fair Value</label>
-							</div>
-							<div>
-								<input id="custom_implied" type="checkbox">
-								<label for="custom_implied">Implied</label>
-							</div>
-							<div>
-								<input id="custom_kelly" type="checkbox">
-								<label for="custom_kelly">¼ Kelly</label>
-							</div>
-						</div>
-						<!-- Player / Odds -->
-						<div>
-							<h3>Player & Odds</h3>
-							<div>
-								<input id="custom_player" type="checkbox" checked disabled>
-								<label for="custom_player">Player</label>
-							</div>
-							<div>
-								<input id="custom_book" type="checkbox" checked disabled>
-								<label for="custom_book">EV Book</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_fd">Fanduel</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_b365" type="checkbox">
-								<label for="custom_bookOdds_b365">B365</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_dk" type="checkbox">
-								<label for="custom_bookOdds_dk">Draftkings</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_mgm" type="checkbox">
-								<label for="custom_bookOdds_mgm">MGM</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_espn" type="checkbox">
-								<label for="custom_bookOdds_espn">ESPN</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_cz" type="checkbox">
-								<label for="custom_bookOdds_cz">Caesars</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fn" type="checkbox">
-								<label for="custom_bookOdds_fn">Fanatics</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_br" type="checkbox">
-								<label for="custom_bookOdds_br">BetRivers</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_hr" type="checkbox">
-								<label for="custom_bookOdds_hr">Hard Rock</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_kambi" type="checkbox">
-								<label for="custom_bookOdds_kambi">Kambi (BB)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_bv" type="checkbox">
-								<label for="custom_bookOdds_bv">Bovada</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_re" type="checkbox">
-								<label for="custom_bookOdds_re">Rebet</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fl" type="checkbox">
-								<label for="custom_bookOdds_fl">Fliff</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_bol" type="checkbox">
-								<label for="custom_bookOdds_bol">Betonline</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_pn" type="checkbox">
-								<label for="custom_bookOdds_pn">Pinnacle</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_circa">Circa</label>
-							</div>
-						</div>
-						<!-- ETC -->
-						<div>
-							<h3>Stats</h3>
-							<div>
-								<input id="custom_oppRank" type="checkbox">
-								<label for="custom_oppRank">Opp Rank</label>
-							</div>
-							<div>
-								<input id="custom_dvpRank" type="checkbox">
-								<label for="custom_dvpRank">DvP Rank</label>
-							</div>
-							<div>
-								<input id="custom_hitRate" type="checkbox">
-								<label for="custom_hitRate">Hit Rate</label>
-							</div>
-							<div>
-								<input id="custom_hitRateLYR" type="checkbox">
-								<label for="custom_hitRateLYR">Hit Rate LYR</label>
-							</div>
-							<div>
-								<input id="custom_hitRateCareer" type="checkbox">
-								<label for="custom_hitRateCareer">Hit Rate Career</label>
-							</div>
-							<div>
-								<input id="custom_logs" type="checkbox">
-								<label for="custom_logs">Logs</label>
-							</div>
-						</div>
-					</div>
-					<div class="loggedOut">
-						<div style="padding: 0.5rem;text-align: center;">
-							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
-						</div>
-					</div>
-					<div style="display: flex;justify-content: center;align-items: center;">
-						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
-						<span id="save-status" style="margin: 0.5rem 0"></span>
-						<button onclick="closeOverlay();">Close</button>
 					</div>
 				</div>
 			</div>

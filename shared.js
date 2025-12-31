@@ -69,6 +69,7 @@ let PAGE_DROPDOWN = `
 	<option value="pts">🏀 PTS</option>
 	<option value="nba">🏀 NBA Props (Sharps)</option>
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
+	<option value="kotc">🏀 KOTC</option>
 	<option value="analysis?sport=nba">🏀 Results</option>
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
@@ -1422,8 +1423,8 @@ const playerFormatter = function(cell, params, rendered) {
 		<div class="player-cell">
 			<div class='game-container'>${gameContainer}</div>
 			${p} ${prop}
-			<div class="bats">${bats}</div>
-			<div class="pos">${pos}</div>
+			<div class="bats">${bats || ""}</div>
+			<div class="pos">${pos || ""}</div>
 		</div>
 	`
 }

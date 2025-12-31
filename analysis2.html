@@ -78,34 +78,34 @@
 					</svg>
 				</div>
 				<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude</span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> FD</label>
-				      <label><input type="checkbox" value="dk"> DK</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> CZ</label>
-				      <label><input type="checkbox" value="fn"> FN</label>
-				      <label><input type="checkbox" value="br"> BR</label>
-				      <label><input type="checkbox" value="bv"> BV</label>
-				      <label><input type="checkbox" value="hr"> HR</label>
-				      <label><input type="checkbox" value="kambi"> Kambi</label>
-				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude</span>
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+					  <label><input type="checkbox" value="fd"> FD</label>
+					  <label><input type="checkbox" value="dk"> DK</label>
+					  <label><input type="checkbox" value="b365"> B365</label>
+					  <label><input type="checkbox" value="mgm"> MGM</label>
+					  <label><input type="checkbox" value="espn"> ESPN</label>
+					  <label><input type="checkbox" value="cz"> CZ</label>
+					  <label><input type="checkbox" value="fn"> FN</label>
+					  <label><input type="checkbox" value="br"> BR</label>
+					  <label><input type="checkbox" value="bv"> BV</label>
+					  <label><input type="checkbox" value="hr"> HR</label>
+					  <label><input type="checkbox" value="kambi"> Kambi</label>
+					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <div class="chkdd-actions">
+						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					  </div>
+					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
+						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+					  </div>
+					  <div>
+						<span id="exclude-status"></span>
+					  </div>
+					</div>
 				  </div>
 				<div class="select-wrapper">
 					<label for="devig-select" class="select-label">Devig</label>
@@ -145,9 +145,9 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-				       type="number" min="0" step="5"
-				       placeholder="Custom %"
-				       style="display:none; width:7ch; margin-left:.5rem;" />
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
 				<div class="select-wrapper">
 					<label for="game-select" class="select-label">Game</label>
 					<select id="game-select">
@@ -381,7 +381,7 @@
 			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
 			e.stopPropagation();
 			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
+			open ? closeMenu() : openMenu();
 		});
 		document.addEventListener('click', (e) => {
 			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
@@ -495,29 +495,29 @@
 				}
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook.includes("+")) {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageCustomSharps(bookOdds, devigBook, row.under); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else {
-				    	ou = buildOU(bookOdds, row.under);
-				    }
+					// If under, swap priority
+					if (devigBook.includes("+")) {
+						// Fallback to averageSharps for unders if combining books
+						ou = averageCustomSharps(bookOdds, devigBook, row.under); // pass true for under-side avg if supported
+					} else if (devigBook) {
+						// Use the book's under odds if available
+						const val = bookOdds[devigBook];
+						ou = val;
+						if (val && String(val).includes("/")) {
+							let [o,u] = String(val).split("/");
+							ou = `${u}/${o}`;
+						}
+						//ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
+					} else {
+						ou = buildOU(bookOdds, row.under);
+					}
 				} else {
-				    // Normal over-first logic
-				    if (devigBook.includes("+")) {
-				        ou = averageCustomSharps(bookOdds, devigBook);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
+					// Normal over-first logic
+					if (devigBook.includes("+")) {
+						ou = averageCustomSharps(bookOdds, devigBook);
+					} else if (devigBook) {
+						ou = bookOdds[devigBook];
+					}
 				}
 				if (!ou) {
 					row["ev"] = "";
@@ -653,6 +653,7 @@
 			for (prop of props) {
 				const barColors = [];
 				const profits = [];
+				const kellyProfits = [];
 				const bookNames = [];
 				const annotations = [];
 				const traces = [];
@@ -670,10 +671,12 @@
 					const wins = TEST[key][d]["wins"];
 					const losses = TEST[key][d]["losses"];
 					const profit = TEST[key][d]["profit"];
+					const kelly = TEST[key][d]["kelly"];
 
 					const bookName = `vs ${book.toUpperCase()}`;
 					bookNames.push(bookName);
 					profits.push(profit);
+					kellyProfits.push(kelly);
 
 					if (profit > 0) {
 						barColors.push('rgba(65, 131, 215, 0.8)');
@@ -694,13 +697,24 @@
 
 				const trace = {
 					x: bookNames,
-				    y: profits,
-				    type: 'bar',
-				    marker: {
-				        color: barColors
-				    },
-				    hoverinfo: 'x+y',
-				    name: 'Profit/Loss'
+					y: profits,
+					type: 'bar',
+					marker: {
+						color: barColors
+					},
+					hoverinfo: 'x+y',
+					name: 'Profit/Loss'
+				};
+
+				const kellyTrace = {
+					x: bookNames,
+					y: kellyProfits,
+					type: 'bar',
+					marker: {
+						color: 'rgba(155, 89, 182, 0.8)'
+					},
+					name: 'Kelly Profit',
+					hoverinfo: 'x+y'
 				};
 
 				
@@ -708,37 +722,40 @@
 					plot_bgcolor: '#181a1b',
 					paper_bgcolor: "#181a1b",
 					width: 1000,
-				    title: {
-				    	text: `Profit/Loss for ${prop.toUpperCase()} Devigged to Book`
-				    },
-				    xaxis: {
-				        title: {
-				        	text: 'Bookmaker'
-				        },
-				        automargin: true // Adjust margins for long labels
-				    },
-				    yaxis: {
-				        title: {
-				        	text: 'Profit (Units)'
-				        },
-				        zeroline: true,
-				        zerolinecolor: '#969696',
-				        zerolinewidth: 1
-				    },
-				    font: {
-				        color: "#e8e6e3"
-				    },
-				    margin: {
-				        l: 50, r: 50, b: 100, t: 80, pad: 4
-				    },
-				    annotations: annotations,
-				    showlegend: false
+					title: {
+						text: `Profit/Loss for ${prop.toUpperCase()} Devigged to Book`
+					},
+					xaxis: {
+						title: {
+							text: 'Bookmaker'
+						},
+						automargin: true // Adjust margins for long labels
+					},
+					yaxis: {
+						title: {
+							text: 'Profit (Units)'
+						},
+						zeroline: true,
+						zerolinecolor: '#969696',
+						zerolinewidth: 1
+					},
+					font: {
+						color: "#e8e6e3"
+					},
+					margin: {
+						l: 50, r: 50, b: 100, t: 80, pad: 4
+					},
+					annotations: annotations,
+					showlegend: false
 				};
 
 				const div = document.createElement("div");
 				div.id = prop;
 				document.getElementById("tables").appendChild(div);
-				Plotly.newPlot(prop, [trace], layout, {displayModeBar: false});
+				Plotly.newPlot(prop, [trace], {
+					...layout,
+					barmode: "group"
+				}, {displayModeBar: false});
 			}
 		}
 

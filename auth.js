@@ -406,7 +406,7 @@ async function handleSession() {
 				fetchTuddys();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "nba", "pts", "analysis", "ncaab"].includes(PAGE)) {
+	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "analysis", "ncaab"].includes(PAGE)) {
 		fetchProps();
 		renderFilters();
 		initExcluded();

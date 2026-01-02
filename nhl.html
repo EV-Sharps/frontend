@@ -397,6 +397,14 @@
 						<div>
 							<h3>Stats</h3>
 							<div>
+								<input id="custom_ppLine" type="checkbox">
+								<label for="custom_ppLine">PP Line</label>
+							</div>
+							<div>
+								<input id="custom_goalie" type="checkbox">
+								<label for="custom_goalie">Goalie</label>
+							</div>
+							<div>
 								<input id="custom_oppRank" type="checkbox">
 								<label for="custom_oppRank">Opp Rank</label>
 							</div>
@@ -555,6 +563,7 @@
 						responsive: 0,
 						frozen: true
 					},
+					{title: "PP Line", field: "ppLine", width: 50},
 					{
 						title: "Line",
 						field: "handicap",
@@ -642,6 +651,7 @@
 						visible: MOBILE ? false : true
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: "Goalie", field: "goalie", formatter: goalieFormatter, width: 80, hozAlign: "left"},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: "DvP<br>Rank", field: "dvpRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},

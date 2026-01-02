@@ -780,10 +780,11 @@ const oppFormatter = function(cell, params, rendered) {
 	let team = data.oppId || data.opp;
 	let sport = data.sport || SPORT;
 	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba") {
+		let t = team.toUpperCase();
 		return `<div class="opp-cell">
 			${ah}
 			${getTeamImg(sport, team)}
-			${team.toUpperCase()}
+			${t}
 		</div>`;
 	}
 	let pitcher = "";
@@ -1429,6 +1430,14 @@ const playerFormatter = function(cell, params, rendered) {
 	`
 }
 
+const goalieFormatter = function(cell, params, rendered) {
+	let goalie = cell.getValue();
+	if (goalie) {
+		goalie = title(goalie).split(" ").at(-1);
+	}
+	return goalie;
+}
+
 const trendFormatter = function(cell, params, rendered) {
 	const div = document.createElement("div");
 	let val = cell.getValue();
@@ -1902,13 +1911,13 @@ const DEFAULT_FIELDS_ALL = [
 
 const DEFAULT_SHARED = [
 	"ev", "book", "player", "fairVal", "implied", "kelly", "opp",
-	"bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "logs", "hitRate", "hitRateLYR"
+	"bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "bookOdds_fl", "bookOdds_re", "logs", "hitRate", "hitRateLYR"
 ]
 const DEFAULT_FIELDS = {
 	tds: [...DEFAULT_SHARED, "oppRank"],
-	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank"],
+	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
 	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
-	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank"],
+	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank"],
 	mlb: [...DEFAULT_SHARED, "handicap"],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]

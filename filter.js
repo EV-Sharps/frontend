@@ -480,7 +480,7 @@ function closePropSelectorModal() {
 
 const AVAILABLE_PROPS = {
 	nba: [
-		"pts", "reb", "ast", "3ptm", "dd", "td", "pa", "pr", "ra", "pra",
+		"pts", "reb", "ast", "3ptm", "dd", "td", "pa", "pr", "ra", "pra", "stl", "blk", 
 		"main", "ml", "props"
 	],
 	nfl: [

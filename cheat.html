@@ -216,7 +216,7 @@
 	PAGE = "cheat";
 	parseURLParams();
 
-const bettingData = {
+let bettingData = {
 	"Fanduel (FD)": [
 		{ market: "PTS", vs: "Circa", u: 12 },
 		{ market: "PTS", vs: "FD+ESPN+MGM", u: 15 },
@@ -349,6 +349,142 @@ const bettingData = {
 		{ market: "PA", vs: "FD", u: 20 }
 	]
 };
+
+
+if (SPORT == "nhl") {
+	bettingData = {
+	"Fanduel (FD)": [
+		{ market: "PTS", vs: "Circa", u: 12 },
+		{ market: "PTS", vs: "FD+ESPN+MGM", u: 15 },
+		{ market: "PTS", vs: "Only+DK+ESPN", u: 12 },
+		{ market: "REB", vs: "ESPN", u: 21 },
+		{ market: "REB", vs: "Only+FD+DK", u: 18 },
+		{ market: "REB", vs: "Only+DK+ESPN", u: 17 },
+		{ market: "REB", vs: "Circa", u: 9 },
+		{ market: "AST", vs: "FD+ESPN+MGM", u: 19 },
+		{ market: "STL", vs: "Any (ESPN+HR, ESPN, HR, DK)", u: null },
+		{ market: "BLK", vs: "Only+FD+DK+BOL", u: 3 },
+		{ market: "3PTM", vs: "Only+FD+DK+BOL", u: 48 },
+		{ market: "3PTM", vs: "ESPN", u: 21 },
+		{ market: "3PTM", vs: "Only+DK+ESPN", u: 20 },
+		{ market: "3PTM", vs: "PN", u: 11 },
+		{ market: "RA", vs: "Any (> +10u)", u: 10 }
+	],
+	"DraftKings (DK)": [
+		{ market: "PTS", vs: "FD", u: 42 },
+		{ market: "PTS", vs: "ESPN", u: 42 },
+		{ market: "PTS", vs: "FD+ESPN+MGM", u: 51 },
+		{ market: "REB", vs: "PN", u: 10 },
+		{ market: "REB", vs: "FD+ESPN+MGM", u: 40 },
+		{ market: "AST", vs: "b365", u: 7 },
+		{ market: "DD", vs: "FD", u: 13 },
+		{ market: "PRA", vs: "FD", u: 8 },
+		{ market: "PRA", vs: "PN", u: 6 },
+		{ market: "PRA", vs: "FD+ESPN+MGM", u: 8 },
+		{ market: "PA", vs: "FD", u: 2 },
+		{ market: "PA", vs: "Only+FD+DK", u: 9 },
+		{ market: "PR", vs: "FD", u: 2 },
+		{ market: "RA", vs: "FD+ESPN+MGM", u: 10 },
+		{ market: "PR", vs: "HR", u: 9 }
+	],
+	"BetMGM (MGM)": [
+		{ market: "PTS", vs: "FD", u: 46 },
+		{ market: "PTS", vs: "Only+FD+DK", u: 27 },
+		{ market: "REB", vs: "Only+PN+FD", u: 8 },
+		{ market: "AST", vs: "PN", u: 5 },
+		{ market: "DD", vs: "ESPN", u: 11 },
+		{ market: "3PTM", vs: "FD+ESPN+MGM", u: 3 },
+		{ market: "3PTM", vs: "Only+DK+ESPN", u: 11 },
+		{ market: "PRA", vs: "Only+PN+FD", u: 13 },
+		{ market: "PRA", vs: "FD+ESPN+MGM", u: 4 },
+		{ market: "PA", vs: "FD", u: 11 },
+		{ market: "PA", vs: "HR", u: 7 },
+		{ market: "PR", vs: "HR", u: 29 },
+		{ market: "PR", vs: "ESPN+HR", u: 28 },
+		{ market: "PR", vs: "Only+FD+DK", u: 8 },
+		{ market: "RA", vs: "HR", u: 18 },
+		{ market: "RA", vs: "Only+FD+DK+BOL", u: 18 }
+	],
+	"TheScore (ESPN)": [
+		{ market: "PTS", vs: "FD", u: 6 },
+		{ market: "PTS", vs: "ESPN+HR", u: 7 },
+		{ market: "REB", vs: "PN", u: 1 },
+		{ market: "REB", vs: "FD+ESPN+MGM", u: 15 },
+		{ market: "AST", vs: "FD+ESPN+MGM", u: 12 },
+		{ market: "AST", vs: "Only+PN+DK", u: 5 },
+		{ market: "STL", vs: "Only+FD+DK+BOL", u: 5 },
+		{ market: "DD", vs: "PN", u: 5 },
+		{ market: "DD", vs: "FD", u: 2 },
+		{ market: "3PTM", vs: "Only+PN+Circa", u: 4 },
+		{ market: "PRA", vs: "PN", u: 7 },
+		{ market: "PRA", vs: "HR", u: 5 },
+		{ market: "PR", vs: "Any (Not DK)", u: null },
+		{ market: "PA", vs: "Any (Not Only+FD+DK)", u: null },
+		{ market: "RA", vs: "Only+FD+DK+BOL", u: 8 }
+	],
+	"HardRock (HR)": [
+		{ market: "PTS", vs: "ESPN", u: 12 },
+		{ market: "PTS", vs: "Only+PN+DK", u: 15 },
+		{ market: "REB", vs: "FD", u: 27 },
+		{ market: "REB", vs: "DK", u: 39 },
+		{ market: "REB", vs: "Only+FD+DK", u: 53 },
+		{ market: "REB", vs: "Only+FD+DK+BOL", u: 98 },
+		{ market: "STL", vs: "STL", u: 10 },
+		{ market: "BLK", vs: "FD+ESPN+MGM", u: 18 },
+		{ market: "3PTM", vs: "FD", u: 17 },
+		{ market: "3PTM", vs: "ESPN", u: 38 },
+		{ market: "3PTM", vs: "Only+FD+DK", u: 26 },
+		{ market: "3PTM", vs: "Only+DK+ESPN", u: 23 },
+		{ market: "PA", vs: "FD", u: 29 },
+		{ market: "PA", vs: "DK", u: 13 },
+		{ market: "PA", vs: "FD+ESPN+MGM", u: 19 }
+	],
+	"Bovada (BV)": [
+		{ market: "PTS", vs: "FD", u: 121 },
+		{ market: "PTS", vs: "FD+ESPN+MGM", u: 85 },
+		{ market: "PTS", vs: "PN", u: 18 },
+		{ market: "REB", vs: "FD", u: 30 },
+		{ market: "REB", vs: "ESPN", u: 17 },
+		{ market: "REB", vs: "PN", u: 14 },
+		{ market: "REB", vs: "Only+DK+ESPN", u: 20 },
+		{ market: "REB", vs: "FD+ESPN+MGM", u: 27 },
+		{ market: "AST", vs: "FD+ESPN+MGM", u: 18 },
+		{ market: "AST", vs: "Only+FD+DK", u: 8 },
+		{ market: "DD", vs: "DK", u: 15 },
+		{ market: "DD", vs: "Only+FD+DK", u: 12 },
+		{ market: "3PTM", vs: "Only+FD+DK+BOL", u: 49 },
+		{ market: "3PTM", vs: "ESPN", u: 19 },
+		{ market: "3PTM", vs: "Only+DK+ESPN", u: 24 },
+		{ market: "3PTM", vs: "DK", u: 34 },
+		{ market: "PA", vs: "FD", u: 44 },
+		{ market: "PR", vs: "Any (DK, Only+FD+DK, FD+ESPN+MGM, ESPN)", u: 56 },
+		{ market: "RA", vs: "Any (FD+ESPN+MGM, FD, ESPN+HR, ESPN)", u: 60 }
+	],
+	"BetRivers (BR)": [
+		{ market: "PTS", vs: "FD", u: 16 },
+		{ market: "PTS", vs: "HR", u: 16 },
+		{ market: "PTS", vs: "FD+ESPN+MGM", u: 25 },
+		{ market: "REB", vs: "FD", u: 21 },
+		{ market: "REB", vs: "Only+DK+ESPN", u: 12 },
+		{ market: "AST", vs: "DK", u: 11 },
+		{ market: "AST", vs: "B365", u: 4 },
+		{ market: "AST", vs: "ESPN+HR", u: 16 },
+		{ market: "STL", vs: "Only+FD+DK", u: 8 },
+		{ market: "STL", vs: "FD+ESPN+MGM", u: 10 },
+		{ market: "3PTM", vs: "Any (DK, ESPN, FD+ESPN+MGM, ESPN+HR, PN)", u: 22 },
+		{ market: "PRA", vs: "HR", u: 3 }
+	],
+	"Bet365 (B365)": [
+		{ market: "PTS", vs: "Only+FD+DK+BOL", u: 3 },
+		{ market: "REB", vs: "Only+FD+DK", u: 6 },
+		{ market: "AST", vs: "DK", u: 7 },
+		{ market: "STL", vs: "Any (No ESPN)", u: null },
+		{ market: "BLK", vs: "Any (No FD)", u: null },
+		{ market: "3PTM", vs: "DK", u: 3 },
+		{ market: "3PTM", vs: "Circa", u: 2 },
+		{ market: "PA", vs: "FD", u: 20 }
+	]
+}
 
 const dashboard = document.getElementById('dashboard');
 

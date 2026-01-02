@@ -1416,7 +1416,7 @@ const playerFormatter = function(cell, params, rendered) {
 		bats = data.avgTOI;
 	}
 	let pos = "";
-	if (["nba", "atgs"].includes(PAGE)) {
+	if (["nba", "atgs", "ncaafprops"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	return `

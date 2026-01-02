@@ -126,78 +126,96 @@ function closeMenu() {
 const boostSel = document.getElementById('boost-select');
 const boostCustom = document.getElementById('boost-custom');
 
-boostSel.value = BOOST || 0;
-if (BOOST == "custom") {
-	boostCustom.style.display = "";
-}
-boostSel.addEventListener("change", (event) => {
-	boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-	changeFilter();
-});
+if (boostSel) {
+	boostSel.value = BOOST || 0;
+	if (BOOST == "custom") {
+		boostCustom.style.display = "";
+	}
+	boostSel.addEventListener("change", (event) => {
+		boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
+		changeFilter();
+	});
 
-boostCustom.addEventListener("input", () => {
-	changeFilter();
-});
+	boostCustom.addEventListener("input", () => {
+		changeFilter();
+	});
+}
 
 const debouncedChangeFilter = debounce(changeFilter, 400);
-document.getElementById("min-odds").value = MIN;
-document.getElementById("min-odds").addEventListener("input", debouncedChangeFilter);
-document.getElementById("max-odds").value = MAX;
-document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
+if (document.getElementById("min-odds")) {
+	document.getElementById("min-odds").value = MIN;
+	document.getElementById("min-odds").addEventListener("input", debouncedChangeFilter);
+	document.getElementById("max-odds").value = MAX;
+	document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
+}
 
-document.querySelector("#devig-select").value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
-if (!WEIGHT && !DEVIG.includes("+")) {
-	WEIGHT = "1";
+const devigSel = document.getElementById("devig-select");
+if (devigSel) {
+	devigSel.value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
+	if (!WEIGHT && !DEVIG.includes("+")) {
+		WEIGHT = "1";
+	}
 }
 
 if (document.getElementById("devig-display-text") && typeof parseWeightKey === 'function') {
 	document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
 }
-document.querySelector("#devig-select").addEventListener("change", (event) => {
-	if (event.target.value == "custom") {
-		openCustomDevig();
-	} else if (event.target.value == "delete") {
-		openDeleteCustomDevigOverlay();
-	} else {
-		[DEVIG, WEIGHT] = event.target.value.split(";");
-		if (!DEVIG.includes("+")) {
-			WEIGHT = "1";
+
+if (devigSel) {
+	devigSel.addEventListener("change", (event) => {
+		if (event.target.value == "custom") {
+			openCustomDevig();
+		} else if (event.target.value == "delete") {
+			openDeleteCustomDevigOverlay();
+		} else {
+			[DEVIG, WEIGHT] = event.target.value.split(";");
+			if (!DEVIG.includes("+")) {
+				WEIGHT = "1";
+			}
+			changeFilter();
 		}
+	});
+}
+
+if (document.getElementById("ou-select")) {
+	document.querySelector("#ou-select").value = OU;
+	document.querySelector("#ou-select").addEventListener("change", (event) => {
 		changeFilter();
-	}
-});
+	});
+}
 
-document.querySelector("#ou-select").value = OU;
-document.querySelector("#ou-select").addEventListener("change", (event) => {
-	changeFilter();
-});
+if (document.getElementById("prop-select")) {
+	document.querySelector("#prop-select").value = PROP || "";
+	document.querySelector("#prop-select").addEventListener("change", (event) => {
+		PROP = event.target.value;
+		const params = new URLSearchParams(window.location.search);
+		params.set("prop", PROP);
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		history.pushState({}, '', newUrl);
+		changeFilter();
+	});
+}
 
-document.querySelector("#prop-select").value = PROP || "";
-document.querySelector("#prop-select").addEventListener("change", (event) => {
-	PROP = event.target.value;
-	const params = new URLSearchParams(window.location.search);
-	params.set("prop", PROP);
-	const newUrl = `${window.location.pathname}?${params.toString()}`;
-	history.pushState({}, '', newUrl);
-	changeFilter();
-});
+if (document.getElementById("game-select")) {
+	document.querySelector("#game-select").value = GAME || "";
+	document.querySelector("#game-select").addEventListener("change", (event) => {
+		GAME = event.target.value;
+		const params = new URLSearchParams(window.location.search);
+		params.set("game", GAME);
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		history.pushState({}, '', newUrl);
+		TABLE.clearFilter();
+		changeFilter();
+	});
+}
 
-document.querySelector("#game-select").value = GAME || "";
-document.querySelector("#game-select").addEventListener("change", (event) => {
-	GAME = event.target.value;
-	const params = new URLSearchParams(window.location.search);
-	params.set("game", GAME);
-	const newUrl = `${window.location.pathname}?${params.toString()}`;
-	history.pushState({}, '', newUrl);
-	TABLE.clearFilter();
-	changeFilter();
-});
-
-document.querySelector("#book-select").value = BOOK || "";
-document.querySelector("#book-select").addEventListener("change", (event) => {
-	BOOK = event.target.value;
-	changeFilter();
-});
+if (document.getElementById("book-select")) {
+	document.querySelector("#book-select").value = BOOK || "";
+	document.querySelector("#book-select").addEventListener("change", (event) => {
+		BOOK = event.target.value;
+		changeFilter();
+	});
+}
 
 function changeView(view) {
 	const cardContainer = document.getElementById("card-container");
@@ -213,15 +231,17 @@ function changeView(view) {
 	}
 }
 
-document.querySelector("#view-select").value = CURRENT_VIEW || "";
-document.querySelector("#view-select").addEventListener("change", (event) => {
-	CURRENT_VIEW = event.target.value;
-	const params = new URLSearchParams(window.location.search);
-	params.set("view", CURRENT_VIEW);
-	const newUrl = `${window.location.pathname}?${params.toString()}`;
-	history.pushState({}, '', newUrl);
-	changeView(event.target.value);
-});
+if (document.getElementById("view-select")) {
+	document.querySelector("#view-select").value = CURRENT_VIEW || "";
+	document.querySelector("#view-select").addEventListener("change", (event) => {
+		CURRENT_VIEW = event.target.value;
+		const params = new URLSearchParams(window.location.search);
+		params.set("view", CURRENT_VIEW);
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		history.pushState({}, '', newUrl);
+		changeView(event.target.value);
+	});
+}
 
 const DEFAULT_DEVIGS = [
 	{ name: "FD", value: "fd;1", group: "100% Weight" },

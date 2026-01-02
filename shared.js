@@ -78,6 +78,7 @@ let PAGE_DROPDOWN = `
 	<option value="outliers?sport=nba">🏀 Outliers</option>
 	<option value="outliers?sport=nfl">🏈 Outliers</option>
 	<option value="outliers?sport=nhl">🏒 Outliers</option>
+	<option value="cheat?sport=nba">Devig Cheat Sheets</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
@@ -88,7 +89,10 @@ setTimeout(() => {
 	if (MOBILE && document.querySelectorAll("#mobile-header").length == 0) {
 		selectId = "#header";
 	}
-	const select = document.querySelector(selectId+" #page-select");
+	let select = document.querySelector(selectId+" #page-select");
+	if (!select) {
+		select = document.getElementById("page-select");
+	}
 	select.addEventListener("change", (event) => {
 		const page = event.target.value;
 		changePage(page);
@@ -110,6 +114,8 @@ setTimeout(() => {
 		select.value = `analysis?sport=${SPORT}`;
 	} else if (PAGE == "movement") {
 		select.value = `movement?sport=${SPORT}`;
+	} else if (PAGE == "cheat") {
+		select.value = `cheat?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
@@ -149,6 +155,9 @@ function changePage(page) {
 	} else if (page.includes("outliers")) {
 		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
 		window.location.href = `./outliers${HTML}?sport=${sport}`;
+	} else if (page.includes("cheat")) {
+		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
+		window.location.href = `./cheat${HTML}?sport=${sport}`;
 	} else if (page.includes("movement")) {
 		let sport = !page.includes("sport=") ? "atgs" : page.split("?sport=")[1];
 		window.location.href = `./movement${HTML}?sport=${sport}`;

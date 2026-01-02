@@ -16,12 +16,17 @@
 			--card-max-height: 300px;
 		}
 
+		html {
+			overflow: auto;
+		}
+
 		body {
 			font-family: system-ui, -apple-system, sans-serif;
 			background-color: var(--bg-color);
 			color: var(--text-main);
 			margin: 0;
 			line-height: 1.5;
+			overflow: auto;
 		}
 
 		.header {
@@ -74,6 +79,12 @@
 			display: flex;
 			flex-direction: column;
 			transition: all 0.3s ease;
+
+		    background-image: url('logos/logo.png');
+		    background-repeat: no-repeat;
+		    background-position: top center;
+		    background-size: 15%;
+		    background-blend-mode: soft-light;
 		}
 
 		.book-title {

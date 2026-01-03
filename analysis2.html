@@ -649,6 +649,8 @@
 			let props = ["pts", "reb", "ast", "stl", "blk", "dd", "3ptm", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
 			if (RES["atgs-vs-circa"]) {
 				props = ["atgs", "sog", "pts", "ast", "sv", "bs"];
+			} else if (RES["rec-vs-fd"]) {
+				props = ["attd", "pass_td", "pass_int", "pass_yds", "pass_cmp", "rush_att", "rush_yds", "rec_yds", "rec", "tackles+ast"];
 			}
 			for (prop of props) {
 				const barColors = [];

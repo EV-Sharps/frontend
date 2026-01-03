@@ -351,7 +351,102 @@ let bettingData = {
 }
 
 
-if (SPORT == "nhl") {
+if (SPORT == "nfl") {
+	bettingData = {
+		"Fanduel (FD)": [
+			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 9 },
+			{ market: "ATTD", vs: "PN", u: 2 },
+			{ market: "PASS_TD", vs: "DK", u: 6 },
+			{ market: "PASS_TD", vs: "Circa", u: 5 },
+			{ market: "PASS_YDS", vs: "HR", u: 20 },
+			{ market: "PASS_YDS", vs: "Circa", u: 4 },
+			{ market: "PASS_CMP", vs: "PN", u: 4 },
+			{ market: "PASS_CMP", vs: "DK", u: 1 },
+			{ market: "RUSH_ATT", vs: "Any (Only+DK+ESPN or DK best)", u: 5 },
+			{ market: "RUSH_YDS", vs: "DK", u: 15 },
+			{ market: "RUSH_YDS", vs: "Circa", u: 4 },
+			{ market: "RUSH_YDS", vs: "PN", u: 4 },
+			{ market: "REC_YDS", vs: "ESPN", u: 11 },
+			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 12 },
+			{ market: "REC_YDS", vs: "Only+DK+ESPN", u: 10 }
+		],
+		"DraftKings (DK)": [
+			{ market: "ATTD", vs: "PN", u: 8 },
+			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 9 },
+			{ market: "PASS_YDS", vs: "HR", u: 24 },
+			{ market: "PASS_YDS", vs: "ESPN+HR", u: 22 },
+			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 16 },
+			{ market: "PASS_YDS", vs: "FD", u: 5 },
+			{ market: "PASS_CMP", vs: "PN", u: 7 },
+			{ market: "RUSH_ATT", vs: "ESPN", u: 9 },
+			{ market: "RUSH_YDS", vs: "FD", u: 25 },
+			{ market: "RUSH_YDS", vs: "ESPN", u: 93 },
+			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 15 },
+			{ market: "REC_YDS", vs: "ESPN", u: 25 }
+		],
+		"BetMGM (MGM)": [
+			{ market: "ATTD", vs: "PN", u: 4 },
+			{ market: "ATTD", vs: "HR", u: 4 },
+			{ market: "PASS_TD", vs: "Any (DK, Circa, HR, ESPN+HR)", u: 10 },
+			{ market: "PASS_CMP", vs: "PN", u: 1 },
+			{ market: "PASS_CMP", vs: "ESPN", u: 1 },
+			{ market: "RUSH_ATT", vs: "DK", u: 2 },
+			{ market: "RUSH_ATT", vs: "FD", u: 1 },
+			{ market: "RUSH_YDS", vs: "Only+FD+DK", u: 1 },
+			{ market: "REC_YDS", vs: "ESPN", u: 11 },
+			{ market: "REC_YDS", vs: "ESPN+HR", u: 12 },
+			{ market: "REC_YDS", vs: "FD", u: 2 },
+			{ market: "REC", vs: "ESPN+HR", u: 10 },
+			{ market: "REC", vs: "Only+FD+DK", u: 6 }
+		],
+		"TheScore (ESPN)": [
+			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 7 },
+			{ market: "PASS_TD", vs: "Any (not PN, Circa best)", u: 5 },
+			{ market: "PASS_YDS", vs: "HR", u: 16 },
+			{ market: "PASS_YDS", vs: "DK", u: 3 },
+			{ market: "PASS_CMP", vs: "PN", u: 6 },
+			{ market: "RUSH_ATT", vs: "DK", u: 8 },
+			{ market: "RUSH_YDS", vs: "Circa", u: 2 },
+			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 6 },
+			{ market: "REC_YDS", vs: "FD", u: 9 },
+			{ market: "TACKLES+AST", vs: "DK", u: 1 }
+		],
+		"HardRock (HR)": [
+			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 6 },
+			{ market: "ATTD", vs: "Circa", u: 3 },
+			{ market: "ATTD", vs: "PN", u: 3 },
+			{ market: "PASS_YDS", vs: "FD", u: 30 },
+			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 36 },
+			{ market: "PASS_YDS", vs: "ESPN", u: 25 },
+			{ market: "PASS_YDS", vs: "DK", u: 2 },
+			{ market: "PASS_CMP", vs: "FD+ESPN+MGM", u: 4 },
+			{ market: "RUSH_ATT", vs: "ESPN", u: 2 },
+			{ market: "RUSH_ATT", vs: "DK", u: 1 },
+			{ market: "RUSH_YDS", vs: "FD", u: 6 },
+			{ market: "RUSH_YDS", vs: "ESPN", u: 8 },
+			{ market: "REC_YDS", vs: "FD+ESPN+MGM", u: 12 },
+			{ market: "REC_YDS", vs: "PN", u: 3 },
+			{ market: "REC_YDS", vs: "DK", u: 15 }
+		],
+		"BetRivers (BR)": [
+			{ market: "ATTD", vs: "Circa", u: 14 },
+			{ market: "ATTD", vs: "PN", u: 8 },
+			{ market: "ATTD", vs: "HR", u: 6 },
+			{ market: "PASS_TD", vs: "DK", u: 9 },
+			{ market: "PASS_TD", vs: "Only+FD+DK", u: 4 },
+			{ market: "PASS_YDS", vs: "ESPN", u: 29 },
+			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 42 },
+			{ market: "PASS_YDS", vs: "FD", u: 12 },
+			{ market: "PASS_CMP", vs: "PN", u: 6 },
+			{ market: "PASS_CMP", vs: "HR", u: 9 },
+			{ market: "RUSH_ATT", vs: "Any", u: 11 },
+			{ market: "RUSH_YDS", vs: "Any", u: 40 },
+			{ market: "REC_YDS", vs: "DK", u: 25 },
+			{ market: "REC_YDS", vs: "HR", u: 14 },
+			{ market: "REC_YDS", vs: "Circa", u: 7 }
+		]
+	}
+} else if (SPORT == "nhl") {
 	bettingData = {
 		"Fanduel (FD)": [
 			{ market: "ATGS", vs: "ESPN+HR", u: 119 },

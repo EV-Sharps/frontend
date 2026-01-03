@@ -79,6 +79,7 @@ let PAGE_DROPDOWN = `
 	<option value="outliers?sport=nfl">🏈 Outliers</option>
 	<option value="outliers?sport=nhl">🏒 Outliers</option>
 	<option value="cheat?sport=nba">🏀 Cheat Sheets</option>
+	<option value="cheat?sport=nfl">🏈 Cheat Sheets</option>
 	<option value="cheat?sport=nhl">🏒 Cheat Sheets</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>

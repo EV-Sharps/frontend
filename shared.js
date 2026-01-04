@@ -12,7 +12,7 @@ let WEIGHTS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE;
+let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, REQUIRE;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -1981,6 +1981,9 @@ function parseWeightKey(key) {
 
 function loadWeights() {
 	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
+	if (DEVIG && DEVIG.includes("only+")) {
+		DEVIG = DEVIG.replace("only+", "");
+	}
 
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
 		CURR_USER.metadata["weights"] = [];
@@ -2145,13 +2148,6 @@ function openCustomDevig() {
 	`;
 	card.innerHTML = `
 	<h3 style="margin:0 0 8px">Custom Devig</h3>
-	<p style="margin:0 0 12px; color:#c8c3bc">Pick books to average against. Choose "Only" to require all selected books to be present.</p>
-
-	<div style="display:flex;gap:16px;align-items:center;margin:6px 0 14px">
-	  <label><input type="radio" name="cd-mode" value="avg" checked> Average selected (<code>fd+dk+circa</code>)</label>
-	  <label><input type="radio" name="cd-mode" value="only"> Only selected (<code>only+fd+dk+circa</code>)</label>
-	</div>
-
 	<div id="weighting-body" style="display:flex;gap: 20px;">
 		<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
 			<div id="weight-chart-section" style="display: flex; justify-content: center;">
@@ -2959,6 +2955,7 @@ function parseURLParams() {
 	MAX = URLParams.get("max") || "";
 	OU = URLParams.get("ou") || "ou";
 	SIDE = URLParams.get("side") ?? "both";
+	REQUIRE = URLParams.get("require") || "all";
 
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";

@@ -1,14 +1,14 @@
 
 const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl", "br"];
 const SESSION_WEIGHTS = {
-	"tds-only+pn+circa": {
+	"tds-pn+circa": {
 		pn: 0.4,
 		circa: 0.6
 	}
 }
 let TMP_WEIGHTS = {};
 let RAW_WEIGHTS = {};
-WEIGHTS = getDefaultWeights((DEVIG || "").replace("only+", "").split("+"));
+WEIGHTS = getDefaultWeights((DEVIG || "").split("+"));
 let WEIGHT_LOADED = false;
 
 function getDefaultWeights(books) {
@@ -30,7 +30,7 @@ function getUserWeights() {
 	if (!DEVIG) {
 		return getDefaultWeights();
 	}
-	DEVIG.replace("only+", "").split("+").map((book, idx) => {
+	DEVIG.split("+").map((book, idx) => {
 		weights[book] = parseFloat(WEIGHT.split("+")[idx]);
 	});
 	return weights;
@@ -60,7 +60,7 @@ function renderWeightSettings() {
 
 	const devig = DEVIG || 'mkt';
 	const currentDevigKey = `${PAGE}-${devig}`;
-	const includedDevigs = devig.replace("only+", "").split("+");
+	const includedDevigs = devig.split("+");
 
 	let marketWeights = getUserWeights();
 	WEIGHTS = marketWeights;
@@ -210,10 +210,6 @@ function getWeightKey() {
 	let totalWeight = 0;
 	let sortedData = [];
 
-	const mode = document.querySelector('input[name="cd-mode"]:checked').value;
-	if (mode == "only") {
-		books.push("only");
-	}
 	Object.entries(RAW_WEIGHTS).forEach(([book, weight]) => {
         // Ensure weight is a number and is not zero/falsy after conversion
         const numWeight = parseFloat(weight); 
@@ -236,12 +232,7 @@ function getWeightKey() {
 
 	let weightKey = raw.join("+");
 	let bookKey = books.join("+");
-	let text = "";
-
-	if (mode == "only") {
-		text += "Only ";
-	}
-	text += `${books.map(book => book.toUpperCase()).join("/").replace("ONLY/", "")}`;
+	let text = `${books.map(book => book.toUpperCase()).join("/")}`;
 	if (raw.length > 1 && rawSet.size == 1) {
 		text += ` ${Math.round(100 / books.length)}% Equal`;
 	} else {
@@ -274,6 +265,8 @@ async function saveWeights() {
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata["weights"]) {
 		metadata["weights"] = [];
+	} else {
+		metadata["weights"] = removeOnlyWeights(metadata["weights"]);
 	}
 
 	let key = getWeightKey();

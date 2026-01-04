@@ -67,7 +67,7 @@ if (dd) {
 }
 
 function getExcludedBooks() {
-  return boxes.filter(b => b.checked).map(b => b.value);
+	return boxes.filter(b => b.checked).map(b => b.value);
 }
 if (excludeBtn) {
 	excludeBtn.addEventListener("click", (e) => {
@@ -82,7 +82,7 @@ document.addEventListener('click', (e) => {
 	if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
 });
 boxes.forEach(b => b.addEventListener('change', () => {
-  changeFilter();
+	changeFilter();
 }));
 
 if (menu) {
@@ -118,9 +118,9 @@ function openMenu() {
 }
 
 function closeMenu() {
-  menu.style.display = 'none';
-  dd.appendChild(menu);                  // put it back (optional)
-  excludeBtn.setAttribute('aria-expanded','false');
+	menu.style.display = 'none';
+	dd.appendChild(menu);                  // put it back (optional)
+	excludeBtn.setAttribute('aria-expanded','false');
 }
 
 const boostSel = document.getElementById('boost-select');
@@ -243,6 +243,22 @@ if (document.getElementById("view-select")) {
 	});
 }
 
+let req = document.getElementById("require-all");
+if (req) {
+	if (REQUIRE == "any") {
+		document.getElementById("require-any").checked = true;
+	} else {
+		req.checked = true;
+	}
+
+	document.querySelectorAll('input[name="require"]').forEach(radio => {
+		radio.addEventListener('change', (e) => {
+			REQUIRE = e.target.value;
+			changeFilter();
+		});
+	});
+}
+
 const DEFAULT_DEVIGS = [
 	{ name: "FD", value: "fd;1", group: "100% Weight" },
 	{ name: "DK", value: "dk;1", group: "100% Weight" },
@@ -254,7 +270,7 @@ const DEFAULT_DEVIGS = [
 	{ name: "BOL", value: "bol;1", group: "100% Weight" },
 	{ name: "BV", value: "bv;1", group: "100% Weight" },
 
-	{ name: "Only FD/DK 50% Equal", value: "only+fd+dk;1+1", group: "Split Weights" },
+	{ name: "FD/DK 50% Equal", value: "fd+dk;1+1", group: "Split Weights" },
 	{ name: "PN/Circa 50% Equal", value: "pn+circa;1+1", group: "Split Weights" },
 	{ name: "CIRC/PN/FD/DK 25% Equal", value: "circa+pn+fd+dk;1+1+1+1", group: "Split Weights" }
 ];
@@ -419,9 +435,9 @@ function renderDevigOptions(searchTerm = "") {
 					<button 
 						onclick="event.stopPropagation(); toggleFavorite('${opt.value}');" 
 						style="position:absolute; right: ${opt.group == "Your Custom Devigs" ? '30px' : '0'}; 
-							   background: none; color: ${starColor}; border: none;
-							   padding: 4px 8px; cursor: pointer; font-size: 16px; 
-							   line-height: 1; z-index: 10;">
+								 background: none; color: ${starColor}; border: none;
+								 padding: 4px 8px; cursor: pointer; font-size: 16px; 
+								 line-height: 1; z-index: 10;">
 						${isFavorite ? '★' : '☆'}
 					</button>
 				`;
@@ -432,8 +448,8 @@ function renderDevigOptions(searchTerm = "") {
 					<button 
 						onclick="event.stopPropagation(); deleteDevig('${opt.value}')" 
 						style="position:absolute;right:0;background-color: #f44336; color: white; border: none; 
-							   padding: 4px 8px; cursor: pointer; border-radius: 4px; 
-							   font-weight: bold; line-height: 1;">
+								 padding: 4px 8px; cursor: pointer; border-radius: 4px; 
+								 font-weight: bold; line-height: 1;">
 						&times;
 					</button>
 				`;
@@ -448,6 +464,8 @@ function renderDevigOptions(searchTerm = "") {
 				}
 
 				devigDisplay.textContent = opt.name;
+				REQUIRE = "all";
+				document.getElementById("require-all").checked = true;
 				changeFilter();
 				devigModal.style.display = 'none';
 			});
@@ -617,9 +635,23 @@ function parseLabel(label) {
 	return `${sportLogo} ${prop.toUpperCase()}`;
 }
 
+function removeOnlyWeights(arr) {
+	let seen = {};
+	let newArr = [];	
+	for (devig of arr) {
+		devig = devig.replace("only+", "");
+		if (!seen[devig]) {
+			newArr.push(devig);
+		}
+		seen[devig] = true;
+	}
+	return newArr;
+}
+
 function getCustomDevigs() {
 	const meta = CURR_USER?.metadata || {};
-	return meta["weights"] || [];
+	let weights = removeOnlyWeights(meta["weights"] || []);
+	return weights;
 }
 
 async function setFavoriteDevigs(favorites) {
@@ -700,8 +732,8 @@ function renderCustomDevigList() {
 			<button 
 				onclick="deleteDevig('${key}')" 
 				style="background-color: #f44336; color: white; border: none; 
-					   padding: 4px 8px; cursor: pointer; border-radius: 4px; 
-					   font-weight: bold; line-height: 1;">
+						 padding: 4px 8px; cursor: pointer; border-radius: 4px; 
+						 font-weight: bold; line-height: 1;">
 				&times;
 			</button>
 		</div>
@@ -757,6 +789,7 @@ function changeFilter(render = true) {
 	const params = new URLSearchParams(window.location.search);
 	params.set("boost", boost);
 	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
+	params.set("require", REQUIRE);
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", game);
 	params.set("book", book);
@@ -780,10 +813,9 @@ function changeFilter(render = true) {
 			row["kelly"] = "";
 			return;
 		}
-		const isOnlyCombo = devigBook && devigBook.startsWith("only+");
-		const comboList = devigBook ? devigBook.replace(/^only\+/, "").split("+").filter(Boolean) : [];
-		if (!avg || (isOnlyCombo && comboList.some(k => !bookOdds[k]))) {
-			row["ev"] = "";
+		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : [];
+		if (!avg || (REQUIRE == "all" && comboList.some(k => !bookOdds[k]))) {
+			row["ev"] = null;
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
@@ -796,7 +828,7 @@ function changeFilter(render = true) {
 		}
 		const highest = highestOver(bookOdds, ex, boost, book, row.under);
 		if (!isFinite(highest.value)) {
-			row["ev"] = "";
+			row["ev"] = null;
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
@@ -807,7 +839,7 @@ function changeFilter(render = true) {
 		let avgDevig = averageDevigs(bookOdds, highest.book, row.under, weights);
 
 		if (!isFinite(avgDevig)) {
-			row["ev"] = "";
+			row["ev"] = null;
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
@@ -888,6 +920,15 @@ function changeFilter(render = true) {
 	}
 	if (filters.length > 0) {
 		TABLE.setFilter(filters);
+	}
+
+	if (!TABLE.getData("active").length) {
+		let t = "No data for this devig.";
+		if (REQUIRE == "all") {
+			t += " Try switching to require=Any.";
+		}
+		TABLE.options.placeholder = t;
+		TABLE.redraw(true);
 	}
 
 	const table = document.getElementById("table");

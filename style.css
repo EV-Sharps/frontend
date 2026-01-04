@@ -82,6 +82,9 @@ body::before {
   color: #666;
 }
 
+#hide-username {
+	display: none;
+}
 .radio-group {
   display: inline-flex;
   background-color: #1c1c1c;
@@ -1895,6 +1898,15 @@ button#logout:hover {
 }
 
 @media (max-width: 1430px) {
+	#hide-username {
+		display: initial;
+	}
+	.tabulator-placeholder {
+		justify-content: left !important;
+	}
+	.tabulator-placeholder-contents {
+		text-align: left;
+	}
 	.dropdown {
 		flex: 0 0 auto;
 	}

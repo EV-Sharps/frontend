@@ -2820,7 +2820,8 @@ function buildTourSteps() {
 	const evEl = colHeader("ev");
 	const book = colHeader("book");
 	const bookSel = document.getElementById("book-select");
-	const devigSel = document.getElementById("devig-select");
+	const devigSel = document.getElementById("devig-button");
+	const requireToggle = document.querySelector(".radio-toggle");
 	const exclude = document.getElementById("exclude-dd");
 	const fv = colHeader("fairVal");
 	const implied = colHeader("implied");
@@ -2867,6 +2868,13 @@ function buildTourSteps() {
 		element: devigSel,
 		title: "Devig Filter",
 		intro: "Choose the sharp sportsbooks (devig books) you trust to set the most accurate odds and remove the vigorish (vig) and determine the true 'Fair Value' line.<br>Circa and Pinnacle are a good start.",
+		position: "bottom"
+	});
+
+	if (requireToggle) steps.push({
+		element: requireToggle,
+		title: "Require Toggle",
+		intro: "'All' books in the devig need to be present",
 		position: "bottom"
 	});
 

@@ -192,7 +192,10 @@ function createNewCard(rowData, uniqueId) {
 	collapsedBody.className = 'card-body-collapsed';
 	card.appendChild(collapsedBody);
 	
-	header.addEventListener('click', () => {
+	header.addEventListener('click', (e) => {
+		if (e.target.closest('.all-books-row')) {
+            return; 
+        }
 		collapsedBody.classList.toggle('visible');
 		const uniqueId = card.dataset.uniqueId;
 	    const logs = rowData.logs;

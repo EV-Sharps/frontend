@@ -488,12 +488,15 @@ body::before {
 /* 3. All Books Row (Bottom Visible Row) */
 .all-books-row {
 	display: flex;
-	overflow-x: scroll;
+	flex-wrap: nowrap;
+	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	padding: 8px 10px;
 	background-color: #121212;
 	border-bottom: none;
 	touch-action: pan-x;
+	position: relativel;
+	z-index: 2;
 }
 .all-books-row::-webkit-scrollbar {
 	height: 4px; /* Make scrollbar tiny */
@@ -508,6 +511,7 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	padding: 0 10px;
+	flex-grow: 0;
 	flex-shrink: 0; /* Important: prevents items from shrinking */
 }
 

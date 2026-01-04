@@ -2814,6 +2814,10 @@ function colHeader(field) {
 	} catch(e) { return null; }
 }
 
+function hideUsername() {
+	document.getElementById("auth-buttons").style.display = "none";
+}
+
 function buildTourSteps() {
 	const steps = [];
 

@@ -356,8 +356,6 @@ function renderCards(data) {
 		});
 	}
 
-	document.querySelector(".filter-wrapper").style.display = "initial";
-
 	const container = document.getElementById("card-container");
 	container.innerHTML = "";
 

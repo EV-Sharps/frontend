@@ -12,7 +12,7 @@ let WEIGHTS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, REQUIRE;
+let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, WIDTH;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -2825,7 +2825,7 @@ function buildTourSteps() {
 	const book = colHeader("book");
 	const bookSel = document.getElementById("book-select");
 	const devigSel = document.getElementById("devig-button");
-	const requireToggle = document.querySelector(".radio-toggle");
+	const widthInput = document.getElementById("width-input");
 	const exclude = document.getElementById("exclude-dd");
 	const fv = colHeader("fairVal");
 	const implied = colHeader("implied");
@@ -2875,10 +2875,10 @@ function buildTourSteps() {
 		position: "bottom"
 	});
 
-	if (requireToggle) steps.push({
-		element: requireToggle,
-		title: "Require Toggle",
-		intro: "'All' books in the devig need to be present",
+	if (widthInput) steps.push({
+		element: widthInput,
+		title: "Width",
+		intro: "The minimum number of trusted sportsbooks required to have odds available for a play to be shown. Higher width means more consensus and higher confidence.",
 		position: "bottom"
 	});
 
@@ -2967,7 +2967,7 @@ function parseURLParams() {
 	MAX = URLParams.get("max") || "";
 	OU = URLParams.get("ou") || "ou";
 	SIDE = URLParams.get("side") ?? "both";
-	REQUIRE = URLParams.get("require") || "all";
+	WIDTH = URLParams.get("width") || "1";
 
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";

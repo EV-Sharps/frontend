@@ -149,6 +149,11 @@ if (document.getElementById("min-odds")) {
 	document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
 }
 
+if (document.getElementById("width-input")) {
+	document.getElementById("width-input").value = parseInt(WIDTH);
+	document.getElementById("width-input").addEventListener("input", debouncedChangeFilter);
+}
+
 const devigSel = document.getElementById("devig-select");
 if (devigSel) {
 	devigSel.value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
@@ -243,22 +248,6 @@ if (document.getElementById("view-select")) {
 		const newUrl = `${window.location.pathname}?${params.toString()}`;
 		history.pushState({}, '', newUrl);
 		changeView(event.target.value);
-	});
-}
-
-let req = document.getElementById("require-all");
-if (req) {
-	if (REQUIRE == "any") {
-		document.getElementById("require-any").checked = true;
-	} else {
-		req.checked = true;
-	}
-
-	document.querySelectorAll('input[name="require"]').forEach(radio => {
-		radio.addEventListener('change', (e) => {
-			REQUIRE = e.target.value;
-			changeFilter();
-		});
 	});
 }
 
@@ -467,8 +456,7 @@ function renderDevigOptions(searchTerm = "") {
 				}
 
 				devigDisplay.textContent = opt.name;
-				REQUIRE = "all";
-				document.getElementById("require-all").checked = true;
+				document.getElementById("width-input").value = 1;
 				changeFilter();
 				devigModal.style.display = 'none';
 			});
@@ -786,6 +774,7 @@ function changeFilter(render = true) {
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
+	let width = document.getElementById("width-input").value;
 	let excluded = getExcludedBooks();
 	if (boost === "custom") {
 		boost = boostCustom.value;
@@ -796,12 +785,13 @@ function changeFilter(render = true) {
 	OU = ou;
 	MIN = minOdds;
 	MAX = maxOdds;
+	WIDTH = width;
 
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);
 	params.set("boost", boost);
 	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
-	params.set("require", REQUIRE);
+	params.set("width", width);
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", game);
 	params.set("book", book);
@@ -825,8 +815,9 @@ function changeFilter(render = true) {
 			row["kelly"] = "";
 			return;
 		}
-		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : [];
-		if (!avg || (REQUIRE == "all" && comboList.some(k => !bookOdds[k]))) {
+		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
+		const presentBooks = comboList.filter(k => bookOdds[k]).length;
+		if (!avg || presentBooks < WIDTH) {
 			row["ev"] = null;
 			row["fairVal"] = "";
 			row["implied"] = "";
@@ -936,9 +927,6 @@ function changeFilter(render = true) {
 
 	if (!TABLE.getData("active").length) {
 		let t = "No data for this devig.";
-		if (REQUIRE == "all") {
-			t += " Try switching to require=Any.";
-		}
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
 	}

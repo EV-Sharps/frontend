@@ -203,12 +203,9 @@ function createNewCard(rowData, uniqueId) {
 	const header = document.createElement('div');
 	header.className = 'card-header';
 	card.appendChild(header);
-
-	const collapsedBody = document.createElement('div');
-	collapsedBody.className = 'card-body-collapsed';
-	card.appendChild(collapsedBody);
 	
 	header.addEventListener('click', (e) => {
+		const collapsedBody = header.querySelector('.card-body-collapsed');
 		if (e.target.closest('.all-books-row')) {
 			return; 
 		}
@@ -266,7 +263,6 @@ function renderAllBooks(bookOdds, bestBook) {
 function updateExistingCard(card, rowData) {
 	const uniqueId = card.dataset.uniqueId;
 	const header = card.querySelector('.card-header');
-	const collapsedBody = card.querySelector('.card-body-collapsed');
 
 	const book = rowData.book;
 	const evCell = { getValue: () => rowData.ev };
@@ -311,6 +307,7 @@ function updateExistingCard(card, rowData) {
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
+		<div class="card-body-collapsed"></div>
 		<div class="card-arrow-container">
 			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
 				<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -318,6 +315,7 @@ function updateExistingCard(card, rowData) {
 		</div>
 	`;
 	
+	const collapsedBody = card.querySelector('.card-body-collapsed');
 	collapsedBody.innerHTML = `
 		<div style="display:flex;justify-content: space-evenly;">
 			<div>${rowData.fairVal} Fair Val</div>
@@ -333,7 +331,7 @@ function updateExistingCard(card, rowData) {
 	`;
 
 	if (collapsedBody.classList.contains('visible')) {
-		renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap);
+		//renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap);
 	}
 
 	const previousRow = PREVIOUS_DATA.find(d => `${d.player}-${d.prop}-${d.line}` === card.dataset.uniqueId);
@@ -341,8 +339,8 @@ function updateExistingCard(card, rowData) {
 		card.style.transition = 'none';
 		card.style.backgroundColor = 'rgba(100, 181, 246, 0.3)';
 		setTimeout(() => {
-			card.style.transition = 'background-color 1s ease-out, transform 0.1s ease';
-			card.style.backgroundColor = '';
+			//card.style.transition = 'background-color 1s ease-out, transform 0.1s ease';
+			//card.style.backgroundColor = '';
 		}, 50);
 	}
 }

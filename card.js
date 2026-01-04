@@ -1,62 +1,78 @@
 let ALL_CARD_DATA = [];
+let MASTER_DATA = [];
 let CURRENT_CARD_INDEX = 0;
 const CARDS_PER_LOAD = 20;
 // Flag to prevent loading multiple batches simultaneously
 let IS_LOADING_CARDS = false;
 
-function loadMoreCards() {
-    if (IS_LOADING_CARDS) return;
-    
-    const container = document.getElementById("card-container");
-    const data = ALL_CARD_DATA;
-    
-    // Determine the slice for the next batch
-    const endIndex = Math.min(CURRENT_CARD_INDEX + CARDS_PER_LOAD, data.length);
-    
-    if (CURRENT_CARD_INDEX >= data.length) {
-        // All data has been loaded
-        return;
-    }
-    
-    IS_LOADING_CARDS = true;
-    
-    const fragment = document.createDocumentFragment();
-    
-    for (let i = CURRENT_CARD_INDEX; i < endIndex; i++) {
-        const rowData = data[i];
-        const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`;
-        
-        // Use the existing function to create the card
-        const newCard = createNewCard(rowData, uniqueId);
-        fragment.appendChild(newCard);
-    }
-    
-    container.appendChild(fragment);
-    
-    // Update the index and loading flag
-    CURRENT_CARD_INDEX = endIndex;
-    IS_LOADING_CARDS = false;
-    
-    // Edge case: If the loaded cards don't fill the container (e.g., on a large monitor), 
-    // immediately load the next batch until the container is full or all data is loaded.
-    if (container.scrollHeight <= container.clientHeight && CURRENT_CARD_INDEX < data.length) {
-        loadMoreCards();
-    }
+function initializeCards(data) {
+	MASTER_DATA = data;
+	applyFilters();
 }
 
-/**
- * Handles scrolling of the card container to trigger loading of more cards.
- */
-function handleScroll() {
-    const container = document.getElementById("card-container");
-    
-    // Check if the user has scrolled within 200px of the bottom
-    const scrollTriggerDistance = 200;
-    const scrolledNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - scrollTriggerDistance;
+function applyFilters() {
+	const searchTerm = document.getElementById("player-search").value.toLowerCase();
 
-    if (scrolledNearBottom && !IS_LOADING_CARDS && CURRENT_CARD_INDEX < ALL_CARD_DATA.length) {
-        loadMoreCards();
-    }
+	const filtered = MASTER_DATA.filter(row => {
+		return row.player.includes(searchTerm);
+	});
+
+	renderCards(filtered);
+}
+
+const debouncedApplyFilters = debounce(applyFilters, 400);
+document.getElementById("player-search").addEventListener("input", () => {
+	debouncedApplyFilters();
+});
+
+function loadMoreCards() {
+	if (IS_LOADING_CARDS) return;
+	
+	const container = document.getElementById("card-container");
+	const data = ALL_CARD_DATA;
+	
+	const endIndex = Math.min(CURRENT_CARD_INDEX + CARDS_PER_LOAD, data.length);
+	
+	if (CURRENT_CARD_INDEX >= data.length) {
+		return;
+	}
+	
+	IS_LOADING_CARDS = true;
+	
+	const fragment = document.createDocumentFragment();
+	
+	for (let i = CURRENT_CARD_INDEX; i < endIndex; i++) {
+		const rowData = data[i];
+		const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`;
+		
+		// Use the existing function to create the card
+		const newCard = createNewCard(rowData, uniqueId);
+		fragment.appendChild(newCard);
+	}
+	
+	container.appendChild(fragment);
+	
+	CURRENT_CARD_INDEX = endIndex;
+	IS_LOADING_CARDS = false;
+	
+	// Edge case: If the loaded cards don't fill the container (e.g., on a large monitor), 
+	// immediately load the next batch until the container is full or all data is loaded.
+	if (container.scrollHeight <= container.clientHeight && CURRENT_CARD_INDEX < data.length) {
+		loadMoreCards();
+	}
+}
+
+function handleScroll() {
+	const container = document.getElementById("table-container");
+	
+	const scrollTriggerDistance = 200;
+	const scrolledNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - scrollTriggerDistance;
+
+	//console.log(scrolledNearBottom, CURRENT_CARD_INDEX)
+
+	if (scrolledNearBottom && !IS_LOADING_CARDS && CURRENT_CARD_INDEX < ALL_CARD_DATA.length) {
+		loadMoreCards();
+	}
 }
 
 function plusMinusCardFormatter(cell) {
@@ -87,23 +103,21 @@ function bookContent(cell) {
 let PREVIOUS_DATA = [];
 
 function sliceLogs(logs, interval) {
-    // Determine the starting index for slicing to get the last 'interval' games
-    const start = Math.max(0, logs.length - interval);
-    const slicedLogs = logs.slice(start);
-    // Create game index numbers (e.g., 1, 2, 3, ... 15)
-    const slicedIndices = Array.from({ length: slicedLogs.length }, (_, i) => i + 1);
-    
-    return { slicedLogs, slicedIndices };
+	const start = Math.max(0, logs.length - interval);
+	const slicedLogs = logs.slice(start);
+	const slicedIndices = Array.from({ length: slicedLogs.length }, (_, i) => i + 1);
+	
+	return { slicedLogs, slicedIndices };
 }
 
 function renderCardPlot(uniqueId, under, logs, handicap, interval) {
 	if (!logs || logs.length === 0) {
-        const chartDiv = document.getElementById(`card-chart-${uniqueId}`);
-        if (chartDiv) {
-            chartDiv.innerHTML = '<div style="text-align:center; padding:10px; font-style:italic;">No recent game logs available.</div>';
-        }
-        return;
-    }
+		const chartDiv = document.getElementById(`card-chart-${uniqueId}`);
+		if (chartDiv) {
+			chartDiv.innerHTML = '<div style="text-align:center; padding:10px; font-style:italic;">No recent game logs available.</div>';
+		}
+		return;
+	}
 
 	const colors = logs.map(value => {
 		let cond = parseFloat(value) > parseFloat(handicap);
@@ -194,21 +208,22 @@ function createNewCard(rowData, uniqueId) {
 	
 	header.addEventListener('click', (e) => {
 		if (e.target.closest('.all-books-row')) {
-            return; 
-        }
-		collapsedBody.classList.toggle('visible');
-		const uniqueId = card.dataset.uniqueId;
-	    const logs = rowData.logs;
-	    const handicap = rowData.handicap;
+			return; 
+		}
 
-	    if (collapsedBody.classList.contains('visible')) {
-	        // Get current selected interval, default to 15 if not set
-	        const intervalSelect = document.getElementById(`log-interval-${uniqueId}`);
-	        const interval = intervalSelect ? parseInt(intervalSelect.value) : 15;
-	        
-	        // Render the chart using the current interval
-	        renderCardPlot(uniqueId, rowData.under, logs, handicap, interval);
-	    }
+		const isVisible = collapsedBody.classList.toggle("visible");
+		card.classList.toggle("expanded", isVisible);
+
+		const uniqueId = card.dataset.uniqueId;
+
+		const logs = rowData.logs;
+		const handicap = rowData.handicap;
+
+		if (collapsedBody.classList.contains('visible')) {
+			const intervalSelect = document.getElementById(`log-interval-${uniqueId}`);
+			const interval = intervalSelect ? parseInt(intervalSelect.value) : 15;
+			renderCardPlot(uniqueId, rowData.under, logs, handicap, interval);
+		}
 	});
 
 	// Run the update logic to populate the content
@@ -294,6 +309,11 @@ function updateExistingCard(card, rowData) {
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
+		<div class="card-arrow-container">
+			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
+				<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+		</div>
 	`;
 	
 	collapsedBody.innerHTML = `
@@ -336,6 +356,8 @@ function renderCards(data) {
 		});
 	}
 
+	document.querySelector(".filter-wrapper").style.display = "initial";
+
 	const container = document.getElementById("card-container");
 	container.innerHTML = "";
 
@@ -345,8 +367,9 @@ function renderCards(data) {
 
 	loadMoreCards();
 
-	if (!container.dataset.scrollListenerAdded) {
-        container.addEventListener('scroll', handleScroll);
-        container.dataset.scrollListenerAdded = 'true';
-    }
+	const c = document.querySelector("#table-container");
+	if (!c.dataset.scrollListenerAdded) {
+		c.addEventListener('scroll', handleScroll);
+		c.dataset.scrollListenerAdded = 'true';
+	}
 }

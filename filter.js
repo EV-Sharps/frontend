@@ -223,7 +223,7 @@ function changeView(view) {
 	if (view === "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
-		renderCards(RES.data);
+		initializeCards(RES.data);
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
@@ -945,7 +945,7 @@ function changeFilter(render = true) {
 	if (CURRENT_VIEW == "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
-		renderCards(data);
+		initializeCards(data);
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";

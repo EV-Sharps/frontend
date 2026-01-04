@@ -12,7 +12,7 @@ let WEIGHTS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, WIDTH;
+let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, WIDTH, TEAMS;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -2968,6 +2968,7 @@ function parseURLParams() {
 	OU = URLParams.get("ou") || "ou";
 	SIDE = URLParams.get("side") ?? "both";
 	WIDTH = URLParams.get("width") || "1";
+	TEAMS = URLParams.get("teams") || "";
 
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";

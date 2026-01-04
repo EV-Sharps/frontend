@@ -470,6 +470,10 @@
 				RES = data;
 				UPDATED[PAGE] = data["updated"];
 
+				if (TEAMS) {
+					RES.data = RES.data.filter(r => TEAMS.split(",").includes(r.team));
+				}
+
 				const gameSel = document.getElementById("game-select");
 				gameSel.innerHTML = `<option value="" selected>All</option>`;
 				data.games.forEach(game => {

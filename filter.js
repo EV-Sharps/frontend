@@ -220,13 +220,16 @@ if (document.getElementById("book-select")) {
 function changeView(view) {
 	const cardContainer = document.getElementById("card-container");
 	const table = document.getElementById("table");
+	const playerFilter = document.querySelector(".filter-wrapper");
 	if (view === "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
+		playerFilter.style.display = "initial";
 		initializeCards(RES.data);
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
+		playerFilter.style.display = "none";
 		renderTable(RES.data);
 	}
 }

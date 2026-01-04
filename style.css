@@ -495,7 +495,7 @@ body::before {
 	background-color: #121212;
 	border-bottom: none;
 	touch-action: pan-x;
-	position: relativel;
+	position: relative;
 	z-index: 2;
 }
 .all-books-row::-webkit-scrollbar {

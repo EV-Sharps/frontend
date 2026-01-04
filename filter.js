@@ -479,7 +479,7 @@ function renderDevigOptions(searchTerm = "") {
 	Array.from(document.querySelectorAll(".add-prop-btn")).map(btn => {
 		btn.onclick = function(event) {
 			event.stopPropagation();
-			renderPropOptions(btn.dataset.devig);
+			renderPropOptions(btn.dataset.devig.replace("only+", ""));
 			openPropSelectorModal();
 		}
 	});
@@ -621,9 +621,17 @@ function getDevigLabels(devig) {
 	return ["nba-reb", "nhl-pts", "nba-pts"];
 }
 
+function removeOnlyTags(tags) {
+	let j = {};
+	for (const [key, value] of Object.entries(tags)) {
+		j[key.replace("only+", "")] = value;
+	}
+	return j;
+}
+
 function getAllDevigLabels() {
 	const meta = CURR_USER?.metadata || {};
-	return meta["tags"] || {};
+	return removeOnlyTags(meta["tags"] || {});
 }
 
 function parseLabel(label) {
@@ -656,7 +664,7 @@ function getCustomDevigs() {
 
 async function setFavoriteDevigs(favorites) {
 	const metadata = CURR_USER?.metadata || {};
-	metadata["favorites"] = favorites;
+	metadata["favorites"] = removeOnlyWeights(favorites);
 
 	if (CURR_USER) {
 		const { error: updateError } = await SB.from('profiles')
@@ -667,7 +675,8 @@ async function setFavoriteDevigs(favorites) {
 
 function getFavoriteDevigs() {
 	const meta = CURR_USER?.metadata || {};
-	return meta["favorites"] || [];
+	let arr = removeOnlyWeights(meta["favorites"] || []);
+	return arr;
 }
 
 function renderWeightBar(books, weights) {

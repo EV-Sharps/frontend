@@ -21,9 +21,11 @@ function applyFilters() {
 }
 
 const debouncedApplyFilters = debounce(applyFilters, 400);
-document.getElementById("player-search").addEventListener("input", () => {
-	debouncedApplyFilters();
-});
+if (document.getElementById("player-search")) {
+	document.getElementById("player-search").addEventListener("input", () => {
+		debouncedApplyFilters();
+	});
+}
 
 function loadMoreCards() {
 	if (IS_LOADING_CARDS) return;

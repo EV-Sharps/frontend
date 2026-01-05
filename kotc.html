@@ -195,14 +195,15 @@
 					   type="number" min="0" step="5"
 					   placeholder="Custom %"
 					   style="display:none; width:7ch; margin-left:.5rem;" />
-				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
-						<option value="" selected>All</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
+				<div class="chkdd" id="prop-dd">
+					<label for="prop-dd-button" class="select-label">Prop</label>
+					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+					<div class="chkdd-menu" id="prop-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
 				</div>
 				<div class="select-wrapper">
 					<label for="ou-select" class="select-label">O/U</label>

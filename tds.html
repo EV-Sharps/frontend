@@ -210,18 +210,15 @@
 					   type="number" min="0" step="5"
 					   placeholder="Custom %"
 					   style="display:none; width:7ch; margin-left:.5rem;" />
-				<div class="select-wrapper">
-					<label for="prop-select" class="select-label">Prop</label>
-					<select id="prop-select">
-						<option value="" selected>All</option>
-						<option value="attd">ATTD</option>
-						<option value="2+td">2+ TD</option>
-						<option value="ftd">FTD</option>
-						<option value="ltd">LTD</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
+				<div class="chkdd" id="prop-dd">
+					<label for="prop-dd-button" class="select-label">Prop</label>
+					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+					<div class="chkdd-menu" id="prop-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
 				</div>
 				<div class="select-wrapper" style="display: none;">
 					<label for="ou-select" class="select-label">O/U</label>
@@ -468,7 +465,7 @@
 
 		handleSession();
 
-		function fetchTuddys() {
+		function fetchProps() {
 			fetch(API_BASE+`/api/tds`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
@@ -487,21 +484,18 @@
 				});
 				gameSel.value = GAME;
 
-				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option><option value="attd">ATTD</option>
-						<option value="2+td">2+ TD</option>
-						<option value="ftd">FTD</option>
-						<option value="ltd">LTD</option>`;
-				data.props.forEach(prop => {
-					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
-						return;
-					}
-					const option = document.createElement("option");
-					option.value = prop;
-					option.textContent = prop.toUpperCase();
-					propSel.appendChild(option);
-				});
-				propSel.value = PROP;
+				const propMenu = document.getElementById("prop-options");
+				propMenu.innerHTML = `
+					<div class="chkdd-actions">
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					</div>
+				`;
+				[...data.props].sort().forEach(p => createOption(p, propMenu));
+				restoreChkddState(propMenu);
+				if (PROP) {
+					updatePropLabel(PROP.split(","));
+				}
 
 				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";

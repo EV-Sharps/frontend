@@ -1,4 +1,103 @@
 
+const CHKDD_STATE = {};
+
+function restoreChkddState(menu) {
+	const saved = CHKDD_STATE[menu.id];
+	if (!saved) return;
+
+	menu.querySelectorAll("input[type=checkbox]").forEach(cb => {
+		cb.checked = saved.includes(cb.value);
+	});
+}
+
+function onChkddChange(menu) {
+	const id = menu.id;
+	if (!id) return;
+
+	CHKDD_STATE[id] = [...menu.querySelectorAll("input[type=checkbox]")]
+		.filter(cb => cb.checked)
+		.map(cb => cb.value);
+
+	const totChecked = CHKDD_STATE[id].length;
+	const total = menu.querySelectorAll("input").length;
+	const btn = menu.parentNode.querySelector(".chkdd-btn");
+
+	if (totChecked == total) {
+		btn.innerText = "All Props";
+	} else if (totChecked == 0) {
+		btn.innerText = "No Props";
+	} else if (totChecked == 1) {
+		btn.innerText = CHKDD_STATE[id][0].toUpperCase();
+	} else {
+		btn.innerText = `${totChecked} Props`;
+	}
+
+	changeFilter?.();
+}
+
+document.addEventListener("change", (e) => {
+	const cb = e.target;
+	if (cb.type !== "checkbox") return;
+
+	const menu = cb.closest(".chkdd-menu");
+	if (!menu) return;
+
+	onChkddChange(menu);
+});
+
+function initChkddActions(root = document) {
+	root.addEventListener("click", (e) => {
+		const btn = e.target.closest(".chkdd-actions button[data-act]");
+		if (!btn) return;
+
+		e.stopPropagation();
+
+		const menu = btn.closest(".chkdd-menu");
+		if (!menu) return;
+
+		const action = btn.dataset.act === "all";
+		menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+			cb.checked = action;
+		});
+
+		onChkddChange(menu); 
+	});
+
+	if (PROP) {
+		CHKDD_STATE["prop-options"] = PROP.split(",");
+	}
+}
+
+function updatePropLabel(props) {
+	const all_props = document.querySelectorAll("#prop-dd input").length;
+	const btn = document.getElementById("prop-dd-button");
+
+	if (props.length == all_props) {
+		btn.innerText = "All Props";
+	} else if (props.length == 0) {
+		btn.innerText = "No Props";
+	} else if (props.length == 1) {
+		btn.innerText = props[0].toUpperCase();
+	} else {
+		btn.innerText = `${props.length} Props`;
+	}
+}
+
+const createOption = (val, container) => {
+	const label = document.createElement('label');
+	label.setAttribute("onclick", "event.stopPropagation()")
+	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val.toUpperCase()}`;
+	container.appendChild(label);
+};
+
+function toggleDropdown(id, event) {
+	if (event) event.stopPropagation();
+	const menu = document.getElementById(id).querySelector('.chkdd-menu');
+	const isVisible = menu.style.display === 'block';
+	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+	menu.style.display = isVisible ? 'none' : 'block';
+}
+
 function renderBookSelect() {
 	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
 	let bookSel = document.getElementById("book-select");
@@ -186,18 +285,6 @@ if (devigSel) {
 if (document.getElementById("ou-select")) {
 	document.querySelector("#ou-select").value = OU;
 	document.querySelector("#ou-select").addEventListener("change", (event) => {
-		changeFilter();
-	});
-}
-
-if (document.getElementById("prop-select")) {
-	document.querySelector("#prop-select").value = PROP || "";
-	document.querySelector("#prop-select").addEventListener("change", (event) => {
-		PROP = event.target.value;
-		const params = new URLSearchParams(window.location.search);
-		params.set("prop", PROP);
-		const newUrl = `${window.location.pathname}?${params.toString()}`;
-		history.pushState({}, '', newUrl);
 		changeFilter();
 	});
 }
@@ -762,6 +849,10 @@ async function deleteDevig(keyToDelete) {
 	document.getElementById(`devig-label-${keyToDelete}`)?.remove();
 }
 
+const getOptions = (containerId) => {
+  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+};
+
 function changeFilter(render = true) {
 	let [w,l,profit,kellyProfit] = [0,0,0,0];
 	let devigBook = DEVIG;
@@ -771,11 +862,11 @@ function changeFilter(render = true) {
 	let boost = document.getElementById("boost-select").value;
 	let game = document.getElementById("game-select").value;
 	let book = document.getElementById("book-select").value;
-	let prop = document.getElementById("prop-select").value;
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
 	let width = document.getElementById("width-input").value;
+	let props = getOptions("prop-options");
 	let excluded = getExcludedBooks();
 	if (boost === "custom") {
 		boost = boostCustom.value;
@@ -796,7 +887,7 @@ function changeFilter(render = true) {
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", game);
 	params.set("book", book);
-	params.set("prop", prop);
+	params.set("prop", props.join(","));
 	params.set("ou", ou);
 	params.set("min", MIN);
 	params.set("max", MAX);
@@ -875,7 +966,7 @@ function changeFilter(render = true) {
 		row["implied"] = round2(avgDevig * 100);
 		row["kelly"] = getKelly(highest.value, ev);
 
-		if (ev >= 0 && row.result != undefined && (!prop || row.prop == prop) && (OU == "ou" || OU == (row.under ? "u" : "o")) && (!MIN || highest.value >= parseInt(MIN)) && (!MAX || highest.value <= parseInt(MAX))) {
+		if (ev >= 0 && row.result != undefined && (!props || props.includes(row.prop)) && (OU == "ou" || OU == (row.under ? "u" : "o")) && (!MIN || highest.value >= parseInt(MIN)) && (!MAX || highest.value <= parseInt(MAX))) {
 			if (row["hit"]) {
 				w += 1;
 				let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
@@ -904,7 +995,7 @@ function changeFilter(render = true) {
 	history.pushState({}, '', newUrl);
 	const filters = [];
 
-	if (PAGE != "outliers") {
+	if (!["outliers", "atgs2"].includes(PAGE)) {
 		filters.push({field: "ev", type: "!=", value: null});
 	}
 
@@ -914,10 +1005,15 @@ function changeFilter(render = true) {
 		filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
 		data = data.filter(r => r.game == game.replace("-", " @ "));
 	}
-	if (prop) {
-		filters.push({field:"prop", type:"=", value: prop});
-		data = data.filter(r => r.prop == prop);
+	
+	if (!props.length) {
+		filters.push({field:"prop", type:"=", value: ""});
+	} else {
+		filters.push({field:"prop", type:"in", value: props});
 	}
+
+	data = data.filter(r => props.includes(r.prop));
+	
 	if (OU != "ou") {
 		filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
 		data = data.filter(r => r.under == (OU == "u") ? true : false);

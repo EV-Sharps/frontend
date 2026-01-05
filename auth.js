@@ -397,16 +397,8 @@ async function handleSession() {
 				fetchPlays();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "tds" || PAGE == "live") {
-		fetchTuddys();
-		initExcluded();
-		renderTable([]);
-		setInterval(() => {
-			if (document.hasFocus()) {
-				fetchTuddys();
-			}
-		}, 30 * 1000);
-	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "analysis", "ncaab"].includes(PAGE)) {
+	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "analysis", "ncaab", "tds", "live", "nfl", "ncaaf", "ncaafprops"].includes(PAGE)) {
+		initChkddActions();
 		fetchProps();
 		renderFilters();
 		initExcluded();
@@ -419,6 +411,7 @@ async function handleSession() {
 			}, 30 * 1000);
 		}
 	} else if (PAGE == "main" || PAGE == "soccer") {
+		initChkddActions();
 		fetchMain();
 		initExcluded();
 		renderTable([]);
@@ -427,16 +420,8 @@ async function handleSession() {
 				fetchMain();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "nfl" || PAGE == "ncaaf" || PAGE == "ncaafprops") {
-		fetchNFLProps();
-		initExcluded();
-		renderTable([]);
-		setInterval(() => {
-			if (document.hasFocus()) {
-				fetchNFLProps();
-			}
-		}, 30 * 1000);
 	} else if (PAGE == "dingers") {
+		initChkddActions();
 		fetchDingersData();
 		initExcluded();
 		renderTable([]);

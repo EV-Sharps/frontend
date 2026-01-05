@@ -402,14 +402,6 @@
 		});
 	}
 
-	function toggleDropdown(id, event) {
-		if (event) event.stopPropagation();
-		const menu = document.getElementById(id).querySelector('.chkdd-menu');
-		const isVisible = menu.style.display === 'block';
-		document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
-		menu.style.display = isVisible ? 'none' : 'block';
-	}
-
 	function initFilters() {
 		const devigs = new Set();
 		const props = new Set();

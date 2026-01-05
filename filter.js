@@ -62,8 +62,7 @@ function initChkddActions(root = document) {
 
 	root.addEventListener('click', (e) => {
 		if (menu.style.display === 'block' && !menu.contains(e.target)) {
-			menu.style.display = "none";
-			dd.appendChild(menu);
+			closeDropdown(dd, menu)
 		}
 	});
 
@@ -94,13 +93,13 @@ const createOption = (val, container) => {
 	container.appendChild(label);
 };
 
-function toggleDropdown(id, event) {
-	if (event) event.stopPropagation();
-	const menu = document.getElementById(id).querySelector('.chkdd-menu');
-	const isVisible = menu.style.display === 'block';
-	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
-	menu.style.display = isVisible ? 'none' : 'block';
+function closeDropdown(dd, menu) {
+	menu.style.display = "none";
+	dd.appendChild(menu);
+	document.getElementById("prop-dd").setAttribute('aria-expanded','false');
+}
 
+function openDropdown(id, menu) {
 	const r = document.getElementById(id).getBoundingClientRect();
 	menu.style.position = "fixed";
 	menu.style.top = `${r.bottom + 6}px`;
@@ -108,6 +107,17 @@ function toggleDropdown(id, event) {
 	menu.style.right = 'auto';
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
+	document.getElementById(id).setAttribute('aria-expanded','true');
+}
+
+function toggleDropdown(id, event) {
+	if (event) event.stopPropagation();
+	const menu = document.querySelector('#prop-options');
+	const isVisible = menu.style.display === 'block';
+	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+	menu.style.display = isVisible ? 'none' : 'block';
+
+	isVisible ? closeDropdown(document.getElementById("prop-dd"), menu) : openDropdown(id, menu);
 }
 
 function renderBookSelect() {

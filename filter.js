@@ -2,11 +2,34 @@
 const CHKDD_STATE = {};
 
 function restoreChkddState(menu) {
+	wireChkddMenu(menu);
+
 	const saved = CHKDD_STATE[menu.id];
 	if (!saved) return;
 
 	menu.querySelectorAll("input[type=checkbox]").forEach(cb => {
 		cb.checked = saved.includes(cb.value);
+	});
+}
+
+function wireChkddMenu(menu, onChange = onChkddChange) {
+	// prevent duplicate listeners when menu is rebuilt/refreshed
+	if (menu.dataset.wired === "1") return;
+	menu.dataset.wired = "1";
+
+	menu.addEventListener("click", (e) => {
+		const act = e.target?.dataset?.act; // "all" | "none"
+		if (!act) return;
+
+		const state = act === "all";
+		menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = state);
+		onChange(menu);
+	});
+
+	menu.addEventListener("change", (e) => {
+		if (e.target?.matches('input[type="checkbox"]')) {
+			onChange(menu);
+		}
 	});
 }
 
@@ -18,20 +41,7 @@ function onChkddChange(menu) {
 		.filter(cb => cb.checked)
 		.map(cb => cb.value);
 
-	const totChecked = CHKDD_STATE[id].length;
-	const total = menu.querySelectorAll("input").length;
-	const btn = menu.parentNode.querySelector(".chkdd-btn");
-
-	if (totChecked == total) {
-		btn.innerText = "All Props";
-	} else if (totChecked == 0) {
-		btn.innerText = "No Props";
-	} else if (totChecked == 1) {
-		btn.innerText = CHKDD_STATE[id][0].toUpperCase();
-	} else {
-		btn.innerText = `${totChecked} Props`;
-	}
-
+	updatePropLabel(CHKDD_STATE[id]);
 	changeFilter?.();
 }
 
@@ -46,21 +56,15 @@ document.addEventListener("change", (e) => {
 });
 
 function initChkddActions(root = document) {
-	root.addEventListener("click", (e) => {
-		const btn = e.target.closest(".chkdd-actions button[data-act]");
-		if (!btn) return;
+	const dd = document.getElementById("prop-dd");
+	const btn = dd.querySelectorAll(".chkdd-btn");
+	const menu = dd.querySelector(".chkdd-menu");
 
-		e.stopPropagation();
-
-		const menu = btn.closest(".chkdd-menu");
-		if (!menu) return;
-
-		const action = btn.dataset.act === "all";
-		menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-			cb.checked = action;
-		});
-
-		onChkddChange(menu); 
+	root.addEventListener('click', (e) => {
+		if (menu.style.display === 'block' && !menu.contains(e.target)) {
+			menu.style.display = "none";
+			dd.appendChild(menu);
+		}
 	});
 
 	if (PROP) {
@@ -69,13 +73,13 @@ function initChkddActions(root = document) {
 }
 
 function updatePropLabel(props) {
-	const all_props = document.querySelectorAll("#prop-dd input").length;
+	const all_props = document.querySelectorAll("#prop-options input").length;
 	const btn = document.getElementById("prop-dd-button");
 
-	if (props.length == all_props) {
-		btn.innerText = "All Props";
-	} else if (props.length == 0) {
+	if (props.length == 0) {
 		btn.innerText = "No Props";
+	} else if (props.length == all_props) {
+		btn.innerText = "All Props";
 	} else if (props.length == 1) {
 		btn.innerText = props[0].toUpperCase();
 	} else {
@@ -96,6 +100,14 @@ function toggleDropdown(id, event) {
 	const isVisible = menu.style.display === 'block';
 	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
 	menu.style.display = isVisible ? 'none' : 'block';
+
+	const r = document.getElementById(id).getBoundingClientRect();
+	menu.style.position = "fixed";
+	menu.style.top = `${r.bottom + 6}px`;
+	menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+	menu.style.right = 'auto';
+	document.body.appendChild(menu);
+	menu.style.display = 'block';
 }
 
 function renderBookSelect() {

@@ -221,6 +221,10 @@
 			display: flex;
 			align-items: center;
 		}
+
+		.unit-toggle-container {
+			display: flex; align-items: center; gap: 10px; background: #334155; padding: 4px 12px; border-radius: 6px; border: 1px solid #475569;
+		}
 	</style>
 </head>
 <body>
@@ -239,21 +243,27 @@
 		</svg>
 	</div>
 
-	<div class="select-wrapper">
-		<label for="devig-filter" class="select-label">Devig</label>
-		<select id="devig-filter" onchange="renderDashboard()">
-			<option value="all">All Devigs</option>
-		</select>
+	<div class="chkdd" id="devig-dd">
+		<button class="chkdd-btn" type="button" onclick="toggleDropdown('devig-dd', event)">Devig Filter</button>
+		<div class="chkdd-menu" id="devig-options">
+			<div class="chkdd-actions">
+				<button type="button" data-act="all">All</button>
+				<button type="button" data-act="none">None</button>
+			</div>
+		</div>
 	</div>
 
-	<div class="select-wrapper">
-		<label for="prop-filter" class="select-label">Prop</label>
-		<select id="prop-filter" onchange="renderDashboard()">
-			<option value="all">All Props</option>
-		</select>
+	<div class="chkdd" id="prop-dd">
+		<button class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">Prop Filter</button>
+		<div class="chkdd-menu" id="prop-options">
+			<div class="chkdd-actions">
+				<button type="button" data-act="all">All</button>
+				<button type="button" data-act="none">None</button>
+			</div>
+		</div>
 	</div>
 
-	<div class="unit-toggle-container" style="display: flex; align-items: center; gap: 10px; background: #334155; padding: 4px 12px; border-radius: 6px; border: 1px solid #475569;">
+	<div class="unit-toggle-container">
 		<span style="font-size: 0.85rem; font-weight: 600;">Full Unit</span>
 		<label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
 			<input type="checkbox" id="unit-toggle" onchange="renderDashboard()" style="opacity: 0; width: 0; height: 0;">
@@ -294,8 +304,12 @@
 		const dashboard = document.getElementById('dashboard');
 		dashboard.innerHTML = "";
 
-		const devigFilter = document.getElementById('devig-filter').value;
-		const propFilter = document.getElementById('prop-filter').value;
+		const getChecked = (containerId) => {
+	        return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+	    };
+
+		const activeDevigs = getChecked('devig-options');
+   		const activeProps = getChecked('prop-options');
 		const isKelly = document.getElementById('unit-toggle').checked;
 		const unitKey = isKelly ? 'k' : 'u';
 
@@ -309,9 +323,7 @@
 					return {...stats};
 				})
 				.filter(line => {
-					const matchesDevig = devigFilter === 'all' || line.vs === devigFilter;
-					const matchesProp = propFilter === 'all' || line.market === propFilter;
-					return matchesDevig && matchesProp;
+					return activeDevigs.includes(line.vs) && activeProps.includes(line.market);
 				});
 
 			if (filteredLines.length == 0) continue;
@@ -379,6 +391,14 @@
 		});
 	}
 
+	function toggleDropdown(id, event) {
+		if (event) event.stopPropagation();
+		const menu = document.getElementById(id).querySelector('.chkdd-menu');
+		const isVisible = menu.style.display === 'block';
+		document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+		menu.style.display = isVisible ? 'none' : 'block';
+	}
+
 	function initFilters() {
 		const devigs = new Set();
 		const props = new Set();
@@ -399,12 +419,42 @@
 			});
 		});
 
-		const devigSelect = document.getElementById('devig-filter');
-		const propSelect = document.getElementById('prop-filter');
+		const devigMenu = document.getElementById('devig-options');
+		const propMenu = document.getElementById('prop-options');
 
-		[...devigs].sort().forEach(d => devigSelect.add(new Option(d, d)));
-		[...props].sort().forEach(p => propSelect.add(new Option(p, p)));
+		const createItem = (val, container) => {
+			const label = document.createElement('label');
+			label.setAttribute("onclick", "event.stopPropagation()")
+			label.innerHTML = `<input type="checkbox" value="${val}" checked onchange="renderDashboard()"> ${val.toUpperCase()}`;
+			container.appendChild(label);
+		};
+
+		[...devigs].sort().forEach(d => createItem(d, devigMenu));
+		[...props].sort().forEach(p => createItem(p, propMenu))
 	}
+
+	window.onclick = function(event) {
+		if (!event.target.matches('.chkdd-btn')) {
+			document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+		}
+	}
+
+	document.addEventListener('click', function (e) {
+		const btn = e.target.closest('.chkdd-actions button');
+		if (!btn) return;
+
+		e.stopPropagation();
+
+		const action = btn.dataset.act;
+		const menu = btn.closest('.chkdd-menu');
+		const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
+
+		checkboxes.forEach(cb => {
+			cb.checked = action === 'all';
+		});
+
+		renderDashboard();
+	});
 
 	initFilters();
 	renderDashboard();

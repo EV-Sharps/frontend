@@ -842,6 +842,10 @@ function changeFilter(render = true) {
 		let ou = avg.avgAmerican.toString();
 		let avgDevig = averageDevigs(bookOdds, highest.book, row.under, weights);
 
+		if (row.player == "ian cole" && row.prop == "atgs" && row.handicap == "0.5" && row.ouIdx == 0) {
+			//console.log(row.bookOdds, avgDevig)
+		}
+
 		if (!isFinite(avgDevig)) {
 			row["ev"] = null;
 			row["fairVal"] = "";
@@ -898,9 +902,11 @@ function changeFilter(render = true) {
 
 	const newUrl = `${window.location.pathname}?${params.toString()}`;
 	history.pushState({}, '', newUrl);
-	const filters = [
-		{field: "ev", type: "!=", value: null}
-	];
+	const filters = [];
+
+	if (PAGE != "outliers") {
+		filters.push({field: "ev", type: "!=", value: null});
+	}
 
 	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();

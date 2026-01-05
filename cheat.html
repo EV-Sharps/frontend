@@ -302,7 +302,7 @@
 		let data = parseRecord(RES);
 		let books = ["fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
 		for (bookName of books) {
-			const bookData = data[bookName];
+			const bookData = {...data[bookName]};
 			const filteredLines = Object.entries(bookData)
 				.map(([key, stats]) => {
 					const [prop, devig] = key.split("-vs-");
@@ -314,7 +314,7 @@
 					return matchesDevig && matchesProp;
 				});
 
-			if (filteredLines.length == 0) return;
+			if (filteredLines.length == 0) continue;
 
 			filteredLines.sort((a,b) => (b[unitKey] || 0) - (a[unitKey] || 0));
 

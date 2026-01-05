@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Betting Performance Infographic</title>
+	<title>Cheat Sheets</title>
 	<link href="style.css" rel="stylesheet">
 	<style>
 		:root {
@@ -13,6 +13,7 @@
 			--text-dim: #94a3b8;
 			--accent: #38bdf8;
 			--success: #22c55e;
+			--failure: #ef4444;
 			--card-max-height: 300px;
 		}
 
@@ -80,11 +81,11 @@
 			flex-direction: column;
 			transition: all 0.3s ease;
 
-		    background-image: url('logos/logo.png');
-		    background-repeat: no-repeat;
-		    background-position: top center;
-		    background-size: 15%;
-		    background-blend-mode: soft-light;
+			background-image: url('logos/logo.png');
+			background-repeat: no-repeat;
+			background-position: top center;
+			background-size: 15%;
+			background-blend-mode: soft-light;
 		}
 
 		.book-title {
@@ -173,6 +174,11 @@
 			font-size: 0.9rem;
 		}
 
+		.units-negative {
+			color: var(--failure);
+			background: rgba(239, 68, 68, 0.1);
+		}
+
 		.no-unit { color: var(--text-dim); background: rgba(148, 163, 184, 0.1); }
 
 		.expand-btn {
@@ -187,13 +193,41 @@
 			width: 100%;
 			display: block;
 		}
+
+		.switch input:checked + .slider { background-color: var(--accent); }
+		.slider:before {
+			position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px;
+			background-color: white; transition: .4s; border-radius: 50%;
+		}
+		.switch input:checked + .slider:before { transform: translateX(14px); }
+
+		.record-container {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			margin-right: 12px;
+			min-width: 80px;
+		}
+
+		.record-text {
+			font-size: 0.75rem;
+			font-weight: 700;
+			color: var(--text-dim);
+			letter-spacing: 0.5px;
+		}
+
+		/* Adjust Entry layout to fit the record */
+		.entry-right-group {
+			display: flex;
+			align-items: center;
+		}
 	</style>
 </head>
 <body>
 
 <div class="header">
 	<h1>Prop Betting Performance</h1>
-	<p>Data tracked: Nov 11th, 2025 - Jan 2nd, 2026</p>
+	<p>Data tracked: Nov 11th, 2025 - Jan 5th, 2026</p>
 </div>
 
 <div class="controls">
@@ -204,6 +238,29 @@
 			<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 		</svg>
 	</div>
+
+	<div class="select-wrapper">
+		<label for="devig-filter" class="select-label">Devig</label>
+		<select id="devig-filter" onchange="renderDashboard()">
+			<option value="all">All Devigs</option>
+		</select>
+	</div>
+
+	<div class="select-wrapper">
+		<label for="prop-filter" class="select-label">Prop</label>
+		<select id="prop-filter" onchange="renderDashboard()">
+			<option value="all">All Props</option>
+		</select>
+	</div>
+
+	<div class="unit-toggle-container" style="display: flex; align-items: center; gap: 10px; background: #334155; padding: 4px 12px; border-radius: 6px; border: 1px solid #475569;">
+		<span style="font-size: 0.85rem; font-weight: 600;">Full Unit</span>
+		<label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
+			<input type="checkbox" id="unit-toggle" onchange="renderDashboard()" style="opacity: 0; width: 0; height: 0;">
+			<span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1e293b; transition: .4s; border-radius: 20px; border: 1px solid var(--accent);"></span>
+		</label>
+		<span style="font-size: 0.85rem; font-weight: 600;">Kelly</span>
+	</div>
 	<button class="btn-ctrl" onclick="toggleAll(true)">Expand All</button>
 	<button class="btn-ctrl" onclick="toggleAll(false)">Collapse All</button>
 </div>
@@ -212,380 +269,145 @@
 </div>
 
 <script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="record_nhl.js"></script>
+<script type="text/javascript" src="record_nba.js"></script>
+<script type="text/javascript" src="record_nfl.js"></script>
 <script>
 	PAGE = "cheat";
 	parseURLParams();
 
-let bettingData = {
-	"Fanduel (FD)": [
-		{ market: "PTS", vs: "Circa", u: 12 },
-		{ market: "PTS", vs: "FD+ESPN+MGM", u: 15 },
-		{ market: "PTS", vs: "Only+DK+ESPN", u: 12 },
-		{ market: "REB", vs: "ESPN", u: 21 },
-		{ market: "REB", vs: "Only+FD+DK", u: 18 },
-		{ market: "REB", vs: "Only+DK+ESPN", u: 17 },
-		{ market: "REB", vs: "Circa", u: 9 },
-		{ market: "AST", vs: "FD+ESPN+MGM", u: 19 },
-		{ market: "STL", vs: "Any (ESPN+HR, ESPN, HR, DK)", u: null },
-		{ market: "BLK", vs: "Only+FD+DK+BOL", u: 3 },
-		{ market: "3PTM", vs: "Only+FD+DK+BOL", u: 48 },
-		{ market: "3PTM", vs: "ESPN", u: 21 },
-		{ market: "3PTM", vs: "Only+DK+ESPN", u: 20 },
-		{ market: "3PTM", vs: "PN", u: 11 },
-		{ market: "RA", vs: "Any (> +10u)", u: 10 }
-	],
-	"DraftKings (DK)": [
-		{ market: "PTS", vs: "FD", u: 42 },
-		{ market: "PTS", vs: "ESPN", u: 42 },
-		{ market: "PTS", vs: "FD+ESPN+MGM", u: 51 },
-		{ market: "REB", vs: "PN", u: 10 },
-		{ market: "REB", vs: "FD+ESPN+MGM", u: 40 },
-		{ market: "AST", vs: "b365", u: 7 },
-		{ market: "DD", vs: "FD", u: 13 },
-		{ market: "PRA", vs: "FD", u: 8 },
-		{ market: "PRA", vs: "PN", u: 6 },
-		{ market: "PRA", vs: "FD+ESPN+MGM", u: 8 },
-		{ market: "PA", vs: "FD", u: 2 },
-		{ market: "PA", vs: "Only+FD+DK", u: 9 },
-		{ market: "PR", vs: "FD", u: 2 },
-		{ market: "RA", vs: "FD+ESPN+MGM", u: 10 },
-		{ market: "PR", vs: "HR", u: 9 }
-	],
-	"BetMGM (MGM)": [
-		{ market: "PTS", vs: "FD", u: 46 },
-		{ market: "PTS", vs: "Only+FD+DK", u: 27 },
-		{ market: "REB", vs: "Only+PN+FD", u: 8 },
-		{ market: "AST", vs: "PN", u: 5 },
-		{ market: "DD", vs: "ESPN", u: 11 },
-		{ market: "3PTM", vs: "FD+ESPN+MGM", u: 3 },
-		{ market: "3PTM", vs: "Only+DK+ESPN", u: 11 },
-		{ market: "PRA", vs: "Only+PN+FD", u: 13 },
-		{ market: "PRA", vs: "FD+ESPN+MGM", u: 4 },
-		{ market: "PA", vs: "FD", u: 11 },
-		{ market: "PA", vs: "HR", u: 7 },
-		{ market: "PR", vs: "HR", u: 29 },
-		{ market: "PR", vs: "ESPN+HR", u: 28 },
-		{ market: "PR", vs: "Only+FD+DK", u: 8 },
-		{ market: "RA", vs: "HR", u: 18 },
-		{ market: "RA", vs: "Only+FD+DK+BOL", u: 18 }
-	],
-	"TheScore (ESPN)": [
-		{ market: "PTS", vs: "FD", u: 6 },
-		{ market: "PTS", vs: "ESPN+HR", u: 7 },
-		{ market: "REB", vs: "PN", u: 1 },
-		{ market: "REB", vs: "FD+ESPN+MGM", u: 15 },
-		{ market: "AST", vs: "FD+ESPN+MGM", u: 12 },
-		{ market: "AST", vs: "Only+PN+DK", u: 5 },
-		{ market: "STL", vs: "Only+FD+DK+BOL", u: 5 },
-		{ market: "DD", vs: "PN", u: 5 },
-		{ market: "DD", vs: "FD", u: 2 },
-		{ market: "3PTM", vs: "Only+PN+Circa", u: 4 },
-		{ market: "PRA", vs: "PN", u: 7 },
-		{ market: "PRA", vs: "HR", u: 5 },
-		{ market: "PR", vs: "Any (Not DK)", u: null },
-		{ market: "PA", vs: "Any (Not Only+FD+DK)", u: null },
-		{ market: "RA", vs: "Only+FD+DK+BOL", u: 8 }
-	],
-	"HardRock (HR)": [
-		{ market: "PTS", vs: "ESPN", u: 12 },
-		{ market: "PTS", vs: "Only+PN+DK", u: 15 },
-		{ market: "REB", vs: "FD", u: 27 },
-		{ market: "REB", vs: "DK", u: 39 },
-		{ market: "REB", vs: "Only+FD+DK", u: 53 },
-		{ market: "REB", vs: "Only+FD+DK+BOL", u: 98 },
-		{ market: "STL", vs: "STL", u: 10 },
-		{ market: "BLK", vs: "FD+ESPN+MGM", u: 18 },
-		{ market: "3PTM", vs: "FD", u: 17 },
-		{ market: "3PTM", vs: "ESPN", u: 38 },
-		{ market: "3PTM", vs: "Only+FD+DK", u: 26 },
-		{ market: "3PTM", vs: "Only+DK+ESPN", u: 23 },
-		{ market: "PA", vs: "FD", u: 29 },
-		{ market: "PA", vs: "DK", u: 13 },
-		{ market: "PA", vs: "FD+ESPN+MGM", u: 19 }
-	],
-	"Bovada (BV)": [
-		{ market: "PTS", vs: "FD", u: 121 },
-		{ market: "PTS", vs: "FD+ESPN+MGM", u: 85 },
-		{ market: "PTS", vs: "PN", u: 18 },
-		{ market: "REB", vs: "FD", u: 30 },
-		{ market: "REB", vs: "ESPN", u: 17 },
-		{ market: "REB", vs: "PN", u: 14 },
-		{ market: "REB", vs: "Only+DK+ESPN", u: 20 },
-		{ market: "REB", vs: "FD+ESPN+MGM", u: 27 },
-		{ market: "AST", vs: "FD+ESPN+MGM", u: 18 },
-		{ market: "AST", vs: "Only+FD+DK", u: 8 },
-		{ market: "DD", vs: "DK", u: 15 },
-		{ market: "DD", vs: "Only+FD+DK", u: 12 },
-		{ market: "3PTM", vs: "Only+FD+DK+BOL", u: 49 },
-		{ market: "3PTM", vs: "ESPN", u: 19 },
-		{ market: "3PTM", vs: "Only+DK+ESPN", u: 24 },
-		{ market: "3PTM", vs: "DK", u: 34 },
-		{ market: "PA", vs: "FD", u: 44 },
-		{ market: "PR", vs: "Any (DK, Only+FD+DK, FD+ESPN+MGM, ESPN)", u: 56 },
-		{ market: "RA", vs: "Any (FD+ESPN+MGM, FD, ESPN+HR, ESPN)", u: 60 }
-	],
-	"BetRivers (BR)": [
-		{ market: "PTS", vs: "FD", u: 16 },
-		{ market: "PTS", vs: "HR", u: 16 },
-		{ market: "PTS", vs: "FD+ESPN+MGM", u: 25 },
-		{ market: "REB", vs: "FD", u: 21 },
-		{ market: "REB", vs: "Only+DK+ESPN", u: 12 },
-		{ market: "AST", vs: "DK", u: 11 },
-		{ market: "AST", vs: "B365", u: 4 },
-		{ market: "AST", vs: "ESPN+HR", u: 16 },
-		{ market: "STL", vs: "Only+FD+DK", u: 8 },
-		{ market: "STL", vs: "FD+ESPN+MGM", u: 10 },
-		{ market: "3PTM", vs: "Any (DK, ESPN, FD+ESPN+MGM, ESPN+HR, PN)", u: 22 },
-		{ market: "PRA", vs: "HR", u: 3 }
-	],
-	"Bet365 (B365)": [
-		{ market: "PTS", vs: "Only+FD+DK+BOL", u: 3 },
-		{ market: "REB", vs: "Only+FD+DK", u: 6 },
-		{ market: "AST", vs: "DK", u: 7 },
-		{ market: "STL", vs: "Any (No ESPN)", u: null },
-		{ market: "BLK", vs: "Any (No FD)", u: null },
-		{ market: "3PTM", vs: "DK", u: 3 },
-		{ market: "3PTM", vs: "Circa", u: 2 },
-		{ market: "PA", vs: "FD", u: 20 }
-	]
-}
-
-
-if (SPORT == "nfl") {
-	bettingData = {
-		"Fanduel (FD)": [
-			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 9 },
-			{ market: "ATTD", vs: "PN", u: 2 },
-			{ market: "PASS_TD", vs: "DK", u: 6 },
-			{ market: "PASS_TD", vs: "Circa", u: 5 },
-			{ market: "PASS_YDS", vs: "HR", u: 20 },
-			{ market: "PASS_YDS", vs: "Circa", u: 4 },
-			{ market: "PASS_CMP", vs: "PN", u: 4 },
-			{ market: "PASS_CMP", vs: "DK", u: 1 },
-			{ market: "RUSH_ATT", vs: "Any (Only+DK+ESPN or DK best)", u: 5 },
-			{ market: "RUSH_YDS", vs: "DK", u: 15 },
-			{ market: "RUSH_YDS", vs: "Circa", u: 4 },
-			{ market: "RUSH_YDS", vs: "PN", u: 4 },
-			{ market: "REC_YDS", vs: "ESPN", u: 11 },
-			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 12 },
-			{ market: "REC_YDS", vs: "Only+DK+ESPN", u: 10 }
-		],
-		"DraftKings (DK)": [
-			{ market: "ATTD", vs: "PN", u: 8 },
-			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 9 },
-			{ market: "PASS_YDS", vs: "HR", u: 24 },
-			{ market: "PASS_YDS", vs: "ESPN+HR", u: 22 },
-			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 16 },
-			{ market: "PASS_YDS", vs: "FD", u: 5 },
-			{ market: "PASS_CMP", vs: "PN", u: 7 },
-			{ market: "RUSH_ATT", vs: "ESPN", u: 9 },
-			{ market: "RUSH_YDS", vs: "FD", u: 25 },
-			{ market: "RUSH_YDS", vs: "ESPN", u: 93 },
-			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 15 },
-			{ market: "REC_YDS", vs: "ESPN", u: 25 }
-		],
-		"BetMGM (MGM)": [
-			{ market: "ATTD", vs: "PN", u: 4 },
-			{ market: "ATTD", vs: "HR", u: 4 },
-			{ market: "PASS_TD", vs: "Any (DK, Circa, HR, ESPN+HR)", u: 10 },
-			{ market: "PASS_CMP", vs: "PN", u: 1 },
-			{ market: "PASS_CMP", vs: "ESPN", u: 1 },
-			{ market: "RUSH_ATT", vs: "DK", u: 2 },
-			{ market: "RUSH_ATT", vs: "FD", u: 1 },
-			{ market: "RUSH_YDS", vs: "Only+FD+DK", u: 1 },
-			{ market: "REC_YDS", vs: "ESPN", u: 11 },
-			{ market: "REC_YDS", vs: "ESPN+HR", u: 12 },
-			{ market: "REC_YDS", vs: "FD", u: 2 },
-			{ market: "REC", vs: "ESPN+HR", u: 10 },
-			{ market: "REC", vs: "Only+FD+DK", u: 6 }
-		],
-		"TheScore (ESPN)": [
-			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 7 },
-			{ market: "PASS_TD", vs: "Any (not PN, Circa best)", u: 5 },
-			{ market: "PASS_YDS", vs: "HR", u: 16 },
-			{ market: "PASS_YDS", vs: "DK", u: 3 },
-			{ market: "PASS_CMP", vs: "PN", u: 6 },
-			{ market: "RUSH_ATT", vs: "DK", u: 8 },
-			{ market: "RUSH_YDS", vs: "Circa", u: 2 },
-			{ market: "REC_YDS", vs: "Only+FD+DK+BOL", u: 6 },
-			{ market: "REC_YDS", vs: "FD", u: 9 },
-			{ market: "TACKLES+AST", vs: "DK", u: 1 }
-		],
-		"HardRock (HR)": [
-			{ market: "ATTD", vs: "FD+ESPN+MGM", u: 6 },
-			{ market: "ATTD", vs: "Circa", u: 3 },
-			{ market: "ATTD", vs: "PN", u: 3 },
-			{ market: "PASS_YDS", vs: "FD", u: 30 },
-			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 36 },
-			{ market: "PASS_YDS", vs: "ESPN", u: 25 },
-			{ market: "PASS_YDS", vs: "DK", u: 2 },
-			{ market: "PASS_CMP", vs: "FD+ESPN+MGM", u: 4 },
-			{ market: "RUSH_ATT", vs: "ESPN", u: 2 },
-			{ market: "RUSH_ATT", vs: "DK", u: 1 },
-			{ market: "RUSH_YDS", vs: "FD", u: 6 },
-			{ market: "RUSH_YDS", vs: "ESPN", u: 8 },
-			{ market: "REC_YDS", vs: "FD+ESPN+MGM", u: 12 },
-			{ market: "REC_YDS", vs: "PN", u: 3 },
-			{ market: "REC_YDS", vs: "DK", u: 15 }
-		],
-		"BetRivers (BR)": [
-			{ market: "ATTD", vs: "Circa", u: 14 },
-			{ market: "ATTD", vs: "PN", u: 8 },
-			{ market: "ATTD", vs: "HR", u: 6 },
-			{ market: "PASS_TD", vs: "DK", u: 9 },
-			{ market: "PASS_TD", vs: "Only+FD+DK", u: 4 },
-			{ market: "PASS_YDS", vs: "ESPN", u: 29 },
-			{ market: "PASS_YDS", vs: "FD+ESPN+MGM", u: 42 },
-			{ market: "PASS_YDS", vs: "FD", u: 12 },
-			{ market: "PASS_CMP", vs: "PN", u: 6 },
-			{ market: "PASS_CMP", vs: "HR", u: 9 },
-			{ market: "RUSH_ATT", vs: "Any", u: 11 },
-			{ market: "RUSH_YDS", vs: "Any", u: 40 },
-			{ market: "REC_YDS", vs: "DK", u: 25 },
-			{ market: "REC_YDS", vs: "HR", u: 14 },
-			{ market: "REC_YDS", vs: "Circa", u: 7 }
-		]
-	}
-} else if (SPORT == "nhl") {
-	bettingData = {
-		"Fanduel (FD)": [
-			{ market: "ATGS", vs: "ESPN+HR", u: 119 },
-			{ market: "ATGS", vs: "HR", u: 117 },
-			{ market: "ATGS", vs: "ESPN", u: 60 },
-			{ market: "ATGS", vs: "PN", u: 7 },
-			{ market: "SOG", vs: "PN", u: 12 },
-			{ market: "SOG", vs: "Only+DK+ESPN", u: 9 },
-			{ market: "SOG", vs: "Only+PN+DK", u: 9 },
-			{ market: "PTS", vs: "DK", u: 30 },
-			{ market: "PTS", vs: "Only+PN+DK", u: 23 },
-			{ market: "PTS", vs: "Only+DK+ESPN", u: 16 }
-		],
-		"DraftKings (DK)": [
-			{ market: "ATGS", vs: "ESPN+HR", u: 51 },
-			{ market: "ATGS", vs: "HR", u: 20 },
-			{ market: "ATGS", vs: "FD", u: 12 },
-			{ market: "ATGS", vs: "PN", u: 14 },
-			{ market: "SOG", vs: "PN", u: 3 },
-			{ market: "SOG", vs: "ESPN", u: 8 },
-			{ market: "SOG", vs: "ESPN+HR", u: 9 },
-			{ market: "SOG", vs: "Only+PN+FD", u: 4 },
-			{ market: "PTS", vs: "PN", u: 11 },
-			{ market: "PTS", vs: "Circa", u: 5 },
-			{ market: "AST", vs: "PN", u: 5 },
-			{ market: "SV", vs: "ESPN", u: 2 }
-		],
-		"BetMGM (MGM)": [
-			{ market: "ATGS", vs: "HR", u: 122 },
-			{ market: "ATGS", vs: "ESPN+HR", u: 60 },
-			{ market: "ATGS", vs: "ESPN", u: 22 },
-			{ market: "ATGS", vs: "Circa", u: 7 },
-			{ market: "SOG", vs: "FD", u: 18 },
-			{ market: "SOG", vs: "HR", u: 4 },
-			{ market: "SOG", vs: "Only+FD+DK+BOL", u: 11 },
-			{ market: "SOG", vs: "Only+FD+DK", u: 6 }
-		],
-		"TheScore (ESPN)": [
-			{ market: "ATGS", vs: "HR", u: 2 },
-			{ market: "ATGS", vs: "DK", u: 9 },
-			{ market: "SOG", vs: "FD", u: 52 },
-			{ market: "SOG", vs: "Only+FD+DK", u: 19 },
-			{ market: "SOG", vs: "Only+FD+DK+BOL", u: 22 },
-			{ market: "SOG", vs: "PN", u: 9 },
-			{ market: "PTS", vs: "Only+PN+FD", u: 5 }
-		],
-		"HardRock (HR)": [
-			{ market: "SOG", vs: "FD", u: 9 },
-			{ market: "SOG", vs: "Only+FD+DK+BOL", u: 7 },
-			{ market: "AST", vs: "Only+FD+DK", u: 3 },
-			{ market: "BS", vs: "Any", u: 2 }
-		],
-		"Bovada (BV)": [
-			{ market: "ATGS", vs: "ESPN+HR", u: 51 },
-			{ market: "ATGS", vs: "HR", u: 38 },
-			{ market: "ATGS", vs: "Circa", u: 6 },
-			{ market: "SOG", vs: "FD", u: 1 },
-			{ market: "SOG", vs: "ESPN+HR", u: 1 },
-			{ market: "SOG", vs: "Only+FD+DK+BOL", u: 4 },
-			{ market: "PTS", vs: "PN", u: 2 },
-			{ market: "PTS", vs: "Only+DK+ESPN", u: 3 },
-			{ market: "AST", vs: "PN", u: 8 },
-			{ market: "SV", vs: "FD+ESPN+MGM", u: 3 }
-		],
-		"BetRivers (BR)": [
-			{ market: "ATGS", vs: "FD+ESPN+MGM", u: 21 },
-			{ market: "ATGS", vs: "PN", u: 15 },
-			{ market: "ATGS", vs: "DK", u: 9 },
-			{ market: "ATGS", vs: "FD", u: 6 },
-			{ market: "ATGS", vs: "Only+PN+DK", u: 14 },
-			{ market: "SOG", vs: "PN", u: 17 },
-			{ market: "SOG", vs: "FD+ESPN+MGM", u: 13 },
-			{ market: "SOG", vs: "ESPN+HR", u: 8 },
-			{ market: "PTS", vs: "Circa", u: 4 }
-		],
-		"Bet365 (B365)": [
-			{ market: "ATGS", vs: "FD", u: 3 },
-			{ market: "AST", vs: "DK", u: 10 }
-		]
-	}
-}
-
-const dashboard = document.getElementById('dashboard');
-
-// Create cards
-function renderDashboard() {
-	Object.keys(bettingData).forEach(bookName => {
-		const card = document.createElement('div');
-		card.className = 'book-card';
-		
-		// Sort lines by units (descending)
-		const sortedLines = bettingData[bookName].sort((a, b) => (b.u || 0) - (a.u || 0));
-		
-		let entriesHtml = sortedLines.map(line => `
-			<div class="entry">
-				<div class="market-info">
-					<span class="market-name">${line.market}</span>
-					<span class="devig-source">vs ${line.vs}</span>
-				</div>
-				<span class="units-badge ${line.u === null ? 'no-unit' : ''}">
-					${line.u !== null ? '+' + line.u + 'u' : ''}
-				</span>
-			</div>
-		`).join('');
-
-		card.innerHTML = `
-			<div class="book-title" onclick="toggleCard(this.parentElement)">
-				${bookName}
-			</div>
-			<div class="card-content">
-				${entriesHtml}
-			</div>
-			<button class="expand-btn" onclick="toggleCard(this.parentElement)">Show More</button>
-		`;
-		
-		dashboard.appendChild(card);
-	});
-}
-
-function toggleCard(card) {
-	card.classList.toggle('expanded');
-	const btn = card.querySelector('.expand-btn');
-	btn.textContent = card.classList.contains('expanded') ? 'Show Less' : 'Show More';
-}
-
-function toggleAll(expand) {
-	const cards = document.querySelectorAll('.book-card');
-	cards.forEach(card => {
-		if (expand) {
-			card.classList.add('expanded');
-		} else {
-			card.classList.remove('expanded');
+	function parseRecord(record) {
+		let data = {};
+		for (book in record) {
+			let arr = [];
+			for (key in record[book]) {
+				let j = record[book][key];
+				let [prop,devig] = key.split("-vs-");
+				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"], l: j["losses"]});
+			}
+			data[book] = arr;
 		}
-		const btn = card.querySelector('.expand-btn');
-		if (btn) btn.textContent = expand ? 'Show Less' : 'Show More';
-	});
-}
+		return data;
+	}
 
-renderDashboard();
+	function renderDashboard() {
+		const dashboard = document.getElementById('dashboard');
+		dashboard.innerHTML = "";
+
+		const devigFilter = document.getElementById('devig-filter').value;
+		const propFilter = document.getElementById('prop-filter').value;
+		const isKelly = document.getElementById('unit-toggle').checked;
+		const unitKey = isKelly ? 'k' : 'u';
+
+		let data = parseRecord(RES);
+		let books = ["fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
+		for (bookName of books) {
+			const bookData = data[bookName];
+			const filteredLines = Object.entries(bookData)
+				.map(([key, stats]) => {
+					const [prop, devig] = key.split("-vs-");
+					return {...stats};
+				})
+				.filter(line => {
+					const matchesDevig = devigFilter === 'all' || line.vs === devigFilter;
+					const matchesProp = propFilter === 'all' || line.market === propFilter;
+					return matchesDevig && matchesProp;
+				});
+
+			if (filteredLines.length == 0) return;
+
+			filteredLines.sort((a,b) => (b[unitKey] || 0) - (a[unitKey] || 0));
+
+			const card = document.createElement('div');
+			card.className = 'book-card';
+			
+			let entriesHtml = filteredLines.map(line => {
+				const val = line[unitKey];
+				const total = (line.w || 0) + (line.l || 0);
+				const winPct = total > 0 ? (line.w / total) * 100 : 0;
+				const negative = val < 0 ? "units-negative" : "";
+				return `
+				<div class="entry">
+					<div class="market-info">
+						<span class="market-name">${line.market}</span>
+						<span class="devig-source">vs ${line.vs}</span>
+					</div>
+					<div class="entry-right-group">
+						<div class="record-container">
+							<div class="record-text">
+								<span class="win">${line.w}W</span> -
+								<span class="loss">${line.l}L</span>
+							</div>
+						</div>
+						<span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
+							${val ? (val >= 0 ? "+" : "") + val.toFixed(1) + 'u' : ''}
+						</span>
+					</div>
+				</div>
+			`}).join('');
+
+			card.innerHTML = `
+				<div class="book-title" onclick="toggleCard(this.parentElement)">
+					${bookName}
+				</div>
+				<div class="card-content">
+					${entriesHtml}
+				</div>
+				<button class="expand-btn" onclick="toggleCard(this.parentElement)">Show More</button>
+			`;
+			
+			dashboard.appendChild(card);
+		}
+	}
+
+	function toggleCard(card) {
+		card.classList.toggle('expanded');
+		const btn = card.querySelector('.expand-btn');
+		btn.textContent = card.classList.contains('expanded') ? 'Show Less' : 'Show More';
+	}
+
+	function toggleAll(expand) {
+		const cards = document.querySelectorAll('.book-card');
+		cards.forEach(card => {
+			if (expand) {
+				card.classList.add('expanded');
+			} else {
+				card.classList.remove('expanded');
+			}
+			const btn = card.querySelector('.expand-btn');
+			if (btn) btn.textContent = expand ? 'Show Less' : 'Show More';
+		});
+	}
+
+	function initFilters() {
+		const devigs = new Set();
+		const props = new Set();
+
+		if (SPORT == "nba") {
+			RES = NBA_RECORD;
+		} else if (SPORT == "nhl") {
+			RES = NHL_RECORD;
+		} else if (SPORT == "nfl") {
+			RES = NFL_RECORD;
+		}
+
+		Object.values(RES).forEach(book => {
+			Object.keys(book).forEach(key => {
+				const [prop, devig] = key.split('-vs-');
+				if (prop) props.add(prop);
+				if (devig) devigs.add(devig);
+			});
+		});
+
+		const devigSelect = document.getElementById('devig-filter');
+		const propSelect = document.getElementById('prop-filter');
+
+		[...devigs].sort().forEach(d => devigSelect.add(new Option(d, d)));
+		[...props].sort().forEach(p => propSelect.add(new Option(p, p)));
+	}
+
+	initFilters();
+	renderDashboard();
 </script>
 <script type="text/javascript" src="filter.js"></script>
 </body>

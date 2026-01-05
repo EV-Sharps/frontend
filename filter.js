@@ -78,14 +78,15 @@ if (excludeBtn) {
 		open ? closeMenu() : openMenu();
 	});
 }
-document.addEventListener('click', (e) => {
-	if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
-});
-boxes.forEach(b => b.addEventListener('change', () => {
-	changeFilter();
-}));
 
 if (menu) {
+	document.addEventListener('click', (e) => {
+		if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
+	});
+	boxes.forEach(b => b.addEventListener('change', () => {
+		changeFilter();
+	}));
+	
 	menu.addEventListener('click', (e) => {
 		const act = e.target?.dataset?.act;
 		if (!act) return;

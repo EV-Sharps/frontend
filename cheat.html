@@ -225,6 +225,17 @@
 		.unit-toggle-container {
 			display: flex; align-items: center; gap: 10px; background: #334155; padding: 4px 12px; border-radius: 6px; border: 1px solid #475569;
 		}
+
+		@media (max-width: 600px) {
+			.controls {
+				overflow-x: auto;
+				justify-content: normal;
+				align-items: center;
+			}
+			.chkdd, .unit-toggle-container, .btn-ctrl {
+				flex: 0 0 auto;
+			}
+		}
 	</style>
 </head>
 <body>

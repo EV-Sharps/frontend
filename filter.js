@@ -112,12 +112,12 @@ function openDropdown(id, menu) {
 
 function toggleDropdown(id, event) {
 	if (event) event.stopPropagation();
-	const menu = document.querySelector('#prop-options');
+	const menu = document.querySelector(`#${id.includes("devig") ? "devig" : "prop"}-options`);
 	const isVisible = menu.style.display === 'block';
 	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
 	menu.style.display = isVisible ? 'none' : 'block';
 
-	isVisible ? closeDropdown(document.getElementById("prop-dd"), menu) : openDropdown(id, menu);
+	isVisible ? closeDropdown(document.getElementById(id), menu) : openDropdown(id, menu);
 }
 
 function renderBookSelect() {

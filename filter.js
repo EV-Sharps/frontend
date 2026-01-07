@@ -143,7 +143,7 @@ const createOption = (val, container) => {
 function closeDropdown(dd, menu) {
 	menu.style.display = "none";
 	dd.appendChild(menu);
-	document.getElementById("prop-dd").setAttribute('aria-expanded','false');
+	dd.setAttribute('aria-expanded','false');
 }
 
 function openDropdown(id, menu) {

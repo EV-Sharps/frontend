@@ -733,7 +733,7 @@
 						visible: MOBILE ? false : true
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "Goalie", field: "goalie", formatter: goalieFormatter, width: 80, hozAlign: "left"},
+					{title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 80, hozAlign: "left"},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: "DvP<br>Rank", field: "dvpRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},

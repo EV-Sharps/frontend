@@ -1195,7 +1195,7 @@ h1 {
 }
 #player-ev span {
 }
-.player-cell {
+.player-cell, .goalie-cell {
 	position: relative;
 	display: flex;
 	width: 100%; height: 100%;
@@ -1212,13 +1212,13 @@ h1 {
 	bottom: -0.1rem;
 	width: 10px;
 }
-.opp-cell .bats, .player-cell .bats, .mix-cell .right {
+.opp-cell .bats, .player-cell .bats, .goalie-cell .bats, .mix-cell .right {
 	position: absolute;
 	right: 0;
 	bottom: -0.1rem;
 	font-size: 0.5rem;
 }
-.player-cell .pos {
+.player-cell .pos, .goalie-cell .pos {
 	position: absolute;
 	right: 0;
 	top: -0.1rem;

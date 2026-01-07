@@ -1441,12 +1441,47 @@ const playerFormatter = function(cell, params, rendered) {
 	`
 }
 
+function getGoalieColor(key, val) {
+	const v = parseFloat(val);
+	if (Number.isNaN(v)) return "";
+
+	if (key === "goalieSV") {
+		if (v >= 0.915) return "color: #ff0000";
+		if (v >= 0.905) return "color: #e57373";
+		if (v <= 0.885) return "color: #00ff66";
+		if (v <= 0.894) return "color: #33cc66";
+	}
+
+	if (key === "goalieGSAA") {
+		if (v >= 10) return "color: #ff0000";
+		if (v >= 4) return "color: #e57373";
+		if (v <= -9) return "color: #00ff66";
+		if (v <= -3) return "color: #33cc66";
+	}
+
+	return "";
+}
+
 const goalieFormatter = function(cell, params, rendered) {
+	const data = cell.getRow().getData();
 	let goalie = cell.getValue();
 	if (goalie) {
 		goalie = title(goalie).split(" ").at(-1);
 	}
-	return goalie;
+	let sv = "";
+	if (data.goalieSV) {
+		sv = `<div class="bats" style="${getGoalieColor('goalieSV', data.goalieSV)}">${data.goalieSV}</div>`;
+	}
+	let gsaa = "";
+	if (data.goalieGSAA) {
+		gsaa = `<div class="pos" style="${getGoalieColor('goalieGSAA', data.goalieGSAA)}">${data.goalieGSAA}</div>`;
+	}
+	return `
+	<div class="goalie-cell">
+		${goalie}
+		${sv}
+		${gsaa}
+	</div>`;
 }
 
 const trendFormatter = function(cell, params, rendered) {

@@ -41,7 +41,11 @@ function onChkddChange(menu) {
 		.filter(cb => cb.checked)
 		.map(cb => cb.value);
 
-	updatePropLabel(CHKDD_STATE[id]);
+	if (id.includes("game")) {
+		updateGameLabel(CHKDD_STATE[id]);
+	} else {
+		updatePropLabel(CHKDD_STATE[id]);
+	}
 	changeFilter?.();
 }
 
@@ -57,17 +61,41 @@ document.addEventListener("change", (e) => {
 
 function initChkddActions(root = document) {
 	const dd = document.getElementById("prop-dd");
-	const btn = dd.querySelectorAll(".chkdd-btn");
 	const menu = dd.querySelector(".chkdd-menu");
+
+	const game_dd = document.getElementById("game-dd");
+	const game_menu = game_dd.querySelector(".chkdd-menu");
 
 	root.addEventListener('click', (e) => {
 		if (menu.style.display === 'block' && !menu.contains(e.target)) {
-			closeDropdown(dd, menu)
+			closeDropdown(dd, menu);
+		}
+		if (game_menu.style.display === "block" && !game_menu.contains(e.target)) {
+			closeDropdown(game_dd, game_menu);
 		}
 	});
 
 	if (PROP) {
 		CHKDD_STATE["prop-options"] = PROP.split(",");
+	}
+
+	if (GAME) {
+		CHKDD_STATE["game-options"] = GAME.split(",");
+	}
+}
+
+function updateGameLabel(props) {
+	const all_props = document.querySelectorAll("#game-options input").length;
+	const btn = document.getElementById("game-dd-button");
+
+	if (props.length == 0) {
+		btn.innerText = "No Games";
+	} else if (props.length == all_props) {
+		btn.innerText = "All Games";
+	} else if (props.length == 1) {
+		btn.innerText = props[0].toUpperCase();
+	} else {
+		btn.innerText = `${props.length} Games`;
 	}
 }
 
@@ -112,7 +140,7 @@ function openDropdown(id, menu) {
 
 function toggleDropdown(id, event) {
 	if (event) event.stopPropagation();
-	const menu = document.querySelector(`#${id.includes("devig") ? "devig" : "prop"}-options`);
+	const menu = document.querySelector(`#${id.split("-")[0]}-options`);
 	const isVisible = menu.style.display === 'block';
 	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
 	menu.style.display = isVisible ? 'none' : 'block';
@@ -370,6 +398,7 @@ const DEFAULT_DEVIGS = [
 	{ name: "HR", value: "hr;1", group: "100% Weight" },
 	{ name: "MGM", value: "mgm;1", group: "100% Weight" },
 	{ name: "BOL", value: "bol;1", group: "100% Weight" },
+	{ name: "B365", value: "b365;1", group: "100% Weight" },
 	{ name: "BV", value: "bv;1", group: "100% Weight" },
 
 	{ name: "FD/DK 50% Equal", value: "fd+dk;1+1", group: "Split Weights" },
@@ -882,20 +911,19 @@ function changeFilter(render = true) {
 		[devigBook, WEIGHT] = devigBook.split(";");
 	}
 	let boost = document.getElementById("boost-select").value;
-	let game = document.getElementById("game-select").value;
 	let book = document.getElementById("book-select").value;
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
 	let width = document.getElementById("width-input").value;
 	let props = getOptions("prop-options");
+	let games = getOptions("game-options");
 	let excluded = getExcludedBooks();
 	if (boost === "custom") {
 		boost = boostCustom.value;
 	}
 
 	BOOK = book;
-	GAME = game;
 	OU = ou;
 	MIN = minOdds;
 	MAX = maxOdds;
@@ -907,7 +935,7 @@ function changeFilter(render = true) {
 	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
 	params.set("width", width);
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
-	params.set("game", game);
+	params.set("game", games.join(","));
 	params.set("book", book);
 	params.set("prop", props.join(","));
 	params.set("ou", ou);
@@ -1023,9 +1051,14 @@ function changeFilter(render = true) {
 
 	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();
-	if (game) {
-		filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
-		data = data.filter(r => r.game == game.replace("-", " @ "));
+
+	if (["analysis"].includes(PAGE)) {
+		
+	} else if (!games.length) {
+		filters.push({field:"game", type:"=", value: ""});
+	} else {
+		filters.push({field:"game", type:"in", value: games});
+		data = data.filter(r => games.includes(r.game));
 	}
 	
 	if (!props.length) {

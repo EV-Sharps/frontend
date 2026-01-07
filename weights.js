@@ -1,5 +1,5 @@
 
-const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl", "br"];
+const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl", "br", "re"];
 const SESSION_WEIGHTS = {
 	"tds-pn+circa": {
 		pn: 0.4,
@@ -13,7 +13,7 @@ let WEIGHT_LOADED = false;
 
 function getDefaultWeights(books) {
 	if (!books || books.includes("mkt") || books.includes("")) {
-		books = ALL_WEIGHTABLE_BOOKS.filter(b => !["bv", "bol", "br"].includes(b));
+		books = ALL_WEIGHTABLE_BOOKS.filter(b => !["bv", "bol", "br", "re"].includes(b));
 	}
 	const defaultWeight = parseFloat((1 / books.length).toFixed(4));
 	const weights = {};
@@ -305,6 +305,13 @@ async function saveWeights() {
 function clearWeights() {
 	Array.from(document.querySelectorAll(".weight-item input")).forEach(input => {
 		input.value = "";
+	});
+	updateWeightTotal();
+}
+
+function equalWeights() {
+	Array.from(document.querySelectorAll(".weight-item input")).forEach(input => {
+		input.value = "1";
 	});
 	updateWeightTotal();
 }

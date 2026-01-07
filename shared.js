@@ -2159,6 +2159,7 @@ function openCustomDevig() {
 
 	<div style="display:flex;gap:8px;justify-content:flex-end">
 		<button id="cd-apply">Add Devig</button>
+		<button id="cd-equal">Equal</button>
 		<button id="cd-clear">Clear</button>
 		<button id="cd-cancel">Close</button>
 	</div>
@@ -2181,6 +2182,10 @@ function openCustomDevig() {
 
 	card.querySelector("#cd-clear").onclick = () => {
 		clearWeights();
+	}
+
+	card.querySelector("#cd-equal").onclick = () => {
+		equalWeights();
 	}
 
 	if (typeof saveWeights === 'function') {

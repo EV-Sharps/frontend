@@ -219,14 +219,15 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div class="select-wrapper">
-					<label for="game-select" class="select-label">Game</label>
-					<select id="game-select">
-						<option value="" selected>All</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
+				<div class="chkdd" id="game-dd">
+					<label for="game-dd-button" class="select-label">Game</label>
+					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
+					<div class="chkdd-menu" id="game-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
 				</div>
 				<div class="select-wrapper">
 				  <label for="min-odds" class="select-label">Min</label>
@@ -475,15 +476,18 @@
 					RES.data = RES.data.filter(r => TEAMS.split(",").includes(r.team));
 				}
 
-				const gameSel = document.getElementById("game-select");
-				gameSel.innerHTML = `<option value="" selected>All</option>`;
-				data.games.forEach(game => {
-					const option = document.createElement("option");
-					option.value = game.replace(" @ ", "-");
-					option.textContent = game.toUpperCase();
-					gameSel.appendChild(option);
-				});
-				gameSel.value = GAME;
+				const gameMenu = document.getElementById("game-options");
+				gameMenu.innerHTML = `
+					<div class="chkdd-actions">
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					</div>
+				`;
+				[...data.games].sort().forEach(p => createOption(p, gameMenu));
+				restoreChkddState(gameMenu);
+				if (GAME) {
+					updateGameLabel(GAME.split(","));
+				}
 
 				const propMenu = document.getElementById("prop-options");
 				propMenu.innerHTML = `

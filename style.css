@@ -660,6 +660,7 @@ body::before {
 	background:#0e1217; border:1px solid #2f3642; border-radius:.6rem;
 	box-shadow:0 8px 24px rgba(0,0,0,.35); padding:.4rem; display:none; z-index:50;
 	overflow-y: scroll;
+	max-height: 600px;
 }
 .chkdd.open .chkdd-menu { display:block; }
 .chkdd-menu label {

@@ -114,6 +114,25 @@ function updatePropLabel(props) {
 	}
 }
 
+const createGameOption = (val, gameTime, container) => {
+	const label = document.createElement('label');
+	label.setAttribute("onclick", "event.stopPropagation()")
+
+	let display = val.toUpperCase();
+	if (gameTime) {
+		let dt = new Date(gameTime);
+		dt = dt.toLocaleString("en-US", {
+			timeZone: "America/New_York",
+			hour: "numeric",
+			minute: "numeric",
+			hour12: true
+		}).split(", ").at(-1);
+		display += ` (${dt})`;
+	}
+	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${display}`;
+	container.appendChild(label);
+};
+
 const createOption = (val, container) => {
 	const label = document.createElement('label');
 	label.setAttribute("onclick", "event.stopPropagation()")

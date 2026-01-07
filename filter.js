@@ -1052,7 +1052,7 @@ function changeFilter(render = true) {
 	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();
 
-	if (["analysis"].includes(PAGE)) {
+	if (["analysis", "outliers"].includes(PAGE)) {
 		
 	} else if (!games.length) {
 		filters.push({field:"game", type:"=", value: ""});

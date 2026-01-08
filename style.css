@@ -398,16 +398,24 @@ body::before {
 /* Card Styling */
 .data-card {
 	border-radius: 8px;
-	overflow: hidden;
 	transition: transform 0.1s ease-out;
 	background-color: #1e1e1e;
 	border: 1px solid #333;
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-	min-height: 170px;
 	height: auto;
 	display: flex;
 	flex-direction: column;
 	max-width: 500px;
+}
+
+.data-card.collapsed {
+	max-height: 170px;
+	overflow: hidden;
+}
+
+.data-card.expanded {
+	max-height: none;
+	overflow: visible;
 }
 
 .data-card:active {
@@ -449,6 +457,52 @@ body::before {
 	transform: rotate(180deg);
 	color: #fff;
 }
+
+.trend-row{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  justify-content: center;
+}
+
+.trend-pill{
+  width:72px;
+  text-align:center;
+  font-family:inherit;
+}
+
+.trend-label{
+  font-size:12px;
+  font-weight:700;
+  color:#eaeaea;
+  margin-bottom:4px;
+}
+
+.trend-box{
+  border-radius:8px;
+  padding:6px 8px;
+  border:1px solid rgba(255,255,255,0.15);
+  background:rgba(0,0,0,0.35);
+}
+
+.trend-frac{
+  font-size:13px;
+  font-weight:800;
+  line-height:1.05;
+  color:#ffffff;
+}
+
+.trend-pct{
+  font-size:12px;
+  font-weight:700;
+  opacity:0.95;
+  margin-top:2px;
+}
+
+/* tones */
+.trend-box.good{ background: rgba(0, 160, 70, 0.55); }
+.trend-box.mid { background: rgba(0, 110, 200, 0.45); }
+.trend-box.bad { background: rgba(160, 40, 40, 0.55); }
 
 .player-prop-row {
 	display: flex;

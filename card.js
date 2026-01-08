@@ -112,6 +112,38 @@ function sliceLogs(logs, interval) {
 	return { slicedLogs, slicedIndices };
 }
 
+function renderTrends(trends) {
+	const LABELS = {
+		lyr: "'24-25",
+		szn: "'25-26"
+	};
+	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
+	const pills = ORDER
+		.filter(k => trends?.[k])
+		.map(k => {
+			const { w = 0, t = 0, p = 0 } = trends[k];
+			const label = LABELS[k] ?? k;
+
+			const tone =
+				p >= 60 ? "good" :
+				p >= 45 ? "mid"  :
+				"bad";
+
+			return `
+				<div class="trend-pill">
+				  <div class="trend-label">${label}</div>
+				  <div class="trend-box ${tone}">
+					<div class="trend-frac">${w}/${t}</div>
+					<div class="trend-pct">${p}%</div>
+				  </div>
+				</div>
+			`;
+		})
+		.join("");
+
+	return `<div class="trend-row">${pills}</div>`;
+}
+
 function renderCardPlot(uniqueId, under, logs, handicap, interval) {
 	if (!logs || logs.length === 0) {
 		const chartDiv = document.getElementById(`card-chart-${uniqueId}`);
@@ -325,6 +357,7 @@ function updateExistingCard(card, rowData) {
 			<div style="color:${getTDsOppRankColor(rowData.oppRank)}">${addSuffix(rowData.oppRank)} Opp Rank</div>
 			<div style="color:${getTDsOppRankColor(rowData.dvpRank)}">${addSuffix(rowData.dvpRank)} DvP Rank</div>
 		</div>
+		${renderTrends(rowData.hitRates || {})}
 		<div id="card-chart-${uniqueId}" style="height: 120px">
 
 		</div>

@@ -92,18 +92,6 @@
 					</svg>
 				</div>
 			</div>
-			<div id="view-toggle-container">
-				<div class="select-wrapper">
-					<label for="view-select" class="select-label">View</label>
-					<select id="view-select">
-						<option value="table" selected>Table</option>
-						<option value="mobile">Mobile</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<label for="page-select" class="select-label">Page</label>
@@ -576,6 +564,9 @@
 							const prop = data.prop;
 							let ou = data.under ? "u" : "o";
 
+							if (prop.includes("ml")) {
+								return "";
+							}
 							if (prop.includes("spread")) {
 								let line = parseFloat(cell.getValue());
 								if (data.under) {

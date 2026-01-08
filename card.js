@@ -307,7 +307,7 @@ function updateExistingCard(card, rowData) {
 	let teamImg = getTeamImg(sport, team);
 	let player = title(rowData.player);
 	if (PAGE.includes("ncaa")) {
-		player = rowData.game;
+		player = rowData.gameId || rowData.game;
 		teamImg = getGameImgs(rowData, {});
 	}
 	const playerRowContent = `

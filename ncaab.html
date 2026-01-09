@@ -577,9 +577,6 @@
 							}
 							if (prop.includes("spread")) {
 								let line = parseFloat(cell.getValue());
-								if (data.under) {
-									line *= -1;
-								}
 								let pre = line > 0 ? "+" : "";
 								return `${pre}${line}`;
 							}

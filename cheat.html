@@ -299,6 +299,7 @@
 <script type="text/javascript" src="record_nfl.js"></script>
 <script>
 	PAGE = "cheat";
+	let HEATMAP_SET = null;
 	parseURLParams();
 
 	function parseRecord(record) {
@@ -395,24 +396,41 @@
 			dashboard.appendChild(card);
 		}
 
-		document.querySelectorAll(".map-link").forEach(el => {
+		async function loadHeatmapIndex() {
+			if (HEATMAP_SET) return HEATMAP_SET;
+
+			const r = await fetch("/heatmaps/index.json", { cache: "no-store" });
+			if (!r.ok) throw new Error("Missing /heatmaps/index.json");
+
+			const data = await r.json();
+			HEATMAP_SET = new Set(Object.keys(data).map(p => p.startsWith("/") ? p : `/heatmaps/${p}`));
+		  return HEATMAP_SET;
+		}
+
+		async function wireMapLinks() {
+		  const set = await loadHeatmapIndex();
+
+		  document.querySelectorAll(".map-link").forEach(el => {
 			const img = el.dataset.img;
 
-			fetch(img, { method: "HEAD" }).then(res => {
-				if (res.ok) {
-					el.style.cursor = "pointer";
-					el.addEventListener("click", () => {
-						window.open(
-							`/heatmap${HTML}?img=${encodeURIComponent(img)}`,
-							"_blank",
-							"noopener"
-						);
-					});
-				} else {
-					el.style.opacity = 0.3;
-				}
-			});
-		});
+			if (set.has(img)) {
+			  el.style.cursor = "pointer";
+			  el.addEventListener("click", () => {
+				window.open(
+				  `/heatmap${HTML}?img=${encodeURIComponent(img)}`,
+				  "_blank",
+				  "noopener"
+				);
+			  });
+			} else {
+			  el.style.opacity = 0.3;
+			  el.title = "Heatmap not available";
+			  el.style.pointerEvents = "none";
+			}
+		  });
+		}
+
+		wireMapLinks().catch(err => console.error(err));
 	}
 
 	function toggleCard(card) {

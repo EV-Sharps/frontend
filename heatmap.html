@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Heatmap Viewer</title>
+	<style>
+		:root { color-scheme: dark; }
+		body {
+			margin: 0;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+			background: #0f1115;
+			color: #e8e8e8;
+		}
+		header {
+			position: sticky;
+			top: 0;
+			z-index: 5;
+			background: rgba(15,17,21,0.92);
+			backdrop-filter: blur(10px);
+			border-bottom: 1px solid rgba(255,255,255,0.08);
+			padding: 10px 12px;
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+		.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; }
+		.pill {
+			padding: 6px 10px;
+			border: 1px solid rgba(255,255,255,0.12);
+			background: rgba(255,255,255,0.04);
+			border-radius: 999px;
+			font-size: 12px;
+		}
+		button, select, input {
+			border: 1px solid rgba(255,255,255,0.14);
+			background: rgba(255,255,255,0.06);
+			color: #e8e8e8;
+			border-radius: 10px;
+			padding: 8px 10px;
+			font-size: 14px;
+			outline: none;
+		}
+		button { cursor: pointer; }
+		button:disabled { opacity: 0.45; cursor: not-allowed; }
+		input { width: min(520px, 100%); }
+		main {
+			padding: 12px;
+			display: grid;
+			place-items: center;
+		}
+
+		.layout {
+			display: flex;
+			height: 100vh;
+		}
+
+		/* LEFT: controls */
+		.controls {
+			width: 340px;
+			max-width: 90vw;
+			border-right: 1px solid rgba(255,255,255,0.08);
+			background: rgba(15,17,21,0.96);
+			overflow-y: auto;
+		}
+
+		/* RIGHT: image */
+		.viewer {
+			flex: 1;
+			display: flex;
+			justify-content: center;
+			align-items: flex-start;
+			padding: 12px;
+			overflow: hidden;
+		}
+
+		.img-wrap {
+			display: flex;
+			justify-content: center;
+			height: calc(100vh - 24px);
+			width: 100%;
+			max-width: 1400px;
+			max-height: calc(100vh - 24px);
+			overflow: auto;
+			border-radius: 14px;
+			border: 1px solid rgba(255,255,255,0.10);
+			background: rgba(0,0,0,0.25);
+		}
+		img {
+			height: calc(100vh - 24px);
+			width: auto;
+			max-width: none;
+			display: block;
+		}
+		.hint {
+			font-size: 12px;
+			opacity: 0.8;
+		}
+		.spacer { flex: 1; }
+		.danger { color: #ffb4b4; }
+
+		@media (max-width: 900px) {
+			.layout {
+				flex-direction: column;
+			}
+
+			.controls {
+				width: 100%;
+				max-width: none;
+				border-right: none;
+				border-bottom: 1px solid rgba(255,255,255,0.08);
+			}
+
+			.viewer {
+				padding: 8px;
+			}
+
+			.img-wrap {
+				max-height: none;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="layout">
+		<aside class="controls">
+			<header>
+				<div class="row">
+					<div class="spacer"></div>
+
+					<button id="btnPrev" title="Previous (←)">Prev</button>
+					<button id="btnNext" title="Next (→)">Next</button>
+
+					<select id="selImages" title="Choose image" style="min-width: 240px; max-width: 420px;">
+						<option value="">(no list found)</option>
+					</select>
+
+					<button id="btnZoomOut" title="Zoom out">−</button>
+					<button id="btnZoomReset" title="Reset zoom">Reset</button>
+					<button id="btnZoomIn" title="Zoom in">+</button>
+				</div>
+
+				<div class="row">
+					<span class="hint">Tip: use ←/→ to toggle, Ctrl/⌘+wheel to zoom browser, or +/- here.</span>
+				</div>
+
+				<div class="row">
+					<span class="hint" id="status"></span>
+				</div>
+			</header>
+		</aside>
+
+		<main class="viewer">
+			<div class="img-wrap">
+				<img id="heatmapImg" alt="heatmap" />
+			</div>
+		</main>
+	</div>
+
+	<script>
+		const $ = (id) => document.getElementById(id);
+
+		const btnBack = $("btnBack");
+		const btnPrev = $("btnPrev");
+		const btnNext = $("btnNext");
+		const selImages = $("selImages");
+		const imgEl = $("heatmapImg");
+		const btnOpen = $("btnOpen");
+		const status = $("status");
+
+		const btnZoomOut = $("btnZoomOut");
+		const btnZoomIn = $("btnZoomIn");
+		const btnZoomReset = $("btnZoomReset");
+
+		let zoom = 1;
+		let images = [];   // full paths
+		let currentIndex = -1;
+
+		function setStatus(msg, isError=false) {
+			status.textContent = msg || "";
+			status.className = isError ? "hint danger" : "hint";
+		}
+
+		function setZoom(z) {
+			zoom = Math.max(0.25, Math.min(4, z));
+			imgEl.style.transform = `scale(${zoom})`;
+		}
+
+		function parseQuery() {
+			const params = new URLSearchParams(location.search);
+			const img = params.get("img") || "";
+			return { img };
+		}
+
+		function getFolder(path) {
+			const i = path.lastIndexOf("/");
+			return i >= 0 ? path.slice(0, i) : "";
+		}
+
+		function getFile(path) {
+			const i = path.lastIndexOf("/");
+			path = i >= 0 ? path.slice(i + 1) : path;
+			let [b,d] = path.replace(".png", "").split("_");
+			return `${b.toUpperCase()} vs ${d.toUpperCase().replace("%2B", "+")}`;
+		}
+
+		async function headOk(url) {
+			try {
+				const r = await fetch(url, { method: "HEAD" });
+				return r.ok;
+			} catch {
+				return false;
+			}
+		}
+
+		async function tryLoadAutoIndex(folder) {
+			// If your server exposes directory listing HTML, we can parse it.
+			// Works with nginx autoindex / simple servers.
+			try {
+				const r = await fetch(`${folder}/`, { cache: "no-store" });
+				if (!r.ok) return [];
+				const html = await r.text();
+
+				// naive href parse
+				const matches = [...html.matchAll(/href="([^"]+\.png)"/gi)].map(m => m[1]);
+				const resolved = matches
+					.map(href => href.startsWith("http") ? null : href)
+					.filter(Boolean)
+					.map(href => href.startsWith("/") ? href : `${folder}/${href.replace(/^\.\//, "")}`);
+
+				// de-dupe
+				return [...new Set(resolved)];
+			} catch {
+				return [];
+			}
+		}
+
+		function updateNavButtons() {
+			const hasList = images.length > 0 && currentIndex >= 0;
+			btnPrev.disabled = !hasList || currentIndex <= 0;
+			btnNext.disabled = !hasList || currentIndex >= images.length - 1;
+			selImages.disabled = !hasList;
+		}
+
+		function populateSelect() {
+			selImages.innerHTML = "";
+			if (!images.length) {
+				selImages.innerHTML = `<option value="">(no list found)</option>`;
+				updateNavButtons();
+				return;
+			}
+			images.forEach((p, idx) => {
+				const opt = document.createElement("option");
+				opt.value = String(idx);
+				opt.textContent = getFile(p);
+				selImages.appendChild(opt);
+			});
+			if (currentIndex >= 0) selImages.value = String(currentIndex);
+			updateNavButtons();
+		}
+
+		function setCurrentByPath(path) {
+			const idx = images.indexOf(path);
+			currentIndex = idx >= 0 ? idx : -1;
+			if (currentIndex >= 0) selImages.value = String(currentIndex);
+			updateNavButtons();
+		}
+
+		function pushUrl(imgPath) {
+			const params = new URLSearchParams(location.search);
+			params.set("img", imgPath);
+			const newUrl = `${location.pathname}?${params.toString()}`;
+			history.replaceState(null, "", newUrl);
+		}
+
+		async function loadImage(path) {
+			if (!path) {
+				imgEl.removeAttribute("src");
+				setStatus("No image specified.", true);
+				return;
+			}
+
+			// show immediately; browser will error if missing
+			imgEl.src = path;
+
+			// quick check for existence
+			const ok = await headOk(path);
+			if (!ok) {
+				setStatus(`Image not found: ${path}`, true);
+			} else {
+				setStatus("");
+			}
+
+			pushUrl(path);
+			setCurrentByPath(path);
+		}
+
+		function goIndex(delta) {
+			if (!images.length || currentIndex < 0) return;
+			const next = currentIndex + delta;
+			if (next < 0 || next >= images.length) return;
+			currentIndex = next;
+			populateSelect();
+			loadImage(images[currentIndex]);
+		}
+
+		btnPrev.addEventListener("click", () => goIndex(-1));
+		btnNext.addEventListener("click", () => goIndex(1));
+
+		selImages.addEventListener("change", () => {
+			const idx = parseInt(selImages.value, 10);
+			if (!Number.isFinite(idx) || !images[idx]) return;
+			currentIndex = idx;
+			updateNavButtons();
+			loadImage(images[currentIndex]);
+		});
+
+		btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.1));
+		btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.1));
+		btnZoomReset.addEventListener("click", () => setZoom(1));
+
+		window.addEventListener("keydown", (e) => {
+			if (e.key === "ArrowLeft") goIndex(-1);
+			if (e.key === "ArrowRight") goIndex(1);
+		});
+
+		// Init
+		(async function init() {
+			setZoom(1);
+			const { img } = parseQuery();
+
+			if (img) {
+				await loadImage(img);
+				const folder = getFolder(img);
+
+				// Try to build a list of sibling images so Prev/Next works
+				images = await tryLoadAutoIndex(folder);
+
+				// If we found a list, set index and populate
+				if (images.length) {
+					// sort for stability
+					images.sort((a, b) => a.localeCompare(b));
+					setCurrentByPath(img);
+					if (currentIndex < 0) {
+						// if img wasn't in list, include it
+						images.unshift(img);
+						currentIndex = 0;
+					}
+					populateSelect();
+				} else {
+					populateSelect();
+				}
+			} else {
+				populateSelect();
+				setStatus("Open a heatmap via ?img=/heatmaps/... or paste a path and click Open.");
+			}
+		})();
+	</script>
+</body>
+</html>

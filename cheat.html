@@ -160,9 +160,13 @@
 
 		.entry:last-child { border-bottom: none; }
 
-		.market-info { display: flex; flex-direction: column; }
+		.market-info { display: flex;gap: 5px; }
 		.market-name { font-weight: 600; font-size: 0.95rem; }
 		.devig-source { font-size: 0.75rem; color: var(--text-dim); }
+		.map-link {
+			display: flex;
+			align-items: center;
+		}
 
 		.units-badge {
 			background: rgba(34, 197, 94, 0.1);
@@ -349,11 +353,20 @@
 				const total = (line.w || 0) + (line.l || 0);
 				const winPct = total > 0 ? (line.w / total) * 100 : 0;
 				const negative = val < 0 ? "units-negative" : "";
+
+				const imgPath = `/heatmaps/${SPORT}_${line.market}/${bookName}_${line.vs}.png`;
+				const link = `/heatmap${HTML}?img=${encodeURIComponent(imgPath)}`;
+
 				return `
 				<div class="entry">
 					<div class="market-info">
-						<span class="market-name">${line.market}</span>
-						<span class="devig-source">vs ${line.vs}</span>
+						<div class="map-link" data-img="${imgPath}">
+							🗺️
+						</div>
+						<div style="display: flex; flex-direction: column;">
+							<span class="market-name">${line.market}</span>
+							<span class="devig-source">vs ${line.vs}</span>
+						</div>
 					</div>
 					<div class="entry-right-group">
 						<div class="record-container">
@@ -381,6 +394,25 @@
 			
 			dashboard.appendChild(card);
 		}
+
+		document.querySelectorAll(".map-link").forEach(el => {
+			const img = el.dataset.img;
+
+			fetch(img, { method: "HEAD" }).then(res => {
+				if (res.ok) {
+					el.style.cursor = "pointer";
+					el.addEventListener("click", () => {
+						window.open(
+							`/heatmap${HTML}?img=${encodeURIComponent(img)}`,
+							"_blank",
+							"noopener"
+						);
+					});
+				} else {
+					el.style.opacity = 0.3;
+				}
+			});
+		});
 	}
 
 	function toggleCard(card) {

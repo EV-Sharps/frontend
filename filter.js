@@ -386,7 +386,7 @@ function changeView(view) {
 	if (view === "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
-		playerFilter.style.display = "initial";
+		playerFilter.style.display = "flex";
 		initializeCards(RES.data);
 	} else {
 		table.style.display = "initial";

@@ -387,7 +387,7 @@ body::before {
 #card-container {
 	display: grid;
 	gap: 10px;
-	padding: 10px;
+	padding: 0 10px;
 	grid-template-columns: 1fr; 
 	width: 100%;
 	box-sizing: border-box;
@@ -477,7 +477,15 @@ body::before {
 }
 
 .metric-pill {
-	flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:8px; display:flex; flex-direction:column; align-items:center; line-height:1.1;
+	flex:1;
+	background:rgba(255,255,255,0.04);
+	border:1px solid rgba(255,255,255,0.06);
+	border-radius:10px;
+	padding: 4px;
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	line-height:1.1;
 }
 
 .trend-label{
@@ -549,34 +557,31 @@ body::before {
 	white-space: nowrap;
 }
 
-/* 2. EV and Best Book Row (Middle Focus Row) */
 .ev-book-row {
 	display: flex;
 	justify-content: space-between; 
 	align-items: center;
-	padding: 10px;
+	padding: 6px;
 }
 
-/* EV Styling */
 .ev-section {
 	display: flex;
 	align-items: baseline;
 	font-weight: bold;
 }
 .ev-value {
-	font-size: 1.3em; /* Make the EV pop! */
+	font-size: 1.1em;
 	font-weight: bold;
 	margin-right: 5px;
 }
 
-/* Best Book Odds & Logo Styling */
 .best-book-section {
 	display: flex;
 	align-items: center;
 	gap: 5px;
 }
 .book-img-large {
-	height: 24px; 
+	height: 20px; 
 	width: auto;
 }
 .evbook-odds-large {

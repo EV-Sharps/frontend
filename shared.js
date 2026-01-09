@@ -3005,11 +3005,15 @@ function parseURLParams() {
 	VIG = URLParams.get("vig") || "";
 	MIN = URLParams.get("min") || "";
 	MAX = URLParams.get("max") || "";
-	OU = URLParams.get("ou") || "ou";
 	SIDE = URLParams.get("side") ?? "both";
 	WIDTH = URLParams.get("width") || "1";
 	TEAMS = URLParams.get("teams") || "";
-
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";
+
+	function defaultOU() {
+		if (["atgs", "tds"].includes(PAGE)) return "o";
+		return "ou";
+	}
+	OU = URLParams.get("ou") || defaultOU();
 }

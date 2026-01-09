@@ -361,6 +361,21 @@ function updateExistingCard(card, rowData) {
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
 		<div class="card-body-collapsed"></div>
+		<!-- Top metrics -->
+			<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.8rem;">${rowData.fairVal > 0 ? "+"+rowData.fairVal : rowData.fairVal}</div>
+					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>
+				</div>
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.8rem;">${Math.round(rowData.implied)}%</div>
+					<div style="opacity:0.85; font-size:0.72rem;">Implied</div>
+				</div>
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : rowData.kelly.toFixed(2)+"u"}</div>
+					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
+				</div>
+			</div>
 		<div class="card-arrow-container">
 			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
 				<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -371,21 +386,6 @@ function updateExistingCard(card, rowData) {
 	const collapsedBody = card.querySelector('.card-body-collapsed');
 	collapsedBody.innerHTML = `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
-			<!-- Top metrics -->
-			<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
-				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.95rem;">${rowData.fairVal}</div>
-					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>
-				</div>
-				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.95rem;">${rowData.implied}%</div>
-					<div style="opacity:0.85; font-size:0.72rem;">Implied</div>
-				</div>
-				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.95rem;">${rowData.kelly.toFixed(2)}u</div>
-					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
-				</div>
-			</div>
 
 			<!-- Matchup ranks -->
 			<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -403,7 +403,7 @@ function updateExistingCard(card, rowData) {
 
 			<div class="expanded-trends-chart" style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
 				<div class="expanded-trends" style="flex:1 1 160px; min-width:160px;">
-					<div style="display:flex; justify-content:center; align-items:center; margin:2px 0 6px;">
+					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
 					${renderTrends(rowData.hitRates || {})}

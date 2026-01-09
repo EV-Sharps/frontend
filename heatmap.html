@@ -202,7 +202,7 @@
 			const i = path.lastIndexOf("/");
 			path = i >= 0 ? path.slice(i + 1) : path;
 			let [b,d] = path.replace(".png", "").split("_");
-			return `${b.toUpperCase()} vs ${d.toUpperCase().replace("%2B", "+")}`;
+			return `${b.toUpperCase()} vs ${d.toUpperCase().replaceAll("%2B", "+")}`;
 		}
 
 		async function headOk(url) {
@@ -211,28 +211,6 @@
 				return r.ok;
 			} catch {
 				return false;
-			}
-		}
-
-		async function tryLoadAutoIndex(folder) {
-			// If your server exposes directory listing HTML, we can parse it.
-			// Works with nginx autoindex / simple servers.
-			try {
-				const r = await fetch(`${folder}/`, { cache: "no-store" });
-				if (!r.ok) return [];
-				const html = await r.text();
-
-				// naive href parse
-				const matches = [...html.matchAll(/href="([^"]+\.png)"/gi)].map(m => m[1]);
-				const resolved = matches
-					.map(href => href.startsWith("http") ? null : href)
-					.filter(Boolean)
-					.map(href => href.startsWith("/") ? href : `${folder}/${href.replace(/^\.\//, "")}`);
-
-				// de-dupe
-				return [...new Set(resolved)];
-			} catch {
-				return [];
 			}
 		}
 
@@ -325,36 +303,44 @@
 			if (e.key === "ArrowRight") goIndex(1);
 		});
 
+		async function loadIndexJson() {
+			const r = await fetch("/heatmaps/index.json", { cache: "no-store" });
+			if (!r.ok) throw new Error("Missing /heatmaps/index.json");
+
+			const obj = await r.json(); // { "nhl_atgs/fd_hr.png": 1, ... }
+
+			// normalize to full paths
+			return Object.keys(obj).map(p =>
+				p.startsWith("/") ? p : `/heatmaps/${p}`
+			);
+		}
+
+
 		// Init
 		(async function init() {
 			setZoom(1);
+
 			const { img } = parseQuery();
+
+			// load full index
+			images = await loadIndexJson();
+			images.sort((a, b) => a.localeCompare(b));
 
 			if (img) {
 				await loadImage(img);
-				const folder = getFolder(img);
 
-				// Try to build a list of sibling images so Prev/Next works
-				images = await tryLoadAutoIndex(folder);
-
-				// If we found a list, set index and populate
-				if (images.length) {
-					// sort for stability
-					images.sort((a, b) => a.localeCompare(b));
-					setCurrentByPath(img);
-					if (currentIndex < 0) {
-						// if img wasn't in list, include it
-						images.unshift(img);
-						currentIndex = 0;
-					}
-					populateSelect();
-				} else {
-					populateSelect();
+				// ensure current img exists in list
+				setCurrentByPath(img);
+				if (currentIndex < 0) {
+					images.unshift(img);
+					currentIndex = 0;
 				}
-			} else {
-				populateSelect();
-				setStatus("Open a heatmap via ?img=/heatmaps/... or paste a path and click Open.");
+			} else if (images.length) {
+				currentIndex = 0;
+				loadImage(images[0]);
 			}
+
+			populateSelect();
 		})();
 	</script>
 </body>

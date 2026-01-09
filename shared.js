@@ -81,6 +81,7 @@ let PAGE_DROPDOWN = `
 	<option value="cheat?sport=nba">🏀 Cheat Sheets</option>
 	<option value="cheat?sport=nfl">🏈 Cheat Sheets</option>
 	<option value="cheat?sport=nhl">🏒 Cheat Sheets</option>
+	<option value="heatmap">🗺️ Heat Map</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>

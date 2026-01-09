@@ -5,6 +5,23 @@ const CARDS_PER_LOAD = 20;
 // Flag to prevent loading multiple batches simultaneously
 let IS_LOADING_CARDS = false;
 
+function cardStateKey(rowData) {
+  const player = (rowData.player || "").trim();
+  const prop   = (rowData.prop || "").trim();
+  const line   = String(rowData.handicap ?? "");
+  const side   = rowData.under ? "U" : "O";
+
+  return `cardOpen:${player}|${prop}|${side}|${line}`;
+}
+
+function clearCardOpenState() {
+  Object.keys(localStorage)
+    .filter(k => k.startsWith("cardOpen:"))
+    .forEach(k => localStorage.removeItem(k));
+}
+
+clearCardOpenState();
+
 function initializeCards(data) {
 	MASTER_DATA = data;
 	applyFilters();
@@ -250,6 +267,9 @@ function createNewCard(rowData, uniqueId) {
 		const logs = rowData.logs;
 		const handicap = rowData.handicap;
 
+		const key = cardStateKey(rowData);
+		localStorage.setItem(key, collapsedBody.classList.contains("visible") ? "1" : "0");
+
 		if (collapsedBody.classList.contains('visible')) {
 			const intervalSelect = document.getElementById(`log-interval-${uniqueId}`);
 			const interval = intervalSelect ? parseInt(intervalSelect.value) : 15;
@@ -306,9 +326,10 @@ function updateExistingCard(card, rowData) {
 	let team = rowData.teamId || rowData.team;
 	let teamImg = getTeamImg(sport, team);
 	let player = title(rowData.player);
+	let gameImg = getGameImgs(rowData, {});
 	if (PAGE.includes("ncaa")) {
 		player = rowData.gameId || rowData.game;
-		teamImg = getGameImgs(rowData, {});
+		teamImg = gameImg;
 	}
 	const playerRowContent = `
 		<div class="player-content-stack">
@@ -349,19 +370,53 @@ function updateExistingCard(card, rowData) {
 	
 	const collapsedBody = card.querySelector('.card-body-collapsed');
 	collapsedBody.innerHTML = `
-		<div style="display:flex;justify-content: space-evenly;">
-			<div>${rowData.fairVal} Fair Val</div>
-			<div>${rowData.implied}% Implied</div>
-		</div>
-		<div style="display:flex;justify-content: center; gap: 10px;">
-			<div style="color:${getTDsOppRankColor(rowData.oppRank)}">${addSuffix(rowData.oppRank)} Opp Rank</div>
-			<div style="color:${getTDsOppRankColor(rowData.dvpRank)}">${addSuffix(rowData.dvpRank)} DvP Rank</div>
-		</div>
-		${renderTrends(rowData.hitRates || {})}
-		<div id="card-chart-${uniqueId}" style="height: 120px">
+		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
+			<!-- Top metrics -->
+			<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.95rem;">${rowData.fairVal}</div>
+					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>
+				</div>
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.95rem;">${rowData.implied}%</div>
+					<div style="opacity:0.85; font-size:0.72rem;">Implied</div>
+				</div>
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.95rem;">${rowData.kelly.toFixed(2)}u</div>
+					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
+				</div>
+			</div>
 
+			<!-- Matchup ranks -->
+			<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+				<div class="metric-pill">
+					<div style="font-weight:700; font-size:0.95rem;display: flex;">${gameImg.join("")}</div>
+					<div style="opacity:0.85; font-size:0.72rem;">Game</div>
+				</div>
+				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.oppRank)}; font-weight:600; font-size:0.85rem;">
+					${addSuffix(rowData.oppRank)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
+				</div>
+				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.dvpRank)}; font-weight:600; font-size:0.85rem;">
+					${addSuffix(rowData.dvpRank)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
+				</div>
+			</div>
+
+			<div class="expanded-trends-chart" style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+				<div class="expanded-trends" style="flex:1 1 160px; min-width:160px;">
+					<div style="display:flex; justify-content:center; align-items:center; margin:2px 0 6px;">
+						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
+					</div>
+					${renderTrends(rowData.hitRates || {})}
+				</div>
+			</div>
 		</div>
 	`;
+
+	const key = cardStateKey(rowData);
+	const shouldOpen = localStorage.getItem(key) === "1";
+
+	collapsedBody.classList.toggle("visible", shouldOpen);
+	card.classList.toggle("expanded", shouldOpen);
 
 	if (collapsedBody.classList.contains('visible')) {
 		//renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap);

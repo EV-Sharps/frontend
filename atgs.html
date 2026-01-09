@@ -733,7 +733,7 @@
 						visible: MOBILE ? false : true
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 80, hozAlign: "left"},
+					{title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 90, hozAlign: "left"},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: "DvP<br>Rank", field: "dvpRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
@@ -768,6 +768,7 @@
 					{title: "Last Goal (Due)", columns: [
 						{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},
 						{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},
+						//{title: "SD", field: "due.g.sd", width: 40, formatter: homerLogFormatter},
 						{title: "Z", field: "due.g.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 						//{title: "Avg", field: "due.g.avg", width: 40, formatter: homerLogFormatter, visible: false},
 						//{title: "Z", field: "due.g.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},

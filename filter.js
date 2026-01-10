@@ -920,7 +920,7 @@ async function deleteDevig(keyToDelete) {
 }
 
 const getOptions = (containerId) => {
-  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+	return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
 };
 
 function changeFilter(render = true) {

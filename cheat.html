@@ -279,6 +279,15 @@
 	</div>
 
 	<div class="unit-toggle-container">
+		<span style="font-size: 0.85rem; font-weight: 600;">ROI</span>
+		<label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
+			<input type="checkbox" id="profit-toggle" onchange="renderDashboard()" style="opacity: 0; width: 0; height: 0;">
+			<span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; transition: .4s; border-radius: 20px; border: 1px solid var(--accent);"></span>
+		</label>
+		<span style="font-size: 0.85rem; font-weight: 600;">Profit</span>
+	</div>
+
+	<div class="unit-toggle-container">
 		<span style="font-size: 0.85rem; font-weight: 600;">Full Unit</span>
 		<label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
 			<input type="checkbox" id="unit-toggle" onchange="renderDashboard()" style="opacity: 0; width: 0; height: 0;">
@@ -309,7 +318,7 @@
 			for (key in record[book]) {
 				let j = record[book][key];
 				let [prop,devig] = key.split("-vs-");
-				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"], l: j["losses"]});
+				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"], l: j["losses"], r: j["roi"]});
 			}
 			data[book] = arr;
 		}
@@ -326,8 +335,10 @@
 
 		const activeDevigs = getChecked('devig-options');
    		const activeProps = getChecked('prop-options');
+   		const isProfit = document.getElementById('profit-toggle').checked;
 		const isKelly = document.getElementById('unit-toggle').checked;
-		const unitKey = isKelly ? 'k' : 'u';
+		let unitKey = isKelly ? 'k' : 'u';
+		if (!isProfit) unitKey = "r";
 
 		let data = parseRecord(RES);
 		let books = ["fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
@@ -350,9 +361,9 @@
 			card.className = 'book-card';
 			
 			let entriesHtml = filteredLines.map(line => {
-				const val = line[unitKey];
+				let val = line[unitKey];
 				const total = (line.w || 0) + (line.l || 0);
-				const winPct = total > 0 ? (line.w / total) * 100 : 0;
+				const winPct = total > 0 ? Math.round((line.w / total) * 100) : 0;
 				const negative = val < 0 ? "units-negative" : "";
 
 				const imgPath = `/heatmaps/${SPORT}_${line.market}/${bookName}_${line.vs}.png`;
@@ -374,10 +385,11 @@
 							<div class="record-text">
 								<span class="win">${line.w}W</span> -
 								<span class="loss">${line.l}L</span>
+								<span class="">(${winPct}%)</span>
 							</div>
 						</div>
 						<span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
-							${val ? (val >= 0 ? "+" : "") + val.toFixed(1) + 'u' : ''}
+							${val ? (val >= 0 ? "+" : "") + (!isProfit ? `${val}%` : `${val.toFixed(1)}u`) : ''}
 						</span>
 					</div>
 				</div>

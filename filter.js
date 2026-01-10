@@ -978,6 +978,7 @@ function changeFilter(render = true) {
 		}
 		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
 		const presentBooks = comboList.filter(k => bookOdds[k]).length;
+		row["present"] = presentBooks
 		if (!avg || presentBooks < WIDTH) {
 			row["ev"] = null;
 			row["fairVal"] = "";
@@ -1066,13 +1067,14 @@ function changeFilter(render = true) {
 
 	if (!["outliers", "atgs2"].includes(PAGE)) {
 		filters.push({field: "ev", type: "!=", value: null});
+	} else {
+		filters.push({field: "present", type: ">=", value: WIDTH});
 	}
 
 	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();
 
 	if (["analysis", "outliers"].includes(PAGE)) {
-		
 	} else if (!games.length) {
 		filters.push({field:"game", type:"=", value: ""});
 	} else {

@@ -4,14 +4,8 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<title>Heatmap Viewer</title>
+	<link href="style.css" rel="stylesheet">
 	<style>
-		:root { color-scheme: dark; }
-		body {
-			margin: 0;
-			font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-			background: #0f1115;
-			color: #e8e8e8;
-		}
 		header {
 			position: sticky;
 			top: 0;
@@ -57,13 +51,75 @@
 		}
 
 		/* LEFT: controls */
-		.controls {
+		.controls{
 			width: 340px;
 			max-width: 90vw;
 			border-right: 1px solid rgba(255,255,255,0.08);
-			background: rgba(15,17,21,0.96);
-			overflow-y: auto;
-		}
+			overflow: hidden; /* inner scroll */
+		  }
+		  .controls-inner{
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+		  }
+		  .controls-top{
+			padding: 14px 14px 10px;
+			border-bottom: 1px solid rgba(255,255,255,0.08);
+		  }
+		  .controls-title{
+			font-size: 16px;
+			font-weight: 800;
+			letter-spacing: 0.2px;
+		  }
+		  .controls-sub{
+			margin-top: 6px;
+			font-size: 12px;
+			opacity: 0.85;
+			min-height: 16px;
+		  }
+		  .controls-block{
+			padding: 12px 14px;
+			border-bottom: 1px solid rgba(255,255,255,0.06);
+		  }
+		  .controls-row{
+			display: flex;
+			gap: 10px;
+			width: 100%;
+		  }
+		  .btn{
+			flex: 1;
+			border: 1px solid rgba(255,255,255,0.14);
+			background: rgba(255,255,255,0.06);
+			color: #e8e8e8;
+			border-radius: 10px;
+			padding: 10px 10px;
+			font-size: 14px;
+			cursor: pointer;
+		  }
+		  .btn:disabled{ opacity: 0.45; cursor: not-allowed; }
+
+		  .label{
+			display: block;
+			margin: 10px 0 6px;
+			font-size: 12px;
+			font-weight: 700;
+			opacity: 0.9;
+		  }
+		  .select{
+			width: 100%;
+			border: 1px solid rgba(255,255,255,0.14);
+			background: rgba(255,255,255,0.06);
+			color: #e8e8e8;
+			border-radius: 10px;
+			padding: 10px 10px;
+			font-size: 14px;
+			outline: none;
+		  }
+		  .hint{
+			margin-top: 10px;
+			font-size: 12px;
+			opacity: 0.75;
+		  }
 
 		/* RIGHT: image */
 		.viewer {
@@ -105,12 +161,13 @@
 				flex-direction: column;
 			}
 
-			.controls {
-				width: 100%;
-				max-width: none;
-				border-right: none;
-				border-bottom: 1px solid rgba(255,255,255,0.08);
+			.controls{
+			  width: 100%;
+			  max-width: none;
+			  border-right: none;
+			  border-bottom: 1px solid rgba(255,255,255,0.08);
 			}
+			.controls-inner{ height: auto; }
 
 			.viewer {
 				padding: 8px;
@@ -135,30 +192,45 @@
 <body>
 	<div class="layout">
 		<aside class="controls">
-			<header>
-				<div class="row">
-					<div class="spacer"></div>
+		  <div class="controls-inner">
+			<div class="controls-top">
+			  <div class="controls-title">Heatmap</div>
+			  <div class="controls-sub" id="status"></div>
+			</div>
 
-					<button id="btnPrev" title="Previous (←)">Prev</button>
-					<button id="btnNext" title="Next (→)">Next</button>
+			<div class="controls-block">
+			  <div class="controls-row">
+				<button id="btnPrev" class="btn" title="Previous (←)">Prev</button>
+				<button id="btnNext" class="btn" title="Next (→)">Next</button>
+			  </div>
 
-					<select id="selImages" title="Choose image" style="min-width: 240px; max-width: 420px;">
-						<option value="">(no list found)</option>
-					</select>
+			  <label class="label" for="selImages">Devigs</label>
+			  <div class="select-wrapper">
+				<select id="selImages" class="select" title="Choose image"></select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+				  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			  </div>
 
-					<button id="btnZoomOut" title="Zoom out">−</button>
-					<button id="btnZoomReset" title="Reset zoom">Reset</button>
-					<button id="btnZoomIn" title="Zoom in">+</button>
-				</div>
+			  <label class="label" for="page-select">Page</label>
+			  <div class="select-wrapper">
+				<select id="page-select" class="select"></select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+				  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			  </div>
+			</div>
 
-				<div class="row">
-					<span class="hint">Tip: use ←/→ to toggle, Ctrl/⌘+wheel to zoom browser, or +/- here.</span>
-				</div>
-
-				<div class="row">
-					<span class="hint" id="status"></span>
-				</div>
-			</header>
+			<div class="controls-block">
+			  <label class="label">Zoom</label>
+			  <div class="controls-row">
+				<button id="btnZoomOut" class="btn" title="Zoom out">−</button>
+				<button id="btnZoomReset" class="btn" title="Reset zoom">Reset</button>
+				<button id="btnZoomIn" class="btn" title="Zoom in">+</button>
+			  </div>
+			  <div class="hint">Tip: ←/→ to toggle</div>
+			</div>
+		  </div>
 		</aside>
 
 		<main class="viewer">
@@ -167,8 +239,9 @@
 			</div>
 		</main>
 	</div>
-
+	<script type="text/javascript" src="shared.js"></script>
 	<script>
+
 		const $ = (id) => document.getElementById(id);
 
 		const btnBack = $("btnBack");
@@ -353,5 +426,6 @@
 			populateSelect();
 		})();
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
 </body>
 </html>

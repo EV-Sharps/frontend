@@ -920,7 +920,15 @@ async function deleteDevig(keyToDelete) {
 }
 
 const getOptions = (containerId) => {
-	return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+	const all = Array.from(document.querySelectorAll(`#${containerId} input`))
+
+	const checked = all.filter(cb => cb.checked);
+
+	if (checked.length == 0 || checked.length == all.length) {
+		return [];
+	}
+
+	return checked.map(cb => cb.value);
 };
 
 function changeFilter(render = true) {
@@ -934,7 +942,7 @@ function changeFilter(render = true) {
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
-	let width = document.getElementById("width-input").value;
+	let width = parseInt(document.getElementById("width-input").value);
 	let props = getOptions("prop-options");
 	let games = getOptions("game-options");
 	let excluded = getExcludedBooks();
@@ -1067,44 +1075,28 @@ function changeFilter(render = true) {
 
 	if (!["outliers", "atgs2"].includes(PAGE)) {
 		filters.push({field: "ev", type: "!=", value: null});
-	} else {
-		filters.push({field: "present", type: ">=", value: WIDTH});
 	}
 
-	let data = CURRENT_VIEW == "mobile" ? [...RES.data] : [];
 	TABLE.clearFilter();
 
-	if (["analysis", "outliers"].includes(PAGE)) {
-	} else if (!games.length) {
-		filters.push({field:"game", type:"=", value: ""});
-	} else {
-		filters.push({field:"game", type:"in", value: games});
-		data = data.filter(r => games.includes(r.game));
-	}
-	
-	if (!props.length) {
-		filters.push({field:"prop", type:"=", value: ""});
-	} else {
-		filters.push({field:"prop", type:"in", value: props});
-	}
-
-	data = data.filter(r => props.includes(r.prop));
-	
-	if (OU != "ou") {
-		filters.push({field: "under", type: "=", value: OU == "u" ? true : false});
-		data = data.filter(r => r.under == (OU == "u") ? true : false);
-	}
-	if (minOdds) {
-		filters.push({field: "line", type: ">", value: parseInt(minOdds)})
-	}
-	if (maxOdds) {
-		filters.push({field: "line", type: "<", value: parseInt(maxOdds)})
-	}
 	if (filters.length > 0) {
 		TABLE.setFilter(filters);
 	}
 
-	if (!TABLE.getData("active").length) {
+	// Filters
+	let filtered = [...RES.data].filter(r => {
+		if (OU != "ou") {
+			if (r.under !== (OU === "u")) return false;
+		}
+		if (minOdds && !(r.line > parseInt(minOdds, 10))) return false;
+		if (maxOdds && !(r.line < parseInt(maxOdds, 10))) return false;
+		if (props.length && !props.includes(r.prop)) return false;
+		if (games.length && !games.includes(r.game)) return false;
+		if (WIDTH > 1 && r.present < WIDTH) return false;
+		return true;
+	});
+
+	if (!filtered.length) {
 		let t = "No data for this devig.";
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
@@ -1115,11 +1107,11 @@ function changeFilter(render = true) {
 	if (CURRENT_VIEW == "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
-		initializeCards(data);
+		initializeCards(filtered);
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
-		TABLE.replaceData(RES.data);
+		TABLE.replaceData(filtered);
 	}
 
 	if (VIG == "0") {

@@ -103,6 +103,8 @@ function updatePropLabel(props) {
 	const all_props = document.querySelectorAll("#prop-options input").length;
 	const btn = document.getElementById("prop-dd-button");
 
+	if (!btn) return;
+
 	if (props.length == 0) {
 		btn.innerText = "No Props";
 	} else if (props.length == all_props) {

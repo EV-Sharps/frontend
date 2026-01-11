@@ -199,26 +199,38 @@
 			</div>
 
 			<div class="controls-block">
-			  <div class="controls-row">
-				<button id="btnPrev" class="btn" title="Previous (←)">Prev</button>
-				<button id="btnNext" class="btn" title="Next (→)">Next</button>
-			  </div>
+				<div class="controls-row">
+					<button id="btnPrev" class="btn" title="Previous (←)">Prev</button>
+					<button id="btnNext" class="btn" title="Next (→)">Next</button>
+				</div>
 
-			  <label class="label" for="selImages">Devigs</label>
-			  <div class="select-wrapper">
-				<select id="selImages" class="select" title="Choose image"></select>
-				<svg class="select-arrow" viewBox="0 0 20 20">
-				  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-				</svg>
-			  </div>
+				<label class="label" for="selImages">Devigs</label>
+				<div class="select-wrapper">
+					<select id="selImages" class="select" title="Choose image"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 
-			  <label class="label" for="page-select">Page</label>
-			  <div class="select-wrapper">
-				<select id="page-select" class="select"></select>
-				<svg class="select-arrow" viewBox="0 0 20 20">
-				  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-				</svg>
-			  </div>
+
+				<label class="label" for="page-select">Page</label>
+				<div class="select-wrapper">
+					<select id="page-select" class="select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+
+				<label class="label" for="selSport">Sport</label>
+				<div class="select-wrapper">
+					<select id="selSport" class="select">
+					  <option value="nba">NBA</option>
+					  <option value="nhl">NHL</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 
 			<div class="controls-block">
@@ -247,6 +259,7 @@
 		const btnBack = $("btnBack");
 		const btnPrev = $("btnPrev");
 		const btnNext = $("btnNext");
+		const selSport = $("selSport");
 		const selImages = $("selImages");
 		const imgEl = $("heatmapImg");
 		const btnOpen = $("btnOpen");
@@ -390,9 +403,8 @@
 			const r = await fetch("/heatmaps/index.json", { cache: "no-store" });
 			if (!r.ok) throw new Error("Missing /heatmaps/index.json");
 
-			const obj = await r.json(); // { "nhl_atgs/fd_hr.png": 1, ... }
+			const obj = await r.json();
 
-			// normalize to full paths
 			return Object.keys(obj).map(p =>
 				p.startsWith("/") ? p : `/heatmaps/${p}`
 			);
@@ -405,22 +417,46 @@
 
 			const { img } = parseQuery();
 
-			// load full index
-			images = await loadIndexJson();
-			images.sort((a, b) => a.localeCompare(b));
+			const allImages = await loadIndexJson();
+
+			const bySport = {
+			  nba: [],
+			  nhl: [],
+			};
+
+			for (const p of allImages) {
+			  if (p.includes("/nba_")) bySport.nba.push(p);
+			  else if (p.includes("/nhl_")) bySport.nhl.push(p);
+			}
+
+			SPORT = "nba";
+			function setSport(sport) {
+			  SPORT = sport;
+			  images = bySport[sport] || [];
+			  images.sort((a, b) => a.localeCompare(b));
+
+			  currentIndex = images.length ? 0 : -1;
+			  populateSelect();
+			  if (currentIndex >= 0) {
+			  	loadImage(images[currentIndex])
+			  } else {
+			  	imgEl.removeAttribute("src")
+			  };
+			}
+
+			selSport.addEventListener("change", () => {
+			  setSport(selSport.value);
+			});
 
 			if (img) {
-				await loadImage(img);
+				if (img.includes("/nhl_")) selSport.value = "nhl";
+				if (img.includes("/nba_")) selSport.value = "nba";
+			}
 
-				// ensure current img exists in list
-				setCurrentByPath(img);
-				if (currentIndex < 0) {
-					images.unshift(img);
-					currentIndex = 0;
-				}
-			} else if (images.length) {
-				currentIndex = 0;
-				loadImage(images[0]);
+			setSport(selSport.value);
+
+			if (img) {
+				loadImage(img);
 			}
 
 			populateSelect();

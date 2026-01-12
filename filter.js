@@ -424,6 +424,7 @@ const DEFAULT_DEVIGS = [
 
 	{ name: "FD/DK 50% Equal", value: "fd+dk;1+1", group: "Split Weights" },
 	{ name: "PN/Circa 50% Equal", value: "pn+circa;1+1", group: "Split Weights" },
+	{ name: "ESPN/HR 50% Equal", value: "espn+hr;1+1", group: "Split Weights" },
 	{ name: "CIRC/PN/FD/DK 25% Equal", value: "circa+pn+fd+dk;1+1+1+1", group: "Split Weights" }
 ];
 
@@ -933,6 +934,38 @@ const getOptions = (containerId) => {
 	return checked.map(cb => cb.value);
 };
 
+let DEFAULT_COLS = [];
+function reorderOddsColumns(devig) {
+	if (!TABLE) return;
+
+	if (!DEFAULT_COLS.length) {
+		DEFAULT_COLS = [...TABLE.getColumnLayout()];
+	}
+
+	const devigBooks = devig.split("+");
+	const odds = [];
+	const [pre, post] = [[], []];
+	let seenOdds = false;
+	DEFAULT_COLS.forEach(col => {
+		if (!col.field) return;
+
+		if (col.field.startsWith("bookOdds.")) {
+			seenOdds = true;
+			odds.push(col);
+		} else if (!seenOdds) {
+			pre.push(col);
+		} else {
+			post.push(col);
+		}
+	});
+
+	const devigOdds = odds.filter(x => devigBooks.includes(x.field.split(".").at(-1)));
+	const rest = odds.filter(x => !devigBooks.includes(x.field.split(".").at(-1)));
+
+	TABLE.setColumnLayout([...pre, ...devigOdds, ...rest, ...post]);
+	updateHeaders();
+}
+
 function changeFilter(render = true) {
 	let [w,l,profit,kellyProfit] = [0,0,0,0];
 	let devigBook = DEVIG;
@@ -1046,7 +1079,7 @@ function changeFilter(render = true) {
 		row["implied"] = round2(avgDevig * 100);
 		row["kelly"] = getKelly(highest.value, ev);
 
-		if (ev >= 0 && row.result != undefined && (!props || props.includes(row.prop)) && (OU == "ou" || OU == (row.under ? "u" : "o")) && (!MIN || highest.value >= parseInt(MIN)) && (!MAX || highest.value <= parseInt(MAX))) {
+		if (ev >= 0 && row.result != undefined && (!props.length || props.includes(row.prop)) && (OU == "ou" || OU == (row.under ? "u" : "o")) && (!MIN || highest.value >= parseInt(MIN)) && (!MAX || highest.value <= parseInt(MAX))) {
 			if (row["hit"]) {
 				w += 1;
 				let dec = Math.abs(row.line < 0 ? 100 / row.line : row.line / 100);
@@ -1126,5 +1159,6 @@ function changeFilter(render = true) {
 		}
 	}
 
+	reorderOddsColumns(DEVIG);
 	updateWeightHeader();
 }

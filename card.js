@@ -256,7 +256,7 @@ function createNewCard(rowData, uniqueId) {
 	header.addEventListener('click', (e) => {
 		const collapsedBody = header.querySelector('.card-body-collapsed');
 		if (e.target.closest('.all-books-row')) {
-			return; 
+			//return; 
 		}
 
 		const isVisible = collapsedBody.classList.toggle("visible");
@@ -328,7 +328,9 @@ function updateExistingCard(card, rowData) {
 	let player = title(rowData.player);
 	let gameImg = getGameImgs(rowData, {});
 	if (PAGE.includes("ncaa")) {
-		player = rowData.gameId || rowData.game;
+		if (!["reb", "3ptm", "pts", "ast"].includes(rowData.prop)) {
+			player = rowData.gameId || rowData.game;
+		}
 		teamImg = gameImg;
 	}
 	const playerRowContent = `

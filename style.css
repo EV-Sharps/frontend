@@ -598,7 +598,7 @@ body::before {
 	padding: 8px 10px;
 	background-color: #121212;
 	border-bottom: none;
-	touch-action: pan-x;
+	/* touch-action: pan-x; */
 	position: relative;
 	z-index: 2;
 }

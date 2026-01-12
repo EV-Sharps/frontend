@@ -727,7 +727,7 @@
 					continue;
 				}
 
-				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
+				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
 			let header = `🏈 Implied Anytime Touchdown Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 

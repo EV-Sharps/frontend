@@ -2019,6 +2019,8 @@ function loadWeights() {
 	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 	if (DEVIG && DEVIG.includes("only+")) {
 		DEVIG = DEVIG.replace("only+", "");
+	} else if (DEVIG.includes(";")) {
+		DEVIG = DEVIG.split(";")[0];
 	}
 
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
@@ -2056,6 +2058,8 @@ function loadWeights() {
 		}
 		devigSel.insertBefore(fragment, customOption);
 	}
+
+
 }
 
 function showHideUserTable(loaded) {

@@ -2059,7 +2059,9 @@ function loadWeights() {
 		devigSel.insertBefore(fragment, customOption);
 	}
 
-
+	if (DEVIG) {
+		reorderOddsColumns(DEVIG);
+	}
 }
 
 function showHideUserTable(loaded) {

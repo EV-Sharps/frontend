@@ -312,6 +312,49 @@ if (boostSel) {
 	});
 }
 
+function toggleRange(e) {
+  e.stopPropagation();
+  document.getElementById("range-panel").classList.toggle("hidden");
+}
+
+function applyRange() {
+  const min = document.getElementById("range-min").value;
+  const max = document.getElementById("range-max").value;
+
+  document.getElementById("min-odds").value = min;
+  document.getElementById("max-odds").value = max;
+
+  updateRangeLabel(min, max);
+  document.getElementById("range-panel").classList.add("hidden");
+
+  changeFilter();
+}
+
+function clearRange() {
+  document.getElementById("range-min").value = "";
+  document.getElementById("range-max").value = "";
+  document.getElementById("min-odds").value = "";
+  document.getElementById("max-odds").value = "";
+
+  updateRangeLabel();
+  document.getElementById("range-panel").classList.add("hidden");
+
+  changeFilter();
+}
+
+function updateRangeLabel(min, max) {
+  const btn = document.getElementById("range-btn");
+  if (!min && !max) {
+    btn.textContent = "Any";
+  } else if (min && max) {
+    btn.textContent = `${min} → ${max}`;
+  } else if (min) {
+    btn.textContent = `≥ ${min}`;
+  } else {
+    btn.textContent = `≤ ${max}`;
+  }
+}
+
 const debouncedChangeFilter = debounce(changeFilter, 400);
 if (document.getElementById("min-odds")) {
 	document.getElementById("min-odds").value = MIN;

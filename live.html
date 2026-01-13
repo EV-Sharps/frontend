@@ -76,6 +76,21 @@
 				</div>
 			</div>
 		</div>
+		<div id="range-panel" class="range-panel hidden">
+			<div class="range-row">
+				<label>Min</label>
+				<input id="range-min" type="number" placeholder="Min odds">
+			</div>
+			<div class="range-row">
+				<label>Max</label>
+				<input id="range-max" type="number" placeholder="Max odds">
+			</div>
+
+			<div class="range-actions">
+				<button onclick="applyRange()">Apply</button>
+				<button onclick="clearRange()">Clear</button>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
@@ -229,11 +244,17 @@
 					</div>
 				</div>
 				<div class="select-wrapper">
+					<label id="range-label" class="select-label">Range</label>
+					<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
+					Any
+					</button>
+				</div>
+				<div id="min-odds-wrapper" class="select-wrapper">
 				  <label for="min-odds" class="select-label">Min</label>
 				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
 				</div>
 
-				<div class="select-wrapper">
+				<div id="max-odds-wrapper" class="select-wrapper">
 				  <label for="max-odds" class="select-label">Max</label>
 				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
 				</div>

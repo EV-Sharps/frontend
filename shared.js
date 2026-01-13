@@ -2020,7 +2020,7 @@ function loadWeights() {
 	if (DEVIG && DEVIG.includes("only+")) {
 		DEVIG = DEVIG.replace("only+", "");
 	} else if (DEVIG.includes(";")) {
-		DEVIG = DEVIG.split(";")[0];
+		[DEVIG, WEIGHT] = DEVIG.split(";");
 	}
 
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {

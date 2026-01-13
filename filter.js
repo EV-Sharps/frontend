@@ -432,18 +432,26 @@ const devigModal = document.getElementById('devig-modal');
 const devigDisplay = document.getElementById('devig-display-text');
 const devigOptionsContainer = document.getElementById('devig-options-container');
 
-// Helper to determine the display name from the value (since we're no longer using <option> text)
 function getDevigNameFromValue(value) {
-	// Check custom devigs first
 	const customDevigs = getCustomDevigs();
 	const customMatch = customDevigs.find(key => key === value);
-	if (customMatch) return parseWeightKey(customMatch);
+	if (customMatch) return getDevigDisplayName(customMatch);
 
-	// Check default devigs
 	const defaultMatch = DEFAULT_DEVIGS.find(d => d.value === value);
 	if (defaultMatch) return defaultMatch.name;
 
-	return "Market Avg"; // Fallback
+	return "Market Avg";
+}
+
+function getDevigAlias() {
+	const meta = CURR_USER?.metadata || {};
+	return meta["alias"] || {};
+}
+
+function getDevigDisplayName(devigKey) {
+	if (!devigKey) return "Market Avg";
+	const names = getDevigAlias();
+	return names[devigKey] || parseWeightKey(devigKey);
 }
 
 const MAX_FAVORITES = 7;
@@ -470,7 +478,7 @@ function toggleFavorite(devigKey) {
 
 function renderDevigOptions(searchTerm = "") {
 	const customDevigs = getCustomDevigs().map(key => ({
-		name: parseWeightKey(key),
+		name: getDevigDisplayName(key),
 		value: key,
 		group: "Your Custom Devigs"
 	}));
@@ -478,7 +486,7 @@ function renderDevigOptions(searchTerm = "") {
 	const currentFavorites = new Set(getFavoriteDevigs());
 
 	const favorites = getFavoriteDevigs().map(key => ({
-		name: parseWeightKey(key),
+		name: getDevigDisplayName(key),
 		value: key,
 		group: "Favorites"
 	}));
@@ -529,6 +537,7 @@ function renderDevigOptions(searchTerm = "") {
 			let [books,weight] = opt.value.split(";");
 			const isChecked = (DEVIG === opt.value.split(";")[0] && (WEIGHT || "1") === (opt.value.split(";")[1] || "1"));
 			const isFavorite = currentFavorites.has(opt.value);
+			const isCustom = (opt.group === "Your Custom Devigs" || opt.group === "Favorites");
 
 			const labels = allLabels[opt.value] || [];
 
@@ -561,10 +570,41 @@ function renderDevigOptions(searchTerm = "") {
 				const barHTML = renderWeightBar(books, weight);
 				html += `
 					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<div style="display:flex;flex-direction:column;width:75%">
-						<div class="devig-selection-container">
-							${opt.name}
-							<div>${booksHTML.join("")}</div>
+					<div style="display:flex;flex-direction:column;width:80%">
+						<div class="devig-selection-container" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+							<div style="display:flex;align-items:center;gap:8px;min-width:0;">
+								<span class="devig-name-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+									${escapeHtml(opt.name)}
+								</span>
+
+								${isCustom ? `
+									<button class="devig-edit-btn"
+										data-devig="${opt.value}"
+										title="Rename"
+										style="background:none;border:none;cursor:pointer;opacity:0.85;font-size:14px;padding:2px 4px;">
+										✎
+									</button>
+
+									<span class="devig-edit-wrap" style="display:none;align-items:center;gap:6px;">
+										<input class="devig-name-input"
+											type="text"
+											value="${escapeHtml(opt.name)}"
+										/>
+										<button class="devig-save-btn"
+											title="Save"
+											style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">
+											✓
+										</button>
+										<button class="devig-cancel-btn"
+											title="Cancel"
+											style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">
+											✕
+										</button>
+									</span>
+								` : ``}
+							</div>
+
+							<!-- <div>${booksHTML.join("")}</div> -->
 						</div>
 						${barHTML}
 				`;
@@ -608,6 +648,50 @@ function renderDevigOptions(searchTerm = "") {
 				`;
 			}
 			item.innerHTML = html;
+
+			if (["Your Custom Devigs", "Favorites"].includes(opt.group)) {
+				const editBtn = item.querySelector(".devig-edit-btn");
+				const editWrap = item.querySelector(".devig-edit-wrap");
+				const nameText = item.querySelector(".devig-name-text");
+				const input = item.querySelector(".devig-name-input");
+				const saveBtn = item.querySelector(".devig-save-btn");
+				const cancelBtn = item.querySelector(".devig-cancel-btn");
+
+				const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+
+				[editBtn, input, saveBtn, cancelBtn].forEach(el => {
+					if (!el) return;
+					el.addEventListener("click", stop);
+					el.addEventListener("mousedown", stop);
+				});
+
+				editBtn?.addEventListener("click", () => {
+					editBtn.style.display = "none";
+					nameText.style.display = "none";
+					editWrap.style.display = "inline-flex";
+					input.focus();
+					input.select();
+				});
+
+				cancelBtn?.addEventListener("click", () => {
+					input.value = opt.name; // revert
+					editWrap.style.display = "none";
+					nameText.style.display = "";
+					editBtn.style.display = "";
+				});
+
+				saveBtn?.addEventListener("click", async () => {
+					const newName = input.value.trim();
+					await setDevigAlias(opt.value, newName);
+
+					const currentKey = `${DEVIG};${WEIGHT}`;
+					if (currentKey === opt.value) {
+						devigDisplay.textContent = newName || parseWeightKey(opt.value);
+					}
+
+					renderDevigOptions(document.getElementById("devig-search").value);
+				});
+			}
 
 			item.querySelector('input').addEventListener('change', (event) => {
 				const value = event.target.value;
@@ -688,6 +772,24 @@ async function addPropLabel(sport, devig, prop) {
 		metadata: meta
 	})
 	.eq('id', CURR_SESSION.user.id);
+}
+
+async function setDevigAlias(devigKey, name) {
+	if (!CURR_USER) return;
+
+	if (!CURR_USER.metadata) CURR_USER.metadata = {};
+	if (!CURR_USER.metadata["alias"]) CURR_USER.metadata["alias"] = {};
+
+	const trimmed = (name || "").trim();
+	if (!trimmed) {
+		delete CURR_USER.metadata["alias"][devigKey];
+	} else {
+		CURR_USER.metadata["alias"][devigKey] = trimmed;
+	}
+
+	await SB.from('profiles')
+		.update({ metadata: CURR_USER.metadata })
+		.eq('id', CURR_SESSION.user.id);
 }
 
 function renderPropOptions(devig) {
@@ -878,6 +980,41 @@ function closeDeleteCustomDevigOverlay() {
 	document.getElementById("devig-select").value = DEVIG;
 }
 
+let EDITING_ALIAS = null;
+
+function startRenameDevig(key) {
+	EDITING_ALIAS = key;
+	renderCustomDevigList();
+}
+
+function cancelRenameDevig() {
+	EDITING_ALIAS = null;
+	renderCustomDevigList();
+}
+
+async function saveRenameDevig(key) {
+	const input = document.getElementById(`devig-rename-input-${cssSafeId(key)}`);
+	const name = input ? input.value : "";
+	await setDevigDisplayName(key, name);
+
+	EDITING_ALIAS = null;
+
+	// refresh both the delete overlay list + the main devig picker UI
+	renderCustomDevigList();
+	renderDevigOptions(document.getElementById("devig-search")?.value || "");
+
+	// if they renamed the currently-selected devig, update the header text too
+	if (typeof devigDisplay !== "undefined" && devigDisplay && DEVIG) {
+		const currentKey = WEIGHT ? `${DEVIG};${WEIGHT}` : `${DEVIG}${repeatOnes(DEVIG)}`;
+		devigDisplay.textContent = getDevigDisplayName(currentKey);
+	}
+}
+
+// tiny helper so keys with + ; etc don’t break element ids
+function cssSafeId(s) {
+	return String(s).replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+}
+
 function renderCustomDevigList() {
 	const container = document.getElementById("custom-devig-list-container");
 	const devigs = getCustomDevigs();
@@ -887,18 +1024,38 @@ function renderCustomDevigList() {
 		return;
 	}
 
-	container.innerHTML = devigs.map(key => `
-		<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
-			<span style="font-weight: bold;">${parseWeightKey(key)}</span>
-			<button 
-				onclick="deleteDevig('${key}')" 
-				style="background-color: #f44336; color: white; border: none; 
-						 padding: 4px 8px; cursor: pointer; border-radius: 4px; 
-						 font-weight: bold; line-height: 1;">
-				&times;
-			</button>
-		</div>
-	`).join('');
+	container.innerHTML = devigs.map(key => {
+		const isEditing = EDITING_ALIAS === key;
+		const safe = cssSafeId(key);
+
+		return `
+			<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #eee;">
+				<div class="devig-name-wrap">
+					<span
+						style="font-weight:bold; cursor:text;"
+						title="Rename devig"
+						onclick="startRenameDevig('${key}')"
+					>
+						${getDevigDisplayName(key)}
+					</span>
+
+					<span
+						class="devig-edit"
+						title="Edit name"
+						onclick="startRenameDevig('${key}')"
+					>✏️</span>
+				</div>
+
+				<button
+					onclick="deleteDevig('${key}')"
+					title="Delete"
+					style="background-color:#f44336; color:white; border:none; padding:4px 8px; cursor:pointer; border-radius:6px; font-weight:bold;"
+				>
+					&times;
+				</button>
+			</div>
+		`;
+	}).join('');
 }
 
 async function deleteDevig(keyToDelete) {

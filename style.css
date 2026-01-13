@@ -181,6 +181,10 @@ body::before {
 .book-segment.HR {
 	background-color: #290a9f;
 }
+.book-segment.BOL {
+	background-color: #EE3536;
+	color: #1a1a1a;
+}
 .book-segment.FN {
 	background-color: #981e12;
 }
@@ -228,6 +232,29 @@ body::before {
 	padding: 3px 8px;
 	border-radius: 12px;
 	border: 1px solid #4a5169;
+}
+
+.devig-edit {
+	cursor: pointer;
+	opacity: 0.6;
+	font-size: 13px;
+	margin-left: 6px;
+}
+
+.devig-edit:hover {
+	opacity: 1;
+}
+
+.devig-name-wrap {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.devig-name-input {
+	width:200px;
+	padding:4px 6px;
+	border-radius:8px;
 }
 
 .devig-label.sport-nba {

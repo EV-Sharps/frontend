@@ -308,7 +308,6 @@
 <script type="text/javascript" src="record_nfl.js"></script>
 <script>
 	PAGE = "cheat";
-	let HEATMAP_SET = null;
 	parseURLParams();
 
 	function parseRecord(record) {
@@ -368,33 +367,30 @@
 				const winPct = total > 0 ? Math.round((line.w / total) * 100) : 0;
 				const negative = val < 0 ? "units-negative" : "";
 
-				const imgPath = `/heatmaps/${SPORT}_${line.market}/${bookName}_${line.vs}.png`;
-				const link = `/heatmap${HTML}?img=${encodeURIComponent(imgPath)}`;
-
 				return `
 				<div class="entry">
-					<div class="market-info">
-						<div class="map-link" data-img="${imgPath}">
-							🗺️
-						</div>
-						<div style="display: flex; flex-direction: column;">
-							<span class="market-name">${line.market}</span>
-							<span class="devig-source">vs ${line.vs}</span>
-						</div>
-					</div>
-					<div class="entry-right-group">
-						<div class="record-container">
-							<div class="record-text">
-								<span class="win">${line.w}W</span> -
-								<span class="loss">${line.l}L</span>
-								<span class="">(${winPct}%)</span>
-							</div>
-						</div>
-						<span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
-							${val ? (val >= 0 ? "+" : "") + (!isProfit ? `${val}%` : `${val.toFixed(1)}u`) : ''}
-						</span>
-					</div>
-				</div>
+                    <div class="market-info">
+                        <div class="map-link" data-prop="${line.market}" data-devig="${line.vs}" data-book="${bookName}">
+                            🗺️
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <span class="market-name">${line.market}</span>
+                            <span class="devig-source">vs ${line.vs}</span>
+                        </div>
+                    </div>
+                    <div class="entry-right-group">
+                        <div class="record-container">
+                            <div class="record-text">
+                                <span class="win">${line.w}W</span> -
+                                <span class="loss">${line.l}L</span>
+                                <span class="">(${winPct}%)</span>
+                            </div>
+                        </div>
+                        <span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
+                            ${val ? (val >= 0 ? "+" : "") + (!isProfit ? `${val}%` : `${val.toFixed(1)}u`) : ''}
+                        </span>
+                    </div>
+                </div>
 			`}).join('');
 
 			card.innerHTML = `
@@ -408,43 +404,19 @@
 			`;
 			
 			dashboard.appendChild(card);
+
+			// make all map links clickable (always available) and open the new URL with query params
+            card.querySelectorAll('.map-link').forEach(el => {
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', (ev) => {
+                    const prop = el.dataset.prop || '';
+                    const devig = el.dataset.devig || '';
+                    const book = el.dataset.book || '';
+                    const url = `/heatmap${HTML}?sport=${encodeURIComponent(SPORT)}&prop=${encodeURIComponent(prop)}&book=${encodeURIComponent(book)}&devig=${encodeURIComponent(devig)}`;
+                    window.open(url, '_blank', 'noopener');
+                });
+            });
 		}
-
-		async function loadHeatmapIndex() {
-			if (HEATMAP_SET) return HEATMAP_SET;
-
-			const r = await fetch("/heatmaps/index.json", { cache: "no-store" });
-			if (!r.ok) throw new Error("Missing /heatmaps/index.json");
-
-			const data = await r.json();
-			HEATMAP_SET = new Set(Object.keys(data).map(p => p.startsWith("/") ? p : `/heatmaps/${p}`));
-		  return HEATMAP_SET;
-		}
-
-		async function wireMapLinks() {
-		  const set = await loadHeatmapIndex();
-
-		  document.querySelectorAll(".map-link").forEach(el => {
-			const img = el.dataset.img;
-
-			if (set.has(img)) {
-			  el.style.cursor = "pointer";
-			  el.addEventListener("click", () => {
-				window.open(
-				  `/heatmap${HTML}?img=${encodeURIComponent(img)}`,
-				  "_blank",
-				  "noopener"
-				);
-			  });
-			} else {
-			  el.style.opacity = 0.3;
-			  el.title = "Heatmap not available";
-			  el.style.pointerEvents = "none";
-			}
-		  });
-		}
-
-		wireMapLinks().catch(err => console.error(err));
 	}
 
 	function toggleCard(card) {

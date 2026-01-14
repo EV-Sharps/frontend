@@ -187,7 +187,7 @@ function renderFilters() {
 }
 
 function updateHeaders() {
-	const weights = getPercentWeights();
+	const weights = (typeof devigDisplay !== "undefined") ? getPercentWeights() : {};
 	for (book in UPDATED[PAGE]) {
 		if (!UPDATED[PAGE][book]) {
 			continue;

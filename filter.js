@@ -420,7 +420,11 @@ if (document.getElementById("book-select")) {
 	document.querySelector("#book-select").value = BOOK || "";
 	document.querySelector("#book-select").addEventListener("change", (event) => {
 		BOOK = event.target.value;
-		changeFilter();
+		if (PAGE === "heatmap") {
+			updateHeatmap();
+		} else {
+			changeFilter();
+		}
 	});
 }
 

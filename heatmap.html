@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,462 +7,507 @@
 	<title>Heatmap Viewer</title>
 	<link href="style.css" rel="stylesheet">
 	<style>
-		header {
-			position: sticky;
-			top: 0;
-			z-index: 5;
-			background: rgba(15,17,21,0.92);
-			backdrop-filter: blur(10px);
-			border-bottom: 1px solid rgba(255,255,255,0.08);
-			padding: 10px 12px;
-			display: flex;
-			gap: 10px;
-			align-items: center;
-			flex-wrap: wrap;
+		#header {
+			padding: 1rem 2rem;
 		}
-		.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; }
-		.pill {
-			padding: 6px 10px;
-			border: 1px solid rgba(255,255,255,0.12);
-			background: rgba(255,255,255,0.04);
-			border-radius: 999px;
-			font-size: 12px;
+		#heatmap {
+			width: 100%;
+			height: 70vh; min-height: 520px
 		}
-		button, select, input {
-			border: 1px solid rgba(255,255,255,0.14);
-			background: rgba(255,255,255,0.06);
-			color: #e8e8e8;
-			border-radius: 10px;
-			padding: 8px 10px;
-			font-size: 14px;
-			outline: none;
-		}
-		button { cursor: pointer; }
-		button:disabled { opacity: 0.45; cursor: not-allowed; }
-		input { width: min(520px, 100%); }
-		main {
-			padding: 12px;
-			display: grid;
-			place-items: center;
-		}
+		/* book picker styles */
+		#book-select { display: none; }
 
-		.layout {
-			display: flex;
-			height: 100vh;
-		}
-
-		/* LEFT: controls */
-		.controls{
-			width: 340px;
-			max-width: 90vw;
-			border-right: 1px solid rgba(255,255,255,0.08);
-			overflow: hidden; /* inner scroll */
-		  }
-		  .controls-inner{
-			height: 100vh;
+		#center-dropdown {
+			position:relative;
 			display: flex;
 			flex-direction: column;
-		  }
-		  .controls-top{
-			padding: 14px 14px 10px;
-			border-bottom: 1px solid rgba(255,255,255,0.08);
-		  }
-		  .controls-title{
-			font-size: 16px;
-			font-weight: 800;
-			letter-spacing: 0.2px;
-		  }
-		  .controls-sub{
-			margin-top: 6px;
-			font-size: 12px;
-			opacity: 0.85;
-			min-height: 16px;
-		  }
-		  .controls-block{
-			padding: 12px 14px;
-			border-bottom: 1px solid rgba(255,255,255,0.06);
-		  }
-		  .controls-row{
-			display: flex;
 			gap: 10px;
-			width: 100%;
-		  }
-		  .btn{
-			flex: 1;
-			border: 1px solid rgba(255,255,255,0.14);
-			background: rgba(255,255,255,0.06);
-			color: #e8e8e8;
-			border-radius: 10px;
-			padding: 10px 10px;
-			font-size: 14px;
-			cursor: pointer;
-		  }
-		  .btn:disabled{ opacity: 0.45; cursor: not-allowed; }
-
-		  .label{
-			display: block;
-			margin: 10px 0 6px;
-			font-size: 12px;
-			font-weight: 700;
-			opacity: 0.9;
-		  }
-		  .select{
-			width: 100%;
-			border: 1px solid rgba(255,255,255,0.14);
-			background: rgba(255,255,255,0.06);
-			color: #e8e8e8;
-			border-radius: 10px;
-			padding: 10px 10px;
-			font-size: 14px;
-			outline: none;
-		  }
-		  .hint{
-			margin-top: 10px;
-			font-size: 12px;
-			opacity: 0.75;
-		  }
-
-		/* RIGHT: image */
-		.viewer {
-			flex: 1;
-			display: flex;
-			justify-content: center;
 			align-items: flex-start;
-			padding: 12px;
-			overflow: hidden;
+		}
+		#center-dropdown button {
+			background: none;
 		}
 
-		.img-wrap {
+		.book-picker,
+		#dev-picker {
 			display: flex;
-			justify-content: center;
-			height: calc(100vh - 24px);
-			width: 100%;
-			max-width: 1400px;
-			max-height: calc(100vh - 24px);
-			overflow: auto;
-			border-radius: 14px;
-			border: 1px solid rgba(255,255,255,0.10);
-			background: rgba(0,0,0,0.25);
+			gap: 8px;
+			padding: 6px 6px;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			align-items: center;
+			white-space: nowrap;
+			min-width: 0;
 		}
-		img {
-			height: calc(100vh - 24px);
-			width: auto;
-			max-width: none;
-			display: block;
+		.book-picker::-webkit-scrollbar,
+		#dev-picker::-webkit-scrollbar { height: 8px; }
+		.book-picker::-webkit-scrollbar-thumb,
+		#dev-picker::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
+
+		/* chips */
+		.book-chip,
+		.dev-chip {
+			flex: 0 0 auto;
+			background: #172027;
+			color: #e6e6e6;
+			border: 1px solid #2a2e39;
+			border-radius: 999px;
+			padding: 6px 12px;
+			font-size: 13px;
+			white-space: nowrap;
+			cursor: pointer;
+			transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
 		}
-		.hint {
+
+		.book-chip:hover,
+		.dev-chip:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 6px 14px rgba(0,0,0,0.32);
+		}
+
+		.book-chip:focus,
+		.dev-chip:focus {
+			outline: none;
+			box-shadow: 0 0 0 3px rgba(31,101,255,0.14);
+		}
+
+		/* active styling (visible in dark mode) */
+		.book-chip.active,
+		.dev-chip.active {
+			background: linear-gradient(180deg,#1f65ff,#1554d6) !important;
+			border-color: #1554d6;
+			color: #ffffff;
+			box-shadow: 0 6px 18px rgba(31,101,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.15);
+			transform: translateY(-1px);
+		}
+
+		/* label + wrapper adjustments for compact header */
+		.select-wrapper {
+			display: flex;
+			gap: 6px;
+			min-width: 0;
+		}
+		.select-label {
 			font-size: 12px;
-			opacity: 0.8;
+			color: #bfc6cc;
 		}
-		.spacer { flex: 1; }
-		.danger { color: #ffb4b4; }
 
-		@media (max-width: 900px) {
-			.layout {
-				flex-direction: column;
+		/* ensure pickem scrolls smoothly and doesn't wrap */
+		#book-picker, #dev-picker { white-space: nowrap; }
+
+		/* optional max-width to avoid pushing header too far on narrow screens */
+		#book-picker { width: 100%; }
+		#dev-picker  { width: 100%; }
+
+		@media (min-width: 1100px) {
+			/* on large screens allow the devig row to expand further */
+			#dev-picker {  }
+			/* keep header horizontally compact when space allows */
+			#center-dropdown { flex-direction: row; gap: 18px; align-items: center; }
+			/* visually separate title area from controls */
+			#title { margin-right: 12px; }
+		}
+		@media (max-width: 700px){
+			#header {
+				padding: 0.5rem 1rem
 			}
-
-			.controls{
-			  width: 100%;
-			  max-width: none;
-			  border-right: none;
-			  border-bottom: 1px solid rgba(255,255,255,0.08);
-			}
-			.controls-inner{ height: auto; }
-
-			.viewer {
-				padding: 8px;
-			}
-
-			 .img-wrap {
-				height: auto;
-				max-height: none;
-				overflow-x: auto;
-				overflow-y: hidden;
-			  }
-
-			  .img-wrap img {
-				width: 100%;
-				height: auto;
-				max-width: 100%;
-				transform: none; /* disable zoom scaling on mobile */
-			  }
+			#heatmap { height: 80vh; min-height: 240px; }
 		}
 	</style>
 </head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'G-FX06BZ5MRL');
+</script>
 <body>
-	<div class="layout">
-		<aside class="controls">
-		  <div class="controls-inner">
-			<div class="controls-top">
-			  <div class="controls-title">Heatmap</div>
-			  <div class="controls-sub" id="status"></div>
-			</div>
-
-			<div class="controls-block">
-				<div class="controls-row">
-					<button id="btnPrev" class="btn" title="Previous (←)">Prev</button>
-					<button id="btnNext" class="btn" title="Next (→)">Next</button>
+	<div id="app">
+		<header id="header">
+			<div style="display: flex;width:100%;gap:10px;">
+				<div id="title">
+					<h1>+EV Sharps</h1>
+					<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
+					<!-- Icon -->
+					<svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+						<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
+					</svg>
+					<span class="help-label">Help</span>
+					</button>
 				</div>
-
-				<label class="label" for="selImages">Devigs</label>
 				<div class="select-wrapper">
-					<select id="selImages" class="select" title="Choose image"></select>
+					<label for="page-select" class="select-label">Page</label>
+					<select id="page-select"></select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
-					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
 
-
-				<label class="label" for="page-select">Page</label>
 				<div class="select-wrapper">
-					<select id="page-select" class="select"></select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-
-				<label class="label" for="selSport">Sport</label>
-				<div class="select-wrapper">
+					<label class="select-label" for="selSport">Sport</label>
 					<select id="selSport" class="select">
 					  <option value="nba">NBA</option>
 					  <option value="nhl">NHL</option>
+					  <option value="nfl">NFL</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
 			</div>
+			<div style="display: flex;margin-top:1rem;flex-direction: column;gap:15px;width:100%;">
+				<div class="select-wrapper">
+					<label for="book-select" class="select-label">Betting Book</label>
+					<select id="book-select" aria-hidden="true">
+						<option value="" selected>All</option>
+						<option value="fd">FD</option>
+						<option value="dk">DK</option>
+						<option value="b365">B365</option>
+						<option value="mgm">MGM</option>
+						<option value="espn">ESPN</option>
+						<option value="cz">CZ</option>
+						<option value="fn">FN</option>
+						<option value="br">BR</option>
+						<option value="hr">HR</option>
+						<option value="bv">BV</option>
+						<option value="kambi">Kambi</option>
+					</select>
 
-			<div class="controls-block">
-			  <label class="label">Zoom</label>
-			  <div class="controls-row">
-				<button id="btnZoomOut" class="btn" title="Zoom out">−</button>
-				<button id="btnZoomReset" class="btn" title="Reset zoom">Reset</button>
-				<button id="btnZoomIn" class="btn" title="Zoom in">+</button>
-			  </div>
-			  <div class="hint">Tip: ←/→ to toggle</div>
-			</div>
-		  </div>
-		</aside>
+					<div id="book-picker" class="book-picker" role="tablist" aria-label="Select book"></div>
+				</div>
 
-		<main class="viewer">
-			<div class="img-wrap">
-				<img id="heatmapImg" alt="heatmap" />
+				<div class="select-wrapper">
+                    <label for="devig-picker" class="select-label">Devig</label>
+                    <select id="devig-select" aria-hidden="true" style="display:none;"></select>
+
+                    <div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
+                </div>
 			</div>
+		</header>
+		<main>
+			<div id="heatmap"></div>
 		</main>
 	</div>
+	<script src="plotly-3.0.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script>
+		PAGE = "heatmap";
 
-		const $ = (id) => document.getElementById(id);
+		parseURLParams();
 
-		const btnBack = $("btnBack");
-		const btnPrev = $("btnPrev");
-		const btnNext = $("btnNext");
-		const selSport = $("selSport");
-		const selImages = $("selImages");
-		const imgEl = $("heatmapImg");
-		const btnOpen = $("btnOpen");
-		const status = $("status");
-
-		const btnZoomOut = $("btnZoomOut");
-		const btnZoomIn = $("btnZoomIn");
-		const btnZoomReset = $("btnZoomReset");
-
-		let zoom = 1;
-		let images = [];   // full paths
-		let currentIndex = -1;
-
-		function setStatus(msg, isError=false) {
-			status.textContent = msg || "";
-			status.className = isError ? "hint danger" : "hint";
-		}
-
-		function setZoom(z) {
-			zoom = Math.max(0.25, Math.min(4, z));
-			imgEl.style.transform = `scale(${zoom})`;
-		}
-
-		function parseQuery() {
-			const params = new URLSearchParams(location.search);
-			const img = params.get("img") || "";
-			return { img };
-		}
-
-		function getFolder(path) {
-			const i = path.lastIndexOf("/");
-			return i >= 0 ? path.slice(0, i) : "";
-		}
-
-		function getFile(path) {
-			const i = path.lastIndexOf("/");
-			path = i >= 0 ? path.slice(i + 1) : path;
-			let [b,d] = path.replace(".png", "").split("_");
-			return `${b.toUpperCase()} vs ${d.toUpperCase().replaceAll("%2B", "+")}`;
-		}
-
-		async function headOk(url) {
-			try {
-				const r = await fetch(url, { method: "HEAD" });
-				return r.ok;
-			} catch {
-				return false;
-			}
-		}
-
-		function updateNavButtons() {
-			const hasList = images.length > 0 && currentIndex >= 0;
-			btnPrev.disabled = !hasList || currentIndex <= 0;
-			btnNext.disabled = !hasList || currentIndex >= images.length - 1;
-			selImages.disabled = !hasList;
-		}
-
-		function populateSelect() {
-			selImages.innerHTML = "";
-			if (!images.length) {
-				selImages.innerHTML = `<option value="">(no list found)</option>`;
-				updateNavButtons();
-				return;
-			}
-			images.forEach((p, idx) => {
-				const opt = document.createElement("option");
-				opt.value = String(idx);
-				opt.textContent = getFile(p);
-				selImages.appendChild(opt);
+		function initBookPicker(){
+			const select = document.getElementById('book-select');
+			const picker = document.getElementById('book-picker');
+			if (!select || !picker) return;
+			picker.innerHTML = '';
+			Array.from(select.options).forEach(opt => {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'book-chip';
+				btn.dataset.value = opt.value;
+				btn.textContent = opt.text;
+				if ((BOOK === undefined && opt.selected) || (BOOK && opt.value === BOOK)) {
+					btn.classList.add('active');
+					// ensure BOOK matches the selected option
+					BOOK = opt.value;
+					select.value = opt.value;
+				}
+				btn.addEventListener('click', () => {
+					BOOK = opt.value;
+					select.value = BOOK; // keep hidden select synced
+					document.querySelectorAll('.book-chip').forEach(c => c.classList.toggle('active', c === btn));
+					// keep selected chip centered in view
+					btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
+					updateHeatmap();
+				});
+				picker.appendChild(btn);
 			});
-			if (currentIndex >= 0) selImages.value = String(currentIndex);
-			updateNavButtons();
+			// scroll active into view
+			const active = picker.querySelector('.book-chip.active');
+			if (active) active.scrollIntoView({inline: 'center'});
 		}
 
-		function setCurrentByPath(path) {
-			const idx = images.indexOf(path);
-			currentIndex = idx >= 0 ? idx : -1;
-			if (currentIndex >= 0) selImages.value = String(currentIndex);
-			updateNavButtons();
+		// init devig picker by reading available dev keys from the gz JSON (union across books)
+        async function initDevPicker(data){
+            const devSet = new Set(Object.keys(data));
+            const picker = document.getElementById('dev-picker');
+            const hidden = document.getElementById('devig-select');
+            if (!picker) return;
+            picker.innerHTML = '';
+            if (hidden) hidden.innerHTML = '';
+            Array.from(devSet).sort().forEach(dev => {
+                // populate hidden select too (optional)
+                if (hidden) {
+                    const opt = document.createElement('option');
+                    opt.value = dev;
+                    opt.text = dev;
+                    hidden.appendChild(opt);
+                }
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'book-chip dev-chip';
+                btn.dataset.value = dev;
+                btn.textContent = dev;
+                // default selection logic: preserve DEVIG or pick first available
+                if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
+                    btn.classList.add('active');
+                    DEVIG = dev;
+                    if (hidden) hidden.value = dev;
+                }
+                btn.addEventListener('click', () => {
+                    DEVIG = dev;
+                    if (hidden) hidden.value = dev;
+                    document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
+                    btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
+                    updateHeatmap();
+                });
+                picker.appendChild(btn);
+            });
+            const active = picker.querySelector('.dev-chip.active');
+            if (active) active.scrollIntoView({inline: 'center'});
+        }
+
+		async function loadGzJson(url){
+			const res = await fetch(url);
+			const buf = await res.arrayBuffer();
+			const str = pako.ungzip(new Uint8Array(buf), { to: 'string' });
+			return JSON.parse(str);
 		}
 
-		function pushUrl(imgPath) {
-			const params = new URLSearchParams(location.search);
-			params.set("img", imgPath);
-			const newUrl = `${location.pathname}?${params.toString()}`;
-			history.replaceState(null, "", newUrl);
+		function americanWinProfit(odds){
+			if (odds === 0) return 0;
+			if (odds > 0) return odds/100;
+			return 100/Math.abs(odds);
 		}
 
-		async function loadImage(path) {
-			if (!path) {
-				imgEl.removeAttribute("src");
-				setStatus("No image specified.", true);
-				return;
+		function arange(start, stop, step){
+			const r = [];
+			for(let v = start; v <= stop + 1e-9; v += step) r.push(v);
+			return r;
+		}
+
+		function formatXLabel(left, right){ return `${Math.round(left)}–${Math.round(right)}%`; }
+		function formatYLabel(left, right){ return `${Math.round(left)}–${Math.round(right)}`; }
+
+		async function renderHeatmap(gzUrl, opts = {}){
+			const cfg = Object.assign({
+				roi: false,
+				evRange: [0,15], evStep: 1,
+				oddsRange: [100,1200], oddsStep: 100,
+				minBets: 1,
+				bookLabel: 'BOOK',
+				devLabel: 'DEV',
+				containerId: 'heatmap'
+			}, opts);
+
+			let bets = await loadGzJson(gzUrl);
+
+			initDevPicker(bets[cfg.bookLabel]);
+
+			bets = bets[cfg.bookLabel][cfg.devLabel];
+
+			// adjust for sport-specific ranges (optional)
+			// filter to display range
+			const [evMin, evMaxRange] = cfg.evRange;
+			const [odMin, odMaxRange] = cfg.oddsRange;
+			const filtered = bets.filter(b => {
+				const ev = Number(b.ev);
+				const od = Number(b.odds);
+				return ev >= evMin && ev <= evMaxRange && od >= odMin && od <= odMaxRange;
+			});
+
+			// bins
+			const evBins = arange(cfg.evRange[0], cfg.evRange[1], cfg.evStep);
+			const oddsBins = arange(cfg.oddsRange[0], cfg.oddsRange[1], cfg.oddsStep);
+
+			const nX = evBins.length - 1;
+			const nY = oddsBins.length - 1;
+
+			// initialize matrices
+			const sumMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
+			const countMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
+			const winMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
+
+			function findBinIndex(value, bins){
+				if (value < bins[0] || value > bins[bins.length-1]) return -1;
+				// right-inclusive as in pandas cut(right=True)
+				for(let i=0;i<bins.length-1;i++){
+					const left = bins[i], right = bins[i+1];
+					if (value >= left && value <= right) return i;
+				}
+				return -1;
 			}
 
-			// show immediately; browser will error if missing
-			imgEl.src = path;
-
-			// quick check for existence
-			const ok = await headOk(path);
-			if (!ok) {
-				setStatus(`Image not found: ${path}`, true);
-			} else {
-				setStatus("");
+			for(const b of filtered){
+				const ev = Number(b.ev);
+				const od = Number(b.odds);
+				const i = findBinIndex(od, oddsBins);
+				const j = findBinIndex(ev, evBins);
+				if (i === -1 || j === -1) continue;
+				const isWin = !!b.hit;
+				const profit = isWin ? americanWinProfit(od) : -1.0;
+				sumMatrix[i][j] += profit;
+				countMatrix[i][j] += 1;
+				if (isWin) winMatrix[i][j] += 1;
 			}
 
-			pushUrl(path);
-			setCurrentByPath(path);
-		}
+			// produce final heat values (ROI = mean profit per bet, else total)
+			const z = Array.from({length: nY}, (_,i) => Array(nX).fill(null));
+			let vmin = Infinity, vmax = -Infinity;
+			for(let i=0;i<nY;i++){
+				for(let j=0;j<nX;j++){
+					if (countMatrix[i][j] < cfg.minBets){
+						z[i][j] = null;
+						continue;
+					}
+					const val = cfg.roi ? (sumMatrix[i][j] / countMatrix[i][j]) : sumMatrix[i][j];
+					z[i][j] = val;
+					if (Number.isFinite(val)){
+						vmin = Math.min(vmin, val);
+						vmax = Math.max(vmax, val);
+					}
+				}
+			}
+			if (!isFinite(vmin)) { vmin = -1; vmax = 1; }
 
-		function goIndex(delta) {
-			if (!images.length || currentIndex < 0) return;
-			const next = currentIndex + delta;
-			if (next < 0 || next >= images.length) return;
-			currentIndex = next;
-			populateSelect();
-			loadImage(images[currentIndex]);
-		}
+			// labels
+			const xLabels = [];
+			for(let j=0;j<nX;j++){
+				xLabels.push(formatXLabel(evBins[j], evBins[j+1]));
+			}
+			const yLabels = [];
+			for(let i=0;i<nY;i++){
+				yLabels.push(formatYLabel(oddsBins[i], oddsBins[i+1]));
+			}
 
-		btnPrev.addEventListener("click", () => goIndex(-1));
-		btnNext.addEventListener("click", () => goIndex(1));
+			let annotations = [];
+			for(let i=0;i<nY;i++){
+				for(let j=0;j<nX;j++){
+					if (countMatrix[i][j] >= cfg.minBets){
+						const w = winMatrix[i][j] || 0;
+						const l = countMatrix[i][j] - w;
+						annotations.push({
+							x: xLabels[j],
+							y: yLabels[i],
+							text: `${w}W ${l}L`,
+							showarrow: false,
+							font: {size:10, color:'black'},
+							align: 'center',
+							bgcolor: 'rgba(255,255,255,0.7)'
+						});
+					}
+				}
+			}
 
-		selImages.addEventListener("change", () => {
-			const idx = parseInt(selImages.value, 10);
-			if (!Number.isFinite(idx) || !images[idx]) return;
-			currentIndex = idx;
-			updateNavButtons();
-			loadImage(images[currentIndex]);
-		});
+			if (MOBILE) annotations = [];
 
-		btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.1));
-		btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.1));
-		btnZoomReset.addEventListener("click", () => setZoom(1));
-
-		window.addEventListener("keydown", (e) => {
-			if (e.key === "ArrowLeft") goIndex(-1);
-			if (e.key === "ArrowRight") goIndex(1);
-		});
-
-		async function loadIndexJson() {
-			const r = await fetch("/heatmaps/index.json", { cache: "no-store" });
-			if (!r.ok) throw new Error("Missing /heatmaps/index.json");
-
-			const obj = await r.json();
-
-			return Object.keys(obj).map(p =>
-				p.startsWith("/") ? p : `/heatmaps/${p}`
-			);
-		}
-
-
-		// Init
-		(async function init() {
-			setZoom(1);
-
-			const { img } = parseQuery();
-
-			const allImages = await loadIndexJson();
-
-			const bySport = {
-			  nba: [],
-			  nhl: [],
+			// build Plotly trace
+			const trace = {
+				z: z,
+				x: xLabels,
+				y: yLabels,
+				type: 'heatmap',
+				colorscale: [
+					[0.0, '#b2182b'],  // red = bad
+					[0.5, '#f7f7f7'],  // neutral
+					[1.0, '#2166ac']   // blue = good
+				],
+				zmid: 0,
+				zmin: -1,
+				zmax: 1,
+				//zmin: Math.min(-Math.abs(vmax), vmin),
+				//zmax: Math.max(Math.abs(vmax), -vmin),
+				colorbar: {
+					title: {
+						text: cfg.roi ? 'ROI (avg units per bet)' : 'Total Profit (units)'
+					},
+					orientation: 'h',
+					x: 0.5, y: -0.30, xanchor: 'center'
+				},
+				hovertemplate: '%{y}<br>%{x}<br>Value: %{z:.3f}<extra></extra>'
 			};
 
-			for (const p of allImages) {
-			  if (p.includes("/nba_")) bySport.nba.push(p);
-			  else if (p.includes("/nhl_")) bySport.nhl.push(p);
-			}
+			const layout = {
+				paper_bgcolor: '#0f1117',
+				plot_bgcolor: '#0f1117',
+				font: {
+					color: '#e6e6e6'
+				},
+				autosize: true,
+				showlegend: false,
+				responsive: true,
+				xaxis: {
+					title: {
+						text: 'EV %',
+					},
+					//tickangle: 45,
+					gridcolor: '#2a2e39',
+					zerolinecolor: '#2a2e39'
+				},
+				yaxis: {
+					title: {
+						text: 'Odds',
+					},
+					autorange: 'reversed',
+					gridcolor: '#2a2e39',
+					zerolinecolor: '#2a2e39'
+				},
+				title: {
+					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap (bet on ${cfg.bookLabel}, devig vs ${cfg.devLabel})`
+				},
+				annotations,
+				margin: { l: 60, r: 20, t: 40, b: MOBILE ? 160 : 90 },
+				//xaxis: {tickangle:45},
+				//yaxis: {autorange: 'reversed'} // match typical imshow orientation
+			};
 
-			SPORT = "nba";
-			function setSport(sport) {
-			  SPORT = sport;
-			  images = bySport[sport] || [];
-			  images.sort((a, b) => a.localeCompare(b));
+			
+			Plotly.newPlot(cfg.containerId, [trace], layout, {displayModeBar:false, responsive:true});
+			setTimeout(() => {
+				Plotly.Plots.resize(cfg.containerId)
+			}, 100);
+		}
 
-			  currentIndex = images.length ? 0 : -1;
-			  populateSelect();
-			  if (currentIndex >= 0) {
-			  	loadImage(images[currentIndex])
-			  } else {
-			  	imgEl.removeAttribute("src")
-			  };
-			}
+		const selSport = document.getElementById('selSport');
+		selSport.value = SPORT || 'nba';
+		selSport.addEventListener('change', () => {
+			SPORT = selSport.value;
+			if (SPORT == "nba") PROP = "reb";
+			else if (SPORT == "nhl") PROP = "atgs";
+			else if (SPORT == "nfl") PROP = "attd";
+			updateHeatmap();
+		});
 
-			selSport.addEventListener("change", () => {
-			  setSport(selSport.value);
+		if (!BOOK) BOOK = 'fd';
+		if (!DEVIG) DEVIG = 'espn+hr';
+		if (!PROP) {
+			if (SPORT === 'nba') PROP = 'reb';
+			else if (SPORT === 'nhl') PROP = 'atgs';
+			else if (SPORT === 'nfl') PROP = 'attd';
+		};
+
+		initBookPicker();
+		updateHeatmap();
+
+		function updateHeatmap() {
+			const params = new URLSearchParams(window.location.search);
+			params.set("sport", SPORT);
+			params.set("book", BOOK);
+			params.set("devig", DEVIG);
+			params.set("prop", PROP);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
+
+			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, { 
+				roi: true, minBets: 1, containerId:'heatmap', bookLabel: BOOK, devLabel: DEVIG, sport: SPORT,
+				prop: PROP
 			});
-
-			if (img) {
-				if (img.includes("/nhl_")) selSport.value = "nhl";
-				if (img.includes("/nba_")) selSport.value = "nba";
-			}
-
-			setSport(selSport.value);
-
-			if (img) {
-				loadImage(img);
-			}
-
-			populateSelect();
-		})();
+		}
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
-</body>
+	</body>
 </html>

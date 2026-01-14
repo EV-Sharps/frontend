@@ -157,12 +157,19 @@
 					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+
+				<div class="select-wrapper">
+					<label class="select-label" for="selProp">Prop</label>
+					<select id="selProp" class="select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div style="display: flex;margin-top:1rem;flex-direction: column;gap:15px;width:100%;">
 				<div class="select-wrapper">
 					<label for="book-select" class="select-label">Betting Book</label>
 					<select id="book-select" aria-hidden="true">
-						<option value="" selected>All</option>
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
 						<option value="b365">B365</option>
@@ -271,6 +278,30 @@
             if (active) active.scrollIntoView({inline: 'center'});
         }
 
+		function initPropPicker(props) {
+			const propSet = new Set(Object.keys(props || {}));
+			const sel = document.getElementById('selProp');
+			if (!sel) return;
+
+			// populate select
+			sel.innerHTML = '';
+			const propsList = Array.from(propSet).sort();
+			propsList.forEach(p => {
+				const opt = document.createElement('option');
+				opt.value = p;
+				opt.text = p.toUpperCase();
+				sel.appendChild(opt);
+			});
+
+			if (!PROP || !propSet.has(PROP)) PROP = propsList[0] || '';
+			sel.value = PROP;
+
+			sel.addEventListener('change', (e) => {
+				PROP = e.target.value;
+				updateHeatmap();
+			});
+		}
+
 		async function loadGzJson(url){
 			const res = await fetch(url);
 			const buf = await res.arrayBuffer();
@@ -306,9 +337,10 @@
 
 			let bets = await loadGzJson(gzUrl);
 
-			initDevPicker(bets[cfg.bookLabel]);
+			initPropPicker(bets);
+			initDevPicker(bets[cfg.prop][cfg.bookLabel]);
 
-			bets = bets[cfg.bookLabel][cfg.devLabel];
+			bets = bets[cfg.prop][cfg.bookLabel][cfg.devLabel];
 
 			// adjust for sport-specific ranges (optional)
 			// filter to display range
@@ -460,12 +492,9 @@
 					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap (bet on ${cfg.bookLabel}, devig vs ${cfg.devLabel})`
 				},
 				annotations,
-				margin: { l: 60, r: 20, t: 40, b: MOBILE ? 160 : 90 },
-				//xaxis: {tickangle:45},
-				//yaxis: {autorange: 'reversed'} // match typical imshow orientation
+				margin: { l: 80, r: 20, t: 40, b: MOBILE ? 160 : 90 },
 			};
 
-			
 			Plotly.newPlot(cfg.containerId, [trace], layout, {displayModeBar:false, responsive:true});
 			setTimeout(() => {
 				Plotly.Plots.resize(cfg.containerId)
@@ -476,6 +505,8 @@
 		selSport.value = SPORT || 'nba';
 		selSport.addEventListener('change', () => {
 			SPORT = selSport.value;
+			BOOK = "fd";
+			DEVIG = "circa";
 			if (SPORT == "nba") PROP = "reb";
 			else if (SPORT == "nhl") PROP = "atgs";
 			else if (SPORT == "nfl") PROP = "attd";
@@ -483,7 +514,7 @@
 		});
 
 		if (!BOOK) BOOK = 'fd';
-		if (!DEVIG) DEVIG = 'espn+hr';
+		if (!DEVIG) DEVIG = 'circa';
 		if (!PROP) {
 			if (SPORT === 'nba') PROP = 'reb';
 			else if (SPORT === 'nhl') PROP = 'atgs';
@@ -492,6 +523,23 @@
 
 		initBookPicker();
 		updateHeatmap();
+
+		function getRanges() {
+			let evRange = [0,15], oddsRange = [-300,1200];
+			if (SPORT === 'nba') {
+				oddsRange = [-300,800];
+			}
+			/*
+			if (SPORT === 'nba') {
+				evRange = [0,15]; oddsRange = [100,1200];
+			} else if (SPORT === 'nhl') {
+				evRange = [0,10]; oddsRange = [100,800];
+			} else if (SPORT === 'nfl') {
+				evRange = [0,20]; oddsRange = [100,1500];
+			}
+				*/
+			return [evRange, oddsRange];
+		}
 
 		function updateHeatmap() {
 			const params = new URLSearchParams(window.location.search);
@@ -502,9 +550,11 @@
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
 			history.pushState({}, '', newUrl);
 
+			const [evRange, oddsRange] = getRanges();
+
 			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, { 
 				roi: true, minBets: 1, containerId:'heatmap', bookLabel: BOOK, devLabel: DEVIG, sport: SPORT,
-				prop: PROP
+				prop: PROP, evRange: evRange, oddsRange: oddsRange
 			});
 		}
 	</script>

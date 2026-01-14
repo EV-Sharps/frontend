@@ -7,6 +7,8 @@
 	<title>Heatmap Viewer</title>
 	<link href="style.css" rel="stylesheet">
 	<style>
+		.roi.positive { color: #22c55e; }
+		.roi.negative { color: #ef4444; }
 		#header {
 			padding: 1rem 2rem;
 		}
@@ -27,6 +29,37 @@
 		#center-dropdown button {
 			background: none;
 		}
+
+		.dev-chip-wrap {
+			display: flex;           /* use normal flex (not inline-flex) so gap works reliably */
+			flex-direction: column;
+			align-items: center;
+			flex: 0 0 auto;         /* never shrink, occupy own slot in the scroller */
+			margin-right: 8px;
+			min-width: 0;
+			}
+
+			.book-chip,
+			.dev-chip {
+			flex: 0 0 auto;         /* prevent chips from shrinking and overlapping */
+			display: inline-block;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
+			}
+
+			/* keep the small record line compact and prevent it from forcing layout */
+			.dev-subinfo {
+			margin-top: 6px;
+			font-size: 11px;
+			color: #bfc6cc;
+			line-height: 1;
+			max-width: 88px;        /* limit width so it doesn't push neighbors */
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			text-align: center;
+			}
 
 		.book-picker,
 		#dev-picker {
@@ -203,7 +236,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script>
 		PAGE = "heatmap";
-
+		let RECORD;
 		parseURLParams();
 
 		function initBookPicker(){
@@ -240,43 +273,71 @@
 
 		// init devig picker by reading available dev keys from the gz JSON (union across books)
         async function initDevPicker(data){
-            const devSet = new Set(Object.keys(data));
-            const picker = document.getElementById('dev-picker');
-            const hidden = document.getElementById('devig-select');
-            if (!picker) return;
-            picker.innerHTML = '';
-            if (hidden) hidden.innerHTML = '';
-            Array.from(devSet).sort().forEach(dev => {
-                // populate hidden select too (optional)
-                if (hidden) {
-                    const opt = document.createElement('option');
-                    opt.value = dev;
-                    opt.text = dev;
-                    hidden.appendChild(opt);
-                }
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'book-chip dev-chip';
-                btn.dataset.value = dev;
-                btn.textContent = dev;
-                // default selection logic: preserve DEVIG or pick first available
-                if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
-                    btn.classList.add('active');
-                    DEVIG = dev;
-                    if (hidden) hidden.value = dev;
-                }
-                btn.addEventListener('click', () => {
-                    DEVIG = dev;
-                    if (hidden) hidden.value = dev;
-                    document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
-                    btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
-                    updateHeatmap();
-                });
-                picker.appendChild(btn);
-            });
-            const active = picker.querySelector('.dev-chip.active');
-            if (active) active.scrollIntoView({inline: 'center'});
-        }
+			const devSet = new Set(Object.keys(data || {}));
+			const picker = document.getElementById('dev-picker');
+			const hidden = document.getElementById('devig-select');
+			if (!picker) return;
+			picker.innerHTML = '';
+			if (hidden) hidden.innerHTML = '';
+
+			Array.from(devSet).sort().forEach(dev => {
+				// wrapper holds the chip button and the small record line beneath
+				const wrap = document.createElement('div');
+				wrap.className = 'dev-chip-wrap';
+
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'book-chip dev-chip';
+				btn.dataset.value = dev;
+				btn.textContent = dev.toUpperCase();
+				wrap.appendChild(btn);
+
+				// try to read record from RECORD global (by BOOK & dev key)
+				const info = document.createElement('div');
+				info.className = 'dev-subinfo';
+				let recText = '';
+				try {
+					const rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[BOOK]) ? RECORD[BOOK][`${PROP}-vs-${dev}`] : null;
+					if (rec) {
+						const wins = rec.wins ?? rec.w ?? 0;
+						const losses = rec.losses ?? rec.l ?? 0;
+						const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');
+						//recText = `${wins}W ${losses}L ${roi ? `(${roi})` : ''}`;
+						recText = `${wins}W - ${losses}L ${roi ? `<br><span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>` : ''}`;
+					}
+				} catch (e) {
+					recText = '';
+				}
+				info.innerHTML = recText;
+				wrap.appendChild(info);
+
+				// default selection logic: preserve DEVIG or pick first available
+				if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
+					btn.classList.add('active');
+					DEVIG = dev;
+					if (hidden) hidden.value = dev;
+				}
+
+				btn.addEventListener('click', () => {
+					DEVIG = dev;
+					if (hidden) hidden.value = dev;
+					// toggle active class only on buttons
+					document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
+					btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
+					updateHeatmap();
+				});
+
+				picker.appendChild(wrap);
+			});
+
+			// ensure active visible
+			const activeWrap = picker.querySelector('.dev-chip.active');
+			if (activeWrap) {
+				// if the active element is a button inside wrap, scroll its wrapper
+				const btn = picker.querySelector('.dev-chip.active');
+				if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'center'});
+			}
+		}
 
 		function initPropPicker(props) {
 			const propSet = new Set(Object.keys(props || {}));
@@ -337,6 +398,8 @@
 
 			let bets = await loadGzJson(gzUrl);
 
+			RECORD = bets["record"];
+			bets = bets["xy"];
 			initPropPicker(bets);
 			initDevPicker(bets[cfg.prop][cfg.bookLabel]);
 

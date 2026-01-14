@@ -286,7 +286,8 @@ function createNewCard(rowData, uniqueId) {
 function renderAllBooks(bookOdds, bestBook) {
 	const orderedKeys = [
 		'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365', 
-		'cz', 'fn', 'hr', 'bv', 'kambi', 'bol', 're', 'fl'
+		'cz', 'fn', 'hr', 'bv', 'kambi', 'bol', 're', 'fl',
+		'nv', 'kal', 'px', 'poly'
 	];
 
 	let html = '';

@@ -162,6 +162,10 @@
 					  <label><input type="checkbox" value="hr"> HR</label>
 					  <label><input type="checkbox" value="kambi"> Kambi</label>
 					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <label><input type="checkbox" value="kal"> Kalshi (KAL)</label>
+					  <label><input type="checkbox" value="poly"> Polymarket (POLY)</label>
+					  <label><input type="checkbox" value="px"> ProphetX (PX)</label>
+					  <label><input type="checkbox" value="nv"> NoVig (NV)</label>
 					  <div class="chkdd-actions">
 						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 						<button type="button" data-act="all">All</button>
@@ -428,6 +432,22 @@
 								<label for="custom_bookOdds_bol">Betonline</label>
 							</div>
 							<div>
+								<input id="custom_bookOdds_poly" type="checkbox">
+								<label for="custom_bookOdds_poly">Polymarket</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_nv" type="checkbox">
+								<label for="custom_bookOdds_nv">NoVig</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_px" type="checkbox">
+								<label for="custom_bookOdds_px">ProphetX</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_kal" type="checkbox">
+								<label for="custom_bookOdds_kal">Kalshi</label>
+							</div>
+							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
 								<label for="custom_bookOdds_pn">Pinnacle</label>
 							</div>
@@ -682,8 +702,10 @@
 					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					//{title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					//{title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{
 						title: "Game Logs<br> ➡️ Most Recent",

@@ -673,6 +673,11 @@ body::before {
 	position: relative;
 	z-index: 2;
 }
+.data-card.expanded .all-books-row {
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px 0;
+}
 .all-books-row::-webkit-scrollbar {
 	height: 4px; /* Make scrollbar tiny */
 }

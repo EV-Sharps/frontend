@@ -199,6 +199,33 @@
 					</svg>
 				</div>
 
+                <div class="select-wrapper">
+                    <label class="select-label" for="selEvStep">EV step</label>
+                    <select id="selEvStep" class="select" style="width:68px">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="5">5</option>
+                    </select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+                </div>
+
+                <div class="select-wrapper">
+                    <label class="select-label" for="selOddsStep">Odds step</label>
+                    <select id="selOddsStep" class="select" style="width:80px">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                        <option value="1000">1000</option>
+                    </select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+                </div>
+
 				<div class="select-wrapper" style="align-items:center;">
                     <button id="download-btn" class="btn-ctrl" onclick="downloadHeatmapImage()" title="Download heatmap as PNG">Download PNG</button>
                 </div>
@@ -566,6 +593,9 @@
 		}
 
 		const selSport = document.getElementById('selSport');
+		const selEvStep = document.getElementById('selEvStep');
+        const selOddsStep = document.getElementById('selOddsStep');
+
 		selSport.value = SPORT || 'nba';
 		selSport.addEventListener('change', () => {
 			SPORT = selSport.value;
@@ -577,6 +607,9 @@
 			//updateHeatmap();
 			init();
 		});
+
+		if (selEvStep) selEvStep.addEventListener('change', () => updateHeatmap());
+        if (selOddsStep) selOddsStep.addEventListener('change', () => updateHeatmap());
 
 		if (!BOOK) BOOK = 'fd';
 		if (!DEVIG) DEVIG = 'circa';
@@ -622,9 +655,14 @@
 
 			const [evRange, oddsRange] = getRanges();
 
+            const evStep = selEvStep ? Number(selEvStep.value) : 1;
+            const oddsStep = selOddsStep ? Number(selOddsStep.value) : 100;
+
 			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, { 
 				roi: true, minBets: 1, containerId:'heatmap', bookLabel: BOOK, devLabel: DEVIG, sport: SPORT,
-				prop: PROP, evRange: evRange, oddsRange: oddsRange
+				prop: PROP, 
+				evStep: evStep, oddsStep: oddsStep,
+				evRange: evRange, oddsRange: oddsRange
 			});
 		}
 

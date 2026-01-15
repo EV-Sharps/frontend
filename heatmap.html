@@ -396,14 +396,11 @@
 				containerId: 'heatmap'
 			}, opts);
 
-			let bets = await loadGzJson(gzUrl);
+			//let bets = await loadGzJson(gzUrl);
+			//RES = bets;
+			initDevPicker(RES["xy"][cfg.prop][cfg.bookLabel]);
 
-			RECORD = bets["record"];
-			bets = bets["xy"];
-			initPropPicker(bets);
-			initDevPicker(bets[cfg.prop][cfg.bookLabel]);
-
-			bets = bets[cfg.prop][cfg.bookLabel][cfg.devLabel];
+			let bets = RES["xy"][cfg.prop][cfg.bookLabel][cfg.devLabel];
 
 			// adjust for sport-specific ranges (optional)
 			// filter to display range
@@ -573,7 +570,8 @@
 			if (SPORT == "nba") PROP = "reb";
 			else if (SPORT == "nhl") PROP = "atgs";
 			else if (SPORT == "nfl") PROP = "attd";
-			updateHeatmap();
+			//updateHeatmap();
+			init();
 		});
 
 		if (!BOOK) BOOK = 'fd';
@@ -583,9 +581,6 @@
 			else if (SPORT === 'nhl') PROP = 'atgs';
 			else if (SPORT === 'nfl') PROP = 'attd';
 		};
-
-		initBookPicker();
-		updateHeatmap();
 
 		function getRanges() {
 			let evRange = [0,15], oddsRange = [-300,1200];
@@ -604,6 +599,14 @@
 			return [evRange, oddsRange];
 		}
 
+		async function init() {
+			initBookPicker();
+			RES = await loadGzJson(`/heatmaps/${SPORT}.json.gz`);
+			RECORD = RES["record"];
+			initPropPicker(RES["xy"]);
+			updateHeatmap();
+		}
+
 		function updateHeatmap() {
 			const params = new URLSearchParams(window.location.search);
 			params.set("sport", SPORT);
@@ -620,6 +623,8 @@
 				prop: PROP, evRange: evRange, oddsRange: oddsRange
 			});
 		}
+
+		init();
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	</body>

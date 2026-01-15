@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FAQ — Most Asked Questions</title>
+  <link href="style.css" rel="stylesheet">
+  <style>
+    /* Lightweight page-specific styling */
+    .wrap{max-width:1200px;margin:1.25rem auto;padding:1rem}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    header h1{margin:0;font-size:1.25rem}
+    .toolbar{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .search{padding:8px 10px;border-radius:8px;border:1px solid #2b2f3a;background:#0b0f14;color:var(--text)}
+    .layout{display:flex;gap:16px}
+    .q-list{width:320px;max-height:70vh;overflow:auto;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    .q-item{padding:10px;border-radius:8px;margin-bottom:8px;cursor:pointer;background:transparent;display:block;border:1px solid transparent}
+    .q-item:hover{background:rgba(255,255,255,0.02)}
+    .q-item.active{background:linear-gradient(180deg,var(--accent),#1554d6);color:#041226;border-color:rgba(255,255,255,0.06)}
+    .q-summary{font-size:0.9rem;color:var(--muted);margin-top:4px}
+    .detail{flex:1;max-height:70vh;overflow:auto;padding:12px;border-radius:8px;background:linear-gradient(180deg,#071018,#041018);border:1px solid rgba(255,255,255,0.03)}
+    .answer-card{padding:12px;border-radius:8px;background:var(--card);margin-bottom:12px;border:1px solid rgba(255,255,255,0.02)}
+    .answer-card h3{margin:0 0 8px 0}
+    .meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+    .controls{display:flex;gap:8px;margin-bottom:8px}
+    .btn{background:#15314a;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+    @media (max-width:880px){ .layout{flex-direction:column} .q-list{width:100%;max-height:220px} .detail{max-height:50vh} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Frequently Asked Questions</h1>
+      <div class="toolbar">
+        <input id="faq-search" class="search" placeholder="Search questions…" aria-label="Search questions">
+        <div style="width:8px"></div>
+        <button id="expand-all" class="btn ghost">Expand All</button>
+        <button id="collapse-all" class="btn ghost">Collapse All</button>
+      </div>
+    </header>
+
+    <div class="layout" role="region" aria-label="FAQ">
+      <nav class="q-list" id="qList" aria-label="Questions">
+        <!-- question items inserted here -->
+      </nav>
+
+      <section class="detail" id="detailPanel" aria-live="polite">
+        <!-- detailed answers inserted here -->
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // Minimal FAQ data — replace/add items as needed
+    const FAQ = [
+        {
+            id: "q-where-to-sign-up",
+            q: 'Where can I sign up for a subscription?',
+            summary: 'Information on subscription sign-up process.',
+            answer: `
+          <p class="meta">Short: Visit our pricing page to sign up.</p>
+          <div>
+            <p>You can sign up for a subscription by visiting our <a href="/pricing">pricing page</a> on the website. Simply choose the plan that best suits your needs, fill in the required information, and complete the payment process on Stripe to begin your EV journey.</p>
+          </div>`
+      },
+      {
+        "id": "q-link-discord",
+        "q": "Why can't I see the locked channels in the Discord server?",
+        "summary": "Link your Discord account to access locked channels.",
+        "answer": `
+          <p class="meta">Short: Link your subscription to Discord to unlock channels.</p>
+          <div>
+            <p>To access the locked channels in our Discord server, you need to link your subscription to your Discord account. This is done on our <a href="/profile">account page</a>. Once linked, your access will be automatically updated based on your subscription status. Make sure you have joined the server before linking your account!!</p>
+          </div>`
+      },
+      {
+        id: 'q-devig-basics',
+        q: 'What is "devig" and why is it important?',
+        summary: 'Understanding bookmaker vig and its impact on EV calculations.',
+        answer: `
+          <p class="meta">Short: Bookmaker margin and its effect on betting odds.</p>
+          <div>
+            <p>"Devig" refers to the bookmaker's vig or margin, which is the built-in profit margin that bookmakers include in their odds. Understanding devig is crucial for evaluating the true value of a bet and its potential impact on expected value (EV) calculations.</p>
+            <p>You can find the most profitable devigs from the site <a href="/cheat?sport=nhl">here</a></p>
+          </div>`
+      },
+      {
+        id: "q-fair-odds",
+        q: 'How are fair odds calculated from bookmaker odds?',
+        summary: 'Using the devig percentage to compute fair odds.',
+        answer: `
+          <p class="meta">Short: Adjusting bookmaker odds to remove vig.</p>
+          <div>
+            <p>Fair odds are calculated by removing the bookmaker's vig from the offered odds. This involves determining the implied probabilities of all possible outcomes, summing them up, and then adjusting each outcome's probability to reflect a fair market without the bookmaker's margin.</p>
+          </div>`
+      },
+      {
+        id: "q-ev-calculation",
+        q: 'How is Expected Value (EV) calculated in betting?',
+        summary: 'The formula and components of EV calculation.',
+        answer: `
+          <p class="meta">Short: EV = (Probability of Win * Amount Won) - (Probability of Loss * Amount Lost)</p>
+          <div>
+            <p>Expected Value (EV) in betting is calculated using the formula: EV = (Probability of Win * Amount Won) - (Probability of Loss * Amount Lost). This calculation helps bettors understand the average return they can expect from a bet over the long term.</p>
+          </div>`
+      },
+      {
+        id: "q-kelly-criterion",
+        q: 'What is the Kelly Criterion and how is it used?',
+        summary: 'A strategy for bet sizing based on edge and bankroll.',
+        answer: `
+          <p class="meta">Short: A formula to determine optimal bet size.</p>
+          <div>
+            <p>The Kelly Criterion is a mathematical formula used to determine the optimal size of a series of bets. It takes into account the bettor's edge (the perceived advantage over the bookmaker) and the size of their bankroll. The formula is: <code>f* = (bp - q) / b</code>, where <code>f*</code> is the fraction of the bankroll to wager, <code>b</code> is the odds received on the wager, <code>p</code> is the probability of winning, and <code>q</code> is the probability of losing (1 - p).</p>
+          </div>`
+      },
+      {
+        id: "q-what-is-z-score",
+        q: 'What is a Z-Score and how is it relevant to being due in sports?',
+        summary: 'Understanding Z-Scores in the context of betting analysis.',
+        answer: `
+          <p class="meta">Short: A statistical measure of variance in betting data.</p>
+          <div>
+            <p>A Z-Score is a statistical measurement that describes a value's relation to the mean of a group of values. In sports betting, Z-Scores can be used to identify how "due" a team or player is for a positive outcome based on historical performance data. A high Z-Score may indicate that a team is underperforming relative to their expected performance, suggesting a potential value bet.</p>
+          </div>`
+      },
+      {
+        id: "q-cancel-subscription",
+        q: 'How do I cancel or downgrade my subscription?',
+        summary: 'Information on subscription cancellation and downgrade process.',
+        answer: `
+          <p class="meta">Short: Visit your account settings to manage your subscription.</p>
+          <div>
+            <p>You can cancel or downgrade your subscription by visiting the stripe portal from the <a href="/profile">account settings page</a> on our website. From there, you can choose to modify your subscription plan or cancel it entirely. If you need further assistance, please contact our support team.</p>
+          </div>`
+      }
+    ];
+
+    const qList = document.getElementById('qList');
+    const detail = document.getElementById('detailPanel');
+    const search = document.getElementById('faq-search');
+    const expandAllBtn = document.getElementById('expand-all');
+    const collapseAllBtn = document.getElementById('collapse-all');
+
+    function buildFAQ(items) {
+      qList.innerHTML = '';
+      detail.innerHTML = '';
+      items.forEach((item, idx) => {
+        const qEl = document.createElement('button');
+        qEl.className = 'q-item';
+        qEl.type = 'button';
+        qEl.dataset.id = item.id;
+        qEl.innerHTML = `<div style="font-weight:600">${item.q}</div><div class="q-summary">${item.summary}</div>`;
+        qEl.addEventListener('click', () => activate(item.id));
+        qList.appendChild(qEl);
+
+        const card = document.createElement('article');
+        card.className = 'answer-card';
+        card.id = item.id;
+        card.innerHTML = `<h3>${item.q}</h3>${item.answer}<div style="margin-top:8px"><button class="btn" onclick="copyLink('${item.id}')">Link</button> <button class="btn ghost" onclick="toggleVisibility('${item.id}')">Collapse</button></div>`;
+        detail.appendChild(card);
+      });
+    }
+
+    function activate(id) {
+      // highlight list item
+      qList.querySelectorAll('.q-item').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+      // scroll detail into view and expand
+      const target = document.getElementById(id);
+      if (!target) return;
+      // ensure visible
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+      // visually emphasize
+      target.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 12px 40px rgba(0,0,0,0.6)'}], {duration:400,fill:'forwards'});
+    }
+
+    function copyLink(id){
+      const url = `${location.pathname}?faq=${encodeURIComponent(id)}`;
+      navigator.clipboard?.writeText(location.origin + url).then(()=> alert('Link copied to clipboard'));
+    }
+
+    function toggleVisibility(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.display = el.style.display === 'none' ? '' : 'none';
+    }
+
+    expandAllBtn.addEventListener('click', () => {
+      detail.querySelectorAll('.answer-card').forEach(c=> c.style.display = '');
+    });
+    collapseAllBtn.addEventListener('click', () => {
+      detail.querySelectorAll('.answer-card').forEach(c=> c.style.display = 'none');
+    });
+
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      const filtered = FAQ.filter(f => (f.q + ' ' + f.summary + ' ' + (f.answer || '')).toLowerCase().includes(q));
+      buildFAQ(filtered.length ? filtered : FAQ);
+    });
+
+    // initialize
+    buildFAQ(FAQ);
+
+    // read ?faq=id to open a specific answer on load
+    (function openFromQuery(){
+      const params = new URLSearchParams(location.search);
+      const id = params.get('faq');
+      if(id) setTimeout(()=> activate(id), 250);
+    })();
+  </script>
+</body>
+</html>

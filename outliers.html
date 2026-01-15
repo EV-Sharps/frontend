@@ -594,6 +594,7 @@
 						mutator: function(value, rowData) {
 							const s = computeOutlierFromBookOdds(rowData);
 							rowData.outlierBook = s.book;
+							rowData.outlierLine = s.value;
 							rowData.outlierPct  = s.pct;
 							return s.pct;
 						  },
@@ -603,7 +604,7 @@
 							return `${row.outlierPct.toFixed(2)}%`;
 						},
 						responsive: 0,
-						visible: false
+						//visible: false
 					},
 					{
 						title: "Δ vs Low",

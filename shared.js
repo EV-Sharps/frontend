@@ -1111,15 +1111,19 @@ const hedgeBookFormatter = function(cell) {
 
 const evBookFormatter2 = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
+	const book = ["outliers", "atgs"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";
 	let line = data.line;
+	if (["outliers", "atgs"].includes(PAGE)) {
+		line = data.outlierLine;
+	}
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
-	const img = data.book ? `<img class='book-img' src='logos/${data.book.replace('kambi', 'parx')}.png' alt='${data.book}' title='${data.book}' />` : "";
+	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx')}.png' alt='${book}' title='${book}' />` : "";
 	return `
 		<div class='evbook-cell ${cls}'>
-			<span class='evbook-odds'>${data.line}</span>
+			<span class='evbook-odds'>${line}</span>
 			${img}
 		</div>
 	`;
@@ -2060,7 +2064,7 @@ function loadWeights() {
 	}
 
 	if (DEVIG) {
-		reorderOddsColumns(DEVIG);
+		reorderOddsColumns(BOOK, DEVIG);
 	}
 }
 
@@ -2282,12 +2286,14 @@ function computeOutlierFromBookOdds(rowData) {
 	const legIndex = rowData.under ? 1 : 0;
 
 	let entries, avgP;
+	let excluded = getExcludedBooks();
+	excluded.push("pn"); excluded.push("circa");
 
 	if (DEVIG) {
 		let p_devig;
 
 		if (DEVIG.includes("+")) {
-			const devigBooks = DEVIG.replace("only+", "").split("+");
+			const devigBooks = DEVIG.split("+");
 			let sumImpliedP = 0;
 			let count = 0;
 			
@@ -2302,7 +2308,7 @@ function computeOutlierFromBookOdds(rowData) {
 				}
 			}
 
-			if (count === 0 || (DEVIG.includes("only") && count != devigBooks.length)) {
+			if (count === 0 || (WIDTH && count != WIDTH)) {
 				return { book: null, value: null, deviation: 0, pct: 0 };
 			}
 			
@@ -2324,8 +2330,6 @@ function computeOutlierFromBookOdds(rowData) {
 		}
 
 		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
-		let excluded = getExcludedBooks();
-		excluded.push("pn"); excluded.push("circa");
 
 		// Add the single book DEVIG to the excluded list to avoid comparing 
 		// a book against itself if DEVIG is a single book.
@@ -2374,7 +2378,7 @@ function computeOutlierFromBookOdds(rowData) {
 		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
 		entries.forEach(([book, american, p]) => {
-			if (bookFilter && book != bookFilter) {
+			if ((bookFilter && book != bookFilter) || excluded.includes(book)) {
 				return;
 			}
 			const dev = avgP - p;

@@ -104,12 +104,15 @@ function plusMinusCardFormatter(cell) {
 	return `<span class="${colorClass}">${value}</span>`;
 }
 
-function evCardFormatter(cell) {
-	let value = cell.getValue();
+function evCardFormatter(row) {
+	let value = row.ev;
 	let colorClass = "negative";
 	if (value >= 0) {
 		colorClass = "positive";
 		value = `+${value}`;
+	}
+	if (["outliers", "atgs"].includes(PAGE)) {
+		return `<span class="ev-value">${(row?.outlierPct || 0).toFixed(2)}%</span><span style=""> from devig</span>`;
 	}
 	return `<span class="ev-value ${colorClass}">${value}%</span><span style="">EV</span>`;
 }
@@ -318,10 +321,9 @@ function updateExistingCard(card, rowData) {
 	const header = card.querySelector('.card-header');
 
 	const book = rowData.book;
-	const evCell = { getValue: () => rowData.ev };
 	const pre = rowData.ouIdx == 1 ? "u" : "o";
 
-	const evContent = evCardFormatter(evCell);
+	const evContent = evCardFormatter(rowData);
 	const sport = rowData.sport || SPORT || "nba";
 	const avgMin = PAGE == "nhl" ? rowData.avgTOI : rowData.avgMin;
 	let team = rowData.teamId || rowData.team;
@@ -375,7 +377,7 @@ function updateExistingCard(card, rowData) {
 					<div style="opacity:0.85; font-size:0.72rem;">Implied</div>
 				</div>
 				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : rowData.kelly.toFixed(2)+"u"}</div>
+					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : (rowData?.kelly || 0).toFixed(2)+"u"}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
 				</div>
 			</div>
@@ -438,7 +440,7 @@ function updateExistingCard(card, rowData) {
 
 function renderCards(data) {
 	if (PAGE == "outliers") {
-		data = data.sort((a,b) => {
+		data = [...TABLE.getData()].sort((a,b) => {
 			return parseFloat(b.outlier) - parseFloat(a.outlier);
 		});
 	} else {

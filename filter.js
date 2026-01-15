@@ -1139,7 +1139,7 @@ const getOptions = (containerId) => {
 };
 
 let DEFAULT_COLS = [];
-function reorderOddsColumns(devig) {
+function reorderOddsColumns(book, devig) {
 	if (!TABLE) return;
 
 	if (!DEFAULT_COLS.length) {
@@ -1163,10 +1163,12 @@ function reorderOddsColumns(devig) {
 		}
 	});
 
+	//const bookOdds = odds.filter(x => x.field.split(".").at(-1) === book);
+	const bookOdds = [];
 	const devigOdds = odds.filter(x => devigBooks.includes(x.field.split(".").at(-1)));
 	const rest = odds.filter(x => !devigBooks.includes(x.field.split(".").at(-1)));
 
-	TABLE.setColumnLayout([...pre, ...devigOdds, ...rest, ...post]);
+	TABLE.setColumnLayout([... new Set([...pre, ...bookOdds, ...devigOdds, ...rest, ...post])]);
 	updateHeaders();
 }
 
@@ -1314,6 +1316,8 @@ function changeFilter(render = true) {
 
 	if (!["outliers", "atgs2"].includes(PAGE)) {
 		filters.push({field: "ev", type: "!=", value: null});
+	} else {
+		
 	}
 
 	TABLE.clearFilter();
@@ -1354,6 +1358,7 @@ function changeFilter(render = true) {
 	}
 
 	if (VIG == "0") {
+		TABLE.clearFilter();
 		TABLE.hideColumn("ev");
 		TABLE.showColumn("outlier");
 		TABLE.setSort([{column: "outlier", dir: "desc"}]);
@@ -1363,6 +1368,6 @@ function changeFilter(render = true) {
 		}
 	}
 
-	reorderOddsColumns(DEVIG);
+	reorderOddsColumns(BOOK, DEVIG);
 	updateWeightHeader();
 }

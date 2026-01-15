@@ -303,9 +303,8 @@
 				}
 				btn.addEventListener('click', () => {
 					BOOK = opt.value;
-					select.value = BOOK; // keep hidden select synced
+					select.value = BOOK;
 					document.querySelectorAll('.book-chip').forEach(c => c.classList.toggle('active', c === btn));
-					// keep selected chip centered in view
 					btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
 					updateHeatmap();
 				});
@@ -713,7 +712,7 @@
 		function getRanges() {
 			let evRange = [0,15], oddsRange = [-300,1200];
 			if (SPORT === 'nba') {
-				oddsRange = [-300,800];
+				//oddsRange = [-300,1200];
 			} else if (SPORT === "nhl" && PROP == "atgs") {
 				oddsRange = [100, 1400];
 			}

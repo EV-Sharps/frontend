@@ -1111,10 +1111,10 @@ const hedgeBookFormatter = function(cell) {
 
 const evBookFormatter2 = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	const book = ["outliers", "atgs"].includes(PAGE) ? data.outlierBook : data.book;
+	const book = ["outliers", "atgs2"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";
 	let line = data.line;
-	if (["outliers", "atgs"].includes(PAGE)) {
+	if (["outliers", "atgs2"].includes(PAGE)) {
 		line = data.outlierLine;
 	}
 	if (parseInt(line || 0) > 0) {

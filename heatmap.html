@@ -29,6 +29,20 @@
 		#center-dropdown button {
 			background: none;
 		}
+		#heatmap-tooltip {
+			position: fixed;
+			z-index: 10000;
+			pointer-events: none;
+			max-width: 420px;
+			background: rgba(12,14,20,0.95);
+			color: #e6e6e6;
+			border: 1px solid rgba(255,255,255,0.06);
+			padding: 8px;
+			border-radius: 8px;
+			font-size: 12px;
+			display: none;
+			box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+		}
 
 		.dev-chip-wrap {
 			display: flex;           /* use normal flex (not inline-flex) so gap works reliably */
@@ -455,6 +469,8 @@
 			const countMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
 			const winMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
 
+			const cellBets = Array.from({length: nY}, () => Array.from({length: nX}, () => []));
+
 			function findBinIndex(value, bins){
 				if (value < bins[0] || value > bins[bins.length-1]) return -1;
 				// right-inclusive as in pandas cut(right=True)
@@ -476,6 +492,15 @@
 				sumMatrix[i][j] += profit;
 				countMatrix[i][j] += 1;
 				if (isWin) winMatrix[i][j] += 1;
+
+				// store a small bet summary in the cell list (use sensible player field fallbacks)
+                const player = b.player || '';
+                cellBets[i][j].push({
+                    ev: Number(b.ev),
+                    odds: Number(b.odds),
+                    hit: !!b.hit,
+                    player: player
+                });
 			}
 
 			// produce final heat values (ROI = mean profit per bet, else total)
@@ -551,7 +576,9 @@
 					orientation: 'h',
 					x: 0.5, y: -0.30, xanchor: 'center'
 				},
-				hovertemplate: '%{y}<br>%{x}<br>Value: %{z:.3f}<extra></extra>'
+				hoverinfo: 'skip',
+				hovertemplate: '%{y}<br>%{x}<br>Value: %{z:.3f}<extra></extra>',
+				customdata: cellBets
 			};
 
 			const layout = {
@@ -590,6 +617,70 @@
 			setTimeout(() => {
 				Plotly.Plots.resize(cfg.containerId)
 			}, 100);
+
+			// custom hover tooltip showing list of bets split between hits and losses
+            (function attachTooltip() {
+                const gd = document.getElementById(cfg.containerId);
+                if (!gd) return;
+
+                // create tooltip element once
+                let tip = document.getElementById('heatmap-tooltip');
+                if (!tip) {
+                    tip = document.createElement('div');
+                    tip.id = 'heatmap-tooltip';
+                    document.body.appendChild(tip);
+                }
+
+                gd.on('plotly_hover', (ev) => {
+                    try {
+                        if (!ev || !ev.points || !ev.points.length) return;
+                        const pt = ev.points[0];
+                        // customdata holds the array for each cell
+                        const betsList = pt.customdata || [];
+                        if (!Array.isArray(betsList) || betsList.length === 0) {
+                            tip.style.display = 'none';
+                            return;
+                        }
+                        // partition hits / losses
+                        const hits = [], losses = [];
+                        for (const bet of betsList) {
+                            const line = `${(bet.ev||'').toFixed ? bet.ev.toFixed(2) : bet.ev}% • ${bet.odds} • ${(title(bet.player) || '')}`;
+                            if (bet.hit) hits.push(line); else losses.push(line);
+                        }
+                        let html = `<div style="font-weight:600;margin-bottom:6px;">${pt.y} — ${pt.x} (${betsList.length} bets)</div>`;
+                        if (hits.length) {
+                            html += `<div style="color:#22c55e;font-weight:600;margin-bottom:4px;">Hits (${hits.length})</div><div style="margin-bottom:6px;">`;
+                            html += hits.slice(0,50).map(h => `<div style="margin:2px 0;">${h}</div>`).join('');
+                            if (hits.length > 50) html += `<div style="opacity:.7;margin-top:6px;">...and ${hits.length-50} more</div>`;
+                            html += `</div>`;
+                        }
+                        if (losses.length) {
+                            html += `<div style="color:#ef4444;font-weight:600;margin-bottom:4px;">Losses (${losses.length})</div><div>`;
+                            html += losses.slice(0,50).map(h => `<div style="margin:2px 0;">${h}</div>`).join('');
+                            if (losses.length > 50) html += `<div style="opacity:.7;margin-top:6px;">...and ${losses.length-50} more</div>`;
+                            html += `</div>`;
+                        }
+                        tip.innerHTML = html;
+
+                        // position near mouse (ev.event has original browser event)
+                        const e = ev.event && (ev.event.clientX !== undefined) ? ev.event : null;
+                        if (e) {
+                            const x = Math.min(window.innerWidth - 20 - tip.offsetWidth, e.clientX + 12);
+                            const y = Math.min(window.innerHeight - 20 - tip.offsetHeight, e.clientY + 12);
+                            tip.style.left = `${x}px`;
+                            tip.style.top = `${y}px`;
+                        }
+                        tip.style.display = 'block';
+                    } catch (err) {
+                        // fail quietly
+                        tip.style.display = 'none';
+                    }
+                });
+
+                gd.on('plotly_unhover', () => {
+                    if (tip) tip.style.display = 'none';
+                });
+            })();
 		}
 
 		const selSport = document.getElementById('selSport');
@@ -623,6 +714,8 @@
 			let evRange = [0,15], oddsRange = [-300,1200];
 			if (SPORT === 'nba') {
 				oddsRange = [-300,800];
+			} else if (SPORT === "nhl" && PROP == "atgs") {
+				oddsRange = [100, 1400];
 			}
 			/*
 			if (SPORT === 'nba') {

@@ -198,6 +198,10 @@
 					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+
+				<div class="select-wrapper" style="align-items:center;">
+                    <button id="download-btn" class="btn-ctrl" onclick="downloadHeatmapImage()" title="Download heatmap as PNG">Download PNG</button>
+                </div>
 			</div>
 			<div style="display: flex;margin-top:1rem;flex-direction: column;gap:15px;width:100%;">
 				<div class="select-wrapper">
@@ -623,6 +627,44 @@
 				prop: PROP, evRange: evRange, oddsRange: oddsRange
 			});
 		}
+
+		async function downloadHeatmapImage(){
+            const btn = document.getElementById('download-btn');
+            const gd = document.getElementById('heatmap');
+            if (!gd) {
+                alert('Heatmap not ready');
+                return;
+            }
+            const filenameBase = `heatmap_${(SPORT||'sport')}_${(PROP||'prop')}_${(BOOK||'book')}_${(DEVIG||'dev')}`.replace(/[^a-z0-9-_]/gi,'_');
+            try {
+                if (btn) { btn.disabled = true; btn.textContent = 'Preparing...'; }
+                // prefer toImage for data-uri -> anchor download (works across builds)
+                if (typeof Plotly.toImage === 'function') {
+                    // choose a reasonable export size (scale up for better quality)
+                    const width = Math.max(gd.clientWidth, 1200);
+                    const height = Math.max(gd.clientHeight, 800);
+                    const dataUrl = await Plotly.toImage(gd, {format: 'png', width, height, scale: 2});
+                    const a = document.createElement('a');
+                    a.href = dataUrl;
+                    a.download = filenameBase + '.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    return;
+                }
+                // fallback to Plotly.downloadImage if available
+                if (typeof Plotly.downloadImage === 'function') {
+                    await Plotly.downloadImage(gd, {format:'png', filename: filenameBase, width: Math.max(gd.clientWidth,1200), height: Math.max(gd.clientHeight,800)});
+                    return;
+                }
+                alert('This Plotly build does not support image export.');
+            } catch (err) {
+                console.error('downloadHeatmapImage error', err);
+                alert('Failed to generate image.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Download PNG'; }
+            }
+        }
 
 		init();
 	</script>

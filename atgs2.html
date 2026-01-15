@@ -573,23 +573,24 @@
 						responsive: 0
 					},
 					{
-						title: "Δ vs Avg",
+						title: "Δ vs Devig",
 						field: "outlier",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
 						mutator: function(value, rowData) {
-						    const s = computeOutlierFromBookOdds(rowData);
-						    rowData.outlierBook = s.book;
-						    rowData.outlierPct  = s.pct;
-						    //return s.deviation;
-						    return s.pct;
+							const s = computeOutlierFromBookOdds(rowData);
+							rowData.outlierBook = s.book;
+							rowData.outlierLine = s.value;
+							rowData.outlierPct  = s.pct;
+							return s.pct;
 						  },
 						  formatter: function(cell) {
-						    const row = cell.getRow().getData();
-						    const dev = cell.getValue();
-						    return `${row.outlierPct.toFixed(1)}%`;
+							const row = cell.getRow().getData();
+							const dev = cell.getValue();
+							return `${row.outlierPct.toFixed(2)}%`;
 						},
-						responsive: 0
+						responsive: 0,
+						//visible: false
 					},
 					{
 						title: "Best Book", field: "book",

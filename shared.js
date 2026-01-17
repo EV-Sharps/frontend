@@ -6,7 +6,7 @@ let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
-let API_BASE = "http://localhost:5000";
+let API_BASE = "http://localhost:5001";
 let UPDATED = {};
 let WEIGHTS = {};
 let TEST;
@@ -2076,21 +2076,6 @@ function showHideUserTable(loaded) {
 		}
 		if (!CURR_USER.metadata[PAGE]) {
 			return;
-		}
-		if (PAGE == "dingers") {
-			let arr = [];
-			for (k of CURR_USER.metadata[PAGE]) {
-				if (k.includes("curr_")) {
-					arr.push(k.replace("curr_", ""));
-				} else if (k == "bookOdds_365") {
-					arr.push("bookOdds_b365");
-				} else if (k == "curr_fv" || k == "fv") {
-					arr.push("fairVal");
-				} else {
-					arr.push(k);
-				}
-			}
-			CURR_USER.metadata[PAGE] = arr;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
 		const defs = TABLE.getColumnDefinitions();

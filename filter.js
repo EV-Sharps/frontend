@@ -1140,6 +1140,11 @@ const getOptions = (containerId) => {
 
 let DEFAULT_COLS = [];
 function reorderOddsColumns(book, devig) {
+
+	
+	return;
+
+
 	if (!TABLE) return;
 
 	if (!DEFAULT_COLS.length) {
@@ -1151,7 +1156,7 @@ function reorderOddsColumns(book, devig) {
 	const [pre, post] = [[], []];
 	let seenOdds = false;
 	DEFAULT_COLS.forEach(col => {
-		if (!col.field) return;
+		if (!col.field || !TABLE.getColumn(col.field)._column.visible) return;
 
 		if (col.field.startsWith("bookOdds.")) {
 			seenOdds = true;

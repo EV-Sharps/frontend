@@ -320,6 +320,20 @@
 	PAGE = "cheat";
 	parseURLParams();
 
+	const BEST = {
+			"fd": ["reb-circa", "reb-dk", "reb-pn+circa+hr", "3ptm-pn+dk", "3ptm-pn", "3ptm-espn", "3ptm-circa", "ast-circa", "ast-espn+hr", "blk-hr", "blk-mgm", "pts-circa", "pts-dk+espn", "pts+ast-dk+espn", "pts+reb-espn", "reb+ast-dk+espn", "reb+ast-hr", "stl-espn", "stl-dk", "blk-hr", "blk-mgm", "pts+reb+sat-pn+espn+hr"],
+			"dk": ["dd-pn", "pts-fd", "pts-espn+hr", "pts+ast-fd", "pts+reb-hr", "pts+reb+ast-pn", "pts+reb+ast-fd", "reb-pn", "reb-pn+fd", "reb+ast-espn"],
+			"b365": ["3ptm-dk", "ast-fd+espn+mgm", "pts-fd", "pts+ast-bv", "pts+ast-fd", "pts+ast-dk"],
+			"mgm": ["3ptm-fd+dk", "ast-pn", "dd-espn", "pts-fd+dk", "pts-fd", "pts+ast-fd", "pts+reb-fd", "pts+reb+ast-pn+fd", "reb+ast-fd"],
+			"espn": ["ast-bv", "ast-fd+dk", "blk-hr", "pts-fd", "pts+ast-fd", "pts+reb-fd", "pts+reb+ast-pn", "reb-pn+espn+mgm"],
+			"cz": ["ast-hr", "pts-pn", "reb-fd"],
+			"fn": ["3ptm-circa", "ast-circa", "pts-dk", "pts-circa", "pts+reb-fd", "reb-dk", "reb+ast-dk"],
+			"br": ["3ptm-dk", "ast-dk", "blk-mgm", "pts-fd", "pts+reb+ast-pn+dk", "reb-fd+dk", "stl-fd"],
+			"hr": ["reb+ast-dk+espn", "reb-fd+dk", "pts+reb+ast-mgm", "pts+reb-fd+dk", "pts+ast-fd", "pts+ast-dk", "pts-espn", "pts-fd", "pts-pn", "blk-espn+hr", "ast-dk+espn", "3ptm-circa"],
+			"bv": ["ast-fd+dk", "ast-pn", "blk-espn", "dd-pn", "dd-mgm", "pts-pn", "pts-espn+hr", "pts+ast-dk", "pts+reb-fd+espn+mgm", "pts+reb-dk+espn", "reb-circa", "reb-dk+espn", "reb-espn", "reb-fd", "reb-pn"],
+
+		};
+
 	function parseRecord(record) {
 		let data = {};
 		for (book in record) {
@@ -327,6 +341,9 @@
 			for (key in record[book]) {
 				let j = record[book][key];
 				let [prop,devig] = key.split("-vs-");
+
+				if (PRETTY != undefined && !BEST?.[book].includes(`${prop}-${devig}`)) continue;
+
 				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"], l: j["losses"], r: j["roi"]});
 			}
 			data[book] = arr;

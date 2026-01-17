@@ -146,6 +146,10 @@
 		#book-picker { width: 100%; }
 		#dev-picker  { width: 100%; }
 
+		#header-top {
+			display: flex;width:100%;gap:10px;
+		}
+
 		@media (min-width: 1100px) {
 			/* on large screens allow the devig row to expand further */
 			#dev-picker {  }
@@ -159,6 +163,9 @@
 				padding: 0.5rem 1rem
 			}
 			#heatmap { height: 80vh; min-height: 240px; }
+			#header-top {
+				flex-wrap: wrap;
+			}
 		}
 	</style>
 </head>
@@ -174,7 +181,7 @@
 <body>
 	<div id="app">
 		<header id="header">
-			<div style="display: flex;width:100%;gap:10px;">
+			<div id="header-top">
 				<div id="title">
 					<h1>+EV Sharps</h1>
 					<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
@@ -227,7 +234,7 @@
                 </div>
 
                 <div class="select-wrapper">
-                    <label class="select-label" for="selOddsStep">Odds step</label>
+                    <label class="select-label" for="selOddsStep" style="left:0;">Odds step</label>
                     <select id="selOddsStep" class="select" style="width:80px">
                         <option value="50">50</option>
                         <option value="100" selected>100</option>

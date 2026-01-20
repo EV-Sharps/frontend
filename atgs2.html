@@ -107,163 +107,137 @@
 					</svg>
 				</div>
 			</div>
-			<div id="center-dropdown">
-				<div class="select-wrapper">
-					<label for="page-select" class="select-label">Page</label>
-					<select id="page-select"></select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="select-wrapper">
-					<label for="book-select" class="select-label">Book</label>
-					<select id="book-select">
-						<option value="" selected>All</option>
-						<option value="fd">FD</option>
-						<option value="dk">DK</option>
-						<!-- <option value="b365">B365</option> -->
-						<option value="mgm">MGM</option>
-						<option value="espn">ESPN</option>
-						<option value="cz">CZ</option>
-						<option value="fn">FN</option>
-						<option value="br">BR</option>
-						<option value="hr">HR</option>
-						<option value="bv">BV</option>
-						<option value="kambi">Kambi</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude</span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> FD</label>
-				      <label><input type="checkbox" value="dk"> DK</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> CZ</label>
-				      <label><input type="checkbox" value="fn"> FN</label>
-				      <label><input type="checkbox" value="br"> BR</label>
-				      <label><input type="checkbox" value="bv"> BV</label>
-				      <label><input type="checkbox" value="hr"> HR</label>
-				      <label><input type="checkbox" value="kambi"> Kambi</label>
-				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
-				  </div>
-				<div class="select-wrapper">
-					<label for="devig-button" class="select-label">Devig</label>
-					<button id="devig-button" class="devig-display-btn">
-						<span id="devig-display-text">Market Avg</span>
-						<span class="dropdown-arrow">▼</span>
-					</button>
-				</div>
-				<div class="select-wrapper" style="display:none">
-					<label for="devig-select" class="select-label">Devig</label>
-					<select id="devig-select">
-						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="dk">vs DK</option>
-						<option value="espn">vs ESPN</option>
-						<option value="bol">vs BOL</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="espn+pn">ESPN & PN</option>
-						<option value="espn+pn+circa">Avg ESPN/PN/Circa</option>
-						<option value="only+espn+pn+circa">Only ESPN+PN+Circa</option>
-						<option value="pn+circa">PN & Circa</option>
-						<option id="custom-devig-option" value="custom">Add Custom...</option>
-						<option value="delete">Delete Custom...</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="select-wrapper">
-					<label for="width-input" class="select-label">Width</label>
-					<input type="number" id="width-input" min="1" max="16" value="1">
-				</div>
-				<div class="select-wrapper">
-					<label for="boost-select" class="select-label">Boost</label>
-					<select id="boost-select">
-						<option value="0" selected>None</option>
-						<option value="10">10%</option>
-						<option value="25">25%</option>
-						<option value="30">30%</option>
-						<option value="50">50%</option>
-						<option value="no-sweat">No Sweat</option>
-						<option value="custom">Custom...</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<input id="boost-custom"
-				       type="number" min="0" step="5"
-				       placeholder="Custom %"
-				       style="display:none; width:7ch; margin-left:.5rem;" />
-				<div class="chkdd" id="prop-dd">
-					<label for="prop-dd-button" class="select-label">Prop</label>
-					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
-					<div class="chkdd-menu" id="prop-options">
-						<div class="chkdd-actions">
-							<button type="button" data-act="all">All</button>
-							<button type="button" data-act="none">None</button>
-						</div>
-					</div>
-				</div>
-				<div class="select-wrapper">
-					<label for="ou-select" class="select-label">O/U</label>
-					<select id="ou-select">
-						<option value="ou" selected>Both</option>
-						<option value="o">Overs</option>
-						<option value="u">Unders</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="chkdd" id="game-dd">
-					<label for="game-dd-button" class="select-label">Game</label>
-					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
-					<div class="chkdd-menu" id="game-options">
-						<div class="chkdd-actions">
-							<button type="button" data-act="all">All</button>
-							<button type="button" data-act="none">None</button>
-						</div>
-					</div>
-				</div>
-				<div class="select-wrapper">
-					<label id="range-label" class="select-label">Range</label>
-					<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
-					Any
-					</button>
-				</div>
-				<div id="min-odds-wrapper" class="select-wrapper">
-				  <label for="min-odds" class="select-label">Min</label>
-				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
-				</div>
+			<div id="center-dropdown" role="region" aria-label="Center controls">
+                <!-- Top row: sports / navigation (under +EV Sharps visually) -->
+                <div class="center-top-row">
+                    <nav class="page-nav sports-nav" role="navigation" aria-label="Sports">
+                        <ul class="sports-list">
+                            <li class="sport-item" data-sport="nfl">🏈 NFL</li>
+                            <li class="sport-item" data-sport="mlb">⚾ MLB</li>
+                            <li class="sport-item" data-sport="nba">🏀 NBA</li>
+                            <li class="sport-item active" data-sport="nhl">🏒 NHL</li>
+                            <li class="sport-item" data-sport="soccer">⚽ Soccer</li>
+                        </ul>
+                    </nav>
+                </div>
 
-				<div id="max-odds-wrapper" class="select-wrapper">
-				  <label for="max-odds" class="select-label">Max</label>
-				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
-				</div>
-				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
-			</div>
+                <!-- Bottom row: page select + organized filters -->
+                <div class="center-bottom-row">
+                    <!-- Page select (primary control, centered) -->
+                    <div class="select-wrapper page-select-wrap">
+                        <label for="page-select" class="select-label">Page</label>
+                        <select id="page-select"></select>
+                        <svg class="select-arrow" viewBox="0 0 20 20">
+                            <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+
+                    <!-- Group 1: primary filters -->
+                    <div class="filters-group filters-primary">
+                        <div class="select-wrapper">
+                            <label for="book-select" class="select-label">Book</label>
+                            <select id="book-select">
+                                <option value="" selected>All</option>
+                                <option value="fd">FD</option>
+                                <option value="dk">DK</option>
+                                <option value="mgm">MGM</option>
+                                <option value="espn">ESPN</option>
+                                <option value="cz">CZ</option>
+                                <option value="fn">FN</option>
+                                <option value="br">BR</option>
+                                <option value="hr">HR</option>
+                                <option value="bv">BV</option>
+                                <option value="kambi">Kambi</option>
+                            </select>
+                            <svg class="select-arrow" viewBox="0 0 20 20"><path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                        </div>
+
+						<input id="boost-custom"
+							type="number" min="0" step="5"
+							placeholder="Custom %"
+							style="display:none; width:7ch; margin-left:.5rem;" />
+
+                        <div class="chkdd" id="prop-dd">
+							<label for="prop-dd-button" class="select-label">Prop</label>
+							<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+							<div class="chkdd-menu" id="prop-options">
+								<div class="chkdd-actions">
+									<button type="button" data-act="all">All</button>
+									<button type="button" data-act="none">None</button>
+								</div>
+							</div>
+						</div>
+
+                        <div class="select-wrapper">
+                            <label for="ou-select" class="select-label">O/U</label>
+                            <select id="ou-select">
+                                <option value="ou" selected>Both</option>
+                                <option value="o">Overs</option>
+                                <option value="u">Unders</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: secondary filters / utilities -->
+                    <div class="filters-group filters-secondary">
+                        <div class="select-wrapper">
+                            <label for="width-input" class="select-label">Width</label>
+                            <input type="number" id="width-input" min="1" max="16" value="1">
+                        </div>
+
+                        <div class="select-wrapper">
+                            <label for="boost-select" class="select-label">Boost</label>
+                            <select id="boost-select">
+                                <option value="0" selected>None</option>
+                                <option value="10">10%</option>
+                                <option value="20">20%</option>
+                                <option value="25">25%</option>
+                                <option value="30">30%</option>
+                                <option value="50">50%</option>
+                                <option value="no-sweat">No Sweat</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                        </div>
+
+                        <div class="select-wrapper">
+                            <label for="devig-button" class="select-label">Devig</label>
+                            <button id="devig-button" class="devig-display-btn">
+                                <span id="devig-display-text">Market Avg</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+                        </div>
+
+						<div class="chkdd" id="game-dd">
+							<label for="game-dd-button" class="select-label">Game</label>
+							<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
+							<div class="chkdd-menu" id="game-options">
+								<div class="chkdd-actions">
+									<button type="button" data-act="all">All</button>
+									<button type="button" data-act="none">None</button>
+								</div>
+							</div>
+						</div>
+
+                        <div class="select-wrapper">
+							<label id="range-label" class="select-label">Range</label>
+							<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
+							Any
+							</button>
+						</div>
+						<div id="min-odds-wrapper" class="select-wrapper">
+						<label for="min-odds" class="select-label">Min</label>
+						<input id="min-odds" type="number" placeholder="" style="width:70px;">
+						</div>
+
+						<div id="max-odds-wrapper" class="select-wrapper">
+						<label for="max-odds" class="select-label">Max</label>
+						<input id="max-odds" type="number" placeholder="" style="width:70px;">
+						</div>
+
+                        <button id="customize" class="mini-btn" onclick="openOverlay()">⚙️</button>
+                    </div>
+                </div>
+            </div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
 					<img src="/logos/discord.png" alt="Discord logo">
@@ -495,7 +469,15 @@
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
-				[...data.games].sort().forEach(p => createOption(p, gameMenu));
+				[...data.games].sort((a,b) => {
+					const ta = new Date(RES?.times?.[a]).getTime();
+					const tb = new Date(RES?.times?.[b]).getTime();
+
+					if (isNaN(ta)) return 1;
+					if (isNaN(tb)) return -1;
+
+					return ta - tb;
+				}).forEach(p => createGameOption(p, RES?.times?.[p], gameMenu));
 				restoreChkddState(gameMenu);
 				if (GAME) {
 					updateGameLabel(GAME.split(","));

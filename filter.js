@@ -84,6 +84,102 @@ function initChkddActions(root = document) {
 	}
 }
 
+const defaultPages = {
+	nhl: [
+		{ value: "atgs", label: "🏒 Goals" },
+		{ value: "atgs2", label: "🏒 2+ Goals" },
+		{ value: "live?sport=nhl", label: "🏒 Live (Sharps)" },
+		{ value: "nhl", label: "🏒 NHL Props (Sharps)" },
+		{ value: "main?sport=nhl", label: "🏒 Main (Sharps)" },
+		{ value: "analysis?sport=nhl", label: "🏒 Results" },
+		{ value: "heatmap", label: "🗺️ Heat Map" }
+	],
+	nba: [
+		{ value: "nba", label: "🏀 NBA Props (Sharps)" },
+		{ value: "main?sport=nba", label: "🏀 Main (Sharps)" },
+		{ value: "pts", label: "🏀 PTS" },
+		{ value: "analysis?sport=nba", label: "🏀 Results" },
+		{ value: "kotc", label: "🏀 KOTC" },
+		{ value: "heatmap", label: "🗺️ Heat Map" }
+	],
+	nfl: [
+		{ value: "tds", label: "🏈 TDs" },
+		{ value: "live?sport=nfl", label: "🏈 Live (Sharps)" },
+		{ value: "nfl", label: "🎯 Props (Sharps)" },
+		{ value: "main?sport=nfl", label: "🏆 Main (Sharps)" },
+		{ value: "analysis?sport=nfl", label: "🏈 Results" },
+		{ value: "bets?sport=nfl", label: "🎟️ Bets (Sharps)" },
+		{ value: "heatmap", label: "🗺️ Heat Map" }
+	],
+	mlb: [
+		{ value: "dingers", label: "💣 Dingers" },
+		{ value: "mlb", label: "🎯 Props (Sharps)" },
+		{ value: "main", label: "🏆 Main (Sharps)" },
+		{ value: "movement", label: "📉 Movement" },
+		{ value: "bvp", label: "🆚 BvP" }
+	],
+	soccer: [
+		{ value: "soccer", label: "⚽ Soccer" }
+	]
+};
+
+const sportsList = [
+	{ code: "nfl", label: "🏈 NFL" },
+	{ code: "mlb", label: "⚾ MLB" },
+	{ code: "nba", label: "🏀 NBA" },
+	{ code: "nhl", label: "🏒 NHL" },
+	{ code: "soccer", label: "⚽ Soccer" }
+];
+
+function renderSportsNav() {
+	const ul = document.querySelector(".sports-list");
+	if (!ul) return;
+	ul.innerHTML = "";
+	sportsList.forEach(s => {
+		const li = document.createElement("li");
+		li.className = "sport-item" + (s.code === SPORT ? " active" : "");
+		li.dataset.sport = s.code;
+		li.textContent = s.label;
+		li.addEventListener("click", () => {
+			if (SPORT === s.code) return;
+			SPORT = s.code;
+			document.querySelectorAll(".sport-item").forEach(n => n.classList.remove("active"));
+			li.classList.add("active");
+			populatePageSelect(SPORT);
+			// optionally navigate to the first page for that sport:
+			const first = document.getElementById("page-select")?.value;
+			if (first) changePage(first);
+		});
+		ul.appendChild(li);
+	});
+}
+
+function populatePageSelect(sport) {
+	const select = document.getElementById("page-select");
+	if (!select) return;
+	select.innerHTML = "";
+	const pages = defaultPages[sport] || [];
+	pages.forEach(p => {
+		const opt = document.createElement("option");
+		opt.value = p.value;
+		opt.textContent = p.label;
+		if (p.value === PAGE) opt.selected = true;
+		select.appendChild(opt);
+	});
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	renderSportsNav();
+	populatePageSelect(SPORT);
+	const sel = document.getElementById("page-select");
+	if (sel) {
+		sel.addEventListener("change", (e) => {
+			PAGE = e.target.value;
+			changePage(PAGE);
+		});
+	}
+});
+
 function updateGameLabel(props) {
 	const all_props = document.querySelectorAll("#game-options input").length;
 	const btn = document.getElementById("game-dd-button");
@@ -1341,11 +1437,12 @@ function changeFilter(render = true) {
 		if (props.length && !props.includes(r.prop)) return false;
 		if (games.length && !games.includes(r.game)) return false;
 		if (WIDTH > 1 && r.present < WIDTH) return false;
+		if (!["outliers", "atgs2"].includes(PAGE) && (r.ev === null || r.ev === undefined)) return false;
 		return true;
 	});
 
 	if (!filtered.length) {
-		let t = "No data for this devig.";
+		let t = "No data for this devig. Try adjusting your filters.";
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
 	}

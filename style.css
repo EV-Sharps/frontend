@@ -4,7 +4,7 @@
 }
 */
 :root {
-	--app-header-h: 72px;
+	--app-header-h: 60px;
 	--bg: #0f1116;
 	--panel: #151a22;
 	--border: #2a3042;
@@ -1139,12 +1139,71 @@ input, textarea, select {
 }
 
 #center-dropdown {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	position: absolute;
-	width: 100%;
-	justify-content: center;
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    order: 1; /* ensure sits under #title when header wraps */
+    padding: 0.25rem 0;
+}
+
+/* Top row: sports nav */
+.center-top-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.center-top-row .sports-nav {
+    display: flex;
+    justify-content: center;
+}
+.sports-list {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Bottom row: page-select + filters */
+.center-bottom-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.25rem 1rem;
+}
+
+/* Make page-select visually primary */
+.page-select-wrap {
+    flex: 0 0 auto;
+    min-width: 140px;
+}
+
+/* Filter groups so filters are grouped visually */
+.filters-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.filters-primary { order: 0; }
+.filters-secondary { order: 1; }
+
+/* Small utility button */
+.mini-btn {
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
 }
 #center-dropdown button {
 	background: #007bff;
@@ -1680,6 +1739,51 @@ nav {
 	border: 1px solid #444;
 	border-radius: 6px;
 	min-width: 10ch;
+}
+
+.page-nav { position: relative; display:flex; align-items:center; gap:0.75rem; }
+.sports-nav { background: transparent; }
+.sports-list { display:flex; gap:0.5rem; list-style:none; margin:0; padding:0; }
+.sport-item {
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  background: transparent;
+  transition: background .12s, color .12s;
+}
+.sport-item:hover, .sport-item.active {
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.mega-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(20,24,30,0.98), rgba(10,12,16,0.98));
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  z-index: 1000;
+  min-width: 520px;
+  pointer-events: auto;
+}
+.mega-menu[aria-hidden="true"] { display: none; }
+.menu-column { display:flex; flex-direction:column; gap:6px; min-width:110px; }
+.menu-column .page-link {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display:inline-block;
+}
+.menu-column .page-link:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
 }
 
 #devig-button {

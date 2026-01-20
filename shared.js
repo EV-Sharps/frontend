@@ -6,7 +6,7 @@ let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
-let API_BASE = "http://localhost:5001";
+let API_BASE = "http://localhost:5000";
 let UPDATED = {};
 let WEIGHTS = {};
 let TEST;
@@ -71,8 +71,10 @@ let PAGE_DROPDOWN = `
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
 	<option value="kotc">🏀 KOTC</option>
 	<option value="analysis?sport=nba">🏀 Results</option>
+	<!-- 
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
+	-->
 	<option value="ncaab">🏀 CBB (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
 	<option value="outliers?sport=nba">🏀 Outliers</option>

@@ -6,7 +6,7 @@ let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
-let API_BASE = "http://localhost:5001";
+let API_BASE = "http://localhost:5000";
 let UPDATED = {};
 let WEIGHTS = {};
 let TEST;

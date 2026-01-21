@@ -314,6 +314,7 @@
 
 <script type="text/javascript" src="shared.js"></script>
 <script type="text/javascript" src="record_nhl.js"></script>
+<script type="text/javascript" src="record_ncaab.js"></script>
 <script type="text/javascript" src="record_nba.js"></script>
 <script type="text/javascript" src="record_nfl.js"></script>
 <script>
@@ -478,6 +479,10 @@
 			RES = NHL_RECORD;
 		} else if (SPORT == "nfl") {
 			RES = NFL_RECORD;
+		} else if (SPORT == "ncaab") {
+			RES = NCAAB_RECORD;
+		} else {
+			RES = {};
 		}
 
 		Object.values(RES).forEach(book => {

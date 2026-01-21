@@ -39,12 +39,25 @@
 		<div id="devig-modal" class="modal">
 			<div class="modal-content devig-panel">
 				<div class="modal-header">
-					<h3>Select Devig Method</h3>
+					<h3>Select Devig Books</h3>
 					<button id="close-devig-modal">&times;</button>
 				</div>
 
-				<div style="display:flex;">
+				<div style="display:flex;justify-content: space-evenly;">
 					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+					<div class="select-wrapper">
+						<label for="method-select" class="select-label">Devig Method</label>
+						<select id="method-select">
+							<option value="" selected>Worst-Case</option>
+							<option value="add">Additive</option>
+							<option value="mult">Multiplicative</option>
+							<option value="power">Power</option>
+							<option value="probit">Probit</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
 				</div>
 
 				<div id="devig-options-container" class="options-container">

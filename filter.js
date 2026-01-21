@@ -428,6 +428,15 @@ if (document.getElementById("book-select")) {
 	});
 }
 
+const methodInit = document.getElementById("method-select");
+if (methodInit) {
+	methodInit.value = METHOD;
+	methodInit.addEventListener("change", (event) => {
+		METHOD = event.target.value;
+		changeFilter();
+	});
+}
+
 function changeView(view) {
 	const cardContainer = document.getElementById("card-container");
 	const table = document.getElementById("table");

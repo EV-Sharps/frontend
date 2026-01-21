@@ -1966,6 +1966,9 @@ button#logout:hover {
 	.dropdown {
 		flex: 0 0 auto;
 	}
+	#devig-search {
+		width: 50%;
+	}
 	#center-dropdown, #auth-buttons {
 		width: 100%;
 		transform: none;

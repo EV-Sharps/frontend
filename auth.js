@@ -422,12 +422,13 @@ async function handleSession() {
 		}, 30 * 1000);
 	} else if (PAGE == "dingers") {
 		initChkddActions();
-		fetchDingersData();
+		//fetchDingersData();
+		countdown();
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {
 			if (document.hasFocus()) {
-				fetchDingersData();
+				//fetchDingersData();
 			}
 		}, 60 * 1000);
 	}

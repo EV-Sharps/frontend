@@ -28,9 +28,6 @@
   gtag('config', 'G-FX06BZ5MRL');
 </script>
 <style type="text/css">
-	#overlay input {
-		disable
-	}
 	.game-img {
 		height: 18px; width: 18px;
 	}
@@ -86,16 +83,394 @@
 </style>
 <body>
 	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Books</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;justify-content: space-evenly;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+					<div class="select-wrapper">
+						<label for="method-select" class="select-label">Method</label>
+						<select id="method-select">
+							<option value="" selected>Worst-Case</option>
+							<option value="add">Additive</option>
+							<option value="mult">Multiplicative</option>
+							<option value="power">Power</option>
+							<option value="probit">Probit</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="prop-selector-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Add Prop Tag to Devig</h3>
+					<button onclick="closePropSelectorModal()">x</button>
+				</div>
+				<div>
+					<span id="prop-selector-devig">Devig: Only FD/DK 50% Equal</span>
+				</div>
+				<div id="prop-selector-options-container" class="options-container">
+				</div>
+				<div class="action-footer">
+					<p>Select a stat category to add to the current devig.</p>
+				</div>
+			</div>
+		</div>
+		<div id="range-panel" class="range-panel hidden">
+			<div class="range-row">
+				<label>Min</label>
+				<input id="range-min" type="number" placeholder="Min odds">
+			</div>
+			<div class="range-row">
+				<label>Max</label>
+				<input id="range-max" type="number" placeholder="Max odds">
+			</div>
+
+			<div class="range-actions">
+				<button onclick="applyRange()">Apply</button>
+				<button onclick="clearRange()">Clear</button>
+			</div>
+		</div>
+		<div id="overlay">
+			<div class="overlay-content">
+				<div>
+					<h2 style="justify-content: center;">Customize (In Development)</h2>
+				</div>
+				<div style="justify-content: center;display: flex;gap: 1rem;">
+					<div style="display: flex;flex-direction: column;">
+						<label for="sort-select">Sort</label>
+						<div class="select-wrapper">
+							<select id="sort-select">
+								<option value="ev" selected>Expected Value (EV)</option>
+								<option value="curr_implied">Implied (FV)</option>
+								<option value="savant.barrels_per_bip">Barrel %</option>
+								<option value="savant.exit_velocity_avg">Exit Velocity</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+					<div style="display: flex;flex-direction: column;">
+						<label for="filter-select">Filter</label>
+						<div class="select-wrapper">
+							<select id="filter-select">
+								<option value="" selected>None</option>
+								<option value="game">Game</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+					<div style="display: flex;flex-direction: column;">
+						<label for="custom-devig-select">Devig</label>
+						<div class="select-wrapper">
+							<select id="custom-devig-select">
+								<option value="" selected>Market Avg</option>
+								<option value="fd">vs FD</option>
+								<option value="pn">vs PN</option>
+								<option value="circa">vs Circa</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+				</div>
+				<div id="items" style="display: flex;">
+					<div>
+						<h3>Expected Value</h3>
+						<div>
+							<input id="custom_ev" type="checkbox">
+							<label for="custom_ev">Expected Value</label>
+						</div>
+						<div>
+							<input id="custom_fairVal" type="checkbox">
+							<label for="custom_fairVal">Fair Value</label>
+						</div>
+						<div>
+							<input id="custom_implied" type="checkbox">
+							<label for="custom_implied">Implied</label>
+						</div>
+						<div>
+							<input id="custom_kelly" type="checkbox">
+							<label for="custom_kelly">¼ Kelly</label>
+						</div>
+					</div>
+					<!-- Player / Odds -->
+					<div>
+						<h3>Player & Odds</h3>
+						<div>
+							<input id="custom_player" type="checkbox" checked disabled>
+							<label for="custom_player">Player</label>
+						</div>
+						<div>
+							<input id="custom_book" type="checkbox" checked disabled>
+							<label for="custom_book">EV Book</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_fd">Fanduel</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_b365" type="checkbox">
+							<label for="custom_bookOdds_b365">Bet365</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_dk" type="checkbox">
+							<label for="custom_bookOdds_dk">Draftkings</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_mgm" type="checkbox">
+							<label for="custom_bookOdds_mgm">MGM</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_espn" type="checkbox">
+							<label for="custom_bookOdds_espn">ESPN</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_cz" type="checkbox">
+							<label for="custom_bookOdds_cz">Caesars</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fn" type="checkbox">
+							<label for="custom_bookOdds_fn">Fanatics</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_br" type="checkbox">
+							<label for="custom_bookOdds_br">BetRivers</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_hr" type="checkbox">
+							<label for="custom_bookOdds_hr">Hard Rock</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kambi" type="checkbox">
+							<label for="custom_bookOdds_kambi">Kambi (BB)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bv" type="checkbox">
+							<label for="custom_bookOdds_bv">Bovada</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_re" type="checkbox">
+							<label for="custom_bookOdds_re">Rebet</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fl" type="checkbox">
+							<label for="custom_bookOdds_fl">Fliff</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_pn" type="checkbox">
+							<label for="custom_bookOdds_pn">Pinnacle</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_circa">Circa</label>
+						</div>
+					</div>
+					<!-- Vs Pitcher -->
+					<div>
+						<h3>Vs Pitcher</h3>
+						<div>
+							<input id="custom_pitcher" type="checkbox">
+							<label for="custom_pitcher">Pitcher</label>
+						</div>
+						<div>
+							<input id="custom_percs_hr_pa" type="checkbox">
+							<label for="custom_percs_hr_pa">HR/PA Rate</label>
+						</div>
+						<div>
+							<input id="custom_percs_home_run" type="checkbox">
+							<label for="custom_percs_home_run">Total HR</label>
+						</div>
+						<div>
+							<input id="custom_bvp" type="checkbox">
+							<label for="custom_bvp">Vs Pitcher</label>
+						</div>
+					</div>
+					<!-- BPP -->
+					<div>
+						<h3>Ballparkpal</h3>
+						<div>
+							<input id="custom_bpp" type="checkbox">
+							<label for="custom_bpp">BPP Game</label>
+						</div>
+						<!-- 
+						<div>
+							<input id="custom_playerFactor" type="checkbox">
+							<label for="custom_playerFactor">BPP Player</label>
+						</div>
+						-->
+					</div>
+					<!-- Savant --> 
+					<div>
+						<h3>Adv. Batter Data</h3>
+						<div>
+							<input id="custom_batter_percs_hr_pa" type="checkbox">
+							<label for="custom_batter_percs_hr_pa">HR/PA %</label>
+						</div>
+						<div>
+							<input id="custom_batter_percs_home_run" type="checkbox">
+							<label for="custom_batter_percs_home_run">HR</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_ba" type="checkbox">
+							<label for="custom_savant_est_ba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_woba" type="checkbox">
+							<label for="custom_savant_est_woba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_sweet_spot_percent" type="checkbox">
+							<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_savant_exit_velocity_avg" type="checkbox">
+							<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
+						</div>
+						<div>
+							<input id="custom_savant_hard_hit_percent" type="checkbox">
+							<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_savant_barrels_per_bip" type="checkbox">
+							<label for="custom_savant_barrels_per_bip">Barrel %</label>
+						</div>
+					</div>
+					<!-- Pitcher Data -->
+					<div>
+						<h3>Adv. Pitcher Data</h3>
+						<div>
+							<input id="custom_pitcherData_p_era" type="checkbox">
+							<label for="custom_pitcherData_p_era">ERA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xba" type="checkbox">
+							<label for="custom_pitcherData_xba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xwoba" type="checkbox">
+							<label for="custom_pitcherData_xwoba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_flyballs_percent" type="checkbox">
+							<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
+							<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
+							<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
+							<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
+							<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
+						</div>
+					</div>
+					<!-- MISC -->
+					<div>
+						<h3>Misc</h3>
+						<div>
+							<input id="custom_order" type="checkbox">
+							<label for="custom_order">Batting Order</label>
+						</div>
+						<div>
+							<input id="custom_oppRank" type="checkbox">
+							<label for="custom_oppRank">Opp Ranks</label>
+						</div>
+						<div>
+							<input id="custom_stadiumRank" type="checkbox">
+							<label for="custom_stadiumRank">Stadium Ranks</label>
+						</div>
+						<div>
+							<input id="custom_weather" type="checkbox">
+							<label for="custom_weather">Weather</label>
+						</div>
+					</div>
+					<!-- Last Homer (DUE) -->
+					<div>
+						<h3>Last Homer (Due)</h3>
+						<div>
+							<input id="custom_homerLogs_pa_streak" type="checkbox">
+							<label for="custom_homerLogs_pa_streak">PA</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_med" type="checkbox">
+							<label for="custom_homerLogs_pa_med">Median</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_z_median" type="checkbox">
+							<label for="custom_homerLogs_pa_z_median">Z-score</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_avg" type="checkbox">
+							<label for="custom_homerLogs_pa_avg">Average</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_z" type="checkbox">
+							<label for="custom_homerLogs_pa_z">Avg Z-score</label>
+						</div>
+					</div>
+				</div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+					</div>
+				</div>
+				<div style="display: flex;justify-content: center;align-items: center;">
+					<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
+					<span id="save-status" style="margin: 0.5rem 0"></span>
+					<button onclick="closeOverlay();">Close</button>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
 				<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
-		      <!-- Icon -->
-		      <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-		        <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
-		      </svg>
-		      <span class="help-label">Help</span>
-		    </button>
+				  <!-- Icon -->
+				  <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+					<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
+				  </svg>
+				  <span class="help-label">Help</span>
+				</button>
+			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -112,8 +487,8 @@
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
 						<option value="b365">B365</option>
-						<option value="espn">ESPN</option>
 						<option value="mgm">MGM</option>
+						<option value="espn">ESPN</option>
 						<option value="cz">CZ</option>
 						<option value="fn">FN</option>
 						<option value="br">BR</option>
@@ -125,45 +500,57 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div style="flex: 0 0 auto;">
-					<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude</span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> Fanduel (FD)</label>
-				      <label><input type="checkbox" value="dk"> Draftkings (DK)</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> Caesars (CZ)</label>
-				      <label><input type="checkbox" value="fn"> Fanatics (FN)</label>
-				      <label><input type="checkbox" value="br"> Betrivers (BR)</label>
-				      <label><input type="checkbox" value="bv"> Bovada (BV)</label>
-				      <label><input type="checkbox" value="hr"> Hardrock (HR)</label>
-				      <label><input type="checkbox" value="kambi"> Kambi (BB)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
+				<div class="chkdd" id="exclude-dd">
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+					  <label><input type="checkbox" value="fd"> FD</label>
+					  <label><input type="checkbox" value="dk"> DK</label>
+					  <label><input type="checkbox" value="b365"> B365</label>
+					  <label><input type="checkbox" value="mgm"> MGM</label>
+					  <label><input type="checkbox" value="espn"> ESPN</label>
+					  <label><input type="checkbox" value="cz"> CZ</label>
+					  <label><input type="checkbox" value="fn"> FN</label>
+					  <label><input type="checkbox" value="br"> BR</label>
+					  <label><input type="checkbox" value="bv"> BV</label>
+					  <label><input type="checkbox" value="hr"> HR</label>
+					  <label><input type="checkbox" value="kambi"> Kambi</label>
+					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <div class="chkdd-actions">
+						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					  </div>
+					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
+						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+					  </div>
+					  <div>
+						<span id="exclude-status"></span>
+					  </div>
+					</div>
 				  </div>
-				</div>
 				<div class="select-wrapper">
+					<label for="devig-button" class="select-label">Devig</label>
+					<button id="devig-button" class="devig-display-btn">
+						<span id="devig-display-text">Market Avg</span>
+						<span class="dropdown-arrow">▼</span>
+					</button>
+				</div>
+				<div class="select-wrapper" style="display:none">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="pn+circa">PN & Circa</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="espn;1">vs ESPN</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="espn+pn;1+1">ESPN/PN 50% Equal</option>
+						<option value="espn+pn+circa;1+1+1">Avg ESPN/PN/Circa 33% Equal</option>
+						<option value="only+espn+pn+circa;1+1+1">Only ESPN+PN+Circa 33% Equal</option>
+						<option value="pn+circa;1+1">PN/Circa 50% Equal</option>
 						<option id="custom-devig-option" value="custom">Add Custom...</option>
 						<option value="delete">Delete Custom...</option>
 					</select>
@@ -180,12 +567,10 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
-						<option value="15">15%</option>
 						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
-						<option value="100">100%</option>
 						<option value="no-sweat">No Sweat</option>
 						<option value="custom">Custom...</option>
 					</select>
@@ -194,9 +579,30 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-			       type="number" min="0" step="5"
-			       placeholder="Custom %"
-			       style="display:none; width:7ch;" />
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
+				<div class="chkdd" id="prop-dd">
+					<label for="prop-dd-button" class="select-label">Prop</label>
+					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+					<div class="chkdd-menu" id="prop-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
+				</div>
+				<div class="select-wrapper">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 				<div class="chkdd" id="game-dd">
 					<label for="game-dd-button" class="select-label">Game</label>
 					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
@@ -207,19 +613,22 @@
 						</div>
 					</div>
 				</div>
-				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
-				<button onclick="downloadCSV()">💾 CSV</button>
-			</div>
-			<div id="donate">
-				<div>Tip Jar</div>
-				<div>
-					<a href="https://cash.app/$intersectinglines" target="_blank">
-						<img src="logos/cashapp.png" alt="cashapp" />
-					</a>
-					<a href="https://buymeacoffee.com/interlines" target="_blank">
-						<img src="logos/coffee.png" alt="coffee" />
-					</a>
+				<div class="select-wrapper">
+					<label id="range-label" class="select-label">Range</label>
+					<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
+					Any
+					</button>
 				</div>
+				<div id="min-odds-wrapper" class="select-wrapper">
+				  <label for="min-odds" class="select-label">Min</label>
+				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+
+				<div id="max-odds-wrapper" class="select-wrapper">
+				  <label for="max-odds" class="select-label">Max</label>
+				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -229,20 +638,20 @@
 				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
 				  <div class="gsi-material-button-state"></div>
 				  <div class="gsi-material-button-content-wrapper">
-				    <div class="gsi-material-button-icon">
-				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
-				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-				        <path fill="none" d="M0 0h48v48H0z"></path>
-				      </svg>
-				    </div>
-				    <span style="display: none;">Sign in with Google</span>
+					<div class="gsi-material-button-icon">
+					  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+						<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+						<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+						<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+						<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+						<path fill="none" d="M0 0h48v48H0z"></path>
+					  </svg>
+					</div>
+					<span style="display: none;">Sign in with Google</span>
 				  </div>
 				</button>
 
-				<span id="username" class="loggedIn username"></span>
+				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="hide-username" onclick="hideUsername()">Hide</button>
 				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
@@ -252,13 +661,11 @@
 		</header>
 		<main>
 			<div id="table-container">
-				<div class="loggedOut" style="display: none;">
-					<div style="padding: 0.5rem;">
-						<a href="/pricing" class="upgrade-link">Upgrade</a> to unlock <strong>full Advanced Stats 📊</strong> and <strong>Circa odds 🎯</strong>
-					</div>
-				</div>
-				<div style="padding: 0.25rem 0;font-style: italic;display:none">Refreshes every 60 seconds</div>
 				<div id="table"></div>
+				<div class="filter-wrapper">
+					<input type="text" id="player-search" placeholder="Search players..." autocomplete="off">
+				</div>
+				<div id="card-container"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
@@ -275,308 +682,6 @@
 					<div id="chart"></div>
 				</div>
 			</div>
-			<div id="overlay">
-				<div class="overlay-content">
-					<div>
-						<h2 style="justify-content: center;">Customize (In Development)</h2>
-					</div>
-					<div style="justify-content: center;display: flex;gap: 1rem;">
-						<div style="display: flex;flex-direction: column;">
-							<label for="sort-select">Sort</label>
-							<div class="select-wrapper">
-								<select id="sort-select">
-									<option value="ev" selected>Expected Value (EV)</option>
-									<option value="curr_implied">Implied (FV)</option>
-									<option value="savant.barrels_per_bip">Barrel %</option>
-									<option value="savant.exit_velocity_avg">Exit Velocity</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-						<div style="display: flex;flex-direction: column;">
-							<label for="filter-select">Filter</label>
-							<div class="select-wrapper">
-								<select id="filter-select">
-									<option value="" selected>None</option>
-									<option value="game">Game</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-						<div style="display: flex;flex-direction: column;">
-							<label for="custom-devig-select">Devig</label>
-							<div class="select-wrapper">
-								<select id="custom-devig-select">
-									<option value="" selected>Market Avg</option>
-									<option value="fd">vs FD</option>
-									<option value="pn">vs PN</option>
-									<option value="circa">vs Circa</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-					</div>
-					<div id="items" style="display: flex;">
-						<div>
-							<h3>Expected Value</h3>
-							<div>
-								<input id="custom_ev" type="checkbox">
-								<label for="custom_ev">Expected Value</label>
-							</div>
-							<div>
-								<input id="custom_fairVal" type="checkbox">
-								<label for="custom_fairVal">Fair Value</label>
-							</div>
-							<div>
-								<input id="custom_implied" type="checkbox">
-								<label for="custom_implied">Implied</label>
-							</div>
-							<div>
-								<input id="custom_kelly" type="checkbox">
-								<label for="custom_kelly">¼ Kelly</label>
-							</div>
-						</div>
-						<!-- Player / Odds -->
-						<div>
-							<h3>Player & Odds</h3>
-							<div>
-								<input id="custom_player" type="checkbox" checked disabled>
-								<label for="custom_player">Player</label>
-							</div>
-							<div>
-								<input id="custom_book" type="checkbox" checked disabled>
-								<label for="custom_book">EV Book</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_fd">Fanduel</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_b365" type="checkbox">
-								<label for="custom_bookOdds_b365">Bet365</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_dk" type="checkbox">
-								<label for="custom_bookOdds_dk">Draftkings</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_mgm" type="checkbox">
-								<label for="custom_bookOdds_mgm">MGM</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_espn" type="checkbox">
-								<label for="custom_bookOdds_espn">ESPN</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_cz" type="checkbox">
-								<label for="custom_bookOdds_cz">Caesars</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fn" type="checkbox">
-								<label for="custom_bookOdds_fn">Fanatics</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_br" type="checkbox">
-								<label for="custom_bookOdds_br">BetRivers</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_hr" type="checkbox">
-								<label for="custom_bookOdds_hr">Hard Rock</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_kambi" type="checkbox">
-								<label for="custom_bookOdds_kambi">Kambi (BB)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_bv" type="checkbox">
-								<label for="custom_bookOdds_bv">Bovada</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_re" type="checkbox">
-								<label for="custom_bookOdds_re">Rebet</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fl" type="checkbox">
-								<label for="custom_bookOdds_fl">Fliff</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_pn" type="checkbox">
-								<label for="custom_bookOdds_pn">Pinnacle</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_circa">Circa</label>
-							</div>
-						</div>
-						<!-- Vs Pitcher -->
-						<div>
-							<h3>Vs Pitcher</h3>
-							<div>
-								<input id="custom_pitcher" type="checkbox">
-								<label for="custom_pitcher">Pitcher</label>
-							</div>
-							<div>
-								<input id="custom_percs_hr_pa" type="checkbox">
-								<label for="custom_percs_hr_pa">HR/PA Rate</label>
-							</div>
-							<div>
-								<input id="custom_percs_home_run" type="checkbox">
-								<label for="custom_percs_home_run">Total HR</label>
-							</div>
-							<div>
-								<input id="custom_bvp" type="checkbox">
-								<label for="custom_bvp">Vs Pitcher</label>
-							</div>
-						</div>
-						<!-- BPP -->
-						<div>
-							<h3>Ballparkpal</h3>
-							<div>
-								<input id="custom_bpp" type="checkbox">
-								<label for="custom_bpp">BPP Game</label>
-							</div>
-							<!-- 
-							<div>
-								<input id="custom_playerFactor" type="checkbox">
-								<label for="custom_playerFactor">BPP Player</label>
-							</div>
-							-->
-						</div>
-						<!-- Savant --> 
-						<div>
-							<h3>Adv. Batter Data</h3>
-							<div>
-								<input id="custom_batter_percs_hr_pa" type="checkbox">
-								<label for="custom_batter_percs_hr_pa">HR/PA %</label>
-							</div>
-							<div>
-								<input id="custom_batter_percs_home_run" type="checkbox">
-								<label for="custom_batter_percs_home_run">HR</label>
-							</div>
-							<div>
-								<input id="custom_savant_est_ba" type="checkbox">
-								<label for="custom_savant_est_ba">xBA</label>
-							</div>
-							<div>
-								<input id="custom_savant_est_woba" type="checkbox">
-								<label for="custom_savant_est_woba">xwOBA</label>
-							</div>
-							<div>
-								<input id="custom_savant_sweet_spot_percent" type="checkbox">
-								<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
-							</div>
-							<div>
-								<input id="custom_savant_exit_velocity_avg" type="checkbox">
-								<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
-							</div>
-							<div>
-								<input id="custom_savant_hard_hit_percent" type="checkbox">
-								<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
-							</div>
-							<div>
-								<input id="custom_savant_barrels_per_bip" type="checkbox">
-								<label for="custom_savant_barrels_per_bip">Barrel %</label>
-							</div>
-						</div>
-						<!-- Pitcher Data -->
-						<div>
-							<h3>Adv. Pitcher Data</h3>
-							<div>
-								<input id="custom_pitcherData_p_era" type="checkbox">
-								<label for="custom_pitcherData_p_era">ERA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_xba" type="checkbox">
-								<label for="custom_pitcherData_xba">xBA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_xwoba" type="checkbox">
-								<label for="custom_pitcherData_xwoba">xwOBA</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_flyballs_percent" type="checkbox">
-								<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
-								<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
-								<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
-								<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
-							</div>
-							<div>
-								<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
-								<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
-							</div>
-						</div>
-						<!-- MISC -->
-						<div>
-							<h3>Misc</h3>
-							<div>
-								<input id="custom_order" type="checkbox">
-								<label for="custom_order">Batting Order</label>
-							</div>
-							<div>
-								<input id="custom_oppRank" type="checkbox">
-								<label for="custom_oppRank">Opp Ranks</label>
-							</div>
-							<div>
-								<input id="custom_stadiumRank" type="checkbox">
-								<label for="custom_stadiumRank">Stadium Ranks</label>
-							</div>
-							<div>
-								<input id="custom_weather" type="checkbox">
-								<label for="custom_weather">Weather</label>
-							</div>
-						</div>
-						<!-- Last Homer (DUE) -->
-						<div>
-							<h3>Last Homer (Due)</h3>
-							<div>
-								<input id="custom_homerLogs_pa_streak" type="checkbox">
-								<label for="custom_homerLogs_pa_streak">PA</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_med" type="checkbox">
-								<label for="custom_homerLogs_pa_med">Median</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_z_median" type="checkbox">
-								<label for="custom_homerLogs_pa_z_median">Z-score</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_avg" type="checkbox">
-								<label for="custom_homerLogs_pa_avg">Average</label>
-							</div>
-							<div>
-								<input id="custom_homerLogs_pa_z" type="checkbox">
-								<label for="custom_homerLogs_pa_z">Avg Z-score</label>
-							</div>
-						</div>
-					</div>
-					<div class="loggedOut">
-						<div style="padding: 0.5rem;text-align: center;">
-							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
-						</div>
-					</div>
-					<div style="display: flex;justify-content: center;align-items: center;">
-						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
-						<span id="save-status" style="margin: 0.5rem 0"></span>
-						<button onclick="closeOverlay();">Close</button>
-					</div>
-				</div>
-			</div>
 		</main>
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
@@ -586,89 +691,13 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "dingers";
-		let TABLE, EV_COL, FV_COL, RES;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "mlb";
-		let KAMBI = URLParams.get("kambi");
-		let MARK = URLParams.get("mark");
-		let BPP = URLParams.get("bpp") != undefined;
-		let PH = URLParams.get("ph") != undefined;
-		let SIMPLE = URLParams.get("simple");
-		let PLAYER = URLParams.get("player");
-		let REFRESH = URLParams.get("refresh") || "off";
-		REFRESH = "auto";
-		let BOOK = URLParams.get("book");
-		let HISTORICAL = URLParams.get("historical");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game") || "";
-		TEAM = URLParams.get("team");
-		let DATE = URLParams.get("date");
-		let NOCACHE = URLParams.get("nocache");
-		let NO365 = URLParams.get("no365");
-		let NOBR = URLParams.get("noBR");
-		let BOOST = URLParams.get("boost");
-		let DEVIG = URLParams.get("devig");
+		let NOCACHE, BPP, KAMBI, NO365, HISTORICAL, NOBR, SIMPLE, PH;
+		parseURLParams();
+		SPORT = "mlb";
 
 		handleSession();
 
 		const selectId = "#header";
-
-		const dd = document.getElementById('exclude-dd');
-		const excludeBtn = dd.querySelector('.chkdd-btn');
-		let menu = dd.querySelector('.chkdd-menu');
-		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
-
-		function getExcludedBooks() {
-		  return boxes.filter(b => b.checked).map(b => b.value);
-		}
-		excludeBtn.addEventListener("click", (e) => {
-			//const open = dd.classList.toggle("open");
-			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
-			e.stopPropagation();
-			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
-		});
-		document.addEventListener('click', (e) => {
-			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
-		});
-		boxes.forEach(b => b.addEventListener('change', () => {
-		  changeFilter();
-		}));
-
-		menu.addEventListener('click', (e) => {
-		  const act = e.target?.dataset?.act;
-		  if (!act) return;
-		  const state = act === 'all';
-		  boxes.forEach(b => b.checked = state);
-		  changeFilter();
-		});
-
-		function openMenu() {
-		  const r = excludeBtn.getBoundingClientRect();
-		  menu.style.position = 'fixed';
-		  menu.style.top = `${r.bottom + 6}px`;
-		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-		  menu.style.right = 'auto';
-		  document.body.appendChild(menu);       // move out of the scroller
-		  menu.style.display = 'block';
-		  excludeBtn.setAttribute('aria-expanded','true');
-		}
-
-		function closeMenu() {
-		  menu.style.display = 'none';
-		  dd.appendChild(menu);                  // put it back (optional)
-		  excludeBtn.setAttribute('aria-expanded','false');
-		}
-
-		if (MARK != undefined) {
-			document.querySelector("#watermark").style.display = "initial";
-			if (PRETTY != undefined || IMP !== undefined) {
-				document.querySelector("#watermark").style.width = "20%";
-			}
-		}
 
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
@@ -722,18 +751,90 @@
 			}
 			let OLD = RES;
 			RES = data;
+		}
 
-			const gameSel = document.getElementById("game-select");
-			gameSel.innerHTML = `<option value="" selected>All</option>`;
-			if (games && games.length > 0) {
-				games.forEach(game => {
-					const option = document.createElement("option");
-					option.value = game.replace(" @ ", "-");
-					option.textContent = game.toUpperCase();
-					gameSel.appendChild(option);
-				});
-			}
-			gameSel.value = GAME;
+		function getNextOpeningDay() {
+            // Default: use Apr 1 of current year (adjust to next year if already passed).
+            const now = new Date();
+            let year = now.getFullYear();
+            let opening = new Date(`${year}-03-26T18:15:00Z`);
+            return opening;
+        }
+
+        function formatTwo(n) { return String(n).padStart(2, '0'); }
+
+        let __countdownInterval = null;
+        let __savedTableContainerHTML = null;
+
+        function countdown() {
+            const container = document.getElementById('table-container');
+            if (!container) return;
+
+            // Save existing content once so we can restore if needed
+            if (__savedTableContainerHTML === null) {
+                __savedTableContainerHTML = container.innerHTML;
+            }
+
+            // Create overlay
+            container.innerHTML = `
+                <div id="countdown-overlay" style="
+                    display:flex;
+                    flex-direction:column;
+                    justify-content:center;
+                    align-items:center;
+                    min-height:320px;
+                    background:linear-gradient(180deg, #0f1724 0%, #071020 100%);
+                    color:#fff;
+                    padding:2rem;
+                    border-radius:8px;
+                ">
+                    <h1 style="font-size:1.8rem;margin:0 0 0.5rem;">Opening Day Countdown</h1>
+                    <div id="countdown-clock" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size:2.2rem; letter-spacing:1px;"></div>
+                    <div style="margin-top:.75rem; color: #cbd5e1;">We'll show the table automatically when Opening Day arrives.</div>
+                    <div style="margin-top:1rem;"><button id="countdown-refresh" style='padding:.5rem 1rem;border-radius:4px;border:none;background:#2563eb;color:#fff;cursor:pointer;'>Refresh Now</button></div>
+                </div>
+            `;
+
+            const opening = getNextOpeningDay();
+
+            function update() {
+                const now = new Date();
+                let diff = Math.max(0, opening.getTime() - now.getTime());
+
+                if (diff <= 0) {
+                    // countdown complete -> reload to let page fetch live data
+                    clearInterval(__countdownInterval);
+                    __countdownInterval = null;
+                    // restore original container while reloading quickly to avoid blank UI on slow reload
+                    container.innerHTML = __savedTableContainerHTML || '';
+                    // reload the page to fetch data (or you could call fetchDingersData() here)
+                    window.location.reload();
+                    return;
+                }
+
+                const sec = Math.floor(diff / 1000);
+                const days = Math.floor(sec / 86400);
+                const hours = Math.floor((sec % 86400) / 3600);
+                const minutes = Math.floor((sec % 3600) / 60);
+                const seconds = sec % 60;
+
+                const clock = document.getElementById('countdown-clock');
+                if (clock) {
+                    clock.innerText = `${days}d ${formatTwo(hours)}:${formatTwo(minutes)}:${formatTwo(seconds)}`;
+                }
+            }
+
+            // attach manual refresh button
+            document.getElementById('countdown-refresh')?.addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            // start/replace interval
+            if (__countdownInterval) {
+                clearInterval(__countdownInterval);
+            }
+            update();
+            __countdownInterval = setInterval(update, 1000);
 		}
 
 		async function fetchDingersData() {
@@ -756,7 +857,36 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(res => res.json()).then(res => {
+
 				parseData(res.data);
+
+				const gameMenu = document.getElementById("game-options");
+				gameMenu.innerHTML = `
+					<div class="chkdd-actions">
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					</div>
+				`;
+				[...(res?.games || [])].sort((a,b) => {
+					const ta = new Date(RES?.times?.[a]).getTime();
+					const tb = new Date(RES?.times?.[b]).getTime();
+
+					if (isNaN(ta)) return 1;
+					if (isNaN(tb)) return -1;
+
+					return ta - tb;
+				}).forEach(p => createGameOption(p, RES?.times?.[p], gameMenu));
+				restoreChkddState(gameMenu);
+				if (GAME) {
+					updateGameLabel(GAME.split(","));
+				}
+
+				if (res["data"].length == 0) {
+					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+					TABLE.redraw(true);
+					return;
+				}
+
 				setTimeout(function() {
 					if (PRETTY != undefined) {
 						pretty_();
@@ -817,10 +947,6 @@
 			first.sort((a,b) => {
 				return parseInt(a.startSortable) - parseInt(b.startSortable);
 			});
-			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
-			if (idx != -1) {
-				//data.splice(idx, 0, {prop: "separator", ev: ""});
-			}
 			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
@@ -1100,147 +1226,9 @@
 			GAME = game;
 			changeFilter();
 		});
-
-		document.querySelector("#book-select").value = BOOK || "";
-		document.querySelector("#book-select").addEventListener("change", (event) => {
-			BOOK = event.target.value;
-			changeFilter();
-		});
-
-		const boostSel = document.getElementById('boost-select');
-		const boostCustom = document.getElementById('boost-custom');
-
-		boostSel.value = BOOST || 0;
-		if (BOOST == "custom") {
-			boostCustom.style.display = "";
-		}
-		boostSel.addEventListener("change", (event) => {
-			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-			changeFilter();
-		});
-
-		boostCustom.addEventListener("input", () => {
-			changeFilter();
-		});
-
-		document.querySelector("#devig-select").value = DEVIG || "";
-		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
-		});
-
-		document.querySelector("#game-select").addEventListener("change", (event) => {
-			GAME = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("game", GAME);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.clearFilter();
-			changeFilter();
-		});
-
-		function changeFilter() {
-			let devigBook = document.getElementById("devig-select")?.value;
-			let boost = document.getElementById("boost-select")?.value;
-			let game = document.getElementById("game-select")?.value;
-			let book = document.getElementById("book-select")?.value;
-			let excluded = getExcludedBooks();
-			if (boost === "custom") {
-				boost = boostCustom.value;
-			}
-
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-
-			GAME = game;
-			params.set("boost", boost);
-			params.set("devig", devigBook);
-			params.set("game", game);
-			params.set("book", book);
-
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-
-			if (!RES) {
-				return;
-			}
-
-			RES.forEach(row => {
-				const bookOdds = { ...row.bookOdds };
-				//let avg = getAverageImplied(bookOdds, row.under);
-				let ou = buildOU(bookOdds);
-				if (!ou) {
-					return;
-				}
-				const ex = excluded;
-				ex.push("pn"); ex.push("circa");
-				if (devigBook) {
-					ex.push(devigBook);
-				}
-				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				//let ou = avg.avgAmerican.toString();
-
-				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    }
-				} else {
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
-				}
-				if (!ou) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-
-				let d = devig(ou, highest.value, boost, row.under);
-				if (!d) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				row["book"] = highest.book;
-				row["line"] = highest.value;
-				row["ev"] = d.ev;
-				row["fairVal"] = d.fairVal;
-				row["implied"] = d.implied;
-				row["kelly"] = d.kelly;
-			});
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
-			const filters = [];
-			TABLE.clearFilter();
-			if (game) {
-				game = game.replaceAll("-gm2", "_gm2");
-				let [a,h] = game.split("-");
-				game = `${a} @ ${h}`;
-				game = game.replaceAll("_gm2", "-gm2");
-				filters.push({field:"game", type:"=", value: game});
-			}
-			if (filters.length > 0) {
-				TABLE.setFilter(filters);
-			}
-			TABLE.setData(RES);
-		}
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
+	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

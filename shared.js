@@ -32,7 +32,8 @@ function getToday() {
 	<option value="pricing">💳 Pricing</option>
 	*/
 let PAGE_DROPDOWN = `
-
+	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
+	<option value="dingers">💣 Dingers</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs</option>
 	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
@@ -45,8 +46,6 @@ let PAGE_DROPDOWN = `
 	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
 	<!-- <option value="futures">🔮 Futures</option> -->
 	<!--
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
-	<option value="dingers">💣 Dingers</option>
 	 <option value="feed">📡 Feed</option>
 	<option value="mlb">🎯 Props (Sharps)</option>
 	<option value="main">🏆 Main (Sharps)</option>

@@ -313,10 +313,7 @@
 </div>
 
 <script type="text/javascript" src="shared.js"></script>
-<script type="text/javascript" src="record_nhl.js"></script>
-<script type="text/javascript" src="record_ncaab.js"></script>
-<script type="text/javascript" src="record_nba.js"></script>
-<script type="text/javascript" src="record_nfl.js"></script>
+<script type="text/javascript" src="record.js"></script>
 <script>
 	PAGE = "cheat";
 	parseURLParams();
@@ -473,17 +470,7 @@
 		const devigs = new Set();
 		const props = new Set();
 
-		if (SPORT == "nba") {
-			RES = NBA_RECORD;
-		} else if (SPORT == "nhl") {
-			RES = NHL_RECORD;
-		} else if (SPORT == "nfl") {
-			RES = NFL_RECORD;
-		} else if (SPORT == "ncaab") {
-			RES = NCAAB_RECORD;
-		} else {
-			RES = {};
-		}
+		RES = RECORD[SPORT] || {};
 
 		Object.values(RES).forEach(book => {
 			Object.keys(book).forEach(key => {

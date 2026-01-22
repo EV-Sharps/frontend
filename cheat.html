@@ -258,6 +258,19 @@
 		</svg>
 	</div>
 
+	<div class="select-wrapper">
+		<label class="select-label" for="selSport">Sport</label>
+		<select id="selSport" class="select">
+			<option value="nba">🏀 NBA</option>
+			<option value="nhl">🏒 NHL</option>
+			<option value="nfl">🏈 NFL</option>
+			<option value="ncaab">🏀 NCAAB</option>
+		</select>
+		<svg class="select-arrow" viewBox="0 0 20 20">
+			<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+		</svg>
+	</div>
+
 	<div class="chkdd" id="devig-dd">
 		<button class="chkdd-btn" type="button" onclick="toggleDropdown('devig-dd', event)">Devig Filter</button>
 		<div class="chkdd-menu" id="devig-options">
@@ -317,6 +330,18 @@
 <script>
 	PAGE = "cheat";
 	parseURLParams();
+
+	const selSport = document.getElementById('selSport');
+	selSport.value = SPORT || 'nba';
+	selSport.addEventListener('change', () => {
+		SPORT = selSport.value;
+		const params = new URLSearchParams(window.location.search);
+		params.set("sport", SPORT);
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		history.pushState({}, '', newUrl);
+		initFilters();
+		renderDashboard();
+	});
 
 	const BEST = {
 			"fd": ["reb-circa", "reb-dk", "reb-pn+circa+hr", "3ptm-pn+dk", "3ptm-pn", "3ptm-espn", "3ptm-circa", "ast-circa", "ast-espn+hr", "blk-hr", "blk-mgm", "pts-circa", "pts-dk+espn", "pts+ast-dk+espn", "pts+reb-espn", "reb+ast-dk+espn", "reb+ast-hr", "stl-espn", "stl-dk", "blk-hr", "blk-mgm", "pts+reb+sat-pn+espn+hr"],

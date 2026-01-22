@@ -78,9 +78,7 @@ let PAGE_DROPDOWN = `
 	<option value="outliers?sport=nba">🏀 Outliers</option>
 	<option value="outliers?sport=nfl">🏈 Outliers</option>
 	<option value="outliers?sport=nhl">🏒 Outliers</option>
-	<option value="cheat?sport=nba">🏀 Cheat Sheets</option>
-	<option value="cheat?sport=nfl">🏈 Cheat Sheets</option>
-	<option value="cheat?sport=nhl">🏒 Cheat Sheets</option>
+	<option value="cheat">Cheat Sheets</option>
 	<option value="heatmap">🗺️ Heat Map</option>
 	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
 	<option value="faq">❓ FAQ</option>
@@ -118,8 +116,6 @@ setTimeout(() => {
 		select.value = `analysis?sport=${SPORT}`;
 	} else if (PAGE == "movement") {
 		select.value = `movement?sport=${SPORT}`;
-	} else if (PAGE == "cheat") {
-		select.value = `cheat?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
 	} else if (PAGE == "main" && SPORT === "nfl") {
@@ -2020,12 +2016,33 @@ function parseWeightKey(key) {
 	return text;
 }
 
+function setUrlParams(updates = {}) {
+	let url = new URL(window.location.href);
+	const params = new URLSearchParams(window.search);
+	
+	Object.entries(updates).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === "") {
+            params.delete(k);
+        } else {
+            params.set(k, String(v));
+        }
+    });
+	const newUrl = `${url.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+	history.pushState({}, '', newUrl);
+	return newUrl;
+}
+
 function loadWeights() {
 	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 	if (DEVIG && DEVIG.includes("only+")) {
 		DEVIG = DEVIG.replace("only+", "");
 	} else if (DEVIG.includes(";")) {
 		[DEVIG, WEIGHT] = DEVIG.split(";");
+	}
+
+	METHOD = METHOD || CURR_USER.metadata[`${PAGE}-method`] || "";
+	if (METHOD) {
+		setUrlParams({method: METHOD});
 	}
 
 	if (!CURR_USER.metadata["weights"] || !Array.isArray(CURR_USER.metadata["weights"])) {
@@ -2071,7 +2088,7 @@ function loadWeights() {
 
 function showHideUserTable(loaded) {
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
-		if (!loaded && CURR_USER.metadata["weights"] && typeof parseWeightKey === 'function') {
+		if (!loaded && typeof parseWeightKey === 'function') {
 			loadWeights();
 		}
 		if (!CURR_USER.metadata[PAGE]) {

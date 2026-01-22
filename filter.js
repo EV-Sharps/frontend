@@ -428,16 +428,24 @@ if (document.getElementById("book-select")) {
 	});
 }
 
+async function saveMethod() {
+	const metadata = CURR_USER?.metadata || {};
+
+	metadata[`${PAGE}-method`] = METHOD;
+	if (CURR_USER) {
+		const { error: updateError } = await SB.from('profiles')
+			.update({metadata: metadata})
+			.eq('id', CURR_SESSION.user.id);
+	}
+}
+
 const methodInit = document.getElementById("method-select");
 if (methodInit) {
 	methodInit.value = METHOD;
 	methodInit.addEventListener("change", (event) => {
 		METHOD = event.target.value;
-		let url = new URL(window.location.href);
-		const params = new URLSearchParams(window.location.search);
-		params.set("method", METHOD);
-		const newUrl = `${window.location.pathname}?${params.toString()}`;
-		history.pushState({}, '', newUrl);
+		setUrlParams({method: METHOD});
+		saveMethod();
 		changeFilter();
 	});
 }

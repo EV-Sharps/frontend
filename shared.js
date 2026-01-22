@@ -2468,16 +2468,7 @@ function getProbit(impliedOver, impliedUnder) {
         const zOver = inverseNormalCDF(impliedOver);
         const zUnder = inverseNormalCDF(impliedUnder);
 		const overDevigged = zOver - 0.5 * (zOver + zUnder);
-		const underDevigged = zUnder - 0.5 * (zOver + zUnder);
 		probit = normalCDF(overDevigged);
-		/*
-		const dec = 1 / probit;
-		if (dec >= 2) {
-			probit = Math.round((dec - 1) * 100);
-		} else {
-			probit = Math.round(-100 / (dec - 1));
-		}
-		*/
     } catch (e) {
         probit = NaN;
     }

@@ -433,6 +433,11 @@ if (methodInit) {
 	methodInit.value = METHOD;
 	methodInit.addEventListener("change", (event) => {
 		METHOD = event.target.value;
+		let url = new URL(window.location.href);
+		const params = new URLSearchParams(window.location.search);
+		params.set("method", METHOD);
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		history.pushState({}, '', newUrl);
 		changeFilter();
 	});
 }

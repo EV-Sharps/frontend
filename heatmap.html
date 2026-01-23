@@ -625,7 +625,7 @@
 					zerolinecolor: '#2a2e39'
 				},
 				title: {
-					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap (bet on ${cfg.bookLabel}, devig vs ${cfg.devLabel})`
+					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
 				},
 				annotations,
 				margin: { l: 80, r: 20, t: 40, b: MOBILE ? 160 : 90 },
@@ -733,7 +733,11 @@
 			if (SPORT === 'nba') {
 				//oddsRange = [-300,1200];
 			} else if (SPORT === "nhl" && PROP == "atgs") {
-				oddsRange = [100, 1400];
+				if (METHOD === "probit") {
+					evRange = [0,20], oddsRange = [100, 2600];
+				} else {
+					oddsRange = [100, 1400];
+				}
 			}
 			/*
 			if (SPORT === 'nba') {

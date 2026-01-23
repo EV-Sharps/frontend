@@ -1466,6 +1466,9 @@ h1 {
 	height: 16px; width: 16px;
 	margin-left: 0.5rem;
 }
+#preloads-modal .book-img {
+	height: 16px; width: 16px;
+}
 .devig-radio-item .book-img {
 	height: 16px; width: 16px;
 }

@@ -1273,6 +1273,10 @@ function getTeamImg(sport, team) {
 	return `<img class='team-img' src='logos/${sport.replace("ncaaf", "ncaab")}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
 }
 
+function getBookImgs(books) {
+	return books.map(book => `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`).join("");
+}
+
 const brlFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	return isBarrel(data) ? "🏏" : "";

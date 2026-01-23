@@ -290,6 +290,17 @@
 			</div>
 		</div>
 	</div>
+	
+	<div class="select-wrapper">
+        <label for="method-select" class="select-label">Method</label>
+        <select id="method-select" class="select">
+            <option value="">Worst-Case</option>
+            <option value="probit">Probit</option>
+        </select>
+        <svg class="select-arrow" viewBox="0 0 20 20">
+            <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+    </div>
 
 	<div class="unit-toggle-container">
 		<span style="font-size: 0.85rem; font-weight: 600;">ROI</span>
@@ -495,7 +506,7 @@
 		const devigs = new Set();
 		const props = new Set();
 
-		RES = RECORD[SPORT] || {};
+		RES = RECORD[SPORT][METHOD || "worst"] || {};
 
 		Object.values(RES).forEach(book => {
 			Object.keys(book).forEach(key => {

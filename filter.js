@@ -429,6 +429,7 @@ if (document.getElementById("book-select")) {
 }
 
 async function saveMethod() {
+	if (!CURR_USER) return;
 	const metadata = CURR_USER?.metadata || {};
 
 	metadata[`${PAGE}-method`] = METHOD;
@@ -445,8 +446,16 @@ if (methodInit) {
 	methodInit.addEventListener("change", (event) => {
 		METHOD = event.target.value;
 		setUrlParams({method: METHOD});
-		saveMethod();
-		changeFilter();
+
+		if (PAGE === "heatmap") {
+			init();
+		} else if (PAGE === "cheat") {
+			initFilters();
+			renderDashboard();
+		} else {
+			saveMethod();
+			changeFilter();
+		}
 	});
 }
 

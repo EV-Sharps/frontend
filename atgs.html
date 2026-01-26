@@ -80,7 +80,7 @@
 		<div id="preloads-modal" class="modal" style="display:none;">
             <div class="modal-content devig-panel">
                 <div class="modal-header">
-                    <h3>Preloads — Top ATGS Devigs</h3>
+                    <h3>Preloads — Top Devigs</h3>
                     <button id="close-preloads-modal">&times;</button>
                 </div>
 
@@ -950,26 +950,29 @@
 			console.log(out);
 		}
 
-		// Start preload logic 
+		// Start preload logic
 		function getTopAtgsDevigs(limit = 0) {
-            if (typeof RECORD === "undefined" || !RECORD) {
-                return { error: "RECORD not available" };
-            }
-            const list = [];
+			if (typeof RECORD === "undefined" || !RECORD) {
+				return { error: "RECORD not available" };
+			}
+			const list = [];
 			const books = RECORD[METHOD || "worst"];
-			if (!books) return;
+			if (!books) return list;
 			for (const book in books) {
 				const devigs = books[book];
 				if (!devigs) continue;
 				for (const devigKey in devigs) {
-					// only include ATGS-related devigs (keys like "atgs-vs-...")
-					if (!devigKey.startsWith("atgs")) continue;
 					const stats = devigs[devigKey];
 					if (!stats) continue;
+					const parts = devigKey.split("-vs-");
+					const prop = parts[0] || devigKey;
+					// apply optional prop filter (allows any prop in RECORD)
+					//if (propFilter && prop !== propFilter) continue;
 					list.push({
-						METHOD,
+						method: METHOD || "",
 						book,
 						devig: devigKey,
+						prop,
 						roi: typeof stats.roi === "number" ? stats.roi : Number(stats.roi),
 						wins: stats.wins,
 						losses: stats.losses,
@@ -978,13 +981,14 @@
 					});
 				}
 			}
-            list.sort((a,b) => b.roi - a.roi);
+			list.sort((a,b) => b.roi - a.roi);
 			if (!limit) return list;
-            return list.slice(0, limit);
-        }
+			return list.slice(0, limit);
+		}
 
-        // wire up the Preloads button -> open separate Preloads window/modal
-        function openPreloadsWindow(limit = 0) {
+		// wire up the Preloads button -> open separate Preloads window/modal
+		// `prop` parameter lets caller show preloads for any prop in RECORD (defaults to "atgs")
+		function openPreloadsWindow(limit = 0) {
             const devigModal = document.getElementById("devig-modal");
             const preloadsModal = document.getElementById("preloads-modal");
             const container = document.getElementById("preloads-list-container");
@@ -992,14 +996,14 @@
 
             // hide the main devig modal and show preloads window
             if (devigModal) devigModal.style.display = "none";
-            preloadsModal.style.display = "block";
+            preloadsModal.style.display = "flex";
 
-            const top = getTopAtgsDevigs(limit);
-            if (top && top.error) {
+			const top = getTopAtgsDevigs(limit);
+			if (top && top.error) {
                 container.innerHTML = `<div style="padding:1rem;color:#900">${top.error}</div>`;
                 return;
             }
-            renderPreloadsList(container, top || []);
+			renderPreloadsList(container, top || []);
         }
 
         // close preloads and return to devig modal
@@ -1008,28 +1012,24 @@
             const preloadsModal = document.getElementById("preloads-modal");
             const container = document.getElementById("preloads-list-container");
             if (preloadsModal) preloadsModal.style.display = "none";
-            if (devigModal) devigModal.style.display = "block";
+            if (devigModal) devigModal.style.display = "flex";
             if (container) container.innerHTML = "";
         }
 
-        function renderPreloadsList(container, items) {
+		function renderPreloadsList(container, items, prop = "atgs") {
 			container.innerHTML = "";
 			if (!items || items.length === 0) {
-				container.innerHTML = `<div style="padding:1rem">No ATGS devigs found in RECORD.</div>`;
+				container.innerHTML = `<div style="padding:1rem">No ${prop.toUpperCase()} devigs found in RECORD.</div>`;
 				return;
 			}
 
 			// header with global min-bets control (applies to all shown)
-			const header = document.createElement("div");
+				const header = document.createElement("div");
 			header.style.display = "flex";
 			header.style.justifyContent = "space-between";
 			header.style.alignItems = "center";
-			header.style.padding = "0.5rem 1rem";
-			header.innerHTML = `
-				<div>
-					<strong>Top ATGS Devigs (by ROI)</strong>
-				</div>
-				<div class="select-wrapper">
+				header.innerHTML = `
+				<div style="display:flex;flex-direction:column;" class="select-wrapper">
 					<label for="min-bets" style="font-size:0.85rem;font-weight:600;color:var(--text-dim);">Min Bets</label>
 					<select id="min-bets"
 							style="width:50px;padding:6px;border-radius:6px;border:1px solid #475569;background:#0b1220;color:var(--text-main);">
@@ -1040,6 +1040,9 @@
 						<option value="100">100</option>
 						<option value="200">200</option>
 					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
 				</div>
 			`;
 			container.appendChild(header);
@@ -1047,7 +1050,6 @@
 			const list = document.createElement("div");
 			list.style.maxHeight = "420px";
 			list.style.overflowY = "auto";
-			list.style.padding = "0.25rem 0.5rem";
 			container.appendChild(list);
 
 			function buildList(minBets) {
@@ -1062,50 +1064,59 @@
                     return;
                 }
 
-                filtered.forEach((it, idx) => {
+				filtered.forEach((it, idx) => {
                     const row = document.createElement("div");
-                    row.style.display = "flex";
-                    row.style.justifyContent = "space-between";
-                    row.style.alignItems = "center";
-                    row.style.padding = "0.4rem";
-                    row.style.borderBottom = "1px solid rgba(0,0,0,0.06)";
+					row.classList.add("preload-row");
+					let [p,d] = it.devig.split("-vs-");
+					const bookLabel = it.book ? it.book.toUpperCase() : "";
 
-                    let [p,d] = it.devig.split("-vs-");
-                    const bookLabel = it.book ? it.book.toUpperCase() : "";
-
-                    row.innerHTML = `
-                        <div style="min-width:260px">
-                            <div style="gap: 5px;display:flex;align-items:center">${bookLabel}${getBookImgs([it.book])}</div>
-                            <div style="display:flex;align-items:center;font-size:.85rem;color:#666;gap:5px;">vs ${d ? d.toUpperCase() : it.devig} ${getBookImgs(d ? d.split("+") : [])}</div>
-                        </div>
-                        <div style="display:flex;gap:.5rem;align-items:center">
-                            <div style="text-align:right;min-width:110px">
-                                <div style="font-weight:600">${it.roi >= 0 ? '+'+it.roi+'%' : it.roi+'%'}</div>
-                                <div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>
-                            </div>
-                            <button class="btn-secondary preload-add-btn" data-idx="${idx}">Apply</button>
-                        </div>
-                    `;
-                    row.dataset.method = it.method;
+					row.innerHTML = `
+						<div style="min-width:260px">
+							<div style="gap: 5px;display:flex;align-items:center">${bookLabel}${getBookImgs([it.book])}</div>
+							<div style="display:flex;align-items:center;font-size:.85rem;color:#666;gap:5px;">${p.toUpperCase()} vs ${d ? d.toUpperCase() : it.devig} ${getBookImgs(d ? d.split("+") : [])}</div>
+						</div>
+						<div style="display:flex;gap:.5rem;align-items:center">
+							<div style="text-align:right;min-width:110px">
+								<div style="font-weight:600">${it.roi >= 0 ? '+'+it.roi+'%' : it.roi+'%'}</div>
+								<div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>
+							</div>
+							<button class="btn-secondary preload-add-btn" data-idx="${idx}">Apply</button>
+						</div>
+					`;
+                    row.dataset.method = METHOD;
                     row.dataset.book = it.book;
-                    row.dataset.devig = it.devig;
+                    row.dataset.devig = d;
+					row.dataset.prop = p;
                     list.appendChild(row);
                 });
 
-                // attach handlers for add buttons
-                list.querySelectorAll(".preload-add-btn").forEach(btn => {
-                    btn.addEventListener("click", (e) => {
-                        const row = e.target.closest("div[style]");
-                        const devig = row?.dataset?.devig;
-                        const method = row?.dataset?.method;
-                        const book = row?.dataset?.book;
-                        if (!devig) return;
-                        // use current global min-bets for apply (if needed by addPreloadToDevigOptions later)
-                        const minBetsEl = document.getElementById("min-bets");
-                        const minBets = minBetsEl ? Number(minBetsEl.value || 20) : 20;
-                        addPreloadToDevigOptions({method, book, devig, minBets});
-                    });
-                });
+				// attach handlers for add buttons
+				list.querySelectorAll(".preload-add-btn").forEach(btn => {
+					btn.addEventListener("click", (e) => {
+						const row = e.target.closest(".preload-row");
+						const devig = row?.dataset?.devig;
+						const method = row?.dataset?.method;
+						const book = row?.dataset?.book;
+						const prop = row?.dataset?.prop;
+						if (!devig) return;
+
+						DEVIG = devig;
+						document.getElementById("book-select").value = book;
+						setOptions("prop-options", [prop]);
+
+						const preloadsModal = document.getElementById("preloads-modal");
+						const devigModal = document.getElementById("devig-modal");
+						if (preloadsModal) preloadsModal.style.display = "none";
+						if (devigModal) devigModal.style.display = "none";
+
+						const devigDisplay = document.getElementById("devig-display-text");
+						if (devigDisplay) devigDisplay.innerText = parseWeightKey(`${devig}${repeatOnes(devig)}`);
+
+						if (typeof changeFilter === 'function') {
+							changeFilter();
+						}
+					});
+				});
             }
 
             // initial render using default select value

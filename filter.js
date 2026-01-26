@@ -1157,9 +1157,15 @@ async function deleteDevig(keyToDelete) {
 	document.getElementById(`devig-label-${keyToDelete}`)?.remove();
 }
 
+const setOptions = (containerId, options) => {
+	const all = Array.from(document.querySelectorAll(`#${containerId} input`))
+	all.forEach(cb => {
+		cb.checked = options.includes(cb.value);
+	});
+};
+
 const getOptions = (containerId) => {
 	const all = Array.from(document.querySelectorAll(`#${containerId} input`))
-
 	const checked = all.filter(cb => cb.checked);
 
 	if (checked.length == 0 || checked.length == all.length) {

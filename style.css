@@ -1359,6 +1359,13 @@ h1 {
 #player-ev, #player-weather, #player-pitcher {
 	padding-left: 5px;
 }
+.preload-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.4rem;
+	border-bottom: 1px solid rgba(0,0,0,0.06);
+}
 #player-ev span {
 }
 .player-cell, .goalie-cell {

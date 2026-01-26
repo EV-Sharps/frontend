@@ -519,6 +519,9 @@
 		const devigMenu = document.getElementById('devig-options');
 		const propMenu = document.getElementById('prop-options');
 
+		//propMenu.innerHTML = "";
+		//devigMenu.innerHTML = "";
+
 		const createItem = (val, container) => {
 			const label = document.createElement('label');
 			label.setAttribute("onclick", "event.stopPropagation()")

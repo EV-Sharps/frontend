@@ -246,7 +246,7 @@
 
 <div class="header">
 	<h1>Prop Betting Performance</h1>
-	<p>Data tracked: Nov 11th, 2025 - Jan 18th, 2026</p>
+	<p>Data tracked: Nov 11th, 2025 - Jan 26th, 2026</p>
 </div>
 
 <div class="controls">
@@ -519,8 +519,18 @@
 		const devigMenu = document.getElementById('devig-options');
 		const propMenu = document.getElementById('prop-options');
 
-		//propMenu.innerHTML = "";
-		//devigMenu.innerHTML = "";
+		propMenu.innerHTML = `
+			<div class="chkdd-actions">
+				<button type="button" data-act="all">All</button>
+				<button type="button" data-act="none">None</button>
+			</div>
+		`;
+		devigMenu.innerHTML = `
+			<div class="chkdd-actions">
+				<button type="button" data-act="all">All</button>
+				<button type="button" data-act="none">None</button>
+			</div>
+		`;
 
 		const createItem = (val, container) => {
 			const label = document.createElement('label');

@@ -403,7 +403,7 @@
 		const minBets = Math.max(0, Number(document.getElementById('min-bets').value) || 0);
 
 		let data = parseRecord(RES);
-		let books = ["fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
+		let books = ["best", "fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
 		for (bookName of books) {
 			const bookData = {...data[bookName]};
 			const filteredLines = Object.entries(bookData)

@@ -72,10 +72,11 @@ function renderWeightSettings() {
 	renderWeightPieChart();
 	
 	ALL_WEIGHTABLE_BOOKS.forEach(book => {
+		let bookImg = book == "best" ? "" : `<img class='book-img' style="width:32px;height:32px;" src='logos/${book}.png' alt='${book}' title='${book}' />`;
 		const inputHtml = `
 			<div class="weight-item" style="margin-bottom: 10px; color: #fff;">
 				<div style="display:flex;gap:8px;align-items:end;">
-					<img class='book-img' style="width:32px;height:32px;" src='logos/${book}.png' alt='${book}' title='${book}' />
+					${bookImg}
 					<div style="display:flex;flex-direction:column;">
 						<span style="font-size:0.7rem;">${parseBook(book)}</span>
 						<input 
@@ -517,7 +518,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 				WEIGHT = repeatOnes(devig).slice(1);
 				document.getElementById("width-input").value = devig.split("+").length;
 				const bookSelectEl = document.getElementById("book-select");
-				if (bookSelectEl) bookSelectEl.value = book || "";
+				if (bookSelectEl) bookSelectEl.value = book.replace("best", "") || "";
 				setOptions("prop-options", [prop]);
 				updatePropLabel([prop]);
 

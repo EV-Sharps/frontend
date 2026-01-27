@@ -1274,7 +1274,7 @@ function getTeamImg(sport, team) {
 }
 
 function getBookImgs(books) {
-	return books.map(book => `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`).join("");
+	return books.map(book => book == "best" ? "" : `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`).join("");
 }
 
 const brlFormatter = function(cell) {

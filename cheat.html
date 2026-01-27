@@ -476,7 +476,7 @@
                     const prop = el.dataset.prop || '';
                     const devig = el.dataset.devig || '';
                     const book = el.dataset.book || '';
-                    const url = `/heatmap${HTML}?sport=${encodeURIComponent(SPORT)}&prop=${encodeURIComponent(prop)}&book=${encodeURIComponent(book)}&devig=${encodeURIComponent(devig)}`;
+                    const url = `/heatmap${HTML}?sport=${encodeURIComponent(SPORT)}&prop=${encodeURIComponent(prop)}&book=${encodeURIComponent(book)}&devig=${encodeURIComponent(devig)}&method=${encodeURIComponent(METHOD)}`;
                     window.open(url, '_blank', 'noopener');
                 });
             });

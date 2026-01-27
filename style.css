@@ -1366,6 +1366,10 @@ h1 {
 	padding: 0.4rem;
 	border-bottom: 1px solid rgba(0,0,0,0.06);
 }
+.preload-record {
+	text-align: right;
+	min-width: 110px;
+}
 #player-ev span {
 }
 .player-cell, .goalie-cell {
@@ -1934,6 +1938,13 @@ button#logout:hover {
 	}
 	.options-container {
 		padding: 0;
+	}
+	.preload-row {
+		flex-wrap: wrap;
+	}
+	.preload-record {
+		text-align: left;
+		min-width: auto;
 	}
 	.modal-content.devig-panel {
 		width: 100%;

@@ -1158,6 +1158,7 @@ async function deleteDevig(keyToDelete) {
 }
 
 const setOptions = (containerId, options) => {
+	CHKDD_STATE[containerId] = options;
 	const all = Array.from(document.querySelectorAll(`#${containerId} input`))
 	all.forEach(cb => {
 		cb.checked = options.includes(cb.value);

@@ -69,10 +69,26 @@
 
 				<div class="action-footer">
 					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button id="load-predefined-devigs" class="btn-secondary">Preloads</button>
 					<button onclick="closeDevig()">Close</button>
 				</div>
 			</div>
 		</div>
+		<div id="preloads-modal" class="modal" style="display:none;">
+            <div class="modal-content devig-panel">
+                <div class="modal-header">
+                    <h3>Preloads — Top Devigs</h3>
+                    <button id="close-preloads-modal">&times;</button>
+                </div>
+
+                <div id="preloads-list-container" class="options-container" style="max-height:520px;">
+                </div>
+
+                <div class="action-footer">
+                    <button id="preloads-close" class="btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
 		<div id="prop-selector-modal" class="modal">
 			<div class="modal-content devig-panel">
 				<div class="modal-header">

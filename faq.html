@@ -25,7 +25,19 @@
     .controls{display:flex;gap:8px;margin-bottom:8px}
     .btn{background:#15314a;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
     .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-    @media (max-width:880px){ .layout{flex-direction:column} .q-list{width:100%;max-height:220px} .detail{max-height:50vh} }
+    @media (max-width:880px){ 
+        .layout{flex-direction:column}
+        .q-list{width:100%;max-height:220px}
+        .detail{max-height:50vh}
+
+        .wrap {
+            padding-top:0;
+            margin-top: 5px;
+        }
+        header h1 {
+            font-size: 0.95rem;
+        }
+    }
   </style>
 </head>
 <body>

@@ -693,6 +693,20 @@
 						responsive: 0,
 						frozen: true
 					},
+					/*{
+						title: "Results",
+						field: "results",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							try {
+								let j = RECORD[METHOD||"worst"][BOOK||data.book][`${data.prop}-vs-${DEVIG}`];
+								//return `${j.wins}-${j.losses} (${j.roi}%)`;
+								return `${j.roi}% (${j.profit >= 0 ? "+" : ""}${Math.round(j.profit)}u)`;
+							} catch (e) {
+								return "";
+							}
+						}
+					},*/
 					{title: "PP Line", field: "ppLine", width: 50},
 					{
 						title: "Line",

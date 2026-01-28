@@ -1229,7 +1229,7 @@ function changeFilter(render = true) {
 	let width = parseInt(document.getElementById("width-input").value);
 	let props = getOptions("prop-options");
 	let games = getOptions("game-options");
-	let excluded = getExcludedBooks();
+	let excluded = [...getExcludedBooks()];
 	if (boost === "custom") {
 		boost = boostCustom.value;
 	}
@@ -1278,10 +1278,13 @@ function changeFilter(render = true) {
 			row["kelly"] = "";
 			return;
 		}
-		const ex = excluded;
+		let ex = [...excluded];
 		ex.push("pn"); ex.push("circa");
 		if (devigBook) {
 			ex.push(devigBook);
+		}
+		if (book) {
+			ex = ex.filter(b => b !== book);
 		}
 		const highest = highestOver(bookOdds, ex, boost, book, row.under);
 		if (!isFinite(highest.value)) {

@@ -226,9 +226,17 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div class="select-wrapper">
-					<label for="width-input" class="select-label">Width</label>
-					<input type="number" id="width-input" min="1" max="16" value="1">
+				<div class="chkdd" id="required-dd">
+					<label for="required-button" class="select-label">Required</label>
+					<button id="required-button" class="chkdd-btn" type="button" onclick="toggleDropdown('required-dd', event)">
+						All
+					</button>
+					<div class="chkdd-menu" id="required-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="any">Any</button>
+						</div>
+					</div>
 				</div>
 				<div class="select-wrapper">
 					<label for="boost-select" class="select-label">Boost</label>

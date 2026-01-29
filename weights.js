@@ -36,25 +36,6 @@ function getUserWeights() {
 	return weights;
 }
 
-function parseBook(book) {
-	let conv = {
-		PN: "Pinnacle",
-		B365: "Bet365",
-		BOL: "BetOnline",
-		BV: "Bovada",
-		CZ: "Caesars",
-		DK: "Draftkings",
-		FD: "Fanduel",
-		FN: "Fanatics",
-		HR: "Hardrock",
-		MGM: "BetMGM",
-		BR: "BetRivers",
-		FL: "Fliff",
-		RE: "ReBet"
-	}
-	return conv[book.toUpperCase()] || title(book);
-}
-
 function renderWeightSettings() {
 	const inputsDiv = document.getElementById('book-weight-inputs');
 

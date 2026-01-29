@@ -1461,6 +1461,9 @@ h1 {
 .book-img {
 	height: 24px; width: 24px;
 }
+#required-button .book-img {
+	height: 16px; width: 16px;
+}
 .field {
 	width: 20px; width: 20px;
 }
@@ -1473,6 +1476,7 @@ h1 {
 .tabulator .team-img, .tabulator .wind, .tabulator .weather {
 	height: 18px; width: 18px;
 }
+
 .tabulator .book-img {
 	height: 16px; width: 16px;
 	margin-left: 0.5rem;
@@ -1679,6 +1683,16 @@ nav {
 	letter-spacing: 0.3px;
 	pointer-events: none;
 	transition: color 0.2s ease;
+}
+
+#required-button {
+	display: flex;
+	min-width: 55px;
+	max-width: 80px;
+	background-color: #1c1c1c !important;
+}
+#required-dd .select-label {
+	left: 0.5rem;
 }
 
 #range-label {

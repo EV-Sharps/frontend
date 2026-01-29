@@ -1,5 +1,6 @@
 
 const CHKDD_STATE = {};
+const ALL_POSSIBLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl", "br", "re"];
 
 function restoreChkddState(menu) {
 	wireChkddMenu(menu);
@@ -345,13 +346,13 @@ function clearRange() {
 function updateRangeLabel(min, max) {
   const btn = document.getElementById("range-btn");
   if (!min && !max) {
-    btn.textContent = "Any";
+	btn.textContent = "Any";
   } else if (min && max) {
-    btn.textContent = `${min} → ${max}`;
+	btn.textContent = `${min} → ${max}`;
   } else if (min) {
-    btn.textContent = `≥ ${min}`;
+	btn.textContent = `≥ ${min}`;
   } else {
-    btn.textContent = `≤ ${max}`;
+	btn.textContent = `≤ ${max}`;
   }
 }
 
@@ -363,17 +364,28 @@ if (document.getElementById("min-odds")) {
 	document.getElementById("max-odds").addEventListener("input", debouncedChangeFilter);
 }
 
-if (document.getElementById("width-input")) {
-	document.getElementById("width-input").value = parseInt(WIDTH);
-	document.getElementById("width-input").addEventListener("input", debouncedChangeFilter);
-}
-
 const devigSel = document.getElementById("devig-select");
 if (devigSel) {
 	devigSel.value = DEVIG ? `${DEVIG};${WEIGHT}` : DEVIG;
 	if (!WEIGHT && !DEVIG.includes("+")) {
 		WEIGHT = "1";
 	}
+}
+
+if (document.getElementById("required-dd")) {
+	updateRequiredDropdown();
+	
+	// Close required-dd when clicking elsewhere
+	document.addEventListener('click', (e) => {
+		const requiredDD = document.getElementById("required-dd");
+		const requiredBtn = document.getElementById("required-button");
+		const requiredMenu = document.getElementById("required-options");
+		
+		if (requiredMenu && requiredMenu.style.display === 'block' && 
+		    !requiredMenu.contains(e.target) && !requiredBtn.contains(e.target)) {
+			requiredMenu.style.display = "none";
+		}
+	});
 }
 
 if (document.getElementById("devig-display-text") && typeof parseWeightKey === 'function') {
@@ -394,6 +406,126 @@ if (devigSel) {
 			changeFilter();
 		}
 	});
+}
+
+function updateRequiredLabel(requiredBooks) {
+	const button = document.getElementById("required-button");
+	if (!button) return;
+	
+	if (requiredBooks.length === 0) {
+		button.textContent = "Any";
+	} else if (DEVIG && requiredBooks.length === DEVIG.split("+").length) {
+		button.textContent = `All`;
+	} else {
+		const booksHTML = requiredBooks.map(book => {
+			return `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`;
+		}).join("");
+		button.innerHTML = booksHTML;
+	}
+}
+
+function getRequiredBooks() {
+	const menu = document.getElementById("required-options");
+	if (!menu) return [];
+	
+	const checkboxes = menu.querySelectorAll("input[type='checkbox']:checked");
+	return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function updateRequiredDropdown() {
+	const menu = document.getElementById("required-options");
+	if (!menu) return;
+	
+	// Get current devig books
+	let devigBook = DEVIG || "";
+	if (devigBook.includes(";")) {
+		devigBook = devigBook.split(";")[0];
+	}
+	
+	let devigBooks = devigBook ? devigBook.split("+").filter(Boolean) : [];
+
+	if (!devigBooks.length) {
+		devigBooks = ALL_POSSIBLE_BOOKS;
+	} else if (devigBooks.length == 1) {
+		REQUIRED = devigBooks;
+	}
+	
+	// Clear existing options (keep action buttons)
+	const actionsDiv = menu.querySelector(".chkdd-actions");
+	menu.innerHTML = "";
+	if (actionsDiv) {
+		menu.appendChild(actionsDiv);
+	} else {
+		menu.innerHTML = `
+			<div class="chkdd-actions">
+				<button type="button" data-act="all">All</button>
+				<button type="button" data-act="any">Any</button>
+			</div>
+		`;
+	}
+	
+	// If no devig or market avg, show message
+	if (devigBooks.length === 0) {
+		const msg = document.createElement("div");
+		msg.style.padding = "8px";
+		msg.style.textAlign = "center";
+		msg.style.color = "#999";
+		msg.textContent = "Required Books";
+		menu.appendChild(msg);
+		updateRequiredLabel([]);
+		return;
+	}
+	
+	// Create checkbox for each devig book
+	devigBooks.forEach(book => {
+		const label = document.createElement("label");
+		const checkbox = document.createElement("input");
+		checkbox.type = "checkbox";
+		checkbox.value = book;
+		checkbox.addEventListener("change", () => {
+			REQUIRED = getRequiredBooks();
+			updateRequiredLabel(REQUIRED);
+			debouncedChangeFilter();
+		});
+		
+		const bookName = parseBook(book);
+		label.appendChild(checkbox);
+		label.appendChild(document.createTextNode(` ${bookName}`));
+		menu.appendChild(label);
+	});
+	
+	// Wire up All/Any buttons
+	const actionsButtons = menu.querySelectorAll(".chkdd-actions button");
+	actionsButtons.forEach(btn => {
+		btn.addEventListener("click", (e) => {
+			const act = e.target.dataset.act;
+			const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
+			
+			if (act === "all") {
+				checkboxes.forEach(cb => cb.checked = true);
+			} else if (act === "any") {
+				checkboxes.forEach(cb => cb.checked = false);
+			}
+			
+			REQUIRED = getRequiredBooks();
+			updateRequiredLabel(REQUIRED);
+			debouncedChangeFilter();
+		});
+	});
+	
+	// Restore previously selected books
+	if (REQUIRED.includes(",")) {
+		REQUIRED = REQUIRED.split(",");
+	} else if (typeof REQUIRED === "string" && REQUIRED.length > 0) {
+		REQUIRED = [REQUIRED];
+	}
+	const savedRequired = REQUIRED || [];
+	savedRequired.forEach(book => {
+		const checkbox = menu.querySelector(`input[value="${book}"]`);
+		if (checkbox) checkbox.checked = true;
+	});
+	
+	updateRequiredLabel(savedRequired);
 }
 
 if (document.getElementById("ou-select")) {
@@ -779,7 +911,9 @@ function renderDevigOptions(searchTerm = "") {
 				}
 
 				devigDisplay.textContent = opt.name;
-				document.getElementById("width-input").value = 1;
+				//REQUIRED = DEVIG.split("+");
+				REQUIRED = []; // require any by default
+				updateRequiredDropdown();
 				changeFilter();
 				devigModal.style.display = 'none';
 			});
@@ -918,6 +1052,21 @@ function closeDevig() {
 }
 document.getElementById('close-devig-modal')?.addEventListener('click', () => {
 	closeDevig();
+});
+
+// Close devig modal when clicking outside of it
+document.addEventListener('click', (e) => {
+	if (devigModal && devigModal.style.display === 'flex' && 
+	    !devigModal.contains(e.target) && !e.target.closest('#devig-button')) {
+		closeDevig();
+	}
+});
+
+// Close devig modal on escape key
+document.addEventListener('keydown', (e) => {
+	if (e.key === 'Escape' && devigModal && devigModal.style.display === 'flex') {
+		closeDevig();
+	}
 });
 
 // 3. Search Filter
@@ -1226,7 +1375,7 @@ function changeFilter(render = true) {
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
-	let width = parseInt(document.getElementById("width-input").value);
+	const requiredBooks = getRequiredBooks();
 	let props = getOptions("prop-options");
 	let games = getOptions("game-options");
 	let excluded = [...getExcludedBooks()];
@@ -1238,13 +1387,12 @@ function changeFilter(render = true) {
 	OU = ou;
 	MIN = minOdds;
 	MAX = maxOdds;
-	WIDTH = width;
 
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);
 	params.set("boost", boost);
 	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
-	params.set("width", width);
+	params.set("required", requiredBooks.join(","));
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", games.join(","));
 	params.set("book", book);
@@ -1270,14 +1418,19 @@ function changeFilter(render = true) {
 		}
 		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
 		const presentBooks = comboList.filter(k => bookOdds[k]).length;
-		row["present"] = presentBooks
-		if (!avg || presentBooks < WIDTH) {
-			row["ev"] = null;
-			row["fairVal"] = "";
-			row["implied"] = "";
-			row["kelly"] = "";
-			return;
+		row["present"] = presentBooks;
+
+		if (requiredBooks.length > 0) {
+			const hasAllRequired = requiredBooks.every(book => bookOdds[book]);
+			if (!hasAllRequired) {
+				row["ev"] = null;
+				row["fairVal"] = "";
+				row["implied"] = "";
+				row["kelly"] = "";
+				return;
+			}
 		}
+
 		let ex = [...excluded];
 		ex.push("pn"); ex.push("circa");
 		if (devigBook) {
@@ -1377,16 +1530,18 @@ function changeFilter(render = true) {
 		if (OU != "ou") {
 			if (r.under !== (OU === "u")) return false;
 		}
+		if (!["outliers", "atgs2"].includes(PAGE)) {
+			if (r.ev === null) return false;
+		}
 		if (minOdds && !(r.line > parseInt(minOdds, 10))) return false;
 		if (maxOdds && !(r.line < parseInt(maxOdds, 10))) return false;
 		if (props.length && !props.includes(r.prop)) return false;
 		if (games.length && !games.includes(r.game)) return false;
-		if (WIDTH > 1 && r.present < WIDTH) return false;
 		return true;
 	});
 
 	if (!filtered.length) {
-		let t = "No data for this devig.";
+		let t = "No data for this devig. Try adjusting your filters.";
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
 	}

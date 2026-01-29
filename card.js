@@ -112,7 +112,7 @@ function evCardFormatter(row) {
 		value = `+${value}`;
 	}
 	if (["outliers", "atgs2"].includes(PAGE)) {
-		return `<span class="ev-value">${(row?.outlierPct || 0).toFixed(2)}%</span><span style=""> from devig</span>`;
+		return `<span class="ev-value">${Math.round((row?.outlierPct || 0) * 100)}%</span><span style=""> from devig</span>`;
 	}
 	return `<span class="ev-value ${colorClass}">${value}%</span><span style="">EV</span>`;
 }

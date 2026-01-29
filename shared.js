@@ -12,7 +12,7 @@ let WEIGHTS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, WIDTH, TEAMS, METHOD;
+let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -163,6 +163,25 @@ function changePage(page) {
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}
+}
+
+function parseBook(book) {
+	let conv = {
+		PN: "Pinnacle",
+		B365: "Bet365",
+		BOL: "BetOnline",
+		BV: "Bovada",
+		CZ: "Caesars",
+		DK: "Draftkings",
+		FD: "Fanduel",
+		FN: "Fanatics",
+		HR: "Hardrock",
+		MGM: "BetMGM",
+		BR: "BetRivers",
+		FL: "Fliff",
+		RE: "ReBet"
+	}
+	return conv[book.toUpperCase()] || title(book);
 }
 
 function isBarrel(row) {
@@ -2296,6 +2315,13 @@ function computeOutlierFromBookOdds(rowData) {
 	let excluded = getExcludedBooks();
 	excluded.push("pn"); excluded.push("circa");
 
+	if (REQUIRED.length > 0) {
+		const hasAllRequired = REQUIRED.every(book => bookOdds[book]);
+		if (!hasAllRequired) {
+			return { book: null, value: null, deviation: 0, pct: 0 };
+		}
+	}
+
 	if (DEVIG) {
 		let p_devig;
 
@@ -2315,7 +2341,7 @@ function computeOutlierFromBookOdds(rowData) {
 				}
 			}
 
-			if (count === 0 || (WIDTH && count != WIDTH)) {
+			if (count === 0) {
 				return { book: null, value: null, deviation: 0, pct: 0 };
 			}
 			
@@ -3090,7 +3116,7 @@ function parseURLParams() {
 	MIN = URLParams.get("min") || "";
 	MAX = URLParams.get("max") || "";
 	SIDE = URLParams.get("side") ?? "both";
-	WIDTH = URLParams.get("width") || "1";
+	REQUIRED = URLParams.get("required") || "";
 	TEAMS = URLParams.get("teams") || "";
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";

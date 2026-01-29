@@ -549,7 +549,8 @@
 						responsive: 0
 					},
 					{
-						title: "Best Book", field: "book",
+						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
+						field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},

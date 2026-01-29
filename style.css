@@ -357,6 +357,16 @@ body::before {
 	border-top: 1px solid #eee;
 	text-align: center;
 }
+#toggle-bookodds-btn {
+	padding: 3px 6px;
+	cursor: pointer;
+	background: #2a2a2a;
+	border: 1px solid #444;
+	color: #c8c3bc;
+	border-radius: 4px;
+	font-size: 10px;
+	white-space: nowrap;
+}
 #table-container {
 	flex: 1 1 auto;
 	display: flex;

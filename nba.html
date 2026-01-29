@@ -625,7 +625,8 @@
 						responsive: 0
 					},
 					{
-						title: "Best Book", field: "book",
+						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
+						field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
@@ -722,7 +723,7 @@
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
-					{title: "Opp<br>Pos Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
+					{title: "DvP<br>Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},

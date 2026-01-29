@@ -684,11 +684,13 @@
 						visible: false
 					},
 					{
-						title: "Best Book", field: "book",
+						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
+						field: "book",
 						vertAlign:"bottom", width: MOBILE ? 75 : 75,
 						formatter: evBookFormatter2,
 						formatterParams:{book:BOOK},
-						responsive: 0
+						responsive: 0,
+						titleFormatter: "html"
 					},
 					{
 						title: "Player (L5 TOI/g)",
@@ -808,8 +810,7 @@
 					{title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 90, hozAlign: "left"},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: "DvP<br>Rank", field: "dvpRank", formatter: rankingFormatter, width: 50},
-					
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`,field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
@@ -970,6 +971,36 @@
 				}
 			});
 			console.log(out);
+		}
+
+		function toggleBookOddsColumns() {
+			const bookOddsFields = [
+				"bookOdds.circa", "bookOdds.fd", "bookOdds.b365", "bookOdds.dk",
+				"bookOdds.mgm", "bookOdds.espn", "bookOdds.cz", "bookOdds.fn",
+				"bookOdds.br", "bookOdds.hr", "bookOdds.bv", "bookOdds.re",
+				"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn"
+			];
+			
+			const circaCol = TABLE.getColumn("bookOdds.circa");
+			const isVisible = circaCol.isVisible();
+			
+			// Toggle all bookOdds columns
+			bookOddsFields.forEach(field => {
+				const col = TABLE.getColumn(field);
+				if (col) {
+					if (isVisible) {
+						col.hide();
+					} else {
+						col.show();
+					}
+				}
+			});
+			
+			// Update the toggle icon
+			const toggleIcon = document.querySelector("#book-odds-toggle");
+			if (toggleIcon) {
+				toggleIcon.textContent = isVisible ? "+" : "−";
+			}
 		}
 	</script>
 	<script type="text/javascript" src="filter.js"></script>

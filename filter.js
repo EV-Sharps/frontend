@@ -187,6 +187,41 @@ function renderFilters() {
 	renderBookSelect();
 }
 
+function toggleBookOddsColumns() {
+	const bookOddsFields = ["bookOdds.circa", "bookOdds.fd", "bookOdds.b365", "bookOdds.dk",
+		"bookOdds.mgm", "bookOdds.espn", "bookOdds.cz", "bookOdds.fn",
+		"bookOdds.br", "bookOdds.hr", "bookOdds.bv", "bookOdds.re",
+		"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn"
+	];
+	
+	const circaCol = TABLE.getColumn("bookOdds.circa");
+	if (!circaCol) return;
+	
+	const isVisible = circaCol.isVisible();
+	
+	// Toggle all bookOdds columns
+	bookOddsFields.forEach(field => {
+		const col = TABLE.getColumn(field);
+		if (col) {
+			if (isVisible) {
+				col.hide();
+			} else {
+				col.show();
+			}
+		}
+	});
+	
+	// Update the toggle button
+	const toggleBtn = document.querySelector("#toggle-bookodds-btn");
+	if (toggleBtn) {
+		if (isVisible) {
+			toggleBtn.innerHTML = '<span id="book-odds-toggle">+</span> Show Odds';
+		} else {
+			toggleBtn.innerHTML = '<span id="book-odds-toggle">−</span> Hide Odds';
+		}
+	}
+}
+
 function updateHeaders() {
 	const weights = (typeof devigDisplay !== "undefined") ? getPercentWeights() : {};
 	for (book in UPDATED[PAGE]) {

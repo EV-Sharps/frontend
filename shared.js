@@ -70,8 +70,10 @@ let PAGE_DROPDOWN = `
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
 	<option value="kotc">🏀 KOTC</option>
 	<option value="analysis?sport=nba">🏀 Results</option>
+	<!-- 
 	<option value="ncaafprops">🏈 CFB Props</option>
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
+	-->
 	<option value="ncaab">🏀 CBB (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
 	<option value="outliers?sport=nba">🏀 Outliers</option>
@@ -2974,7 +2976,7 @@ function buildTourSteps() {
 	const book = colHeader("book");
 	const bookSel = document.getElementById("book-select");
 	const devigSel = document.getElementById("devig-button");
-	const widthInput = document.getElementById("width-input");
+	const requiredInput = document.getElementById("required-button");
 	const exclude = document.getElementById("exclude-dd");
 	const fv = colHeader("fairVal");
 	const implied = colHeader("implied");
@@ -3024,10 +3026,10 @@ function buildTourSteps() {
 		position: "bottom"
 	});
 
-	if (widthInput) steps.push({
-		element: widthInput,
-		title: "Width",
-		intro: "The minimum number of trusted sportsbooks required to have odds available for a play to be shown. Higher width means more consensus and higher confidence.",
+	if (requiredInput) steps.push({
+		element: requiredInput,
+		title: "Required Books",
+		intro: "Only show plays where these books have prices available. Useful for ensuring access to lines.",
 		position: "bottom"
 	});
 

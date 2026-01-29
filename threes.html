@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏀 PTS/REB/AST</title>
+	<title>🏀 3PTM</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -515,7 +515,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "pts";
+		PAGE = "threes";
 		
 		parseURLParams();
 		SPORT = "nba";
@@ -527,7 +527,7 @@
 		handleSession();
 
 		function fetchProps() {
-			fetch(API_BASE+`/api/pts`, {
+			fetch(API_BASE+`/api/threes`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}

@@ -213,7 +213,7 @@ async function saveExcludeHelper(key) {
 	const excluded = getExcludedBooks();
 
 	if (key == "all") {
-		for (k of ["atgs", "atgs2", "dingers", "live", "main", "mlb", "nba", "ncaaf", "ncaafprops", "nhl", "pts", "soccer", "tds"]) {
+		for (k of ["atgs", "atgs2", "dingers", "live", "main", "mlb", "nba", "ncaaf", "ncaafprops", "nhl", "pts", "threes", "outliers", "soccer", "tds"]) {
 			data[`${k}-exclude`] = excluded;
 		}
 	} else {
@@ -397,7 +397,7 @@ async function handleSession() {
 				fetchPlays();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "analysis", "ncaab", "tds", "live", "nfl", "ncaaf", "ncaafprops"].includes(PAGE)) {
+	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "threes", "analysis", "ncaab", "tds", "live", "nfl", "ncaaf", "ncaafprops"].includes(PAGE)) {
 		initChkddActions();
 		fetchProps();
 		renderFilters();

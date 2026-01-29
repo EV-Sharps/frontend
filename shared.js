@@ -35,7 +35,7 @@ let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
-	<option value="tds">🏈 TDs</option>
+	<option value="tds">🏈 TDs (Free)</option>
 	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="analysis?sport=nfl">🏈 Results</option>
@@ -65,8 +65,9 @@ let PAGE_DROPDOWN = `
 	<option value="nhl">🏒 NHL Props (Sharps)</option>
 	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
 	<option value="analysis?sport=nhl">🏒 Results</option>
-	<option value="pts">🏀 PTS</option>
-	<option value="nba">🏀 NBA Props (Sharps)</option>
+	<option value="threes">🏀 3PTM (Free) </option>
+	<option value="pts">🏀 PTS/REB/AST (Analyst) </option>
+	<option value="nba">🏀 All NBA Props (Sharps)</option>
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
 	<option value="kotc">🏀 KOTC</option>
 	<option value="analysis?sport=nba">🏀 Results</option>

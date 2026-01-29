@@ -497,7 +497,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 
 				DEVIG = devig;
 				WEIGHT = repeatOnes(devig).slice(1);
-				document.getElementById("width-input").value = devig.split("+").length;
+				REQUIRED = [];
 				const bookSelectEl = document.getElementById("book-select");
 				if (bookSelectEl) bookSelectEl.value = book.replace("best", "") || "";
 				setOptions("prop-options", [prop]);

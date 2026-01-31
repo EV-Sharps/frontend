@@ -419,7 +419,7 @@ async function initDevPicker(data){
 			if (hidden) hidden.value = dev;
 			// toggle active class only on buttons
 			document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
-			btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
+			btn.scrollIntoView({inline: 'nearest', block: 'nearest'});
 			
 			WEIGHT = repeatOnes(DEVIG).slice(1);
 			REQUIRED = [];
@@ -440,7 +440,7 @@ async function initDevPicker(data){
 	if (activeWrap) {
 		// if the active element is a button inside wrap, scroll its wrapper
 		const btn = picker.querySelector('.dev-chip.active');
-		if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'center'});
+		if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'nearest', block: 'nearest'});
 	}
 }
 

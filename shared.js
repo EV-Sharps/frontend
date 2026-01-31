@@ -1142,6 +1142,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx')}.png' alt='${book}' title='${book}' />` : "";
 	
 	// Get ROI color for vertical slice
+	let extra = "";
 	let borderColor = 'transparent';
 	if (["atgs"].includes(PAGE)) {
 		const roi = getRowROI(data);
@@ -1153,6 +1154,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	return `
 		<div class='evbook-cell ${cls}' style='border-left: 2px solid ${borderColor};'>
 			<span class='evbook-odds'>${line}</span>
+			<span class='evbook-implied'>${extra}</span>
 			${img}
 		</div>
 	`;

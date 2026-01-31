@@ -381,6 +381,10 @@ async function initDevPicker(data){
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';
 
+		if (PAGE === "nhl" && ["atgs", "fgs", "lgs"].includes(prop)) {
+			continue; // skip atgs/fgs/lgs for nhl page
+		}
+
 		// Add prop tag
 		const propTag = document.createElement('div');
 		propTag.className = 'dev-prop-tag';

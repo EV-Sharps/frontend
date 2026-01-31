@@ -428,6 +428,7 @@ async function initDevPicker(data){
 			if (bookSelectEl) bookSelectEl.value = row.book.replace("best", "") || "";
 			setOptions("prop-options", [prop]);
 			updatePropLabel([prop]);
+			updateRequiredDropdown();
 			changeFilter();
 		});
 

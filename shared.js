@@ -9,6 +9,7 @@ let ACCESS_TOKEN = "";
 let API_BASE = "http://localhost:5001";
 let UPDATED = {};
 let WEIGHTS = {};
+let HEATMAP = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
@@ -1091,8 +1092,17 @@ const evFormatter = function(cell, params, rendered) {
 		cls = "positive";
 	}
 	let ou = data.ou || data.daily?.ou || "";
+
+	// Get ROI color for vertical slice
+	let borderColor = 'transparent';
+	if (["atgs"].includes(PAGE)) {
+		const roi = getRowROI(data);
+		if (roi !== null) {
+			borderColor = roiToColor(roi);
+		}
+	}
 	return `
-		<div class='ev-cell'>
+		<div class='ev-cell' style='border-left: 4px solid ${borderColor};'>
 			<span class='ev ${cls}'>${ev}%</span>
 			<span class='ou'>${ou}</span>
 		</div>
@@ -1127,7 +1137,7 @@ const hedgeBookFormatter = function(cell) {
 	</div>`;
 }
 
-const evBookFormatter2 = function(cell, params, rendered) {
+const bestBookFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const book = ["outliers", "atgs2"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";

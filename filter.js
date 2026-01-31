@@ -186,6 +186,9 @@ function renderBookSelect() {
 function renderFilters() {
 	renderBookSelect();
 	initDevPicker(getTopDevigs(BOOK||"best"));
+	if (typeof loadHeatmapData === "function") {
+		loadHeatmapData();
+	}
 }
 
 function toggleBookOddsColumns() {
@@ -623,7 +626,9 @@ if (methodInit) {
 			renderDashboard();
 		} else {
 			saveMethod();
-			changeFilter();
+			loadHeatmapData().then(() => {
+				changeFilter();
+			});
 		}
 	});
 }

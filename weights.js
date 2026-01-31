@@ -375,6 +375,9 @@ async function initDevPicker(data){
 	picker.innerHTML = '';
 	if (hidden) hidden.innerHTML = '';
 
+	if (!data || data.length === 0) {
+		return;
+	}
 	for (row of data) {
 		const [prop, dev] = row.devig.split("-vs-");
 		// wrapper holds the chip button and the small record line beneath
@@ -434,7 +437,7 @@ async function initDevPicker(data){
 			btn.scrollIntoView({inline: 'nearest', block: 'nearest'});
 			
 			WEIGHT = repeatOnes(DEVIG).slice(1);
-			REQUIRED = [];
+			REQUIRED = DEVIG.split("+");
 			document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
 			const bookSelectEl = document.getElementById("book-select");
 			if (bookSelectEl) bookSelectEl.value = row.book.replace("best", "") || "";

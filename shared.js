@@ -1141,12 +1141,13 @@ const bestBookFormatter = function(cell, params, rendered) {
 	}
 	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx')}.png' alt='${book}' title='${book}' />` : "";
 	
-	// Get ROI color for vertical slice
+	// Get ROI color for vertical slice and W-L record
 	let extra = "";
 	let borderColor = 'transparent';
-	const roi = getRowROI(data);
-	if (roi !== null) {
-		borderColor = roiToColor(roi);
+	const roiData = getRowROI(data);
+	if (roiData !== null) {
+		borderColor = roiToColor(roiData.roi);
+		extra = `${roiData.wins}W-${roiData.losses}L`;
 	}
 	
 	return `
@@ -3079,15 +3080,18 @@ function getRowROI(rowData) {
 
 			if (betsInBin.length === 0) return null;
 
-			// Calculate ROI
+			// Calculate ROI and W-L
+			let wins = 0, losses = 0;
 			const profits = betsInBin.map(b => {
 				const isWin = !!b.hit;
+				if (isWin) wins++;
+				else losses++;
 				const profit = isWin ? (b.odds > 0 ? b.odds/100 : 100/Math.abs(b.odds)) : -1.0;
 				return profit;
 			});
 
 			const avgROI = profits.reduce((a,b) => a+b, 0) / profits.length;
-			return avgROI;
+			return { roi: avgROI, wins: wins, losses: losses };
 		}
 	} catch(e) {
 		console.error('Error calculating ROI:', e);

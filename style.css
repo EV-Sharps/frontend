@@ -1532,6 +1532,9 @@ h1 {
 	.evbook-odds {
 		display: none;
 	}
+	.book-img {
+		display: none;
+	}
 }
 .ev-cell:hover {
 	.ou {

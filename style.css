@@ -34,6 +34,7 @@ footer {
 }
 main {
 	display: flex;
+	flex-direction: column;
 	flex: 1 1 auto;
 	overflow: hidden;
 	justify-content: center;
@@ -380,6 +381,88 @@ body::before {
 	height: 100%;
 	overflow: hidden;
 }
+.dev-chip-wrap {
+	display: flex;           /* use normal flex (not inline-flex) so gap works reliably */
+	flex-direction: column;
+	align-items: center;
+	flex: 0 0 auto;         /* never shrink, occupy own slot in the scroller */
+	margin-right: 8px;
+	min-width: 0;
+}
+
+.book-chip,
+.dev-chip {
+	flex: 0 0 auto;
+	background: #172027;
+	color: #e6e6e6;
+	border: 1px solid #2a2e39;
+	border-radius: 999px;
+	padding: 6px 12px;
+	font-size: 13px;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.book-chip:hover,
+.dev-chip:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 14px rgba(0,0,0,0.32);
+}
+
+.book-chip:focus,
+.dev-chip:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(31,101,255,0.14);
+}
+
+/* active styling (visible in dark mode) */
+.book-chip.active,
+.dev-chip.active {
+	background: linear-gradient(180deg,#1f65ff,#1554d6) !important;
+	border-color: #1554d6;
+	color: #ffffff;
+	box-shadow: 0 6px 18px rgba(31,101,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.15);
+	transform: translateY(-1px);
+}
+
+.book-chip,
+.dev-chip {
+	flex: 0 0 auto;         /* prevent chips from shrinking and overlapping */
+	display: inline-block;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+	/* keep the small record line compact and prevent it from forcing layout */
+.dev-subinfo {
+	margin-top: 6px;
+	font-size: 11px;
+	color: #bfc6cc;
+	line-height: 1;
+	max-width: 88px;        /* limit width so it doesn't push neighbors */
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: center;
+}
+
+.book-picker,
+#dev-picker {
+	display: flex;
+	gap: 8px;
+	padding: 6px 6px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	align-items: center;
+	white-space: nowrap;
+	min-width: 0;
+}
+.book-picker::-webkit-scrollbar,
+#dev-picker::-webkit-scrollbar { height: 8px; }
+.book-picker::-webkit-scrollbar-thumb,
+#dev-picker::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
 .remove-weight {
 	padding: 2px 6px;
 	background-color: #E83333;

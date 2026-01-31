@@ -303,7 +303,7 @@ function closeWeights() {
 }
 
 // Start preload logic
-function getTopDevigs(limit = 0) {
+function getTopDevigs(bookArg = null) {
 	if (typeof RECORD === "undefined" || !RECORD) {
 		return { error: "RECORD not available" };
 	}
@@ -311,6 +311,7 @@ function getTopDevigs(limit = 0) {
 	const books = RECORD[METHOD || "worst"];
 	if (!books) return list;
 	for (const book in books) {
+		if (bookArg && book !== bookArg) continue;
 		const devigs = books[book];
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
@@ -320,7 +321,6 @@ function getTopDevigs(limit = 0) {
 			const prop = parts[0] || devigKey;
 			
 			if (PAGE == "atgs" && !["atgs", "fgs", "lgs"].includes(prop)) continue;
-			//if (propFilter && prop !== propFilter) continue;
 			list.push({
 				method: METHOD || "",
 				book,
@@ -335,8 +335,7 @@ function getTopDevigs(limit = 0) {
 		}
 	}
 	list.sort((a,b) => b.roi - a.roi);
-	if (!limit) return list;
-	return list.slice(0, limit);
+	return list;
 }
 
 // wire up the Preloads button -> open separate Preloads window/modal
@@ -351,7 +350,7 @@ function openPreloadsWindow(limit = 0) {
 	if (devigModal) devigModal.style.display = "none";
 	preloadsModal.style.display = "flex";
 
-	const top = getTopDevigs(limit);
+	const top = getTopDevigs();
 	if (top && top.error) {
 		container.innerHTML = `<div style="padding:1rem;color:#900">${top.error}</div>`;
 		return;
@@ -367,6 +366,81 @@ function closePreloadsWindow() {
 	if (preloadsModal) preloadsModal.style.display = "none";
 	if (devigModal) devigModal.style.display = "flex";
 	if (container) container.innerHTML = "";
+}
+
+async function initDevPicker(data){
+	const picker = document.getElementById('dev-picker');
+	const hidden = document.getElementById('devig-select');
+	if (!picker) return;
+	picker.innerHTML = '';
+	if (hidden) hidden.innerHTML = '';
+
+	for (row of data) {
+		const [prop, dev] = row.devig.split("-vs-");
+		// wrapper holds the chip button and the small record line beneath
+		const wrap = document.createElement('div');
+		wrap.className = 'dev-chip-wrap';
+
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'book-chip dev-chip';
+		btn.dataset.value = dev;
+		btn.textContent = dev.toUpperCase();
+		wrap.appendChild(btn);
+
+		// try to read record from RECORD global (by BOOK & dev key)
+		const info = document.createElement('div');
+		info.className = 'dev-subinfo';
+		let recText = '';
+		try {
+			const rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[METHOD||"worst"][BOOK||"best"]) ? RECORD[METHOD||"worst"][BOOK||"best"][`${prop}-vs-${dev}`] : null;
+			if (rec) {
+				const wins = rec.wins ?? rec.w ?? 0;
+				const losses = rec.losses ?? rec.l ?? 0;
+				const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');
+				//recText = `${wins}W ${losses}L ${roi ? `(${roi})` : ''}`;
+				recText = `${wins}W - ${losses}L ${roi ? `<br><span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>` : ''}`;
+			}
+		} catch (e) {
+			recText = '';
+		}
+		info.innerHTML = recText;
+		wrap.appendChild(info);
+
+		// default selection logic: preserve DEVIG or pick first available
+		if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
+			btn.classList.add('active');
+			DEVIG = dev;
+			if (hidden) hidden.value = dev;
+		}
+
+		btn.addEventListener('click', () => {
+			DEVIG = dev;
+			if (hidden) hidden.value = dev;
+			// toggle active class only on buttons
+			document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
+			btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
+			
+			WEIGHT = repeatOnes(DEVIG).slice(1);
+			REQUIRED = [];
+			document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
+			const bookSelectEl = document.getElementById("book-select");
+			if (bookSelectEl) bookSelectEl.value = row.book.replace("best", "") || "";
+			setOptions("prop-options", [prop]);
+			updatePropLabel([prop]);
+			changeFilter();
+		});
+
+		picker.appendChild(wrap);
+	}
+
+	// ensure active visible
+	const activeWrap = picker.querySelector('.dev-chip.active');
+	if (activeWrap) {
+		// if the active element is a button inside wrap, scroll its wrapper
+		const btn = picker.querySelector('.dev-chip.active');
+		if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'center'});
+	}
 }
 
 function renderPreloadsList(container, items, prop = "atgs") {

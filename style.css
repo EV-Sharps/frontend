@@ -448,14 +448,29 @@ body::before {
 	text-align: center;
 }
 
+.dev-prop-tag {
+	font-size: 9px;
+	font-weight: 700;
+	color: #fff;
+	background: #172027;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	margin-bottom: 4px;
+	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+	border: 1px solid rgba(59, 130, 246, 0.4);
+	white-space: nowrap;
+}
+
 .book-picker,
 #dev-picker {
 	display: flex;
-	gap: 8px;
-	padding: 6px 6px;
+	gap: 6px;
+	padding: 8px 6px;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
-	align-items: center;
+	align-items: flex-start;
 	white-space: nowrap;
 	min-width: 0;
 }

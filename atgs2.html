@@ -16,6 +16,7 @@
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
 		#table {
@@ -331,6 +332,11 @@
 			</div>
 		</header>
 		<main>
+			<div class="select-wrapper">
+				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
+
+				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
+			</div>
 			<div id="table-container">
 				<div style="margin:0.5rem 0;font-style: italic;">
 					Disclaimer: To better highlight long-shot outliers, no manual vig has been applied to 1-way lines. As a result, the EV values shown here differ from standard expected value calculations.

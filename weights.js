@@ -381,6 +381,14 @@ async function initDevPicker(data){
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';
 
+		// Add prop tag
+		const propTag = document.createElement('div');
+		propTag.className = 'dev-prop-tag';
+		propTag.textContent = prop || '';
+		if (!["atgs", "tds"].includes(PAGE)) {
+			wrap.appendChild(propTag);
+		}
+
 		const btn = document.createElement('button');
 		btn.type = 'button';
 		btn.id = `devig-btn-${cssSafeId(dev)}`;
@@ -399,8 +407,7 @@ async function initDevPicker(data){
 				const wins = rec.wins ?? rec.w ?? 0;
 				const losses = rec.losses ?? rec.l ?? 0;
 				const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');
-				//recText = `${wins}W ${losses}L ${roi ? `(${roi})` : ''}`;
-				recText = `${wins}W - ${losses}L ${roi ? `<br><span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>` : ''}`;
+				recText = `${wins}W-${losses}L <span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>`;
 			}
 		} catch (e) {
 			recText = '';

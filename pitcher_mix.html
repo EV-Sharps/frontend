@@ -16,6 +16,7 @@
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
 		#tables {
@@ -189,6 +190,11 @@
 			</div>
 		</header>
 		<main>
+			<div class="select-wrapper">
+				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
+
+				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
+			</div>
 			<div id="table-container">
 				<div class="games-bar">
 					<button class="nav prev" aria-label="Previous">‹</button>

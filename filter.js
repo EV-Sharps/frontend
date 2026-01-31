@@ -435,8 +435,6 @@ if (devigSel) {
 	devigSel.addEventListener("change", (event) => {
 		if (event.target.value == "custom") {
 			openCustomDevig();
-		} else if (event.target.value == "delete") {
-			openDeleteCustomDevigOverlay();
 		} else {
 			[DEVIG, WEIGHT] = event.target.value.split(";");
 			if (!DEVIG.includes("+")) {
@@ -1243,17 +1241,6 @@ function populateCustomDevigSelect() {
 	const customDevigs = getCustomDevigs();
 }
 
-function openDeleteCustomDevigOverlay() {
-	document.getElementById("delete-custom-devig-overlay").style.display = "flex";
-	renderCustomDevigList();
-	document.getElementById("custom-devig-select").value = "";
-}
-
-function closeDeleteCustomDevigOverlay() {
-	document.getElementById("delete-custom-devig-overlay").style.display = "none";
-	document.getElementById("devig-select").value = DEVIG;
-}
-
 let EDITING_ALIAS = null;
 
 function startRenameDevig(key) {
@@ -1577,7 +1564,7 @@ function changeFilter(render = true) {
 		if (OU != "ou") {
 			if (r.under !== (OU === "u")) return false;
 		}
-		if (!["outliers", "atgs2"].includes(PAGE)) {
+		if (!["outliers", "atgs2", "analysis"].includes(PAGE) || (PAGE == "analysis" && VIG != "0")) {
 			if (r.ev === null) return false;
 		}
 		if (minOdds && !(r.line > parseInt(minOdds, 10))) return false;

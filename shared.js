@@ -1144,11 +1144,9 @@ const bestBookFormatter = function(cell, params, rendered) {
 	// Get ROI color for vertical slice
 	let extra = "";
 	let borderColor = 'transparent';
-	if (["atgs"].includes(PAGE)) {
-		const roi = getRowROI(data);
-		if (roi !== null) {
-			borderColor = roiToColor(roi);
-		}
+	const roi = getRowROI(data);
+	if (roi !== null) {
+		borderColor = roiToColor(roi);
 	}
 	
 	return `
@@ -2981,6 +2979,120 @@ function colHeader(field) {
 
 function hideUsername() {
 	document.getElementById("auth-buttons").style.display = "none";
+}
+
+async function loadHeatmapData() {
+	try {
+		// Load the compressed heatmap data
+		const response = await fetch(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);
+		const buffer = await response.arrayBuffer();
+		
+		// Decompress if pako is available
+		if (typeof pako !== 'undefined') {
+			const decompressed = pako.ungzip(new Uint8Array(buffer), { to: 'string' });
+			const heatmapData = JSON.parse(decompressed);
+			
+			// Store in HEATMAP for use in getRowROI
+			if (!HEATMAP) HEATMAP = {};
+			HEATMAP.xy = heatmapData.xy;
+			HEATMAP.record = heatmapData.record;
+		}
+	} catch (e) {
+		console.warn('Failed to load heatmap data for ROI coloring:', e);
+	}
+}
+
+// Color interpolation matching heatmap colors
+function roiToColor(roi) {
+	// Heatmap colors: red (#b2182b) at -1, white (#f7f7f7) at 0, blue (#2166ac) at 1
+	const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+	const normalized = clamp(roi, -1, 1); // clamp to [-1, 1]
+	
+	if (normalized < 0) {
+		// Interpolate between red and white
+		const t = (normalized + 1); // 0 to 1
+		return interpolateColor('#b2182b', '#f7f7f7', t);
+	} else {
+		// Interpolate between white and blue
+		const t = normalized; // 0 to 1
+		return interpolateColor('#f7f7f7', '#2166ac', t);
+	}
+}
+
+function interpolateColor(color1, color2, t) {
+	const hex = (c) => parseInt(c, 16);
+	const r1 = hex(color1.slice(1,3)), g1 = hex(color1.slice(3,5)), b1 = hex(color1.slice(5,7));
+	const r2 = hex(color2.slice(1,3)), g2 = hex(color2.slice(3,5)), b2 = hex(color2.slice(5,7));
+	const r = Math.round(r1 + (r2 - r1) * t);
+	const g = Math.round(g1 + (g2 - g1) * t);
+	const b = Math.round(b1 + (b2 - b1) * t);
+	return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+function findBin(value, bins) {
+	if (value < bins[0] || value > bins[bins.length-1]) return -1;
+	for(let i=0; i<bins.length-1; i++){
+		const left = bins[i], right = bins[i+1];
+		if (value >= left && value <= right) return i;
+	}
+	return -1;
+}
+
+function arange(start, stop, step) {
+	const r = [];
+	for(let v = start; v <= stop + 1e-9; v += step) r.push(v);
+	return r;
+}
+
+function getRowROI(rowData) {
+	// Define your bin ranges (match these to your heatmap settings)
+	const evStep = 1, oddsStep = 100;
+	let evRange = [0, 30], oddsRange = [100, 3000];
+
+	const evBins = arange(evRange[0], evRange[1], evStep);
+	const oddsBins = arange(oddsRange[0], oddsRange[1], oddsStep);
+
+	const evBin = findBin(rowData.ev || 0, evBins);
+	const oddsBin = findBin(rowData.line || 0, oddsBins);
+
+	if (evBin === -1 || oddsBin === -1) return null;
+
+	// Look up in RECORD - you'll need to fetch heatmap data
+	// This assumes you have RES loaded with the xy data structure
+	try {
+		if (typeof HEATMAP !== 'undefined' && HEATMAP && HEATMAP.xy) {
+			const propData = HEATMAP.xy[rowData.prop];
+			if (!propData) return null;
+			
+			const bookData = propData[rowData.book] || propData['best'];
+			if (!bookData) return null;
+
+			const devigData = bookData[DEVIG];
+			if (!devigData) return null;
+
+			// Find bets in this bin
+			const betsInBin = devigData.filter(b => {
+				const bEv = findBin(Number(b.ev), evBins);
+				const bOd = findBin(Number(b.odds), oddsBins);
+				return bEv === evBin && bOd === oddsBin;
+			});
+
+			if (betsInBin.length === 0) return null;
+
+			// Calculate ROI
+			const profits = betsInBin.map(b => {
+				const isWin = !!b.hit;
+				const profit = isWin ? (b.odds > 0 ? b.odds/100 : 100/Math.abs(b.odds)) : -1.0;
+				return profit;
+			});
+
+			const avgROI = profits.reduce((a,b) => a+b, 0) / profits.length;
+			return avgROI;
+		}
+	} catch(e) {
+		console.error('Error calculating ROI:', e);
+	}
+	return null;
 }
 
 function buildTourSteps() {

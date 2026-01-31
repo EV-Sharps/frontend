@@ -957,6 +957,11 @@ function renderDevigOptions(searchTerm = "") {
 				REQUIRED = []; // require any by default
 				updateRequiredDropdown();
 				changeFilter();
+				const el = document.getElementById(`devig-btn-${cssSafeId(DEVIG)}`);
+				if (el) {
+					document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === el));
+					el.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+				}
 				devigModal.style.display = 'none';
 			});
 

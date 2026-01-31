@@ -383,6 +383,7 @@ async function initDevPicker(data){
 
 		const btn = document.createElement('button');
 		btn.type = 'button';
+		btn.id = `devig-btn-${cssSafeId(dev)}`;
 		btn.className = 'book-chip dev-chip';
 		btn.dataset.value = dev;
 		btn.textContent = dev.toUpperCase();

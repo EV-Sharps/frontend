@@ -1092,17 +1092,8 @@ const evFormatter = function(cell, params, rendered) {
 		cls = "positive";
 	}
 	let ou = data.ou || data.daily?.ou || "";
-
-	// Get ROI color for vertical slice
-	let borderColor = 'transparent';
-	if (["atgs"].includes(PAGE)) {
-		const roi = getRowROI(data);
-		if (roi !== null) {
-			borderColor = roiToColor(roi);
-		}
-	}
 	return `
-		<div class='ev-cell' style='border-left: 4px solid ${borderColor};'>
+		<div class='ev-cell'>
 			<span class='ev ${cls}'>${ev}%</span>
 			<span class='ou'>${ou}</span>
 		</div>
@@ -1137,7 +1128,7 @@ const hedgeBookFormatter = function(cell) {
 	</div>`;
 }
 
-const bestBookFormatter = function(cell) {
+const bestBookFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	const book = ["outliers", "atgs2"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";
@@ -1149,8 +1140,18 @@ const bestBookFormatter = function(cell) {
 		line = `+${line}`;
 	}
 	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx')}.png' alt='${book}' title='${book}' />` : "";
+	
+	// Get ROI color for vertical slice
+	let borderColor = 'transparent';
+	if (["atgs"].includes(PAGE)) {
+		const roi = getRowROI(data);
+		if (roi !== null) {
+			borderColor = roiToColor(roi);
+		}
+	}
+	
 	return `
-		<div class='evbook-cell ${cls}'>
+		<div class='evbook-cell ${cls}' style='border-left: 2px solid ${borderColor};'>
 			<span class='evbook-odds'>${line}</span>
 			${img}
 		</div>

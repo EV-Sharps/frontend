@@ -30,6 +30,11 @@
 				width: 100%;
 			}
 		}
+		@media (max-width: 600px) {
+			#chart {
+				display: none;
+			}
+		}
 	</style>
 </head>
 
@@ -844,9 +849,7 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
-				if (!MOBILE) {
-					rowClick(row);
-				}
+				rowClick(row);
 			});
 
 			TABLE.on("dataLoaded", function(data) {
@@ -878,10 +881,145 @@
 				row.select();
 				left.style.width = MOBILE ? "100%" : "50%";
 				right.style.display = "flex";
+				right.style.flexDirection = "row-reverse";
+				right.style.gap = "1rem";
 				table.style.width = "100%";
 				tableContainer.style.width = "100%";
-				plotHRGap();
+				if (!MOBILE) {
+					plotHRGap();
+				}
+				renderGoalPropsTable(data);
 			}
+		}
+
+		function renderGoalPropsTable(playerData) {
+			const rightBody = document.querySelector("#right-body");
+			if (!rightBody) return;
+
+			// Check if table already exists, if not create container
+			let tableContainer = document.querySelector("#goal-props-table");
+			if (!tableContainer) {
+				tableContainer = document.createElement("div");
+				tableContainer.id = "goal-props-table";
+				rightBody.appendChild(tableContainer);
+			}
+
+			// Find all rows for this player with different props
+			const allRows = [...RES.data];
+			const playerRows = allRows.filter(r => r.player === playerData.player && r.game === playerData.game);
+
+			// Group by prop (1+ goals, 2+ goals, etc)
+			const propMap = {};
+			playerRows.forEach(r => {
+				if (r.prop === 'atgs' && r.handicap == "0.5") {
+					propMap['1+'] = r;
+				} else if (r.prop === 'atgs' && r.handicap == "1.5") {
+					propMap['2+'] = r;
+				} else if (r.prop === 'atgs' && r.handicap == "2.5") {
+					propMap['3+'] = r;
+				}
+			});
+
+			// Books to display
+			const books = ["circa", "pn", 'fd', 'dk', 'b365', 'mgm', 'espn', 'cz', 'fn', 'br', 'hr', 'bv', 'kambi', 're', 'fl', 'bol'];
+			
+			// Find best odds for each column (highest positive or least negative)
+			const findBestOdds = (propKey) => {
+				let bestOdds = null;
+				let bestValue = -Infinity;
+				
+				books.forEach(book => {
+					let odds = propMap[propKey]?.bookOdds?.[book];
+					if (odds != null) {
+						odds = parseInt(odds.split("/")[0]);
+						if (odds > bestValue) {
+							bestValue = odds;
+							bestOdds = odds;
+						}
+					}
+				});
+				
+				return bestOdds;
+			};
+
+			const best1 = findBestOdds('1+');
+			const best2 = findBestOdds('2+');
+			const best3 = findBestOdds('3+');
+			
+			// Build table HTML
+			let html = `
+				<div style="padding: 1rem; overflow-x: auto; max-height: 400px; overflow-y: auto; background: #0f1117; border-radius: 8px; position: relative;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 0.5rem 0; position: sticky; top: 0; background: #0f1117; padding-bottom: 0.5rem; z-index: 1;">
+						<h3 style="margin: 0;">${title(playerData.player)} - Goal Props</h3>
+						<button onclick="closeRightPanel()" style="background: transparent; border: none; color: #e6e6e6; cursor: pointer; font-size: 24px; line-height: 1; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" onmouseover="this.style.background='#2a2e39'" onmouseout="this.style.background='transparent'">×</button>
+					</div>
+					<table style="width: 100%; border-collapse: collapse; background: #1a1d24; color: #e6e6e6;">
+						<thead style="position: sticky; top: 3rem; background: #1a1d24; z-index: 1;">
+							<tr style="border-bottom: 2px solid #3a3f4f;">
+								<th style="padding: 0.75rem; text-align: left;">Book</th>
+								<th style="padding: 0.75rem; text-align: center;">1+</th>
+								<th style="padding: 0.75rem; text-align: center;">2+</th>
+								<th style="padding: 0.75rem; text-align: center;">3+</th>
+							</tr>
+						</thead>
+						<tbody>
+			`;
+
+			books.forEach(book => {
+				const bookName = book.toUpperCase();
+				let odds1 = propMap['1+']?.bookOdds?.[book];
+				let odds2 = propMap['2+']?.bookOdds?.[book];
+				let odds3 = propMap['3+']?.bookOdds?.[book];
+
+				if (odds1) {
+					odds1 = parseInt(odds1.split("/")[0]);
+				}
+				if (odds2) {
+					odds2 = parseInt(odds2.split("/")[0]);
+				}
+				if (odds3) {
+					odds3 = parseInt(odds3.split("/")[0]);
+				}
+
+				const isBest1 = odds1 != null && odds1 === best1;
+				const isBest2 = odds2 != null && odds2 === best2;
+				const isBest3 = odds3 != null && odds3 === best3;
+
+				const highlightStyle = "background: #2d5016; color: #a3e635; font-weight: 700;";
+
+				html += `
+					<tr style="border-bottom: 1px solid #2a2e39;">
+						<td style="padding: 0.5rem; font-weight: 600;display:flex;align-items:center;gap:4px;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+						<td style="padding: 0.5rem; text-align: center; ${isBest1 ? highlightStyle : ''}">${odds1 ? (odds1 > 0 ? '+' + odds1 : odds1) : '-'}</td>
+						<td style="padding: 0.5rem; text-align: center; ${isBest2 ? highlightStyle : ''}">${odds2 ? (odds2 > 0 ? '+' + odds2 : odds2) : '-'}</td>
+						<td style="padding: 0.5rem; text-align: center; ${isBest3 ? highlightStyle : ''}">${odds3 ? (odds3 > 0 ? '+' + odds3 : odds3) : '-'}</td>
+					</tr>
+				`;
+			});
+
+			html += `
+						</tbody>
+					</table>
+				</div>
+			`;
+
+			tableContainer.innerHTML = html;
+		}
+
+		function closeRightPanel() {
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			
+			TABLE.deselectRow();
+			right.style.display = "none";
+			left.style.width = "100%";
+			table.style.width = "100%";
+			setTimeout(() => {
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+			}, 40);
 		}
 
 		function groupByGame() {

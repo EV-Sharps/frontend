@@ -2080,6 +2080,7 @@ function loadWeights() {
 	METHOD = METHOD || CURR_USER.metadata[`${PAGE}-method`] || "";
 	if (METHOD) {
 		document.getElementById("method-select").value = METHOD;
+		loadHeatmapData();
 		setUrlParams({method: METHOD});
 	}
 

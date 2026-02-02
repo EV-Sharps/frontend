@@ -989,7 +989,7 @@
 
 				html += `
 					<tr style="border-bottom: 1px solid #2a2e39;">
-						<td style="padding: 0.5rem; font-weight: 600;display:flex;align-items:center;gap:4px;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+						<td style="padding: 0.5rem; font-weight: 600;display:flex;align-items:center;gap:4px;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.lower()}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
 						<td style="padding: 0.5rem; text-align: center; ${isBest1 ? highlightStyle : ''}">${odds1 ? (odds1 > 0 ? '+' + odds1 : odds1) : '-'}</td>
 						<td style="padding: 0.5rem; text-align: center; ${isBest2 ? highlightStyle : ''}">${odds2 ? (odds2 > 0 ? '+' + odds2 : odds2) : '-'}</td>
 						<td style="padding: 0.5rem; text-align: center; ${isBest3 ? highlightStyle : ''}">${odds3 ? (odds3 > 0 ? '+' + odds3 : odds3) : '-'}</td>

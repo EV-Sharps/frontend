@@ -3049,7 +3049,7 @@ function arange(start, stop, step) {
 function getRowROI(rowData) {
 	// Define your bin ranges (match these to your heatmap settings)
 	const evStep = 1, oddsStep = 100;
-	let evRange = [0, 30], oddsRange = [100, 3000];
+	let evRange = [-5, 30], oddsRange = [100, 3000];
 
 	const evBins = arange(evRange[0], evRange[1], evStep);
 	const oddsBins = arange(oddsRange[0], oddsRange[1], oddsStep);

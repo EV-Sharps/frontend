@@ -375,7 +375,7 @@ async function initDevPicker(data){
 	picker.innerHTML = '';
 	if (hidden) hidden.innerHTML = '';
 
-	if (!data || data.length === 0) {
+	if (!data || data.length === 0 || data.error) {
 		return;
 	}
 	for (row of data) {

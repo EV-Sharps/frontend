@@ -2984,6 +2984,7 @@ function hideUsername() {
 }
 
 async function loadHeatmapData() {
+	if (["outliers", "analysis"].includes(PAGE)) return;
 	try {
 		// Load the compressed heatmap data
 		const response = await fetch(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);

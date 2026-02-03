@@ -150,31 +150,40 @@
         fetch('bday_analysis.json')
             .then(response => response.json())
             .then(data => {
-                createFindings(data);
-                createStats(data);
+                const sport = data.sport || 'nhl';
+                SPORT = data.sport;
+                if (SPORT == "mlb") {
+                    document.querySelector('h1').innerText = "🎂 MLB Birthday Performance Analysis";
+                    document.querySelector('.subtitle').innerText = "Do MLB players perform better on their birthday?";
+                }
+                createFindings(data, sport);
+                createStats(data, sport);
                 createHistograms(data);
                 createCumulative(data);
                 createThresholdChart(data);
-                createComparisonBar(data);
+                createComparisonBar(data, sport);
             });
 
-        function createFindings(data) {
+        function createFindings(data, sport) {
             const goals = data.distributions.goals_diffs;
-            const points = data.distributions.points_diffs;
             
             const gBetter = goals.filter(x => x > 0).length;
             const gWorse = goals.filter(x => x < 0).length;
             const gWinRate = (gBetter / (gBetter + gWorse) * 100).toFixed(1);
             
-            const pBetter = points.filter(x => x > 0).length;
-            const pWorse = points.filter(x => x < 0).length;
-            const pWinRate = (pBetter / (pBetter + pWorse) * 100).toFixed(1);
-            
             const gMean = data.summary.goals_mean_diff;
-            const pMean = data.summary.points_mean_diff;
-            
             const gMedian = data.summary.goals_median_diff;
-            const pMedian = data.summary.points_median_diff;
+
+            let pMean = 0, pMedian = 0, pWinRate = 0, pBetter = 0, pWorse = 0;
+            const showPoints = sport === 'nhl' && data.distributions.points_diffs;
+            if (showPoints) {
+                const points = data.distributions.points_diffs;
+                pBetter = points.filter(x => x > 0).length;
+                pWorse = points.filter(x => x < 0).length;
+                pWinRate = (pBetter / (pBetter + pWorse) * 100).toFixed(1);
+                pMean = data.summary.points_mean_diff;
+                pMedian = data.summary.points_median_diff;
+            }
             
             // Determine conclusion
             let conclusion = '';
@@ -199,15 +208,15 @@
                         <h3>📈 Statistical Evidence</h3>
                         <p>• Mean goal difference: <strong>${gMean >= 0 ? '+' : ''}${gMean.toFixed(3)}</strong> per game</p>
                         <p>• Median goal difference: <strong>${gMedian >= 0 ? '+' : ''}${gMedian.toFixed(3)}</strong></p>
-                        <p>• Mean points difference: <strong>${pMean >= 0 ? '+' : ''}${pMean.toFixed(3)}</strong></p>
+                        ${showPoints ? `<p>• Mean points difference: <strong>${pMean >= 0 ? '+' : ''}${pMean.toFixed(3)}</strong></p>` : ''}
                         <p>• Sample size: <strong>${data.summary.total_bday_games} birthday games</strong></p>
                     </div>
                     <div class="finding-item">
                         <h3>🎯 Win Rate Analysis</h3>
-                        <p>• Goals: <span class="${gWinRate < 45 ? 'finding-highlight' : ''}">${gWinRate}%</span> perform better</p>
-                        <p>• Points: <span class="${pWinRate < 45 ? 'finding-highlight' : ''}">${pWinRate}%</span> perform better</p>
+                        <p>• ${SPORT == "nhl" ? "Goals" : "Homers"}: <span class="${gWinRate < 45 ? 'finding-highlight' : ''}">${gWinRate}%</span> perform better</p>
+                        ${showPoints ? `<p>• Points: <span class="${pWinRate < 45 ? 'finding-highlight' : ''}">${pWinRate}%</span> perform better</p>` : ''}
                         <p>• Expected if random: <strong>~50%</strong></p>
-                        <p>• ${gWorse} players worse vs ${gBetter} better for goals</p>
+                        <p>• ${gWorse} players worse vs ${gBetter} better for ${SPORT == "nhl" ? "goals" : "homers"}</p>
                     </div>
                     <div class="finding-item">
                         <h3>🔍 What This Means</h3>
@@ -218,7 +227,7 @@
                     </div>
                     <div class="finding-item">
                         <h3>💡 Conclusion</h3>
-                        <p><strong class="finding-neutral">Playing on your birthday has NO meaningful impact</strong> on NHL performance.</p>
+                        <p><strong class="finding-neutral">Playing on your birthday has NO meaningful impact</strong> on ${SPORT} performance.</p>
                         <p>The "birthday effect" is essentially a <strong>myth</strong>.</p>
                         <p>Player performance appears to be <strong>random</strong> relative to birthdays.</p>
                     </div>
@@ -226,14 +235,17 @@
             `;
         }
 
-        function createStats(data) {
+        function createStats(data, sport) {
             const container = document.getElementById('statsContainer');
             const stats = [
                 { label: 'Total Players', value: data.summary.total_players },
                 { label: 'Birthday Games', value: data.summary.total_bday_games },
-                { label: 'Goals Mean Δ', value: data.summary.goals_mean_diff.toFixed(3) },
-                { label: 'Points Mean Δ', value: data.summary.points_mean_diff.toFixed(3) }
+                { label: `${sport === "nhl" ? "Goals" : "Homers"} Mean Δ`, value: data.summary.goals_mean_diff.toFixed(3) }
             ];
+
+            if (sport === 'nhl' && data.summary.points_mean_diff) {
+                stats.push({ label: 'Points Median Δ', value: data.summary.points_median_diff.toFixed(3) });
+            }
             
             container.innerHTML = stats.map(s => `
                 <div class="stat-card">
@@ -440,26 +452,35 @@
             });
         }
 
-        function createComparisonBar(data) {
+        function createComparisonBar(data, sport) {
             const goals = data.distributions.goals_diffs;
             const points = data.distributions.points_diffs;
             
             const gBetter = goals.filter(x => x > 0).length;
             const gWorse = goals.filter(x => x < 0).length;
-            const pBetter = points.filter(x => x > 0).length;
-            const pWorse = points.filter(x => x < 0).length;
+
+            const showPoints = sport === 'nhl' && points;
+            let pBetter = 0, pWorse = 0;
+            if (showPoints) {
+                pBetter = points.filter(x => x > 0).length;
+                pWorse = points.filter(x => x < 0).length;
+            }
+            
+            const labels = showPoints ? ['Goals', 'Points'] : ['Goals'];
+            const betterData = showPoints ? [gBetter, pBetter] : [gBetter];
+            const worseData = showPoints ? [gWorse, pWorse] : [gWorse];
             
             new Chart(document.getElementById('comparisonBar'), {
                 type: 'bar',
                 data: {
-                    labels: ['Goals', 'Points'],
+                    labels: labels,
                     datasets: [{
                         label: 'Better on Birthday',
-                        data: [gBetter, pBetter],
+                        data: betterData,
                         backgroundColor: 'rgba(75, 192, 192, 0.6)'
                     }, {
                         label: 'Worse on Birthday',
-                        data: [gWorse, pWorse],
+                        data: worseData,
                         backgroundColor: 'rgba(255, 99, 132, 0.6)'
                     }]
                 },

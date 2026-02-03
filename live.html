@@ -509,6 +509,7 @@
 		handleSession();
 
 		function fetchProps() {
+			if (SPORT == "nba") return;
 			fetch(API_BASE+`/api/live?sport=${SPORT}`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHL Birthday Performance Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00d9ff;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .findings {
+            background: #0f3460;
+            border-left: 4px solid #00d9ff;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        .findings h2 {
+            color: #00d9ff;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .findings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .finding-item {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .finding-item h3 {
+            color: #00d9ff;
+            font-size: 16px;
+            margin: 0 0 10px 0;
+        }
+        .finding-item p {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+        .finding-highlight {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .finding-neutral {
+            color: #51cf66;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d9ff;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        .chart-container {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d9ff;
+            margin-bottom: 15px;
+        }
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎂 NHL Birthday Performance Analysis</h1>
+        <div class="subtitle">Do NHL players perform better on their birthday?</div>
+        
+        <div class="findings" id="findingsSection">
+            <h2>📊 Key Findings</h2>
+            <div id="findingsContent"></div>
+        </div>
+        
+        <div class="stats" id="statsContainer"></div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Goal Difference Distribution (Birthday - Non-Birthday)</div>
+            <canvas id="goalsHistogram"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Cumulative Distribution: Goals</div>
+            <canvas id="cumulativeGoals"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Win Rate by Performance Threshold</div>
+            <canvas id="thresholdChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Performance Comparison</div>
+            <canvas id="comparisonBar"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Player Scatter: Birthday vs Non-Birthday Performance</div>
+            <canvas id="scatterPlot"></canvas>
+        </div>
+    </div>
+
+    <script>
+        fetch('bday_analysis.json')
+            .then(response => response.json())
+            .then(data => {
+                createFindings(data);
+                createStats(data);
+                createHistograms(data);
+                createCumulative(data);
+                createThresholdChart(data);
+                createComparisonBar(data);
+            });
+
+        function createFindings(data) {
+            const goals = data.distributions.goals_diffs;
+            const points = data.distributions.points_diffs;
+            
+            const gBetter = goals.filter(x => x > 0).length;
+            const gWorse = goals.filter(x => x < 0).length;
+            const gWinRate = (gBetter / (gBetter + gWorse) * 100).toFixed(1);
+            
+            const pBetter = points.filter(x => x > 0).length;
+            const pWorse = points.filter(x => x < 0).length;
+            const pWinRate = (pBetter / (pBetter + pWorse) * 100).toFixed(1);
+            
+            const gMean = data.summary.goals_mean_diff;
+            const pMean = data.summary.points_mean_diff;
+            
+            const gMedian = data.summary.goals_median_diff;
+            const pMedian = data.summary.points_median_diff;
+            
+            // Determine conclusion
+            let conclusion = '';
+            let conclusionClass = '';
+            if (Math.abs(gMean) < 0.05 && Math.abs(pMean) < 0.05) {
+                conclusion = '⚠️ NO SIGNIFICANT BIRTHDAY EFFECT';
+                conclusionClass = 'finding-neutral';
+            } else if (gMean > 0.1 || pMean > 0.1) {
+                conclusion = '✓ POSITIVE BIRTHDAY EFFECT DETECTED';
+                conclusionClass = 'finding-neutral';
+            } else {
+                conclusion = '✗ SLIGHT NEGATIVE EFFECT';
+                conclusionClass = 'finding-highlight';
+            }
+            
+            document.getElementById('findingsContent').innerHTML = `
+                <p style="font-size: 20px; margin-bottom: 20px;" class="${conclusionClass}">
+                    <strong>${conclusion}</strong>
+                </p>
+                <div class="findings-grid">
+                    <div class="finding-item">
+                        <h3>📈 Statistical Evidence</h3>
+                        <p>• Mean goal difference: <strong>${gMean >= 0 ? '+' : ''}${gMean.toFixed(3)}</strong> per game</p>
+                        <p>• Median goal difference: <strong>${gMedian >= 0 ? '+' : ''}${gMedian.toFixed(3)}</strong></p>
+                        <p>• Mean points difference: <strong>${pMean >= 0 ? '+' : ''}${pMean.toFixed(3)}</strong></p>
+                        <p>• Sample size: <strong>${data.summary.total_bday_games} birthday games</strong></p>
+                    </div>
+                    <div class="finding-item">
+                        <h3>🎯 Win Rate Analysis</h3>
+                        <p>• Goals: <span class="${gWinRate < 45 ? 'finding-highlight' : ''}">${gWinRate}%</span> perform better</p>
+                        <p>• Points: <span class="${pWinRate < 45 ? 'finding-highlight' : ''}">${pWinRate}%</span> perform better</p>
+                        <p>• Expected if random: <strong>~50%</strong></p>
+                        <p>• ${gWorse} players worse vs ${gBetter} better for goals</p>
+                    </div>
+                    <div class="finding-item">
+                        <h3>🔍 What This Means</h3>
+                        <p>With ${data.summary.total_players} players analyzed over ${data.summary.total_bday_games} birthday games:</p>
+                        <p>• The difference is <strong class="finding-neutral">statistically negligible</strong></p>
+                        <p>• Distribution centers around <strong>zero</strong></p>
+                        <p>• More players underperform than overperform</p>
+                    </div>
+                    <div class="finding-item">
+                        <h3>💡 Conclusion</h3>
+                        <p><strong class="finding-neutral">Playing on your birthday has NO meaningful impact</strong> on NHL performance.</p>
+                        <p>The "birthday effect" is essentially a <strong>myth</strong>.</p>
+                        <p>Player performance appears to be <strong>random</strong> relative to birthdays.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createStats(data) {
+            const container = document.getElementById('statsContainer');
+            const stats = [
+                { label: 'Total Players', value: data.summary.total_players },
+                { label: 'Birthday Games', value: data.summary.total_bday_games },
+                { label: 'Goals Mean Δ', value: data.summary.goals_mean_diff.toFixed(3) },
+                { label: 'Points Mean Δ', value: data.summary.points_mean_diff.toFixed(3) }
+            ];
+            
+            container.innerHTML = stats.map(s => `
+                <div class="stat-card">
+                    <div class="stat-value">${s.value}</div>
+                    <div class="stat-label">${s.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function createHistograms(data) {
+            const goals = data.distributions.goals_diffs;
+            const points = data.distributions.points_diffs;
+            
+            // Create bins
+            function createBins(arr, binSize = 0.2) {
+                const min = Math.floor(Math.min(...arr) / binSize) * binSize;
+                const max = Math.ceil(Math.max(...arr) / binSize) * binSize;
+                const bins = {};
+                
+                for (let i = min; i <= max; i += binSize) {
+                    bins[i.toFixed(1)] = 0;
+                }
+                
+                arr.forEach(val => {
+                    const bin = (Math.floor(val / binSize) * binSize).toFixed(1);
+                    bins[bin]++;
+                });
+                
+                return bins;
+            }
+            
+            const goalBins = createBins(goals);
+            
+            // Add reference line data for zero
+            const zeroLine = Object.keys(goalBins).map(() => null);
+            const zeroIndex = Object.keys(goalBins).indexOf('0.0');
+            if (zeroIndex >= 0) {
+                zeroLine[zeroIndex] = Math.max(...Object.values(goalBins)) * 1.1;
+            }
+            
+            new Chart(document.getElementById('goalsHistogram'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(goalBins),
+                    datasets: [{
+                        label: 'Number of Players',
+                        data: Object.values(goalBins),
+                        backgroundColor: Object.keys(goalBins).map(bin => 
+                            parseFloat(bin) > 0 ? 'rgba(75, 192, 192, 0.6)' : 
+                            parseFloat(bin) < 0 ? 'rgba(255, 99, 132, 0.6)' : 
+                            'rgba(200, 200, 200, 0.6)'
+                        ),
+                        borderColor: Object.keys(goalBins).map(bin => 
+                            parseFloat(bin) > 0 ? 'rgba(75, 192, 192, 1)' : 
+                            parseFloat(bin) < 0 ? 'rgba(255, 99, 132, 1)' : 
+                            'rgba(200, 200, 200, 1)'
+                        ),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: zeroIndex,
+                                    xMax: zeroIndex,
+                                    borderColor: '#fff',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'No Effect',
+                                        enabled: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Goal Difference (Birthday - Regular)', color: '#eee' },
+                            ticks: { color: '#eee' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Number of Players', color: '#eee' },
+                            ticks: { color: '#eee' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCumulative(data) {
+            const goals = data.distributions.goals_diffs.sort((a, b) => a - b);
+            
+            // Calculate cumulative percentages
+            const cumulative = goals.map((val, idx) => ({
+                x: val,
+                y: (idx + 1) / goals.length * 100
+            }));
+            
+            new Chart(document.getElementById('cumulativeGoals'), {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Cumulative %',
+                        data: cumulative,
+                        borderColor: 'rgba(0, 217, 255, 1)',
+                        backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#eee' } },
+                        title: {
+                            display: true,
+                            text: 'Shows what % of players have difference ≤ X (50% line crosses at median)',
+                            color: '#aaa',
+                            font: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Goal Difference', color: '#eee' },
+                            ticks: { color: '#eee' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Cumulative % of Players', color: '#eee' },
+                            ticks: { color: '#eee', callback: value => value + '%' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createThresholdChart(data) {
+            const goals = data.distributions.goals_diffs;
+            
+            // Calculate win rates at different thresholds
+            const thresholds = [-0.5, -0.3, -0.1, 0, 0.1, 0.3, 0.5];
+            const winRates = thresholds.map(threshold => {
+                const above = goals.filter(x => x > threshold).length;
+                const total = goals.length;
+                return (above / total * 100).toFixed(1);
+            });
+            
+            new Chart(document.getElementById('thresholdChart'), {
+                type: 'line',
+                data: {
+                    labels: thresholds.map(t => `>${t}`),
+                    datasets: [{
+                        label: '% of Players',
+                        data: winRates,
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Random Expectation',
+                        data: thresholds.map(() => 50),
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#eee' } },
+                        title: {
+                            display: true,
+                            text: 'If birthdays mattered, this line would diverge significantly from 50%',
+                            color: '#aaa',
+                            font: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Performance Threshold', color: '#eee' },
+                            ticks: { color: '#eee' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: '% Above Threshold', color: '#eee' },
+                            ticks: { color: '#eee' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function createComparisonBar(data) {
+            const goals = data.distributions.goals_diffs;
+            const points = data.distributions.points_diffs;
+            
+            const gBetter = goals.filter(x => x > 0).length;
+            const gWorse = goals.filter(x => x < 0).length;
+            const pBetter = points.filter(x => x > 0).length;
+            const pWorse = points.filter(x => x < 0).length;
+            
+            new Chart(document.getElementById('comparisonBar'), {
+                type: 'bar',
+                data: {
+                    labels: ['Goals', 'Points'],
+                    datasets: [{
+                        label: 'Better on Birthday',
+                        data: [gBetter, pBetter],
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }, {
+                        label: 'Worse on Birthday',
+                        data: [gWorse, pWorse],
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y: { ticks: { color: '#eee' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#eee' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

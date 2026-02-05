@@ -321,6 +321,8 @@ function getTopDevigs(bookArg = null) {
 			const prop = parts[0] || devigKey;
 			
 			if (PAGE == "atgs" && !["atgs", "fgs", "lgs"].includes(prop)) continue;
+			if (PAGE == "tds" && prop !== "attd") continue;
+
 			list.push({
 				method: METHOD || "",
 				book,

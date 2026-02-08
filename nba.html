@@ -657,7 +657,7 @@
 							const prop = data.prop;
 							let ou = data.under ? "u" : "o";
 							let tank = "";
-							if (["wsh", "ind", "mem", "utah"].includes(data.team)) {
+							if (false && ["wsh", "ind", "mem", "utah"].includes(data.team)) {
 								tank = "<div class='tanking'>🏳️</div>";
 							}
 							return `<div style='position: relative;width:100%;height:100%;'>${ou}${cell.getValue()}${tank}</div>`;

@@ -2560,7 +2560,10 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 		if (manualVig != "") {
 			vig = parseInt(manualVig);
 		}
-		const u = 1 + vig - impliedOver;
+		if (vig >= impliedOver) {
+			vig = Math.max(impliedOver - 0.01, 0);
+		}
+		let u = 1 + vig - impliedOver;
 		if (u >= 1) return;
 
 		if (over > 0) {
@@ -2654,8 +2657,12 @@ function getFairValue(ou) {
 
 	let under = "";
 	if (!ou.includes("/")) {
-		u = 1.07 - impliedOver;
-		if (u > 1) return;
+		let vigFV = 0.07;
+		if (vigFV >= impliedOver) {
+			vigFV = Math.max(impliedOver - 0.01, 0);
+		}
+		u = 1 + vigFV - impliedOver;
+		if (u >= 1) return;
 		under = (over > 0)
 			? parseInt((100*u) / (-1+u)) : parseInt((100 - 100*u) / u);
 	} else {

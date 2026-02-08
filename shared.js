@@ -1441,7 +1441,7 @@ const playerFormatter = function(cell, params, rendered) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
-	if (["feed", "dingers", "barrels"].includes(PAGE) || isPlayerProp) {
+	if (isPlayerProp || ["feed", "dingers", "barrels"].includes(PAGE)) {
 		let s = ["feed", "dingers", "barrels"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		let t = sport.includes("ncaa") ? data.teamId : data.team;

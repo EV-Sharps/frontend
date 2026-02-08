@@ -655,11 +655,12 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return "";
-							}
 							let ou = data.under ? "u" : "o";
-							return `${ou}${cell.getValue()}`;
+							let tank = "";
+							if (["wsh", "ind", "mem", "utah"].includes(data.team)) {
+								tank = "<div class='tanking'>🏳️</div>";
+							}
+							return `<div style='position: relative;width:100%;height:100%;'>${ou}${cell.getValue()}${tank}</div>`;
 						},
 						headerFilter:"list",
 						headerFilterParams:{

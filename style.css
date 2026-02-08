@@ -448,6 +448,12 @@ body::before {
 	text-align: center;
 }
 
+.tanking {
+	position: absolute;
+	top: 3px;
+	left: 0;
+	font-size: 0.6rem;
+}
 .dev-prop-tag {
 	font-size: 9px;
 	font-weight: 700;

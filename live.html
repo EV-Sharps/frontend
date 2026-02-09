@@ -507,6 +507,7 @@
 		});
 
 		handleSession();
+		setUrlParams({sport: SPORT});
 
 		function fetchProps() {
 			if (SPORT == "nba") return;
@@ -684,7 +685,7 @@
 					
 					
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55},
+					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55, visible: false},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},

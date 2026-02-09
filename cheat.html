@@ -302,6 +302,17 @@
         </svg>
     </div>
 
+	<div class="select-wrapper">
+		<label for="odds-type" class="select-label">Odds</label>
+		<select id="odds-type" class="select">
+			<option value="all">All</option>
+			<option value="longshots">Longshots</option>
+		</select>
+		<svg class="select-arrow" viewBox="0 0 20 20">
+			<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+		</svg>
+	</div>
+
 	<div class="unit-toggle-container">
 		<span style="font-size: 0.85rem; font-weight: 600;">ROI</span>
 		<label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
@@ -342,6 +353,9 @@
 	PAGE = "cheat";
 	parseURLParams();
 
+	let RECORD_ALL = RECORD;
+	let RECORD_LONG_TMP = null;
+
 	const selSport = document.getElementById('selSport');
 	selSport.value = SPORT || 'nba';
 	selSport.addEventListener('change', () => {
@@ -352,6 +366,25 @@
 		history.pushState({}, '', newUrl);
 		initFilters();
 		renderDashboard();
+	});
+
+	const selOddsType = document.getElementById('odds-type');
+	selOddsType.addEventListener('change', () => {
+		if (selOddsType.value === 'longshots' && !RECORD_LONG_TMP) {
+			const script = document.createElement('script');
+			script.src = 'record_long.js';
+			script.onload = () => {
+				RECORD_LONG_TMP = RECORD_LONG;
+				RECORD = RECORD_LONG;
+				initFilters();
+				renderDashboard();
+			};
+			document.head.appendChild(script);
+		} else {
+			RECORD = selOddsType.value === 'longshots' ? RECORD_LONG_TMP : RECORD_ALL;
+			initFilters();
+			renderDashboard();
+		}
 	});
 
 	const BEST = {

@@ -2957,6 +2957,166 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 	);
 }
 
+function rowClick(row) {
+	const data = row.getData();
+	const right = document.querySelector("#right-body");
+	const left = document.querySelector("#table-container");
+	const table = document.querySelector("#table");
+	const tableContainer = document.querySelector("#table-container");
+	const sel = TABLE.getSelectedRows();
+	TABLE.deselectRow();
+	if (sel.length > 0 && sel[0] == row) {
+		right.style.display = "none";
+		left.style.width = "100%";
+		table.style.width = "100%";
+		setTimeout(() => {
+			table.style.width = "100%";
+			tableContainer.style.width = "100%";
+		}, 40);
+	} else {
+		row.select();
+		left.style.width = MOBILE ? "100%" : "50%";
+		right.style.display = "flex";
+		right.style.flexDirection = "row-reverse";
+		right.style.justifyContent = "center";
+		right.style.gap = "1rem";
+		table.style.width = "100%";
+		tableContainer.style.width = "100%";
+		if (["atgs"].includes(PAGE) && !MOBILE) {
+			plotHRGap();
+		}
+		renderGoalPropsTable(data);
+	}
+}
+
+function renderGoalPropsTable(playerData) {
+	const rightBody = document.querySelector("#right-body");
+	if (!rightBody) return;
+
+	// Check if table already exists, if not create container
+	let tableContainer = document.querySelector("#goal-props-table");
+	if (!tableContainer) {
+		tableContainer = document.createElement("div");
+		tableContainer.id = "goal-props-table";
+		rightBody.appendChild(tableContainer);
+	}
+
+	// Find all rows for this player+game with the SAME prop at different handicap levels
+	const clickedProp = playerData.prop;
+	const allRows = [...RES.data];
+	const playerRows = allRows.filter(r => r.player === playerData.player && r.game === playerData.game && r.prop === clickedProp);
+
+	// Group by handicap level to build columns (1+, 2+, 3+, etc.)
+	const propMap = {};
+	const columnKeys = [];
+	const columnLabels = {};
+
+	playerRows.forEach(r => {
+		const h = parseFloat(r.handicap);
+		const key = String(r.handicap);
+		if (!propMap[key]) {
+			propMap[key] = r;
+			columnKeys.push(key);
+			const threshold = Number.isFinite(h) ? Math.ceil(h) : key;
+			columnLabels[key] = `${threshold}+`;
+		}
+	});
+
+	// Sort columns by handicap value ascending
+	columnKeys.sort((a, b) => (parseFloat(a) || 0) - (parseFloat(b) || 0));
+
+	if (columnKeys.length === 0) {
+		tableContainer.innerHTML = '';
+		return;
+	}
+
+	// Books to display
+	const books = ["circa", "pn", 'fd', 'dk', 'b365', 'mgm', 'espn', 'cz', 'fn', 'br', 'hr', 'bv', 'kambi', 're', 'fl', 'bol'];
+
+	// Find best odds for each column (highest positive or least negative)
+	const bestByCol = {};
+	columnKeys.forEach(key => {
+		let bestValue = -Infinity;
+		books.forEach(book => {
+			let odds = propMap[key]?.bookOdds?.[book];
+			if (odds != null) {
+				odds = parseInt(String(odds).split("/")[0]);
+				if (odds > bestValue) bestValue = odds;
+			}
+		});
+		bestByCol[key] = bestValue > -Infinity ? bestValue : null;
+	});
+
+	// Build table HTML
+	const headerCells = columnKeys.map(key =>
+		`<th style="padding: 0.75rem; text-align: center;">${columnLabels[key]}</th>`
+	).join('');
+
+	let html = `
+		<div style="padding: 1rem; overflow-x: auto; max-height: 400px; overflow-y: auto; background: #0f1117; border-radius: 8px; position: relative;">
+			<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 0.5rem 0; position: sticky; top: 0; background: #0f1117; padding-bottom: 0.5rem; z-index: 1;">
+				<h3 style="margin: 0;">${title(playerData.player)} - ${convertProp(clickedProp)}</h3>
+				<button onclick="closeRightPanel()" style="background: transparent; border: none; color: #e6e6e6; cursor: pointer; font-size: 24px; line-height: 1; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" onmouseover="this.style.background='#2a2e39'" onmouseout="this.style.background='transparent'">×</button>
+			</div>
+			<table style="width: 100%; border-collapse: collapse; background: #1a1d24; color: #e6e6e6;">
+				<thead style="position: sticky; top: 3rem; background: #1a1d24; z-index: 1;">
+					<tr style="border-bottom: 2px solid #3a3f4f;">
+						<th style="padding: 0.75rem; text-align: left;">Book</th>
+						${headerCells}
+					</tr>
+				</thead>
+				<tbody>
+	`;
+
+	const highlightStyle = "background: #2d5016; color: #a3e635; font-weight: 700;";
+
+	books.forEach(book => {
+		const bookName = book.toUpperCase();
+
+		const cells = columnKeys.map(key => {
+			let raw = propMap[key]?.bookOdds?.[book];
+			let odds = null;
+			if (raw != null) {
+				odds = parseInt(String(raw).split("/")[0]);
+			}
+			const isBest = odds != null && odds === bestByCol[key];
+			const display = odds != null ? (odds > 0 ? '+' + odds : odds) : '-';
+			return `<td style="padding: 0.5rem; text-align: center; ${isBest ? highlightStyle : ''}">${display}</td>`;
+		}).join('');
+
+		html += `
+			<tr style="border-bottom: 1px solid #2a2e39;">
+				<td style="padding: 0.5rem; font-weight: 600;display:flex;align-items:center;gap:4px;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase()}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+				${cells}
+			</tr>
+		`;
+	});
+
+	html += `
+				</tbody>
+			</table>
+		</div>
+	`;
+
+	tableContainer.innerHTML = html;
+}
+
+function closeRightPanel() {
+	const right = document.querySelector("#right-body");
+	const left = document.querySelector("#table-container");
+	const table = document.querySelector("#table");
+	const tableContainer = document.querySelector("#table-container");
+	
+	TABLE.deselectRow();
+	right.style.display = "none";
+	left.style.width = "100%";
+	table.style.width = "100%";
+	setTimeout(() => {
+		table.style.width = "100%";
+		tableContainer.style.width = "100%";
+	}, 40);
+}
+
 
 function parlay(ous) {
 	let totalFV = 1;

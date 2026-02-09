@@ -3049,19 +3049,25 @@ function renderGoalPropsTable(playerData) {
 
 	// Build table HTML
 	const headerCells = columnKeys.map(key =>
-		`<th style="padding: 0.75rem; text-align: center;">${columnLabels[key]}</th>`
+		`<th style="padding: ${MOBILE ? '0.5rem 0.25rem' : '0.75rem'}; text-align: center;">${columnLabels[key]}</th>`
 	).join('');
 
+	const mobilePad = MOBILE ? '0.5rem' : '1rem';
+	const mobileFont = MOBILE ? 'font-size: 0.8rem;' : '';
+	const cellPad = MOBILE ? '0.35rem 0.25rem' : '0.5rem';
+	const headerPad = MOBILE ? '0.5rem 0.25rem' : '0.75rem';
+
 	let html = `
-		<div style="padding: 1rem; overflow-x: auto; max-height: 400px; overflow-y: auto; background: #0f1117; border-radius: 8px; position: relative;">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 0.5rem 0; position: sticky; top: 0; background: #0f1117; padding-bottom: 0.5rem; z-index: 1;">
-				<h3 style="margin: 0;">${title(playerData.player)} - ${convertProp(clickedProp)}</h3>
+		<div style="padding: ${mobilePad}; overflow-x: auto; overflow-y: auto; max-height: ${MOBILE ? '60vh' : '400px'}; max-width: 100vw; background: #0f1117; border-radius: 8px; position: relative; -webkit-overflow-scrolling: touch; ${mobileFont}">
+			<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 0.5rem 0; top: 0; background: #0f1117; padding-bottom: 0.5rem; z-index: 1;">
+				<h3 style="margin: 0; font-size: ${MOBILE ? '0.95rem' : '1.17em'};">${title(playerData.player)} - ${convertProp(clickedProp)}</h3>
 				<button onclick="closeRightPanel()" style="background: transparent; border: none; color: #e6e6e6; cursor: pointer; font-size: 24px; line-height: 1; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" onmouseover="this.style.background='#2a2e39'" onmouseout="this.style.background='transparent'">×</button>
 			</div>
-			<table style="width: 100%; border-collapse: collapse; background: #1a1d24; color: #e6e6e6;">
-				<thead style="position: sticky; top: 3rem; background: #1a1d24; z-index: 1;">
+			<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+			<table style="min-width: ${MOBILE ? 'max-content' : '100%'}; width: 100%; border-collapse: collapse; background: #1a1d24; color: #e6e6e6; white-space: nowrap;">
+				<thead style="background: #1a1d24; z-index: 1;">
 					<tr style="border-bottom: 2px solid #3a3f4f;">
-						<th style="padding: 0.75rem; text-align: left;">Book</th>
+						<th style="padding: ${headerPad}; text-align: left;; left: 0; background: #1a1d24; z-index: 2;">Book</th>
 						${headerCells}
 					</tr>
 				</thead>
@@ -3081,12 +3087,12 @@ function renderGoalPropsTable(playerData) {
 			}
 			const isBest = odds != null && odds === bestByCol[key];
 			const display = odds != null ? (odds > 0 ? '+' + odds : odds) : '-';
-			return `<td style="padding: 0.5rem; text-align: center; ${isBest ? highlightStyle : ''}">${display}</td>`;
+			return `<td style="padding: ${cellPad}; text-align: center; ${isBest ? highlightStyle : ''}">${display}</td>`;
 		}).join('');
 
 		html += `
 			<tr style="border-bottom: 1px solid #2a2e39;">
-				<td style="padding: 0.5rem; font-weight: 600;display:flex;align-items:center;gap:4px;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase()}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+				<td style="padding: ${cellPad}; font-weight: 600;display:flex;align-items:center;gap:4px; position: sticky; left: 0; background: #1a1d24; z-index: 1;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase()}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
 				${cells}
 			</tr>
 		`;
@@ -3095,6 +3101,7 @@ function renderGoalPropsTable(playerData) {
 	html += `
 				</tbody>
 			</table>
+			</div>
 		</div>
 	`;
 

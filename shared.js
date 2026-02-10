@@ -35,15 +35,17 @@ function getToday() {
 let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
+	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
+	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs (Free)</option>
 	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
 	<option value="nfl">🎯 Props (Sharps)</option>
 	<option value="analysis?sport=nfl">🏈 Results</option>
-	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
-	<option value="bets?sport=nfl">🎟️ Bets (Sharps)</option>
 	<option value="movement?sport=nfl">📉 Movement (Sharps)</option>
+	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
 	<option value="backfields">🏈 Backfields</option>
+	-->
 	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
 	<!-- <option value="futures">🔮 Futures</option> -->
 	<!--
@@ -70,6 +72,7 @@ let PAGE_DROPDOWN = `
 	<option value="pts">🏀 PTS/REB/AST (Analyst) </option>
 	<option value="nba">🏀 All NBA Props (Sharps)</option>
 	<option value="main?sport=nba">🏀 Main (Sharps)</option>
+	<option value="live?sport=nba">🏀 NBA Live (Sharps)</option>
 	<option value="kotc">🏀 KOTC</option>
 	<option value="analysis?sport=nba">🏀 Results</option>
 	<!-- 

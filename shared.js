@@ -814,7 +814,7 @@ const oppFormatter = function(cell, params, rendered) {
 	let team = data.oppId || data.opp;
 	let sport = data.sport || SPORT;
 	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba") {
-		let t = team.toUpperCase();
+		let t = team?.toUpperCase() || "";
 		return `<div class="opp-cell">
 			${ah}
 			${getTeamImg(sport, team)}

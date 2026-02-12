@@ -527,10 +527,9 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		function fetchProps() {
-			fetch(API_BASE+`/api/nba`, {
+			fetch(`nba.json`, {
+			//fetch(API_BASE+`/api/nba`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
@@ -836,5 +835,6 @@
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="record_nba.js"></script>
+	<script>handleSession();</script>
 </body>
 </html>

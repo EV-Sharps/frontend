@@ -1,6 +1,6 @@
 
 let CURR_USER, CURR_SESSION;
-let ENABLE_AUTH = true;
+let ENABLE_AUTH = false;
 let SAVE_DISCORD;
 const SB = supabase.createClient(
 	'https://nkdhryqpiulrepmphwmt.supabase.co',

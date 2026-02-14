@@ -80,6 +80,7 @@ let PAGE_DROPDOWN = `
 	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
 	-->
 	<option value="ncaab">🏀 CBB (Sharps)</option>
+	<option value="baseball_ncaa">⚾ NCAA (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
 	<option value="outliers?sport=nba">🏀 Outliers</option>
 	<option value="outliers?sport=nfl">🏈 Outliers</option>
@@ -1307,7 +1308,7 @@ function getTeamImg(sport, team) {
 	if (!team) {
 		return "";
 	}
-	return `<img class='team-img' src='logos/${sport.replace("ncaaf", "ncaab")}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
+	return `<img class='team-img' src='logos/${sport.replace("ncaaf", "ncaab").replace("baseball_ncaa", "ncaab")}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
 }
 
 function getBookImgs(books) {
@@ -1447,6 +1448,7 @@ const playerFormatter = function(cell, params, rendered) {
 	if (isPlayerProp || ["feed", "dingers", "barrels"].includes(PAGE)) {
 		let s = ["feed", "dingers", "barrels"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
+		else if (s == "baseball_ncaa") s = "ncaab";
 		let t = sport.includes("ncaa") ? data.teamId : data.team;
 		if (TEAM) {
 			//t = TEAM;
@@ -1563,7 +1565,7 @@ function getGameImgs(data, params) {
 		homeAlt = title(homeAlt);
 	}
 	let sport = params.sport || data.sport || SPORT;
-	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("atgs", "nhl");
+	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("baseball_ncaa", "ncaab").replace("atgs", "nhl");
 	if (sport == "props") {
 		sport = "nfl";
 	}

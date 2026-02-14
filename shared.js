@@ -35,6 +35,7 @@ function getToday() {
 let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
+	<option value="futures">🔮 Futures</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>

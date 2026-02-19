@@ -273,7 +273,7 @@ const excludeBtn = dd?.querySelector('.chkdd-btn');
 let menu = dd?.querySelector('.chkdd-menu');
 let boxes = [];
 if (dd) {
-	boxes = [...dd.querySelectorAll('input[type="checkbox"]')]
+	boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
 }
 
 function getExcludedBooks() {

@@ -46,6 +46,9 @@ function onChkddChange(menu) {
 		updateGameLabel(CHKDD_STATE[id]);
 	} else {
 		updatePropLabel(CHKDD_STATE[id]);
+		if (typeof filterDevPickerByProps === 'function') {
+			filterDevPickerByProps(CHKDD_STATE[id]);
+		}
 	}
 	changeFilter?.();
 }

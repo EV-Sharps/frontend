@@ -385,6 +385,7 @@ async function initDevPicker(data){
 		// wrapper holds the chip button and the small record line beneath
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';
+		wrap.dataset.prop = prop;
 
 		if (PAGE === "nhl" && ["atgs", "fgs", "lgs"].includes(prop)) {
 			continue; // skip atgs/fgs/lgs for nhl page
@@ -461,6 +462,19 @@ async function initDevPicker(data){
 		const btn = picker.querySelector('.dev-chip.active');
 		if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'nearest', block: 'nearest'});
 	}
+}
+
+function filterDevPickerByProps(selectedProps) {
+	const picker = document.getElementById('dev-picker');
+	if (!picker) return;
+	const allProps = document.querySelectorAll('#prop-options input');
+	const totalProps = allProps.length;
+	const showAll = !selectedProps || selectedProps.length === 0 || selectedProps.length === totalProps;
+
+	picker.querySelectorAll('.dev-chip-wrap').forEach(wrap => {
+		const prop = wrap.dataset.prop;
+		wrap.style.display = (showAll || selectedProps.includes(prop)) ? '' : 'none';
+	});
 }
 
 function renderPreloadsList(container, items, prop = "atgs") {

@@ -83,6 +83,7 @@ let PAGE_DROPDOWN = `
 	<option value="ncaab">🏀 CBB (Sharps)</option>
 	<option value="baseball_ncaa">⚾ NCAA (Sharps)</option>
 	<option value="soccer">⚽ Soccer</option>
+	<option value="ufc">🥊 UFC</option>
 	<option value="outliers?sport=nba">🏀 Outliers</option>
 	<option value="outliers?sport=nfl">🏈 Outliers</option>
 	<option value="outliers?sport=nhl">🏒 Outliers</option>

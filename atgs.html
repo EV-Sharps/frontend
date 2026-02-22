@@ -692,17 +692,6 @@
 						titleFormatter: "html"
 					},
 					{
-						title: "Game",
-						field: "game",
-						formatter: function(cell) {
-							const game = cell.getValue().replace("czechia", "cz").replace("sweden", "swe").replace("france", "fra").replace("italy", "ita").replace("switzerland", "sui").replace("slovakia", "svk").replace("germany", "ger").replace("austria", "aut").replace("norway", "nor").replace("denmark", "den").replace("latvia", "lat").replace("finland", "fin").replace("canada", "can").toUpperCase();
-							//return `<div style="display:flex; flex-direction: column; gap: 4px;"><span>${team1} vs ${team2}</span><span style="font-size: 0.8em; color: #888;">${displayTime}</span></div>`;
-							return `<div style="display:flex; flex-direction: column; gap: 4px;"><span>${game}</span></div>`;
-						},
-						hozAlign: "left",
-						headerFilter: "list",
-					},
-					{
 						title: "Player (L5 TOI/g)",
 						field: "player",
 						headerFilter: "input",
@@ -727,6 +716,7 @@
 							}
 						}
 					},*/
+					{title: "PP Line", field: "ppLine", width: 50},
 					{
 						title: "Line",
 						field: "handicap",
@@ -815,13 +805,19 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
+					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 90, hozAlign: "left"},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
+					{title: "DvP<br>Rank", field: "dvpRank", formatter: rankingFormatter, width: 50},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`,field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					//{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					//{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},

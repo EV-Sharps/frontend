@@ -391,6 +391,8 @@ async function initDevPicker(data){
 			continue; // skip atgs/fgs/lgs for nhl page
 		} else if (PAGE == "threes" && prop !== "3ptm") {
 			continue;
+		} else if (dev.includes("re")) {
+			continue;
 		}
 
 		// Add prop tag

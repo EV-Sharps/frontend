@@ -856,6 +856,8 @@
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
 				if (!loaded) {
+					TABLE.setHeaderFilterValue("handicap", "0.5");
+					TABLE.setHeaderFilterValue("prop", "atgs");
 					changeFilter();
 				}
 				loaded = true;

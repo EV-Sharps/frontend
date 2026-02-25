@@ -2561,7 +2561,7 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 
 	let under;
 	if (ou.indexOf("/") === -1 || parts.length < 2 || parts[1] === "") {
-		let vig = (promo == "vs-fd") ? 0.05 : 0.07;
+		let vig = 0.07;
 		if (PAGE == "atgs2") {
 			vig = 0;
 		}

@@ -633,6 +633,19 @@
 							}
 							let ou = data.under ? "u" : "o";
 							return `${ou}${cell.getValue()}`;
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
 						}
 					},
 					{
@@ -648,7 +661,20 @@
 							}
 							//line = parseFloat(line) + 0.5;
 							return `o${line} ${cell.getValue()}`;
-						}
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
 					},
 					
 					{

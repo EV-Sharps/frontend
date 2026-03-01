@@ -344,7 +344,13 @@
 			picker.innerHTML = '';
 			if (hidden) hidden.innerHTML = '';
 
-			Array.from(devSet).sort().forEach(dev => {
+			const getRoi = dev => {
+				try {
+					const rec = RECORD?.[BOOK]?.[`${PROP}-vs-${dev}`]?.["All"];
+					return (typeof rec?.roi === 'number') ? rec.roi : -Infinity;
+				} catch { return -Infinity; }
+			};
+		Array.from(devSet).sort((a, b) => getRoi(b) - getRoi(a)).forEach(dev => {
 				// wrapper holds the chip button and the small record line beneath
 				const wrap = document.createElement('div');
 				wrap.className = 'dev-chip-wrap';

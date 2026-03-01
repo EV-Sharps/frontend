@@ -361,8 +361,9 @@
 				info.className = 'dev-subinfo';
 				let recText = '';
 				try {
-					const rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[BOOK]) ? RECORD[BOOK][`${PROP}-vs-${dev}`] : null;
+					let rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[BOOK]) ? RECORD[BOOK][`${PROP}-vs-${dev}`] : null;
 					if (rec) {
+						rec = rec["All"];
 						const wins = rec.wins ?? rec.w ?? 0;
 						const losses = rec.losses ?? rec.l ?? 0;
 						const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');

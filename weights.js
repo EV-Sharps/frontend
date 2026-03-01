@@ -315,7 +315,7 @@ function getTopDevigs(bookArg = null) {
 		const devigs = books[book];
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
-			const stats = devigs[devigKey];
+			let stats = devigs[devigKey]["All"];
 			if (!stats) continue;
 			const parts = devigKey.split("-vs-");
 			const prop = parts[0] || devigKey;
@@ -416,8 +416,9 @@ async function initDevPicker(data){
 		info.className = 'dev-subinfo';
 		let recText = '';
 		try {
-			const rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[METHOD||"worst"][BOOK||"best"]) ? RECORD[METHOD||"worst"][BOOK||"best"][`${prop}-vs-${dev}`] : null;
+			let rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[METHOD||"worst"][BOOK||"best"]) ? RECORD[METHOD||"worst"][BOOK||"best"][`${prop}-vs-${dev}`] : null;
 			if (rec) {
+				rec = rec["All"];
 				const wins = rec.wins ?? rec.w ?? 0;
 				const losses = rec.losses ?? rec.l ?? 0;
 				const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');

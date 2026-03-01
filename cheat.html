@@ -246,7 +246,7 @@
 
 <div class="header">
 	<h1>Prop Betting Performance</h1>
-	<p>Data tracked: Nov 11th, 2025 - Feb 25th, 2026</p>
+	<p>Data tracked: Nov 11th, 2025 - Mar 1st, 2026</p>
 </div>
 
 <div class="controls">
@@ -301,6 +301,18 @@
             <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
         </svg>
     </div>
+
+	<div class="select-wrapper">
+		<label for="window-select" class="select-label">Window</label>
+		<select id="window-select" class="select" onchange="renderDashboard()">
+			<option value="All">All</option>
+			<option value="L14">L14</option>
+			<option value="L30">L30</option>
+		</select>
+		<svg class="select-arrow" viewBox="0 0 20 20">
+			<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+		</svg>
+	</div>
 
 	<div class="select-wrapper">
 		<label for="odds-type" class="select-label">Odds</label>
@@ -402,16 +414,18 @@
 		};
 
 	function parseRecord(record) {
+		const window = document.getElementById('window-select').value || 'All';
 		let data = {};
 		for (book in record) {
 			let arr = [];
 			for (key in record[book]) {
-				let j = record[book][key];
+				let j = record[book][key][window] || record[book][key]["All"];
+				if (!j) continue;
 				let [prop,devig] = key.split("-vs-");
 
 				if (PRETTY != undefined && !BEST?.[book].includes(`${prop}-${devig}`)) continue;
 
-				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"], l: j["losses"], r: j["roi"]});
+				arr.push({market: prop, vs: devig, u: j["profit"], k: j["kelly"], w: j["wins"] ?? j["w"], l: j["losses"] ?? j["l"], r: j["roi"]});
 			}
 			data[book] = arr;
 		}

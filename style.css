@@ -443,7 +443,6 @@ body::before {
 	line-height: 1;
 	max-width: 88px;        /* limit width so it doesn't push neighbors */
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 	text-align: center;
 }

@@ -378,6 +378,17 @@
 		PAGE = "main";
 
 		parseURLParams();
+
+		(function loadRecord() {
+			const sport = SPORT || 'nba';
+			const src = `record_${sport}_main.js`;
+			const script = document.createElement('script');
+			script.src = src;
+			script.onload = () => initDevPicker(getTopDevigs(BOOK || "best"));
+			script.onerror = () => console.warn(`No record file for ${src}`);
+			document.head.appendChild(script);
+		})();
+
 		handleSession();
 
 		window.addEventListener("resize", () => {

@@ -625,12 +625,9 @@ if (methodInit) {
 		} else if (PAGE === "cheat") {
 			initFilters();
 			renderDashboard();
-		} else if (PAGE === "main") {
-			saveMethod();
-			initDevPicker(getTopDevigs(BOOK || "best"));
-			loadHeatmapData().then(() => changeFilter());
 		} else {
 			saveMethod();
+			initDevPicker(getTopDevigs(BOOK || "best"));
 			loadHeatmapData().then(() => {
 				changeFilter();
 			});

@@ -1439,6 +1439,10 @@ function changeFilter(render = true) {
 	params.set("min", MIN);
 	params.set("max", MAX);
 
+	if (PAGE.includes("main")) {
+		params.set("sport", SPORT);
+	}
+
 	if (!RES) {
 		return;
 	}

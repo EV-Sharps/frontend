@@ -2089,6 +2089,7 @@ function loadWeights() {
 	if (METHOD) {
 		document.getElementById("method-select").value = METHOD;
 		loadHeatmapData();
+		initDevPicker(getTopDevigs(BOOK || "best"));
 		setUrlParams({method: METHOD});
 	}
 

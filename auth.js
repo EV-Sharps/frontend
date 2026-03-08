@@ -397,7 +397,7 @@ async function handleSession() {
 				fetchPlays();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "threes", "analysis", "ncaab", "baseball_ncaa", "tds", "live", "nfl", "ncaaf", "ncaafprops", "futures", "ufc"].includes(PAGE)) {
+	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "kotc", "nba", "pts", "threes", "analysis", "ncaab", "baseball_ncaa", "tds", "live", "nfl", "ncaaf", "ncaafprops", "futures", "ufc", "wbc"].includes(PAGE)) {
 		initChkddActions();
 		fetchProps();
 		renderFilters();

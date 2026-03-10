@@ -449,8 +449,12 @@ async function initDevPicker(data){
 			document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
 			const bookSelectEl = document.getElementById("book-select");
 			if (bookSelectEl) bookSelectEl.value = row.book.replace("best", "") || "";
-			setOptions("prop-options", [prop]);
-			updatePropLabel([prop]);
+			let props = [prop];
+			if (prop == "team_total") {
+				props = ["away_total", "home_total"];
+			}
+			setOptions("prop-options", props);
+			updatePropLabel(props);
 			updateRequiredDropdown();
 			changeFilter();
 		});

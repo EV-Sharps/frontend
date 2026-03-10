@@ -321,7 +321,10 @@ function updateExistingCard(card, rowData) {
 	const header = card.querySelector('.card-header');
 
 	const book = rowData.book;
-	const pre = rowData.ouIdx == 1 ? "u" : "o";
+	let pre = rowData.ouIdx == 1 ? "u" : "o";
+	if (rowData.ouIdx == undefined) {
+		pre = rowData.under ? "u" : "o";
+	}
 
 	const evContent = evCardFormatter(rowData);
 	const sport = rowData.sport || SPORT || "nba";

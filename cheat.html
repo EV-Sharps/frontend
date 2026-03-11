@@ -38,7 +38,9 @@
 
 		.controls {
 			display: flex;
+			align-items: center;
 			justify-content: center;
+			overflow-x: auto;
 			gap: 15px;
 			margin-bottom: 30px;
 			padding-bottom: 20px;
@@ -240,6 +242,66 @@
 				flex: 0 0 auto;
 			}
 		}
+
+		/* Matrix View */
+		#matrix-view { display: none; max-width: 1600px; margin: 0 auto; overflow-x: auto; }
+
+		.matrix-table {
+			border-collapse: collapse;
+			width: 100%;
+			font-size: 0.8rem;
+		}
+		.matrix-table th {
+			background: #1e293b;
+			color: var(--accent);
+			padding: 8px 12px;
+			text-align: center;
+			position: sticky;
+			top: 0;
+			font-size: 0.72rem;
+			letter-spacing: 0.5px;
+			text-transform: uppercase;
+			border: 1px solid #334155;
+			white-space: nowrap;
+		}
+		.matrix-table th:first-child { text-align: left; min-width: 90px; left: 0; z-index: 2; }
+		.prop-label {
+			font-weight: 700;
+			color: var(--text-main);
+			padding: 6px 12px;
+			background: #1e293b;
+			position: sticky;
+			left: 0;
+			white-space: nowrap;
+			border: 1px solid #334155;
+			z-index: 1;
+		}
+		.matrix-cell {
+			text-align: center;
+			padding: 5px 8px;
+			border: 1px solid #2d3748;
+			min-width: 80px;
+			vertical-align: middle;
+			cursor: default;
+			transition: opacity 0.15s;
+		}
+		.matrix-cell:hover { opacity: 0.85; }
+		.cell-book { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+		.cell-val { font-weight: 700; font-size: 0.82rem; font-family: 'Courier New', monospace; }
+		.cell-val.pos { color: var(--success); }
+		.cell-val.neg { color: var(--failure); }
+		.cell-record { font-size: 0.62rem; color: var(--text-dim); }
+		.matrix-cell.empty { color: #475569; }
+
+		.matrix-book-select {
+			background: #334155;
+			color: var(--text-main);
+			border: 1px solid #475569;
+			padding: 6px 10px;
+			border-radius: 6px;
+			font-size: 0.85rem;
+			font-weight: 600;
+		}
 	</style>
 </head>
 <body>
@@ -353,13 +415,36 @@
         <option value="20" selected>20</option>
         <option value="50">50</option>
         <option value="100">100</option>
+		<option value="200">200</option>
     </select>
 </div>
-	<button class="btn-ctrl" onclick="toggleAll(true)">Expand All</button>
+	<button class="btn-ctrl" id="view-toggle-btn" onclick="toggleView()">Matrix View</button>
+	<button class="btn-ctrl" id="expand-all-btn" onclick="toggleAll(true)">Expand All</button>
 	<button class="btn-ctrl" onclick="toggleAll(false)">Collapse All</button>
 </div>
 
 <div class="dashboard" id="dashboard">
+</div>
+
+<div id="matrix-view">
+	<div style="display:flex;align-items:center;gap:12px;max-width:1600px;margin:0 auto 16px;padding:0 4px;">
+		<span style="font-size:0.85rem;font-weight:600;color:var(--text-dim);">Betting Book:</span>
+		<select id="matrix-book-select" class="matrix-book-select" onchange="renderMatrix()">
+			<option value="best">best</option>
+			<option value="fd">fd</option>
+			<option value="dk">dk</option>
+			<option value="mgm">mgm</option>
+			<option value="espn">espn</option>
+			<option value="cz">cz</option>
+			<option value="fn">fn</option>
+			<option value="b365">b365</option>
+			<option value="br">br</option>
+			<option value="hr">hr</option>
+			<option value="bv">bv</option>
+			<option value="__all__">All (best across books)</option>
+		</select>
+		<span style="font-size:0.78rem;color:var(--text-dim);">Rows = Props &nbsp;|&nbsp; Columns = Devig Source &nbsp;|&nbsp; Cell = Performance</span>
+	</div>
 </div>
 
 <script type="text/javascript" src="shared.js"></script>
@@ -436,6 +521,7 @@
 	}
 
 	function renderDashboard() {
+		if (currentView === 'matrix') { renderMatrix(); return; }
 		const dashboard = document.getElementById('dashboard');
 		dashboard.innerHTML = "";
 
@@ -531,6 +617,147 @@
                 });
             });
 		}
+	}
+
+	let currentView = 'dashboard';
+
+	function toggleView() {
+		const btn = document.getElementById('view-toggle-btn');
+		const expandBtn = document.getElementById('expand-all-btn');
+		if (currentView === 'dashboard') {
+			document.getElementById('dashboard').style.display = 'none';
+			document.getElementById('matrix-view').style.display = 'block';
+			btn.textContent = 'Card View';
+			expandBtn.style.display = 'none';
+			currentView = 'matrix';
+			renderMatrix();
+		} else {
+			document.getElementById('dashboard').style.display = 'grid';
+			document.getElementById('matrix-view').style.display = 'none';
+			btn.textContent = 'Matrix View';
+			expandBtn.style.display = '';
+			currentView = 'dashboard';
+		}
+	}
+
+	function renderMatrix() {
+		const container = document.getElementById('matrix-view');
+		// remove any existing table
+		const existing = container.querySelector('.matrix-table');
+		if (existing) existing.parentElement.remove();
+
+		const isProfit = document.getElementById('profit-toggle').checked;
+		const isKelly = document.getElementById('unit-toggle').checked;
+		let unitKey = isKelly ? 'k' : 'u';
+		if (!isProfit) unitKey = 'r';
+
+		const win = document.getElementById('window-select').value || 'All';
+		const minBets = Math.max(0, Number(document.getElementById('min-bets').value) || 0);
+		const selectedBook = document.getElementById('matrix-book-select')?.value || 'best';
+		const allBooks = selectedBook === '__all__';
+		const books = allBooks ? ["best", "fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"] : [selectedBook];
+
+		const activeDevigs = Array.from(document.querySelectorAll('#devig-options input:checked')).map(cb => cb.value);
+		const activeProps  = Array.from(document.querySelectorAll('#prop-options input:checked')).map(cb => cb.value);
+
+		// matrix[prop][devig] = {val, book, w, l}
+		const matrix = {};
+		const propSet = new Set();
+		const devigSet = new Set();
+
+		for (const book of books) {
+			const bookData = RES[book] || {};
+			for (const [key, windows] of Object.entries(bookData)) {
+				const [prop, devig] = key.split('-vs-');
+				if (!activeProps.includes(prop) || !activeDevigs.includes(devig)) continue;
+				const j = windows[win] || windows['All'];
+				if (!j) continue;
+				const w = j.wins ?? j.w ?? 0;
+				const l = j.losses ?? j.l ?? 0;
+				if ((w + l) < minBets) continue;
+				const rawVal = unitKey === 'r' ? j.roi : unitKey === 'k' ? j.kelly : j.profit;
+				if (rawVal == null) continue;
+
+				propSet.add(prop);
+				devigSet.add(devig);
+				if (!matrix[prop]) matrix[prop] = {};
+				const cur = matrix[prop][devig];
+				if (!cur || rawVal > cur.val) {
+					matrix[prop][devig] = { val: rawVal, book, w, l };
+				}
+			}
+		}
+
+		const props  = [...propSet].sort();
+		const devigs = [...devigSet].sort();
+
+		// Sort props: highest avg value first
+		props.sort((a, b) => {
+			const avg = (p) => {
+				const vals = devigs.map(d => matrix[p]?.[d]?.val).filter(v => v != null);
+				return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : -Infinity;
+			};
+			return avg(b) - avg(a);
+		});
+
+		// Find max absolute value for color scaling
+		let maxAbs = 0;
+		props.forEach(p => devigs.forEach(d => {
+			const cell = matrix[p]?.[d];
+			if (cell) maxAbs = Math.max(maxAbs, Math.abs(cell.val));
+		}));
+		if (maxAbs === 0) maxAbs = 1;
+
+		const getColor = (val) => {
+			const intensity = Math.min(Math.abs(val) / maxAbs, 1);
+			const alpha = 0.08 + intensity * 0.55;
+			return val >= 0
+				? `rgba(34,197,94,${alpha})`
+				: `rgba(239,68,68,${alpha})`;
+		};
+
+		const fmtVal = (val) => {
+			const sign = val >= 0 ? '+' : '';
+			return !isProfit ? `${sign}${val}%` : `${sign}${val.toFixed(1)}u`;
+		};
+
+		let rows = '';
+		for (const prop of props) {
+			rows += `<tr><td class="prop-label">${prop}</td>`;
+			for (const devig of devigs) {
+				const cell = matrix[prop]?.[devig];
+				if (!cell) {
+					rows += `<td class="matrix-cell empty">—</td>`;
+				} else {
+					const total = cell.w + cell.l;
+					const winPct = total > 0 ? Math.round(cell.w / total * 100) : 0;
+					const bookLabel = allBooks ? `<div class="cell-book">${cell.book}</div>` : '';
+					rows += `
+						<td class="matrix-cell" style="background:${getColor(cell.val)}"
+							title="${cell.book} | ${cell.w}W-${cell.l}L (${winPct}%)">
+							${bookLabel}
+							<div class="cell-val ${cell.val < 0 ? 'neg' : 'pos'}">${fmtVal(cell.val)}</div>
+							<div class="cell-record">${cell.w}W-${cell.l}L</div>
+						</td>`;
+				}
+			}
+			rows += '</tr>';
+		}
+
+		const tableHtml = `
+			<div style="overflow-x:auto;">
+				<table class="matrix-table">
+					<thead>
+						<tr>
+							<th>Prop</th>
+							${devigs.map(d => `<th>${d.toUpperCase()}</th>`).join('')}
+						</tr>
+					</thead>
+					<tbody>${rows}</tbody>
+				</table>
+			</div>`;
+
+		container.insertAdjacentHTML('beforeend', tableHtml);
 	}
 
 	function toggleCard(card) {

@@ -2287,8 +2287,11 @@ button#logout:hover {
 		padding: 0.5rem 0;
 		-webkit-overflow-scrolling: touch;
 	}
-	#center-dropdown button, #center-dropdown select, #auth-buttons #username, #auth-buttons button, #prop-dd, #game-dd {
+	#center-dropdown button, #center-dropdown select, #auth-buttons #username, #auth-buttons button, #prop-dd, #game-dd, #devig-dd {
 		flex: 0 0 auto;
+	}
+	.controls {
+		justify-content: flex-start;
 	}
 }
 

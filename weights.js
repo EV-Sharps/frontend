@@ -392,7 +392,7 @@ async function initDevPicker(data){
 		} else if (PAGE == "threes" && prop !== "3ptm") {
 			continue;
 		} else if (dev.includes("re")) {
-			continue;
+			//continue;
 		}
 
 		// Add prop tag

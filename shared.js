@@ -1470,13 +1470,13 @@ const playerFormatter = function(cell, params, rendered) {
 	let bats = data.bats?.replace("B", "S") || "";
 	if (["pitcher_mix", "preview"].includes(PAGE)) {
 		bats = data.pitch_hand;
-	} else if (["pts", "nba", "threes"].includes(PAGE)) {
+	} else if (["pts", "nba", "threes", "kotc"].includes(PAGE)) {
 		bats = data.avgMin;
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
 	}
 	let pos = "";
-	if (["nba", "threes", "atgs", "ncaafprops"].includes(PAGE)) {
+	if (["nba", "threes", "atgs", "ncaafprops", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	return `

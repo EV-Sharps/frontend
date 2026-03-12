@@ -392,6 +392,7 @@ function updateExistingCard(card, rowData) {
 	`;
 	
 	const collapsedBody = card.querySelector('.card-body-collapsed');
+	const dvp = rowData.dvpRank === undefined ? rowData.oppPosRank : rowData.dvpRank;
 	collapsedBody.innerHTML = `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
 
@@ -404,8 +405,8 @@ function updateExistingCard(card, rowData) {
 				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.oppRank)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(rowData.oppRank)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
 				</div>
-				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.dvpRank)}; font-weight:600; font-size:0.85rem;">
-					${addSuffix(rowData.dvpRank)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
+				<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
+					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>
 			</div>
 

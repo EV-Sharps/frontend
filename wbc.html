@@ -857,14 +857,12 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
 			]);
 			TABLE.setFilter([
-				{field: "prop", type: "=", value: "atgs"},
-				{field: "under", type:"=", value: false}
 			]);
 
 			const rows = TABLE.getData("active");

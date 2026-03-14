@@ -368,6 +368,11 @@
 				</div>
 			</div>
 		</main>
+		<div id="card-modal-overlay">
+			<div id="card-modal-inner">
+				<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
+			</div>
+		</div>
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with any sports league. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
@@ -641,7 +646,25 @@
 					{title: "Start", field: "start", visible: false},
 				]
 			});
+			
+			TABLE.on("rowClick", function(e, row) {
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
+			});
 		}
+
+		function closeCardModal() {
+			document.getElementById('card-modal-overlay').classList.remove('open');
+		}
+
+		document.addEventListener('keydown', e => {
+			if (e.key === 'Escape') closeCardModal();
+		});
+		document.getElementById('card-modal-overlay').addEventListener('click', e => {
+			if (e.target === document.getElementById('card-modal-overlay')) closeCardModal();
+		});
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>

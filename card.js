@@ -247,6 +247,25 @@ function renderCardPlot(uniqueId, under, logs, handicap, interval) {
 	}, 100);
 }
 
+function showCardModal(rowData) {
+	const overlay = document.getElementById('card-modal-overlay');
+	const inner = document.getElementById('card-modal-inner');
+	// Remove previous card if any
+	inner.querySelectorAll('.data-card').forEach(el => el.remove());
+
+	const uniqueId = `modal-${rowData.player}-${rowData.prop}-${rowData.handicap}-${rowData.under ? 1 : 0}`;
+	const card = createNewCard(rowData, uniqueId);
+	// Auto-expand the collapsed body so trends/ranks show immediately
+	const body = card.querySelector('.card-body-collapsed');
+	if (body) {
+		body.classList.add('visible');
+		card.classList.add('expanded');
+		renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap, 15);
+	}
+	inner.appendChild(card);
+	overlay.classList.add('open');
+}
+
 function createNewCard(rowData, uniqueId) {
 	const card = document.createElement('div');
 	card.className = 'data-card';
@@ -333,7 +352,20 @@ function updateExistingCard(card, rowData) {
 	let teamImg = getTeamImg(sport, team);
 	let player = title(rowData.player);
 	let gameImg = getGameImgs(rowData, {});
-	if (PAGE.includes("ncaa")) {
+	let propDisplay = rowData.prop.toUpperCase();
+
+	const isTeamTotal = rowData.prop === "home_total" || rowData.prop === "away_total";
+	if (isTeamTotal) {
+		const game = rowData.game || rowData.gameId || "";
+		const [awayTeam, homeTeam] = game.split(" @ ");
+		const teamTotalTeam = rowData.prop === "away_total" ? awayTeam : homeTeam;
+		if (teamTotalTeam) {
+			team = teamTotalTeam.trim().toLowerCase();
+			teamImg = getTeamImg(sport, team);
+			player = teamTotalTeam.trim().toUpperCase();
+		}
+		propDisplay = "TEAM TOTAL";
+	} else if (PAGE.includes("ncaa")) {
 		if (!["reb", "3ptm", "pts", "ast"].includes(rowData.prop)) {
 			player = rowData.gameId || rowData.game;
 		}
@@ -350,7 +382,7 @@ function updateExistingCard(card, rowData) {
 		</div>
 		<div class="prop-content-stack">
 			<span class="prop-line">${pre}${rowData.handicap}</span>
-			<span class="prop-type">${rowData.prop.toUpperCase()}</span>
+			<span class="prop-type">${propDisplay}</span>
 		</div>
 	`;
 	

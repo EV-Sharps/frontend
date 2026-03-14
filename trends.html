@@ -10,6 +10,9 @@
 	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="math.min.js"></script>
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -140,19 +143,19 @@
 		</footer>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "trends";
+
+		parseURLParams();
+
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
 		let GRAPH = URLParams.get("graph") || "3d";
 		let DEBUG = URLParams.get("debug");
-		let DATE = URLParams.get("date");
 		let CLOSE = URLParams.get("close");
-		let PLAYER = URLParams.get("player");
-		TEAM = URLParams.get("team");
-		let TABLE = null;
+
 		let HRTABLE = null;
-		let RES = null;
 		let HRROWS = [];
 		let ALMOST = [];
 		let YBY = {};
@@ -220,7 +223,7 @@
 						return;
 					}
 					const data = res[year][month];
-					xVals.push(...data.dt.map(r => new Date("2025-"+r+" 10:00").toLocaleDateString("en-US", {
+					xVals.push(...data.dt.map(r => new Date("2026-"+r+" 10:00").toLocaleDateString("en-US", {
 						month: "short", day: "numeric"
 					}).replace(", ", " '")));
 					yValsMA.push(...movingAverage(data[graph], movingAvg));
@@ -445,6 +448,7 @@
 		function recap() {
 			//document.querySelector("#graph-select").value = "1d";
 			//plotGraph(RES, movingAvg=1);
+			return;
 			const td = new Date().toISOString().split('T')[0];
 			const [y,m,d] = td.split("-");
 			const dt = new Date(y+" "+RES[y][m]["dt"].at(-1)+" 10:00");
@@ -465,5 +469,6 @@ Longest:
 		}
 
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
 </body>
 </html>

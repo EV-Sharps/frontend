@@ -30,45 +30,6 @@
 				width: 100%;
 			}
 		}
-
-		#card-modal-overlay {
-			display: none;
-			position: fixed;
-			inset: 0;
-			background: rgba(0,0,0,0.65);
-			z-index: 2000;
-			align-items: center;
-			justify-content: center;
-		}
-		#card-modal-overlay.open {
-			display: flex;
-		}
-		#card-modal-inner {
-			max-width: 420px;
-			width: 92vw;
-			max-height: 90vh;
-			overflow-y: auto;
-			border-radius: 12px;
-			background: #181a1b;
-			box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-			position: relative;
-		}
-		#card-modal-inner .data-card {
-			margin: 0;
-			border-radius: 12px;
-		}
-		#card-modal-close {
-			position: absolute;
-			top: 8px;
-			right: 10px;
-			background: none;
-			border: none;
-			color: #94a3b8;
-			font-size: 1.3rem;
-			cursor: pointer;
-			z-index: 1;
-			line-height: 1;
-		}
 	</style>
 </head>
 
@@ -870,25 +831,6 @@
 			const today = new Date();
 			let header = `🏀 Anytime Double-Double Odds: FD/DK/PN's top 10 Implied (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
-		}
-
-		function showCardModal(rowData) {
-			const overlay = document.getElementById('card-modal-overlay');
-			const inner = document.getElementById('card-modal-inner');
-			// Remove previous card if any
-			inner.querySelectorAll('.data-card').forEach(el => el.remove());
-
-			const uniqueId = `modal-${rowData.player}-${rowData.prop}-${rowData.handicap}-${rowData.under ? 1 : 0}`;
-			const card = createNewCard(rowData, uniqueId);
-			// Auto-expand the collapsed body so trends/ranks show immediately
-			const body = card.querySelector('.card-body-collapsed');
-			if (body) {
-				body.classList.add('visible');
-				card.classList.add('expanded');
-				renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap, 15);
-			}
-			inner.appendChild(card);
-			overlay.classList.add('open');
 		}
 
 		function closeCardModal() {

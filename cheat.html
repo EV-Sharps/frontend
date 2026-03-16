@@ -39,11 +39,11 @@
 		.controls {
 			display: flex;
 			align-items: center;
-			justify-content: center;
+			justify-content: flex-start;
 			overflow-x: auto;
 			gap: 15px;
 			margin-bottom: 30px;
-			padding-bottom: 20px;
+			padding: 0 1rem 20px;
 			border-bottom: 1px solid #334155;
 		}
 
@@ -66,7 +66,7 @@
 
 		.dashboard {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+			grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 			gap: 20px;
 			max-width: 1600px;
 			margin: 0 auto;
@@ -75,29 +75,54 @@
 		.book-card {
 			background-color: var(--card-bg);
 			border-radius: 12px;
-			padding: 16px;
-			position: relative;
-			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+			overflow: hidden;
 			border: 1px solid #334155;
 			display: flex;
 			flex-direction: column;
-			transition: all 0.3s ease;
-
-			background-image: url('logos/logo.png');
-			background-repeat: no-repeat;
-			background-position: top center;
-			background-size: 15%;
-			background-blend-mode: soft-light;
 		}
 
-		.book-title {
-			font-size: 1.1rem;
+		.card-head {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 12px 14px;
+			border-bottom: 1px solid #334155;
+			background: #162032;
+			cursor: pointer;
+		}
+
+		.card-head::after {
+			content: '▼';
+			font-size: 0.7rem;
+			color: var(--text-dim);
+			transition: transform 0.3s;
+			margin-left: auto;
+		}
+
+		.book-card.expanded .card-head::after {
+			transform: rotate(180deg);
+		}
+
+		.book-logo {
+			width: 26px;
+			height: 26px;
+			object-fit: contain;
+			border-radius: 4px;
+		}
+
+		.book-name {
+			font-size: 1rem;
 			font-weight: 800;
-			padding-bottom: 12px;
-			margin-bottom: 8px;
-			border-bottom: 2px solid #334155;
 			color: var(--accent);
 			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			flex: 1;
+		}
+
+		.book-summary {
+			font-size: 0.72rem;
+			color: var(--text-dim);
+			text-align: right;
 		}
 
 		.card-content {
@@ -128,61 +153,81 @@
 			opacity: 0;
 		}
 
-		.book-title {
-			font-size: 1.1rem;
-			font-weight: 800;
-			padding-bottom: 12px;
-			margin-bottom: 8px;
-			border-bottom: 2px solid #334155;
-			color: var(--accent);
-			text-transform: uppercase;
-			cursor: pointer;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-		}
-
-		.book-title::after {
-			content: '▼';
-			font-size: 0.7rem;
-			transition: transform 0.3s;
-		}
-
-		.book-card.expanded .book-title::after {
-			transform: rotate(180deg);
-		}
-
 		.entry {
 			display: flex;
-			justify-content: space-between;
 			align-items: center;
-			padding: 8px 0;
-			border-bottom: 1px solid #2d3748;
+			gap: 10px;
+			padding: 8px 14px;
+			border-bottom: 1px solid #1e2d40;
 		}
 
 		.entry:last-child { border-bottom: none; }
 
-		.market-info { display: flex;gap: 5px; }
-		.market-name { font-weight: 600; font-size: 0.95rem; }
-		.devig-source { font-size: 0.75rem; color: var(--text-dim); }
-		.map-link {
+		.entry-left {
+			flex: 1;
+			min-width: 0;
 			display: flex;
-			align-items: center;
+			flex-direction: column;
+			gap: 3px;
+		}
+
+		.entry-info {
+			display: flex;
+			align-items: baseline;
+			gap: 6px;
+			min-width: 0;
+		}
+
+		.market-name {
+			font-weight: 700;
+			font-size: 0.88rem;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			flex-shrink: 0;
+		}
+
+		.devig-source {
+			font-size: 0.72rem;
+			color: var(--text-dim);
+			white-space: nowrap;
+		}
+
+		.map-link {
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: 0.85rem;
+			padding: 0 2px;
+			color: var(--text-dim);
+			flex-shrink: 0;
+			line-height: 1;
+		}
+
+		.map-link:hover { color: var(--accent); }
+
+		.top-record {
+			font-size: 0.7rem;
+			color: var(--text-dim);
+			white-space: nowrap;
 		}
 
 		.units-badge {
-			background: rgba(34, 197, 94, 0.1);
-			color: var(--success);
-			padding: 4px 8px;
-			border-radius: 4px;
+			font-family: 'Courier New', monospace;
 			font-weight: 700;
-			font-family: 'Courier New', Courier, monospace;
-			font-size: 0.9rem;
+			font-size: 0.85rem;
+			padding: 3px 8px;
+			border-radius: 5px;
+			white-space: nowrap;
+			min-width: 56px;
+			text-align: center;
+			background: rgba(34, 197, 94, 0.12);
+			color: var(--success);
 		}
 
 		.units-negative {
 			color: var(--failure);
-			background: rgba(239, 68, 68, 0.1);
+			background: rgba(239, 68, 68, 0.12);
 		}
 
 		.no-unit { color: var(--text-dim); background: rgba(148, 163, 184, 0.1); }
@@ -190,15 +235,18 @@
 		.expand-btn {
 			background: none;
 			border: none;
+			border-top: 1px solid #334155;
 			color: var(--accent);
 			cursor: pointer;
 			font-size: 0.8rem;
-			font-weight: bold;
-			padding: 10px 0 0 0;
+			font-weight: 700;
+			padding: 8px 14px;
 			text-align: center;
 			width: 100%;
 			display: block;
 		}
+
+		.expand-btn:hover { background: rgba(56,189,248,0.05); }
 
 		.switch input:checked + .slider { background-color: var(--accent); }
 		.slider:before {
@@ -206,27 +254,6 @@
 			background-color: white; transition: .4s; border-radius: 50%;
 		}
 		.switch input:checked + .slider:before { transform: translateX(14px); }
-
-		.record-container {
-			display: flex;
-			flex-direction: column;
-			align-items: flex-end;
-			margin-right: 12px;
-			min-width: 80px;
-		}
-
-		.record-text {
-			font-size: 0.75rem;
-			font-weight: 700;
-			color: var(--text-dim);
-			letter-spacing: 0.5px;
-		}
-
-		/* Adjust Entry layout to fit the record */
-		.entry-right-group {
-			display: flex;
-			align-items: center;
-		}
 
 		.unit-toggle-container {
 			display: flex; align-items: center; gap: 10px; background: #334155; padding: 4px 12px; border-radius: 6px; border: 1px solid #475569;
@@ -359,7 +386,7 @@
         <label for="method-select" class="select-label">Method</label>
         <select id="method-select" class="select">
             <option value="">Worst-Case</option>
-            <option value="probit">Probit</option>
+            <option value="probit" selected>Probit</option>
         </select>
         <svg class="select-arrow" viewBox="0 0 20 20">
             <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -412,9 +439,9 @@
     <select id="min-bets" onchange="renderDashboard()"
             style="width:50px;padding:6px;border-radius:6px;border:1px solid #475569;background:#0b1220;color:var(--text-main);">
         <option value="1">1</option>
-        <option value="20" selected>20</option>
+        <option value="20">20</option>
         <option value="50">50</option>
-        <option value="100">100</option>
+        <option value="100" selected>100</option>
 		<option value="200">200</option>
     </select>
 </div>
@@ -455,6 +482,15 @@
 
 	let RECORD_ALL = RECORD;
 	let RECORD_LONG_TMP = null;
+
+	const selMethod = document.getElementById('method-select');
+	METHOD = METHOD || 'probit';
+	selMethod.value = METHOD;
+	selMethod.addEventListener('change', () => {
+		METHOD = selMethod.value;
+		initFilters();
+		renderDashboard();
+	});
 
 	const selSport = document.getElementById('selSport');
 	selSport.value = SPORT || 'nba';
@@ -539,7 +575,12 @@
 		const minBets = Math.max(0, Number(document.getElementById('min-bets').value) || 0);
 
 		let data = parseRecord(RES);
-		let books = ["best", "fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
+		const BOOK_LABELS = {
+		best: "Best Book", fd: "FanDuel", dk: "DraftKings", mgm: "BetMGM",
+		espn: "ESPN Bet", cz: "Caesars", fn: "Fanatics", b365: "Bet365",
+		br: "BetRivers", hr: "Hard Rock", bv: "Bovada"
+	};
+	let books = ["best", "fd", "dk", "mgm", "espn", "cz", "fn", "b365", "br", "hr", "bv"];
 		for (bookName of books) {
 			const bookData = {...data[bookName]};
 			const filteredLines = Object.entries(bookData)
@@ -559,43 +600,39 @@
 			const card = document.createElement('div');
 			card.className = 'book-card';
 			
+			const avgRoi = filteredLines.length
+				? Math.round(filteredLines.slice(0, 5).reduce((s, l) => s + (l.r || 0), 0) / Math.min(filteredLines.length, 5))
+				: null;
+
 			let entriesHtml = filteredLines.map(line => {
 				let val = line[unitKey];
 				if (!line || !val) return;
-				
+
 				const total = (line.w || 0) + (line.l || 0);
 				const winPct = total > 0 ? Math.round((line.w / total) * 100) : 0;
 				const negative = val < 0 ? "units-negative" : "";
 
 				return `
 				<div class="entry">
-                    <div class="market-info">
-                        <div class="map-link" data-prop="${line.market}" data-devig="${line.vs}" data-book="${bookName}">
-                            🗺️
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <span class="market-name">${line.market}</span>
-                            <span class="devig-source">vs ${line.vs}</span>
-                        </div>
-                    </div>
-                    <div class="entry-right-group">
-                        <div class="record-container">
-                            <div class="record-text">
-                                <span class="win">${line.w}W</span> -
-                                <span class="loss">${line.l}L</span>
-                                <span class="">(${winPct}%)</span>
-                            </div>
-                        </div>
-                        <span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
-                            ${val ? (val >= 0 ? "+" : "") + (!isProfit ? `${val}%` : `${val.toFixed(1)}u`) : ''}
-                        </span>
-                    </div>
-                </div>
+					<div class="entry-left">
+						<div class="entry-info">
+							<span class="market-name">${line.market}</span>
+							<span class="devig-source">vs ${line.vs}</span>
+						</div>
+						<div class="top-record">${line.w}W-${line.l}L (${winPct}%)</div>
+					</div>
+					<button class="map-link" data-prop="${line.market}" data-devig="${line.vs}" data-book="${bookName}" title="View heatmap">🗺️</button>
+					<span class="units-badge ${negative} ${val === null ? 'no-unit' : ''}">
+						${val ? (val >= 0 ? "+" : "") + (!isProfit ? `${val}%` : `${val.toFixed(1)}u`) : ''}
+					</span>
+				</div>
 			`}).join('');
 
 			card.innerHTML = `
-				<div class="book-title" onclick="toggleCard(this.parentElement)">
-					${bookName}
+				<div class="card-head" onclick="toggleCard(this.parentElement)">
+					<img class="book-logo" src="logos/${bookName}.png" alt="${bookName}" onerror="this.style.display='none'">
+					<span class="book-name">${BOOK_LABELS[bookName] || bookName}</span>
+					${avgRoi != null ? `<span class="book-summary">Top 5 avg ROI<br><b style="color:${avgRoi >= 0 ? 'var(--success)' : 'var(--failure)'}">${avgRoi >= 0 ? '+' : ''}${avgRoi}%</b></span>` : ''}
 				</div>
 				<div class="card-content">
 					${entriesHtml}
@@ -605,14 +642,10 @@
 			
 			dashboard.appendChild(card);
 
-			// make all map links clickable (always available) and open the new URL with query params
-            card.querySelectorAll('.map-link').forEach(el => {
-                el.style.cursor = 'pointer';
+			card.querySelectorAll('.map-link').forEach(el => {
                 el.addEventListener('click', (ev) => {
-                    const prop = el.dataset.prop || '';
-                    const devig = el.dataset.devig || '';
-                    const book = el.dataset.book || '';
-                    const url = `/heatmap${HTML}?sport=${encodeURIComponent(SPORT)}&prop=${encodeURIComponent(prop)}&book=${encodeURIComponent(book)}&devig=${encodeURIComponent(devig)}&method=${encodeURIComponent(METHOD)}`;
+                    ev.stopPropagation();
+                    const url = `/heatmap${HTML}?sport=${encodeURIComponent(SPORT)}&prop=${encodeURIComponent(el.dataset.prop||'')}&book=${encodeURIComponent(el.dataset.book||'')}&devig=${encodeURIComponent(el.dataset.devig||'')}&method=${encodeURIComponent(METHOD)}`;
                     window.open(url, '_blank', 'noopener');
                 });
             });

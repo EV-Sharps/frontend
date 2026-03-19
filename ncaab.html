@@ -825,19 +825,16 @@
 		function togglePlayerProps() {
 			const menu = document.getElementById('prop-options');
 			const boxes = [...menu.querySelectorAll('input[type="checkbox"]')];
-			const playerBoxes = boxes.filter(cb => PLAYER_PROPS.has(cb.value));
-			const nonPlayerBoxes = boxes.filter(cb => !PLAYER_PROPS.has(cb.value));
+			const playerValues = boxes.map(cb => cb.value).filter(v => PLAYER_PROPS.has(v));
+			const nonPlayerValues = boxes.map(cb => cb.value).filter(v => !PLAYER_PROPS.has(v));
 
-			// if already showing only player props, switch to non-player props
-			const playerOnly = playerBoxes.every(cb => cb.checked) && nonPlayerBoxes.every(cb => !cb.checked);
+			// if already showing only player props, switch to non-player
+			const playerOnly = playerValues.length > 0
+				&& playerValues.every(v => menu.querySelector(`input[value="${CSS.escape(v)}"]`)?.checked)
+				&& nonPlayerValues.every(v => !menu.querySelector(`input[value="${CSS.escape(v)}"]`)?.checked);
 
-			boxes.forEach(cb => cb.checked = false);
-			if (playerOnly) {
-				nonPlayerBoxes.forEach(cb => cb.checked = true);
-			} else {
-				playerBoxes.forEach(cb => cb.checked = true);
-			}
-
+			const selected = playerOnly ? nonPlayerValues : playerValues;
+			setOptions('prop-options', selected);
 			changeFilter();
 		}
 

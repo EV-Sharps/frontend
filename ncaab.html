@@ -250,6 +250,7 @@
 						<div class="chkdd-actions">
 							<button type="button" data-act="all">All</button>
 							<button type="button" data-act="none">None</button>
+							<button type="button" onclick="togglePlayerProps()">Players</button>
 						</div>
 					</div>
 				</div>
@@ -552,6 +553,7 @@
 					<div class="chkdd-actions">
 						<button type="button" data-act="all">All</button>
 						<button type="button" data-act="none">None</button>
+						<button type="button" onclick="togglePlayerProps()">Players</button>
 					</div>
 				`;
 				[...data.props].sort().forEach(p => createOption(p, propMenu));
@@ -811,6 +813,32 @@
 			});
 			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
+		}
+
+		const PLAYER_PROPS = new Set([
+			'pts', 'ast', 'reb', 'stl', 'blk', 'to', 'dd', 'td',
+			'3ptm', 'fga', 'fgm', 'fta', 'ftm',
+			'pts+ast', 'pts+reb', 'ast+reb',
+			'pts+reb+ast', 'pts+ast+stl', 'pts+reb+ast+stl+blk'
+		]);
+
+		function togglePlayerProps() {
+			const menu = document.getElementById('prop-options');
+			const boxes = [...menu.querySelectorAll('input[type="checkbox"]')];
+			const playerBoxes = boxes.filter(cb => PLAYER_PROPS.has(cb.value));
+			const nonPlayerBoxes = boxes.filter(cb => !PLAYER_PROPS.has(cb.value));
+
+			// if already showing only player props, switch to non-player props
+			const playerOnly = playerBoxes.every(cb => cb.checked) && nonPlayerBoxes.every(cb => !cb.checked);
+
+			boxes.forEach(cb => cb.checked = false);
+			if (playerOnly) {
+				nonPlayerBoxes.forEach(cb => cb.checked = true);
+			} else {
+				playerBoxes.forEach(cb => cb.checked = true);
+			}
+
+			changeFilter();
 		}
 
 		function closeCardModal() {

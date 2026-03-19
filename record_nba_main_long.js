@@ -1,1 +1,1 @@
-let RECORD = {"probit": {}, "worst": {}}
+let RECORD = {"probit": {}, "worst": {}, "mult": {}}

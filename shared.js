@@ -35,6 +35,7 @@ function getToday() {
 let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
+	<option value="strikeouts">💨 Strikeouts</option>
 	<option value="main?sport=mlb">⚾ Preseason</option>
 	<option value="wbc">🌎 WBC</option>
 	<option value="futures">🔮 Futures</option>
@@ -3440,7 +3441,7 @@ function parseURLParams() {
 	TEAM = URLParams.get("team") || "det";
 
 	function defaultOU() {
-		if (["atgs", "tds"].includes(PAGE)) return "o";
+		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";
 		return "ou";
 	}
 	OU = URLParams.get("ou") || defaultOU();

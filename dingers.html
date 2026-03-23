@@ -48,13 +48,9 @@
 		max-height: 400px;
 		margin-top: 0.5rem;
 	}
-	#customize {
-		
-	}
 	
 	#table {
-		width: auto;
-		min-width: 300px;
+		width: 100%;
 	}
 	@media (max-width: 1850px) {
 		#table {
@@ -747,15 +743,6 @@
 			])
 		});
 
-		function noBR() {
-			const params = new URLSearchParams(window.location.search);
-			//NOBR = true;
-			params.set("noBR", NOBR);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			fetchDingersData();
-		}
-
 		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 			checkbox.addEventListener("change", () => {
 				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
@@ -776,9 +763,6 @@
 			const games = data["games"];
 			data = data["data"];
 
-			if (PLAYER) {
-				data = data.filter(r => PLAYER.split(",").includes(r.player))
-			}
 			let OLD = RES;
 			RES = data;
 		}
@@ -869,26 +853,13 @@
 
 		async function fetchDingersData() {
 			let url = "/api/ev";
-			const params = new URLSearchParams();
-			if (NOCACHE != undefined) {
-				params.set("nocache", "true");
-			}
-			if (NO365 != undefined) {
-				params.set("no365", "true");
-			}
-			if (NOBR != undefined) {
-				params.set("noBR", "true");
-			}
-			if (params.toString()) {
-				url += "?"+params.toString();
-			}
 			fetch(API_BASE+url, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
-			}).then(res => res.json()).then(res => {
-
-				parseData(res.data);
+			}).then(response => response.json()).then(data => {
+				RES = data;
+				UPDATED[PAGE] = data["updated"];
 
 				const gameMenu = document.getElementById("game-options");
 				gameMenu.innerHTML = `
@@ -897,7 +868,7 @@
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
-				[...(res?.games || [])].sort((a,b) => {
+				[...data.games].sort((a,b) => {
 					const ta = new Date(RES?.times?.[a]).getTime();
 					const tb = new Date(RES?.times?.[b]).getTime();
 
@@ -911,7 +882,7 @@
 					updateGameLabel(GAME.split(","));
 				}
 
-				if (res["data"].length == 0) {
+				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
 					TABLE.redraw(true);
 					return;
@@ -924,7 +895,7 @@
 					if (SIMPLE != undefined) {
 						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
 					}
-					updateTimes();
+					updateHeaders();
 					changeFilter();
 
 					if (IMP != undefined) {
@@ -934,21 +905,20 @@
 			}).catch(err => console.log(err));
 		}
 
-		function updateTimes() {
-			updateHeaders();
-		}
-
-		function updateHeaders() {
-			for (book in UPDATED[PAGE]) {
-				if (!UPDATED[PAGE][book]) {
-					continue;
-				}
-
-				if (!TABLE.getColumn(`bookOdds.${book}`)) {
-					continue;
-				}
-				let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
+		let ODDS_HIDDEN = false;
+		function toggleBookOddsColumns() {
+			ODDS_HIDDEN = !ODDS_HIDDEN;
+			const btn = document.getElementById('book-odds-toggle');
+			if (ODDS_HIDDEN) {
+				TABLE.getColumns().forEach(col => {
+					if (col.getField()?.startsWith('bookOdds.')) col.hide();
+				});
+				if (btn) btn.textContent = '+';
+			} else {
+				TABLE.getColumns().forEach(col => {
+					if (col.getField()?.startsWith('bookOdds.')) col.show();
+				});
+				if (btn) btn.textContent = '−';
 			}
 		}
 
@@ -1034,6 +1004,30 @@
 						frozen: MOBILE ? true : true
 					},
 					{
+						title: "Line",
+						field: "handicap",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							const prop = data.prop;
+							let ou = data.under ? "u" : "o";
+							return `${ou}${cell.getValue()}`;
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
+						width: 60
+					},
+					{
 						title: "Fair<br>Value",
 						field: "fairVal",
 						width: MOBILE ? 40 : 60,
@@ -1073,15 +1067,16 @@
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `PARX*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 50, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["hr"], short=true)}`, field: "bookOdds.hr",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
-					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["br"], short=true)}`, field: "bookOdds.br",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
-					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["bv"], short=true)}`, field: "bookOdds.bv",  width: 50, sorter: "number", visible: false, formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					
 					{title: "Pinch Hits", field: "ph", visible: PH ? true : false},
@@ -1159,6 +1154,7 @@
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
 				if (!loaded) {
+					TABLE.setHeaderFilterValue("handicap", "0.5");
 					changeFilter();
 				}
 				loaded = true;
@@ -1261,5 +1257,6 @@
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
+	<script type="text/javascript" src="record_mlb.js"></script>
 </body>
 </html>

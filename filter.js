@@ -1613,4 +1613,10 @@ function changeFilter(render = true) {
 
 	reorderOddsColumns(BOOK, DEVIG);
 	updateWeightHeader();
+
+	if (typeof ODDS_HIDDEN !== 'undefined' && ODDS_HIDDEN) {
+		TABLE.getColumns().forEach(col => {
+			if (col.getField()?.startsWith('bookOdds.')) col.hide();
+		});
+	}
 }

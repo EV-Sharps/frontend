@@ -14,12 +14,16 @@
 	<script type="text/javascript" src="flatpickr.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+	<link rel="stylesheet" href="https://unpkg.com/intro.js/themes/introjs-modern.css">
+	<script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+	<link href="style.css" rel="stylesheet">
 	<style>
 		#table {
-			width: auto;
+			width: 100%;
 		}
 		@media (max-width: 1750px) {
 			#table {
@@ -40,9 +44,276 @@
 </script>
 <body>
 	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Books</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;justify-content: space-evenly;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+					<div class="select-wrapper">
+						<label for="method-select" class="select-label">Method</label>
+						<select id="method-select">
+							<option value="" selected>Worst-Case</option>
+							<option value="add">Additive</option>
+							<option value="mult">Multiplicative</option>
+							<option value="power">Power</option>
+							<option value="probit">Probit</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button id="load-predefined-devigs" class="btn-secondary">Preloads</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="preloads-modal" class="modal" style="display:none;">
+            <div class="modal-content devig-panel">
+                <div class="modal-header">
+                    <h3>Preloads — Top Devigs</h3>
+                    <button id="close-preloads-modal">&times;</button>
+                </div>
+
+                <div id="preloads-list-container" class="options-container" style="max-height:520px;">
+                </div>
+
+                <div class="action-footer">
+                    <button id="preloads-close" class="btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+		<div id="prop-selector-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Add Prop Tag to Devig</h3>
+					<button onclick="closePropSelectorModal()">x</button>
+				</div>
+				<div>
+					<span id="prop-selector-devig">Devig: Only FD/DK 50% Equal</span>
+				</div>
+				<div id="prop-selector-options-container" class="options-container">
+				</div>
+				<div class="action-footer">
+					<p>Select a stat category to add to the current devig.</p>
+				</div>
+			</div>
+		</div>
+		<div id="range-panel" class="range-panel hidden">
+			<div class="range-row">
+				<label>Min</label>
+				<input id="range-min" type="number" placeholder="Min odds">
+			</div>
+			<div class="range-row">
+				<label>Max</label>
+				<input id="range-max" type="number" placeholder="Max odds">
+			</div>
+
+			<div class="range-actions">
+				<button onclick="applyRange()">Apply</button>
+				<button onclick="clearRange()">Clear</button>
+			</div>
+		</div>
+		<div id="overlay">
+			<div class="overlay-content">
+				<div><h2 style="justify-content: center;">Customize</h2></div>
+				<div style="justify-content: center;display: flex;gap: 1rem;">
+					<div class="select-wrapper">
+						<label for="custom-devig-select" class="select-label">Devig</label>
+						<select id="custom-devig-select"></select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+					<div class="select-wrapper">
+						<label for="custom-ou-select" class="select-label">O/U</label>
+						<select id="custom-ou-select">
+							<option value="ou" selected>Both</option>
+							<option value="o">Overs</option>
+							<option value="u">Unders</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+				</div>
+				<div id="items" style="display: flex;">
+					<div>
+						<h3>Expected Value</h3>
+						<div>
+							<input id="custom_ev" type="checkbox">
+							<label for="custom_ev">Expected Value</label>
+						</div>
+						<div>
+							<input id="custom_fairVal" type="checkbox">
+							<label for="custom_fairVal">Fair Value</label>
+						</div>
+						<div>
+							<input id="custom_implied" type="checkbox">
+							<label for="custom_implied">Implied</label>
+						</div>
+						<div>
+							<input id="custom_kelly" type="checkbox">
+							<label for="custom_kelly">¼ Kelly</label>
+						</div>
+					</div>
+					<!-- Player / Odds -->
+					<div>
+						<h3>Player & Odds</h3>
+						<div>
+							<input id="custom_player" type="checkbox" checked disabled>
+							<label for="custom_player">Player</label>
+						</div>
+						<div>
+							<input id="custom_book" type="checkbox" checked disabled>
+							<label for="custom_book">EV Book</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_fd">Fanduel</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_b365" type="checkbox">
+							<label for="custom_bookOdds_b365">B365</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_dk" type="checkbox">
+							<label for="custom_bookOdds_dk">Draftkings</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_mgm" type="checkbox">
+							<label for="custom_bookOdds_mgm">MGM</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_espn" type="checkbox">
+							<label for="custom_bookOdds_espn">ESPN</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_cz" type="checkbox">
+							<label for="custom_bookOdds_cz">Caesars</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fn" type="checkbox">
+							<label for="custom_bookOdds_fn">Fanatics</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_br" type="checkbox">
+							<label for="custom_bookOdds_br">BetRivers</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_hr" type="checkbox">
+							<label for="custom_bookOdds_hr">Hard Rock</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kambi" type="checkbox">
+							<label for="custom_bookOdds_kambi">Kambi (BB)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bv" type="checkbox">
+							<label for="custom_bookOdds_bv">Bovada</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_re" type="checkbox">
+							<label for="custom_bookOdds_re">Rebet</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fl" type="checkbox">
+							<label for="custom_bookOdds_fl">Fliff</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bol" type="checkbox">
+							<label for="custom_bookOdds_bol">Betonline</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_pn" type="checkbox">
+							<label for="custom_bookOdds_pn">Pinnacle</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_circa">Circa</label>
+						</div>
+					</div>
+					<!-- ETC -->
+					<div>
+						<h3>Stats</h3>
+						<div>
+							<input id="custom_ppLine" type="checkbox">
+							<label for="custom_ppLine">PP Line</label>
+						</div>
+						<div>
+							<input id="custom_goalie" type="checkbox">
+							<label for="custom_goalie">Goalie</label>
+						</div>
+						<div>
+							<input id="custom_oppRank" type="checkbox">
+							<label for="custom_oppRank">Opp Rank</label>
+						</div>
+						<div>
+							<input id="custom_dvpRank" type="checkbox">
+							<label for="custom_dvpRank">DvP Rank</label>
+						</div>
+						<div>
+							<input id="custom_hitRate" type="checkbox">
+							<label for="custom_hitRate">Hit Rate</label>
+						</div>
+						<div>
+							<input id="custom_hitRateLYR" type="checkbox">
+							<label for="custom_hitRateLYR">Hit Rate LYR</label>
+						</div>
+						<div>
+							<input id="custom_hitRateCareer" type="checkbox">
+							<label for="custom_hitRateCareer">Hit Rate Career</label>
+						</div>
+						<div>
+							<input id="custom_logs" type="checkbox">
+							<label for="custom_logs">Logs</label>
+						</div>
+					</div>
+				</div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+					</div>
+				</div>
+				<div style="display: flex;justify-content: center;align-items: center;">
+					<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
+					<span id="save-status" style="margin: 0.5rem 0"></span>
+					<button onclick="closeOverlay();">Close</button>
+				</div>
+			</div>
+		</div>
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
+				<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
+				  <!-- Icon -->
+				  <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+					<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
+				  </svg>
+				  <span class="help-label">Help</span>
+				</button>
+			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -58,7 +329,7 @@
 						<option value="" selected>All</option>
 						<option value="fd">FD</option>
 						<option value="dk">DK</option>
-						<!-- <option value="b365">B365</option> -->
+						<option value="b365">B365</option>
 						<option value="mgm">MGM</option>
 						<option value="espn">ESPN</option>
 						<option value="cz">CZ</option>
@@ -73,46 +344,60 @@
 					</svg>
 				</div>
 				<div class="chkdd" id="exclude-dd">
-				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-				      Exclude</span>
-				    </button>
-				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
-				      <label><input type="checkbox" value="fd"> FD</label>
-				      <label><input type="checkbox" value="dk"> DK</label>
-				      <label><input type="checkbox" value="b365"> B365</label>
-				      <label><input type="checkbox" value="mgm"> MGM</label>
-				      <label><input type="checkbox" value="espn"> ESPN</label>
-				      <label><input type="checkbox" value="cz"> CZ</label>
-				      <label><input type="checkbox" value="fn"> FN</label>
-				      <label><input type="checkbox" value="br"> BR</label>
-				      <label><input type="checkbox" value="bv"> BV</label>
-				      <label><input type="checkbox" value="hr"> HR</label>
-				      <label><input type="checkbox" value="kambi"> Kambi</label>
-				      <label><input type="checkbox" value="re"> RE</label>
-					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
-				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-				        <button type="button" data-act="all">All</button>
-				        <button type="button" data-act="none">None</button>
-				      </div>
-				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
-				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-				      </div>
-				      <div>
-				      	<span id="exclude-status"></span>
-				      </div>
-				    </div>
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+						<label><input type="checkbox" value="fd"> FD</label>
+						<label><input type="checkbox" value="dk"> DK</label>
+						<label><input type="checkbox" value="b365"> B365</label>
+						<label><input type="checkbox" value="mgm"> MGM</label>
+						<label><input type="checkbox" value="espn"> ESPN</label>
+						<label><input type="checkbox" value="cz"> CZ</label>
+						<label><input type="checkbox" value="re"> RE</label>
+						<label><input type="checkbox" value="fn"> FN</label>
+						<label><input type="checkbox" value="br"> BR</label>
+						<label><input type="checkbox" value="bv"> BV</label>
+						<label><input type="checkbox" value="hr"> HR</label>
+						<label><input type="checkbox" value="fl"> FL</label>
+						<label><input type="checkbox" value="kambi"> Kambi</label>
+						<label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+						<div class="chkdd-actions">
+							<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+						<div class="chkdd-actions" style="display: flex; justify-content: center;">
+							<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+						</div>
+						<div>
+							<span id="exclude-status"></span>
+						</div>
+					</div>
 				  </div>
 				<div class="select-wrapper">
+					<label for="devig-button" class="select-label">Devig</label>
+					<button id="devig-button" class="devig-display-btn">
+						<span id="devig-display-text">Market Avg</span>
+						<span class="dropdown-arrow">▼</span>
+					</button>
+				</div>
+				<div class="select-wrapper" style="display:none">
 					<label for="devig-select" class="select-label">Devig</label>
 					<select id="devig-select">
 						<option value="" selected>Market Avg</option>
-						<option value="fd">vs FD</option>
-						<option value="dk">vs DK</option>
-						<option value="bol">vs BOL</option>
-						<option value="pn">vs PN</option>
-						<option value="circa">vs Circa</option>
-						<option value="pn+circa">PN & Circa</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="espn;1">vs ESPN</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="espn+pn;1+1">ESPN/PN 50% Equal</option>
+						<option value="espn+pn+circa;1+1+1">Avg ESPN/PN/Circa 33% Equal</option>
+						<option value="only+espn+pn+circa;1+1+1">Only ESPN+PN+Circa 33% Equal</option>
+						<option value="pn+circa;1+1">PN/Circa 50% Equal</option>
+						<option id="custom-devig-option" value="custom">Add Custom...</option>
+						<option value="delete">Delete Custom...</option>
 					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -135,6 +420,7 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
+						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
@@ -146,9 +432,30 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-				       type="number" min="0" step="5"
-				       placeholder="Custom %"
-				       style="display:none; width:7ch; margin-left:.5rem;" />
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
+				<div class="chkdd" id="prop-dd">
+					<label for="prop-dd-button" class="select-label">Prop</label>
+					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+					<div class="chkdd-menu" id="prop-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
+				</div>
+				<div class="select-wrapper">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
 				<div class="chkdd" id="game-dd">
 					<label for="game-dd-button" class="select-label">Game</label>
 					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
@@ -159,15 +466,20 @@
 						</div>
 					</div>
 				</div>
-				<div class="chkdd" id="prop-dd">
-					<label for="prop-dd-button" class="select-label">Prop</label>
-					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
-					<div class="chkdd-menu" id="prop-options">
-						<div class="chkdd-actions">
-							<button type="button" data-act="all">All</button>
-							<button type="button" data-act="none">None</button>
-						</div>
-					</div>
+				<div class="select-wrapper">
+					<label id="range-label" class="select-label">Range</label>
+					<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
+					Any
+					</button>
+				</div>
+				<div id="min-odds-wrapper" class="select-wrapper">
+				  <label for="min-odds" class="select-label">Min</label>
+				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+
+				<div id="max-odds-wrapper" class="select-wrapper">
+				  <label for="max-odds" class="select-label">Max</label>
+				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
@@ -207,413 +519,36 @@
 				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
 			</div>
 			<div id="table-container">
-				<div id="table">
+				<div id="table"></div>
+				<div class="filter-wrapper">
+					<input type="text" id="player-search" placeholder="Search players..." autocomplete="off">
 				</div>
+				<div id="card-container"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
-			</div>
-			<div id="overlay">
-				<div class="overlay-content">
-					<div><h2 style="justify-content: center;">Customize</h2></div>
-					<div style="justify-content: center;display: flex;gap: 1rem;">
-						<div style="display: flex;flex-direction: column;">
-							<label for="custom-devig-select">Devig</label>
-							<div class="select-wrapper">
-								<select id="custom-devig-select">
-									<option value="" selected>Market Avg</option>
-									<option value="fd">vs FD</option>
-									<option value="pn">vs PN</option>
-									<option value="circa">vs Circa</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-						</div>
-					</div>
-					<div id="items" style="display: flex;">
-						<div>
-							<h3>Expected Value</h3>
-							<div>
-								<input id="custom_ev" type="checkbox">
-								<label for="custom_ev">Expected Value</label>
-							</div>
-							<div>
-								<input id="custom_fairVal" type="checkbox">
-								<label for="custom_fairVal">Fair Value</label>
-							</div>
-							<div>
-								<input id="custom_implied" type="checkbox">
-								<label for="custom_implied">Implied</label>
-							</div>
-							<div>
-								<input id="custom_kelly" type="checkbox">
-								<label for="custom_kelly">¼ Kelly</label>
-							</div>
-						</div>
-						<!-- Player / Odds -->
-						<div>
-							<h3>Player & Odds</h3>
-							<div>
-								<input id="custom_player" type="checkbox" checked disabled>
-								<label for="custom_player">Player</label>
-							</div>
-							<div>
-								<input id="custom_book" type="checkbox" checked disabled>
-								<label for="custom_book">EV Book</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_fd">Fanduel</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_dk" type="checkbox">
-								<label for="custom_bookOdds_dk">Draftkings</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_mgm" type="checkbox">
-								<label for="custom_bookOdds_mgm">MGM</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_espn" type="checkbox">
-								<label for="custom_bookOdds_espn">ESPN</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_cz" type="checkbox">
-								<label for="custom_bookOdds_cz">Caesars</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fn" type="checkbox">
-								<label for="custom_bookOdds_fn">Fanatics</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_br" type="checkbox">
-								<label for="custom_bookOdds_br">BetRivers</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_hr" type="checkbox">
-								<label for="custom_bookOdds_hr">Hard Rock</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_kambi" type="checkbox">
-								<label for="custom_bookOdds_kambi">Kambi (BB)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_bv" type="checkbox">
-								<label for="custom_bookOdds_bv">Bovada</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_re" type="checkbox">
-								<label for="custom_bookOdds_re">Rebet</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_fl" type="checkbox">
-								<label for="custom_bookOdds_fl">Fliff</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_bol" type="checkbox">
-								<label for="custom_bookOdds_bol">Betonline</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_pn" type="checkbox">
-								<label for="custom_bookOdds_pn">Pinnacle</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
-								<label for="custom_bookOdds_circa">Circa</label>
-							</div>
-						</div>
-					</div>
-					<div class="loggedOut">
-						<div style="padding: 0.5rem;text-align: center;">
-							<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
-						</div>
-					</div>
-					<div style="display: flex;justify-content: center;align-items: center;">
-						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
-						<span id="save-status" style="margin: 0.5rem 0"></span>
-						<button onclick="closeOverlay();">Close</button>
-					</div>
+				<div id="right-body" class="body">
+					<div id="chart"></div>
 				</div>
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NHL. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
-	</main>
+	</div>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "mlb";
-		let RES, TABLE, LAST, NO365, KAMBI;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") || "";
-		let TODAY = getToday();
-		let SPORT = "mlb";
-		let PLAYER = URLParams.get("player");
-		let DEVIG = URLParams.get("devig");
-		let BOOST = URLParams.get("boost");
-		let PRETTY = URLParams.get("pretty");
-		let BOOK = URLParams.get("book");
-		let PROP = URLParams.get("prop") || "";
-		TEAM = URLParams.get("team") || "det";
-		let SIDE = URLParams.get("side") ?? "both";
-
-		// Exclude
-		const dd = document.getElementById('exclude-dd');
-		const excludeBtn = dd.querySelector('.chkdd-btn');
-		let menu = dd.querySelector('.chkdd-menu');
-		const boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
-
-		function getExcludedBooks() {
-		  return boxes.filter(b => b.checked).map(b => b.value);
-		}
-		excludeBtn.addEventListener("click", (e) => {
-			//const open = dd.classList.toggle("open");
-			//excludeBtn.setAttribute("aria-expanded", open ? true : false);
-			e.stopPropagation();
-			const open = excludeBtn.getAttribute('aria-expanded') === 'true';
-  			open ? closeMenu() : openMenu();
-		});
-		document.addEventListener('click', (e) => {
-			if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
-		});
-		boxes.forEach(b => b.addEventListener('change', () => {
-		  changeFilter();
-		}));
-
-		menu.addEventListener('click', (e) => {
-		  const act = e.target?.dataset?.act;
-		  if (!act) return;
-		  const state = act === 'all';
-		  boxes.forEach(b => b.checked = state);
-		  changeFilter();
-		});
-
-		function openMenu() {
-		  const r = excludeBtn.getBoundingClientRect();
-		  menu.style.position = 'fixed';
-		  menu.style.top = `${r.bottom + 6}px`;
-		  menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-		  menu.style.right = 'auto';
-		  document.body.appendChild(menu);       // move out of the scroller
-		  menu.style.display = 'block';
-		  excludeBtn.setAttribute('aria-expanded','true');
-		}
-
-		function closeMenu() {
-		  menu.style.display = 'none';
-		  dd.appendChild(menu);                  // put it back (optional)
-		  excludeBtn.setAttribute('aria-expanded','false');
-		}
 		
-		if (MARK != undefined) {
-			document.querySelector("#watermark").style.display = "initial";
-			document.querySelector("#table-container").style["max-height"] = "initial";
-			document.querySelector("#watermark").style.width = "20%";
-		}
+		parseURLParams();
+		SPORT = "mlb";
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
-			checkbox.addEventListener("change", () => {
-				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
-				if (checkbox.checked) {
-					TABLE.getColumn(field)?.show();
-				} else {
-					TABLE.getColumn(field)?.hide();
-				}
-			});
-		});
-
-		function changeFilter() {
-			let devigBook = document.getElementById("devig-select").value;
-			let boost = document.getElementById("boost-select").value;
-			let game = document.getElementById("game-select").value;
-			let book = document.getElementById("book-select").value;
-			let prop = document.getElementById("prop-select").value;
-			let excluded = getExcludedBooks();
-			if (boost === "custom") {
-				boost = boostCustom.value;
-			}
-			BOOK = book;
-			GAME = game;
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-			params.set("boost", boost);
-			params.set("devig", devigBook);
-			params.set("game", game);
-			params.set("book", book);
-			params.set("prop", prop);
-
-			if (!RES) {
-				return;
-			}
-
-			RES.data.forEach(row => {
-				const bookOdds = { ...row.bookOdds };
-				let avg = getAverageImplied(bookOdds, row.under);
-				if (!avg) {
-					return;
-				}
-				const ex = excluded;
-				ex.push("pn"); ex.push("circa");
-				if (devigBook) {
-					ex.push(devigBook);
-				}
-				const highest = highestOver(bookOdds, ex, boost, book, row.under);
-				let ou = avg.avgAmerican.toString();
-				if (!isFinite(highest.value)) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				if (row.under) {
-				    // If under, swap priority
-				    if (devigBook === "pn+circa") {
-				        // Fallback to averageSharps for unders if combining books
-				        ou = averageSharps(bookOdds, true); // pass true for under-side avg if supported
-				    } else if (devigBook) {
-				        // Use the book's under odds if available
-				        const val = bookOdds[devigBook];
-				        ou = val;
-				        if (val && String(val).includes("/")) {
-				        	let [o,u] = String(val).split("/");
-				        	ou = `${u}/${o}`;
-				        }
-				        //ou = val && String(val).includes("/") ? String(val).split("/")[1] : val;
-				    } else {
-				    	ou = buildOU(bookOdds, true);
-				    }
-				} else {
-				    // Normal over-first logic
-				    if (devigBook === "pn+circa") {
-				        ou = averageSharps(bookOdds);
-				    } else if (devigBook) {
-				        ou = bookOdds[devigBook];
-				    }
-				}
-				if (!ou) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-
-				let d = devig(ou, highest.value, boost, row.under);
-				if (!d) {
-					row["ev"] = "";
-					row["fairVal"] = "";
-					row["implied"] = "";
-					row["kelly"] = "";
-					return;
-				}
-				row["book"] = highest.book;
-				row["line"] = highest.value;
-				row["ev"] = d.ev;
-				row["fairVal"] = d.fairVal;
-				row["implied"] = d.implied;
-				row["kelly"] = d.kelly;
-			});
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.setSort([
-				{column: "ev", dir: "desc"}
-			]);
-			const filters = [];
-			TABLE.clearFilter();
-			if (game) {
-				filters.push({field:"game", type:"=", value: game.replace("-", " @ ")});
-			}
-			if (prop) {
-				filters.push({field:"prop", type:"=", value: prop});
-			}
-			if (filters.length > 0) {
-				TABLE.setFilter(filters);
-			}
-			TABLE.replaceData(RES.data);
-			//TABLE.redraw(true);
-		}
-
-
-
-		const boostSel = document.getElementById('boost-select');
-		const boostCustom = document.getElementById('boost-custom');
-
-		boostSel.value = BOOST || 0;
-		if (BOOST == "custom") {
-			boostCustom.style.display = "";
-		}
-		boostSel.addEventListener("change", (event) => {
-			boostCustom.style.display = (event.target.value === "custom") ? '' : 'none';
-			changeFilter();
-		});
-
-		boostCustom.addEventListener("input", () => {
-			changeFilter();
-		});
-
-		document.querySelector("#devig-select").value = DEVIG || "";
-		document.querySelector("#devig-select").addEventListener("change", (event) => {
-			changeFilter();
-		});
-
-		document.querySelector("#prop-select").value = PROP || "";
-		document.querySelector("#prop-select").addEventListener("change", (event) => {
-			PROP = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("prop", PROP);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			changeFilter();
-		});
-
-		document.querySelector("#game-select").addEventListener("change", (event) => {
-			GAME = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("game", GAME);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			TABLE.clearFilter();
-			changeFilter();
-		});
-
-		document.querySelector("#book-select").value = BOOK || "";
-		document.querySelector("#book-select").addEventListener("change", (event) => {
-			BOOK = event.target.value;
-			changeFilter();
-		});
-
 		handleSession();
-
-		function updateTimes() {
-			updateHeaders();
-		}
-
-		function updateHeaders() {
-			for (book in UPDATED[PAGE]) {
-				if (!UPDATED[PAGE][book]) {
-					continue;
-				}
-
-				if (!TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`)) {
-					continue;
-				}
-				let el = TABLE.getColumn(`bookOdds.${book.replace("b365", "365")}`).getElement();
-				el.querySelector(".tabulator-col-title").innerHTML = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' /><br>${timeAgo(UPDATED[PAGE][book], short=true)}`;
-			}
-		}
 
 		function fetchProps() {
 			fetch(API_BASE+`/api/mlb`, {
@@ -631,24 +566,32 @@
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
-				[...data.games].sort().forEach(p => createOption(p, gameMenu));
+				[...data.games].sort((a,b) => {
+					const ta = new Date(RES?.times?.[a]).getTime();
+					const tb = new Date(RES?.times?.[b]).getTime();
+
+					if (isNaN(ta)) return 1;
+					if (isNaN(tb)) return -1;
+
+					return ta - tb;
+				}).forEach(p => createGameOption(p, RES?.times?.[p], gameMenu));
 				restoreChkddState(gameMenu);
 				if (GAME) {
 					updateGameLabel(GAME.split(","));
 				}
 
-				const propSel = document.getElementById("prop-select");
-				propSel.innerHTML = `<option value="" selected>All</option>`;
-				data.props.forEach(prop => {
-					if (["attd", "2+td", "3+td", "ltd", "ftd"].includes(prop) || prop.includes("successful")) {
-						return;
-					}
-					const option = document.createElement("option");
-					option.value = prop;
-					option.textContent = prop.toUpperCase();
-					propSel.appendChild(option);
-				});
-				propSel.value = PROP;
+				const propMenu = document.getElementById("prop-options");
+				propMenu.innerHTML = `
+					<div class="chkdd-actions">
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					</div>
+				`;
+				[...data.props].sort().forEach(p => createOption(p, propMenu));
+				restoreChkddState(propMenu);
+				if (PROP) {
+					updatePropLabel(PROP.split(","));
+				}
 
 				if (data["data"].length == 0) {
 					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
@@ -657,7 +600,7 @@
 				}
 
 				setTimeout(function() {
-					updateTimes();
+					updateHeaders();
 					changeFilter();
 				}, 500);
 			}).catch(err => console.log(err));
@@ -709,8 +652,8 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
+						width: MOBILE ? 100 : 140,
+						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true
@@ -726,6 +669,19 @@
 							}
 							let ou = data.under ? "u" : "o";
 							return `${ou}${cell.getValue()}`;
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
 						}
 					},
 					{
@@ -788,11 +744,11 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false, lastName: true}, hozAlign: "left", width: 80},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", visible: MOBILE ? true : false, formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},
@@ -826,5 +782,8 @@
 			}
 		}
 	</script>
+	<script type="text/javascript" src="filter.js"></script>
+	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
 </body>
 </html>

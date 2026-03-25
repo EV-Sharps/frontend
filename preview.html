@@ -14,10 +14,13 @@
 	<script type="text/javascript" src="flatpickr.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+	<link rel="stylesheet" href="https://unpkg.com/intro.js/themes/introjs-modern.css">
+	<script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+	<link href="style.css" rel="stylesheet">
 	<style>
 		#table {
 			width: auto;
@@ -46,8 +49,21 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
 					<select id="page-select"></select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -85,11 +101,6 @@
 			</div>
 		</header>
 		<main>
-			<div class="select-wrapper">
-				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
-
-				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
-			</div>
 			<div id="table-container">
 				<div id="table"></div>
 				<div id="watermark">
@@ -100,35 +111,15 @@
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
-	</main>
+	</div>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "preview";
-		let RES, TABLE;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let TODAY = getToday();
-		let SPORT = "mlb";
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
-		let BVP = URLParams.get("bvp");
-		let PRETTY = URLParams.get("pretty");
-		//let LAST = URLParams.get("last") != undefined;
-		let LAST = false;
-		let YEAR = new Date();
-		YEAR = YEAR.getFullYear();
 
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-			});
-		});
+		parseURLParams();
+		SPORT = "mlb";
+		let LAST = false;
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";

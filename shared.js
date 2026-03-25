@@ -45,6 +45,7 @@ let PAGE_DROPDOWN = `
 	<option value="mlb">🎯 Props (Sharps)</option>
 	<option value="main?sport=mlb">🏆 Main (Sharps)</option>
 	<option value="futures">🔮 Futures</option>
+	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>

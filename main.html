@@ -26,7 +26,7 @@
 </script>
 <style type="text/css">
 	#table {
-		width: auto;
+		width: 100%;
 	}
 	@media (max-width: 1500px) {
 			#table {
@@ -458,6 +458,7 @@
 			}).catch(err => console.log(err));
 		}
 
+		let loaded = false;
 		function renderTable(data) {
 			data.sort((a,b) => {
 				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
@@ -466,6 +467,8 @@
 			first.sort((a,b) => {
 				return parseInt(a.startSortable) - parseInt(b.startSortable);
 			});
+			// reset loaded so showHideUserTable re-runs on fresh data
+			loaded = false;
 			const idx = data.findIndex(item => parseFloat(item.ev) < 0);
 			if (idx != -1) {
 				//data.splice(idx, 0, {prop: "separator", ev: ""});
@@ -543,6 +546,12 @@
 									<div style="display:flex;gap: 3px;">
 										${getTeamImg(SPORT, team)} ${team.toUpperCase()} ${ou}${data.handicap} ${prefix}
 								</div>`;
+							} else if (prop == "rfi") {
+								return `
+								<div style="display:flex;gap: 3px;">
+									${gameContainer} ${ou}${data.handicap} RFI
+								</div>
+								`;
 							}
 							
 							let prefix = data.prop.includes("_") ? data.prop.split("_")[0] : "";
@@ -648,6 +657,11 @@
 				]
 			});
 			
+			TABLE.on("dataLoaded", function(data) {
+				showHideUserTable(loaded);
+				loaded = true;
+			});
+
 			TABLE.on("rowClick", function(e, row) {
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());

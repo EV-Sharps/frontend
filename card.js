@@ -94,6 +94,93 @@ function handleScroll() {
 	}
 }
 
+function dMetricPill(label, value, color) {
+	if (value === undefined || value === null || value === "") return "";
+	const colorStyle = color ? `color:${color};` : "";
+	return `<div class="metric-pill" style="min-width:48px;">
+		<div style="font-weight:700;font-size:0.8rem;${colorStyle}">${value}</div>
+		<div style="opacity:0.75;font-size:0.68rem;">${label}</div>
+	</div>`;
+}
+
+function dPctPill(label, value, pct, invertPct) {
+	if (value === undefined || value === null || value === "") return "";
+	const p = invertPct ? (pct ? 100 - pct : null) : pct;
+	const color = getPercentileColor(label, p);
+	const display = typeof value === "number" && value < 1 && value > 0
+		? String(value.toFixed(3)).replace(/^0/, "")
+		: (typeof value === "number" ? value.toFixed(1) : value);
+	return dMetricPill(label, display, color);
+}
+
+function renderDingersMetrics(r) {
+	const pd = r.pitcherData || {};
+	const sv = r.savant || {};
+	const bp = r.batter_percs || {};
+	const pc = r.percs || {};
+
+	// ERA color: low is bad for HR (green ERA = bad for batter)
+	function eraColor(v) {
+		const n = parseFloat(v);
+		if (!n) return "";
+		if (n <= 3.5) return "#e53935";
+		if (n >= 4.5) return "#33cc66";
+		return "#aaaaaa";
+	}
+
+	// xwOBA/xBA: higher = better for batter
+	function xwobaColor(v) {
+		const n = parseFloat(v);
+		if (!n) return "";
+		if (n >= 0.370) return "#33cc66";
+		if (n < 0.310) return "#e53935";
+		return "#aaaaaa";
+	}
+	function xwobaColorInv(v) {
+		const n = parseFloat(v);
+		if (!n) return "";
+		if (n >= 0.370) return "#e53935";
+		if (n < 0.310) return "#33cc66";
+		return "#aaaaaa";
+	}
+	function fmtWoba(v) {
+		const n = parseFloat(v);
+		return n ? String(n.toFixed(3)).replace(/^0/, "") : "";
+	}
+
+	const pitcherSection = r.pitcher ? `
+		<div style="display:flex;flex-direction:column;gap:4px;">
+			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Pitcher — ${title(r.pitcher)}</div>
+			<div style="display:flex;gap:6px;flex-wrap:wrap;">
+				${dMetricPill("ERA", pd.p_era || "", eraColor(pd.p_era))}
+				${dMetricPill("HR/PA%", pc.hr_pa !== undefined ? pc.hr_pa : "", getPercentileColor("percs.hr_pa", pc.hr_rate_percentile))}
+				${dMetricPill("HRs", pc.home_run !== undefined ? pc.home_run : "", "")}
+				${dMetricPill("BvP", r.bvp || "", "")}
+				${dPctPill("Fly%", pd.flyballs_percent, pd.flyballs_percentPercentile, false)}
+				${dMetricPill("xwOBA", fmtWoba(pd.xwoba), xwobaColorInv(pd.xwoba))}
+				${dPctPill("EVelo", pd.exit_velocity_avg, pd.exit_velocity_avgPercentile, false)}
+				${dPctPill("BRL%", pd.barrel_batted_rate, pd.barrel_batted_ratePercentile, false)}
+			</div>
+		</div>
+	` : "";
+
+	const batterSection = `
+		<div style="display:flex;flex-direction:column;gap:4px;">
+			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Batter</div>
+			<div style="display:flex;gap:6px;flex-wrap:wrap;">
+				${dMetricPill("HR/PA%", bp.hr_pa !== undefined ? bp.hr_pa : "", getPercentileColor("batter_percs.hr_pa", bp.hr_rate_percentile))}
+				${dMetricPill("HRs", bp.home_run !== undefined ? bp.home_run : "", "")}
+				${dMetricPill("xwOBA", fmtWoba(sv.est_woba), xwobaColor(sv.est_woba))}
+				${dPctPill("SwSp%", sv.sweet_spot_percent, sv.sweet_spot_percentPercentile, false)}
+				${dPctPill("EVelo", sv.exit_velocity_avg, sv.exit_velocity_avgPercentile, false)}
+				${dPctPill("BRL%", sv.barrels_per_bip, sv.barrels_per_bipPercentile, false)}
+			</div>
+		</div>
+	`;
+
+	return `<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0;">${pitcherSection}${batterSection}</div>`;
+}
+
 function plusMinusCardFormatter(cell) {
 	let value = cell.getValue();
 	let colorClass = "negative";
@@ -441,6 +528,8 @@ function updateExistingCard(card, rowData) {
 					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>
 			</div>
+
+			${PAGE === "dingers" ? renderDingersMetrics(rowData) : ""}
 
 			<div class="expanded-trends-chart" style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
 				<div class="expanded-trends" style="flex:1 1 160px; min-width:160px;">

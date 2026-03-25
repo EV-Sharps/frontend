@@ -263,20 +263,11 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "pitcher_mix";
-		let RES, TABLE;
-		let HISTORICAL = {};
-		let url = "";
+		parseURLParams();
+
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let GAME = URLParams.get("game") != undefined;
-		let TODAY = getToday();
-		let SPORT = "mlb";
-		let PLAYER = URLParams.get("player");
-		let PRETTY = URLParams.get("pretty");
 		TEAM = URLParams.get("team") || "lad";
-		let SIDE = URLParams.get("side") ?? "both";
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";

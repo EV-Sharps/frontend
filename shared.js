@@ -44,11 +44,13 @@ let PAGE_DROPDOWN = `
 
 	<option value="mlb">🎯 Props (Sharps)</option>
 	<option value="main?sport=mlb">🏆 Main (Sharps)</option>
+	<option value="live?sport=mlb">⚾ Live (Sharps)</option>
 	<option value="futures">🔮 Futures</option>
 	<option value="bvp">🆚 BvP</option>
 	<option value="stats">📊 Stats</option>
 	<option value="barrels">🏏 Barrels (due)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
+	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
@@ -140,14 +142,8 @@ setTimeout(() => {
 		select.value = `movement?sport=${SPORT}`;
 	} else if (PAGE == "bets" && SPORT === "nfl") {
 		select.value = "bets?sport=nfl";
-	} else if (PAGE == "main" && SPORT === "nfl") {
-		select.value = "main?sport=nfl";
-	} else if (PAGE == "main" && SPORT === "nhl") {
-		select.value = "main?sport=nhl";
-	} else if (PAGE == "main" && SPORT === "nba") {
-		select.value = "main?sport=nba";
-	} else if (PAGE == "main" && SPORT === "ncaab") {
-		select.value = "main?sport=ncaab";
+	} else if (PAGE == "main") {
+		select.value = `main?sport=${SPORT}`;
 	} else {
 		select.value = PAGE;
 	}

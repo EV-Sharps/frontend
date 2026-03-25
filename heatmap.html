@@ -259,6 +259,17 @@
 					</svg>
                 </div>
 
+				<div class="select-wrapper">
+					<label class="select-label" for="selSizing">Sizing</label>
+					<select id="selSizing" class="select" style="width:80px">
+						<option value="unit" selected>Unit</option>
+						<option value="kelly">Kelly</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+					  <path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+
 				<div class="select-wrapper" style="align-items:center;">
                     <button id="download-btn" class="btn-ctrl" onclick="downloadHeatmapImage()" title="Download heatmap as PNG">Download PNG</button>
                 </div>
@@ -302,6 +313,7 @@
 	<script>
 		PAGE = "heatmap";
 		let RECORD;
+		let SIZING = "unit";
 		parseURLParams();
 
 		function initBookPicker(){
@@ -514,7 +526,14 @@
 				const j = findBinIndex(ev, evBins);
 				if (i === -1 || j === -1) continue;
 				const isWin = !!b.hit;
-				const profit = isWin ? americanWinProfit(od) : -1.0;
+				const winProfit = americanWinProfit(od);
+				let profit;
+				if (cfg.sizing === "kelly") {
+					const kellyFrac = winProfit > 0 ? ev / (100 * winProfit) : 0;
+					profit = isWin ? kellyFrac * winProfit : -kellyFrac;
+				} else {
+					profit = isWin ? winProfit : -1.0;
+				}
 				sumMatrix[i][j] += profit;
 				countMatrix[i][j] += 1;
 				if (isWin) winMatrix[i][j] += 1;
@@ -597,7 +616,9 @@
 				//zmax: Math.max(Math.abs(vmax), -vmin),
 				colorbar: {
 					title: {
-						text: cfg.roi ? 'ROI (avg units per bet)' : 'Total Profit (units)'
+						text: cfg.roi
+							? (cfg.sizing === "kelly" ? 'ROI (avg kelly units/bet)' : 'ROI (avg units/bet)')
+							: (cfg.sizing === "kelly" ? 'Total Profit (kelly units)' : 'Total Profit (units)')
 					},
 					orientation: 'h',
 					x: 0.5, y: -0.30, xanchor: 'center'
@@ -633,7 +654,7 @@
 					zerolinecolor: '#2a2e39'
 				},
 				title: {
-					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
+					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap — ${cfg.sizing === 'kelly' ? 'Kelly' : 'Unit'} sizing (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
 				},
 				annotations,
 				margin: { l: 80, r: 20, t: 40, b: MOBILE ? 160 : 90 },
@@ -728,6 +749,9 @@
 		if (selEvStep) selEvStep.addEventListener('change', () => updateHeatmap());
         if (selOddsStep) selOddsStep.addEventListener('change', () => updateHeatmap());
 
+		const selSizing = document.getElementById('selSizing');
+		if (selSizing) selSizing.addEventListener('change', () => { SIZING = selSizing.value; updateHeatmap(); });
+
 		if (!BOOK) BOOK = 'fd';
 		if (!DEVIG) DEVIG = 'circa';
 		if (!PROP) {
@@ -781,9 +805,9 @@
             const evStep = selEvStep ? Number(selEvStep.value) : 1;
             const oddsStep = selOddsStep ? Number(selOddsStep.value) : 100;
 
-			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, { 
+			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, {
 				roi: true, minBets: 1, containerId:'heatmap', bookLabel: BOOK, devLabel: DEVIG, sport: SPORT,
-				prop: PROP, 
+				prop: PROP, sizing: SIZING,
 				evStep: evStep, oddsStep: oddsStep,
 				evRange: evRange, oddsRange: oddsRange
 			});

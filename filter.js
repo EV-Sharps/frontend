@@ -1,6 +1,6 @@
 
 const CHKDD_STATE = {};
-const ALL_POSSIBLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "bv", "cz", "fl", "br", "re"];
+const ALL_POSSIBLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "bv", "cz", "fl", "br", "re"];
 
 function restoreChkddState(menu) {
 	wireChkddMenu(menu);

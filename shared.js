@@ -13,7 +13,7 @@ let HEATMAP = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED;
+let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -45,6 +45,9 @@ let PAGE_DROPDOWN = `
 	<option value="mlb">🎯 Props (Sharps)</option>
 	<option value="main?sport=mlb">🏆 Main (Sharps)</option>
 	<option value="futures">🔮 Futures</option>
+	<option value="bvp">🆚 BvP</option>
+	<option value="stats">📊 Stats</option>
+	<option value="barrels">🏏 Barrels (due)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
@@ -1155,7 +1158,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
-	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx')}.png' alt='${book}' title='${book}' />` : "";
+	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx').replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />` : "";
 	
 	// Get ROI color for vertical slice and W-L record
 	let extra = "";
@@ -1248,7 +1251,7 @@ const evBookFormatter = function(cell, params, rendered) {
 		<div class='${cls}'>
 			<span class='evbook-odds'>${line}</span>
 			<span class='evbook-implied'>${implied}%</span>
-			<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />
+			<img class='book-img' src='logos/${book.replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />
 		</div>
 	`;
 }
@@ -1324,7 +1327,7 @@ function getTeamImg(sport, team) {
 }
 
 function getBookImgs(books) {
-	return books.map(book => book == "best" ? "" : `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`).join("");
+	return books.map(book => book == "best" ? "" : `<img class='book-img' src='logos/${book.replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />`).join("");
 }
 
 const brlFormatter = function(cell) {
@@ -3110,7 +3113,7 @@ function renderGoalPropsTable(playerData) {
 
 		html += `
 			<tr style="border-bottom: 1px solid #2a2e39;">
-				<td style="padding: ${cellPad}; font-weight: 600;display:flex;align-items:center;gap:4px; position: sticky; left: 0; background: #1a1d24; z-index: 1;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase()}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+				<td style="padding: ${cellPad}; font-weight: 600;display:flex;align-items:center;gap:4px; position: sticky; left: 0; background: #1a1d24; z-index: 1;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase().replace("hr_az", "hr")}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
 				${cells}
 			</tr>
 		`;
@@ -3446,6 +3449,9 @@ function parseURLParams() {
 	TEAMS = URLParams.get("teams") || "";
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";
+	ALL = URLParams.get("all") || "";
+	PLAYERS = URLParams.get("players") || "";
+	HARD_HIT = URLParams.get("HH") || "";
 
 	function defaultOU() {
 		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";

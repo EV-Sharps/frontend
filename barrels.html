@@ -134,33 +134,9 @@
 	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "barrels";
+
+		parseURLParams();
 		SPORT = "mlb";
-		let TABLE = null;
-		let FEED = null;
-		let HISTORICAL = {};
-		let RES = null;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let PLAYERS = URLParams.get("players");
-		TEAM = URLParams.get("team");
-		let TODAY = URLParams.get("today");
-		let MARK = URLParams.get("mark");
-		let ALL = URLParams.get("all") != undefined;
-		let BOOK = URLParams.get("book");
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
-		let PRETTY = URLParams.get("pretty");
-		let DUE = URLParams.get("due");
-		let HARD_HIT = URLParams.get("HH");
-		let EXIT_VELO = URLParams.get("EV");
-		let L3 = URLParams.get("L3");
-		TOGGLE_PERCENTILE = URLParams.get("percentiles") != undefined;
-		let BVP = URLParams.get("bvp");
-		let IS_PITCHER = false;
-		let YEAR = new Date();
-		YEAR = YEAR.getFullYear();
 
 		if (TOGGLE_PERCENTILE) {
 			document.querySelector("#percentiles-btn").innerText = "Raw Values";
@@ -267,13 +243,6 @@
 					hozAlign: "center",
 					resizable: false,
 					headerSortStartingDir: "desc"
-				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
 				},
 				groupHeader: function(value, count, data, group){
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;

@@ -52,6 +52,7 @@ let PAGE_DROPDOWN = `
 	<option value="barrels">🏏 Barrels (due)</option>
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
+	<option value="feed">📡 Feed</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
@@ -1377,14 +1378,18 @@ function getWindHTML(data) {
 
 const windFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	if (data.prop == "separator") return "";
-	if (!data.game) {
+	if (!data.game || !RES.weather) {
 		return "";
 	}
-	if (data.blurred) {
-		return "<div class='blurred'>"+cell.getValue()+"</div>";
-	}
-	return getWindHTML(data);
+
+	let w = RES.weather[data.game];
+	if (!w) return "";
+	if (w.wind == "roof") return `Roof`;
+	return `
+		<div>
+			<img class="" src="logos/${w.windLogo}" /> ${w.wind} mph ${w.temp}
+		</div>
+	`;
 }
 
 const ftFormatter = function(cell, params, rendered) {

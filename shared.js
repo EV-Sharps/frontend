@@ -1453,12 +1453,12 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers", "strikeouts", "backfields"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "dingers2", "strikeouts", "backfields"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
-	if (isPlayerProp || ["feed", "dingers", "barrels"].includes(PAGE)) {
-		let s = ["feed", "dingers", "barrels"].includes(PAGE) ? "mlb" : sport;
+	if (isPlayerProp || ["feed", "dingers", "dingers2", "barrels"].includes(PAGE)) {
+		let s = ["feed", "dingers", "dingers2", "barrels"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";
 		let t = sport.includes("ncaa") ? data.teamId : data.team;

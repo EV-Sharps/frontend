@@ -53,6 +53,7 @@ let PAGE_DROPDOWN = `
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option value="feed">📡 Feed</option>
+	<option value="movement?sport=mlb">📉 Movement (Sharps)</option>
 	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>

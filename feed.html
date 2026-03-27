@@ -385,7 +385,11 @@
 		let intervalId = 0;
 		function runFeed() {
 			if (!DEBUG && !PLAYER && (!DATE || DATE == TODAY)) {
-				intervalId = setInterval(() => fetchFeed(), 30 * 1000);
+				intervalId = setInterval(() => {
+					if (document.hasFocus()) {
+						fetchFeed()
+					}
+				}, 30 * 1000);
 			} else if (DATE) {
 				//fetchHistorical();
 				fetchFeed(render=true);

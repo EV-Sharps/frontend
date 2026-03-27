@@ -27,6 +27,9 @@
 </script>
 
 <style>
+	main {
+		flex-direction: row;
+	}
 	#left-body {
 		width: 50%;
 	}
@@ -186,17 +189,15 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "feed";
-		let SPORT = "mlb";
+		parseURLParams();
+		SPORT = "mlb";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let TODAY = getToday();
+
 		let DEBUG = URLParams.get("debug");
-		let DATE = URLParams.get("date");
 		let CLOSE = URLParams.get("close");
-		let PLAYER = URLParams.get("player");
-		let PRETTY = URLParams.get("pretty");
 		TEAM = URLParams.get("team");
-		let TABLE, RES, HIST, HRTABLE;
+		let HIST, HRTABLE;
 		let HRROWS = [];
 		let ALMOST = [];
 		let BARRELS = [];
@@ -386,7 +387,8 @@
 			if (!DEBUG && !PLAYER && (!DATE || DATE == TODAY)) {
 				intervalId = setInterval(() => fetchFeed(), 30 * 1000);
 			} else if (DATE) {
-				fetchHistorical();
+				//fetchHistorical();
+				fetchFeed(render=true);
 			}
 
 			if (!DATE || DATE == TODAY) {

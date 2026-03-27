@@ -198,7 +198,7 @@ function evCardFormatter(row) {
 		colorClass = "positive";
 		value = `+${value}`;
 	}
-	if (["outliers", "atgs2"].includes(PAGE)) {
+	if (["outliers", "atgs2", "dingers2"].includes(PAGE)) {
 		return `<span class="ev-value">${Math.round((row?.outlierPct || 0) * 100)}%</span><span style=""> from devig</span>`;
 	}
 	return `<span class="ev-value ${colorClass}">${value}%</span><span style="">EV</span>`;

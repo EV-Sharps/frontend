@@ -31,7 +31,7 @@ function applyFilters() {
 	const searchTerm = document.getElementById("player-search").value.toLowerCase();
 
 	const filtered = MASTER_DATA.filter(row => {
-		return row.player.includes(searchTerm);
+		return row.player && row.player.includes(searchTerm);
 	});
 
 	renderCards(filtered);

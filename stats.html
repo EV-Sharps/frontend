@@ -196,17 +196,12 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "stats";
-		let TABLE = null;
+		parseURLParams();
+		
 		let HISTORICAL = {};
-		let RES = null;
-		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let BOOK = URLParams.get("book");
-		let SPORT = URLParams.get("sport");
-		let PROP = URLParams.get("prop");
 		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
 		let BVP = URLParams.get("bvp");
 		let CUTOFF = URLParams.get("cutoff") || 10;
 		let IS_PITCHER = false;

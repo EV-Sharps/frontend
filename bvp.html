@@ -202,23 +202,16 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "bvp";
-		let RES = null;
-		let TABLE = null;
-		let HISTORICAL = {};
-		let url = "";
+
+		parseURLParams();
+		SPORT = "mlb";
+
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let BOOK = URLParams.get("book");
-		let DATE = URLParams.get("date");
-		let TODAY = getToday();
-		let SPORT = URLParams.get("sport");
-		let PROP = URLParams.get("prop");
+		let HISTORICAL = {};
 		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
 		let BVP = URLParams.get("bvp");
 		let BVS = URLParams.get("bvs");
-		let PRETTY = URLParams.get("pretty");
-		let MARK = URLParams.get("mark");
 		//let LAST = URLParams.get("last") != undefined;
 		let LAST = false;
 		let YEAR = new Date();
@@ -274,7 +267,6 @@
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(response => response.json()).then(data => {
-				data = data.data;
 				initDatepicker(data.date);
 				data = data.res;
 				data = data.filter(r => r.game != "");
@@ -285,30 +277,6 @@
 					if (BVS != undefined) {
 						bvs();
 					}
-					if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
-						printReddit_();
-						print_2();
-					}
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-				}, 200);
-			}).catch(err => console.log(err));
-		}
-
-		function fetchData2() {
-			let s = SPORT;
-			const url = `https://api.github.com/repos/dailyev/props/contents/static/mlb/stats_bvp.json`;
-			fetch(url, {
-				headers: { "Accept": "application/vnd.github.v3.raw" }
-			}).then(response => response.json()).then(data => {
-				initDatepicker(data.date);
-				data = data.res;
-				data = data.filter(r => r.game != "");
-				RES = data;
-				renderTable(data);
-				setTimeout(function() {
-					TABLE.redraw();
 					if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 						printReddit_();
 						print_2();

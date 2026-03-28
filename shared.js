@@ -54,7 +54,7 @@ let PAGE_DROPDOWN = `
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option value="feed">📡 Feed</option>
 	<option value="movement?sport=mlb">📉 Movement (Sharps)</option>
-	<option value="bets?sport=nhl">🎟️ Bets (Sharps)</option>
+	<option value="bets?sport=mlb">🎟️ Bets (Sharps)</option>
 	<!-- 
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
 	<option value="tds">🏈 TDs (Free)</option>
@@ -3434,7 +3434,7 @@ function parseURLParams() {
 	MARK = URLParams.get("mark");
 	GAME = URLParams.get("game") || "";
 	TODAY = getToday();
-	SPORT = URLParams.get("sport") || "nba";
+	SPORT = URLParams.get("sport") || "mlb";
 	PLAYER = URLParams.get("player");
 	DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
 	WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");

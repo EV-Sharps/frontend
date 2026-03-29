@@ -1225,7 +1225,8 @@
 			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
-				{column: "implied", dir: "desc"}
+				{column: "implied", dir: "desc"},
+				{field: "under", type:"=", value: false}
 			]);
 
 			const rows = TABLE.getData("active");
@@ -1245,7 +1246,7 @@
 					continue;
 				}
 
-				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
+				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
 			let header = `🎯 Circa's top 10 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 

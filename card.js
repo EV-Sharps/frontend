@@ -24,14 +24,28 @@ clearCardOpenState();
 
 function initializeCards(data) {
 	MASTER_DATA = data;
+	populateHandicapFilter(data);
 	applyFilters();
+}
+
+function populateHandicapFilter(data) {
+	const sel = document.getElementById("handicap-filter");
+	if (!sel) return;
+	const current = sel.value;
+	const values = [...new Set(data.map(r => r.handicap).filter(h => h != null))].sort((a, b) => parseFloat(a) - parseFloat(b));
+	sel.innerHTML = `<option value="">All Lines</option>` + values.map(v => `<option value="${v}">${v}</option>`).join("");
+	if (values.includes(parseFloat(current)) || current === "") sel.value = current;
 }
 
 function applyFilters() {
 	const searchTerm = document.getElementById("player-search").value.toLowerCase();
+	const handicapSel = document.getElementById("handicap-filter");
+	const handicap = handicapSel ? handicapSel.value : "";
 
 	const filtered = MASTER_DATA.filter(row => {
-		return row.player && row.player.includes(searchTerm);
+		if (!row.player || !row.player.includes(searchTerm)) return false;
+		if (handicap !== "" && String(row.handicap) !== String(handicap)) return false;
+		return true;
 	});
 
 	renderCards(filtered);
@@ -43,6 +57,17 @@ if (document.getElementById("player-search")) {
 		debouncedApplyFilters();
 	});
 }
+
+// Inject handicap dropdown next to player search
+(function injectHandicapFilter() {
+	const search = document.getElementById("player-search");
+	if (!search || document.getElementById("handicap-filter")) return;
+	const sel = document.createElement("select");
+	sel.id = "handicap-filter";
+	sel.innerHTML = `<option value="">All Lines</option>`;
+	sel.addEventListener("change", applyFilters);
+	search.parentNode.insertBefore(sel, search.nextSibling);
+})();
 
 function loadMoreCards() {
 	if (IS_LOADING_CARDS) return;

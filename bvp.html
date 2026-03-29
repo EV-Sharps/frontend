@@ -335,13 +335,13 @@
 							const data = cell.getRow().getData();
 							return `${data.bvpStats.h}-${data.bvpStats.ab}`;
 						}},
-						{title: "AVG", field: "bvpStats.avg", width: 45, formatter: avgFormatter},
-						{title: "SLG", field: "bvpStats.slg", width: 45, formatter: avgFormatter},
+						{title: "AVG", field: "bvpStats.ba", width: 45, formatter: avgFormatter},
+						//{title: "SLG", field: "bvpStats.slg", width: 45, formatter: avgFormatter},
 						{title: "2B", field: "bvpStats.2b", width: 35},
 						{title: "HR", field: "bvpStats.hr", width: 35},
 					]},
-					{title: "Vs Team<br>2025", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
-					{title: "@ Stadium<br>2025", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
+					{title: "Vs Team<br>2026", field: "bvt", hozAlign: "left", width: 75, formatter: blurFormatter},
+					{title: "@ Stadium<br>2026", field: "bvs", hozAlign: "left", width: 85, visible: true, formatter: blurFormatter},
 					{title: "Pitcher HR Allowed", columns: [
 						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
 						//{title: "vs L/R", field: "percs.hr_l", width: 45, formatter: percentileFormatter },

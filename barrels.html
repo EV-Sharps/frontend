@@ -181,10 +181,6 @@
 				}
 			}).then(response => response.json()).then(data => {
 				data = data.data;
-				if (TEAM) {
-					let teams = TEAM.split(",");
-					data = data.filter(r => teams.includes(r.team));
-				}
 				RES = data;
 				renderTable(data);
 				setTimeout(() => {

@@ -1241,14 +1241,14 @@
 					currentRank++;
 				}
 
-				if (currentRank > 20) {
+				if (currentRank > 10) {
 					continue;
 				}
 
 				tweet.push(`${currentRank}. ${title(row.player)} - ${row["implied"]}%`);
 			}
 			const today = new Date();
-			let header = `🎯 Circa's top 20 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🎯 Circa's top 10 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 

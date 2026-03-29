@@ -1388,9 +1388,16 @@ const windFormatter = function(cell, params, rendered) {
 	if (w.wind == "roof") return `Roof`;
 	return `
 		<div>
+			${w.wind} mph ${w.temp}
+		</div>
+	`
+	/*
+	return `
+		<div>
 			<img class="" src="logos/${w.windLogo}" /> ${w.wind} mph ${w.temp}
 		</div>
 	`;
+	*/
 }
 
 const ftFormatter = function(cell, params, rendered) {

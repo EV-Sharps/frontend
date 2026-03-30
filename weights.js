@@ -391,6 +391,8 @@ async function initDevPicker(data){
 			continue; // skip atgs/fgs/lgs for nhl page
 		} else if (PAGE == "threes" && prop !== "3ptm") {
 			continue;
+		} else if (PAGE == "dingers" && prop !== "hr") {
+			continue;
 		} else if (dev.includes("re")) {
 			//continue;
 		}
@@ -399,7 +401,7 @@ async function initDevPicker(data){
 		const propTag = document.createElement('div');
 		propTag.className = 'dev-prop-tag';
 		propTag.textContent = prop || '';
-		if (!["atgs", "tds"].includes(PAGE)) {
+		if (!["atgs", "tds", "dingers"].includes(PAGE)) {
 			wrap.appendChild(propTag);
 		}
 

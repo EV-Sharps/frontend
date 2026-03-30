@@ -1379,17 +1379,21 @@ function getWindHTML(data) {
 
 const windFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	if (!data.game || !RES.weather) {
+	if (!data.game) {
 		return "";
 	}
 
-	let w = RES.weather[data.game];
-	if (!w) return "";
-	if (w.wind == "roof") return `Roof`;
+	let weather = data.weather;
+	if (RES.weather) {
+		weather = RES.weather[data.game];
+	}
+
+	if (!weather) return "";
+	if (weather.wind == "roof") return `Roof`;
 
 	return `
 		<div>
-			<img class="wind" src="logos/${w.windLogo}" /> ${w.wind} mph ${w.temp}
+			<img class="wind" src="logos/${weather.windLogo}" /> ${weather.wind} mph ${weather.temp}
 		</div>
 	`;
 }

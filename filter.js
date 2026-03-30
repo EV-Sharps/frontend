@@ -177,7 +177,7 @@ function renderBookSelect() {
 	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
 	let bookSel = document.getElementById("book-select");
 
-	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "kambi"];
+	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi"];
 
 	bookSel.innerHTML = `
 		<option value="" selected>All</option>

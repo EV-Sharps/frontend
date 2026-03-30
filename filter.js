@@ -279,8 +279,27 @@ if (dd) {
 	boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
 }
 
+// Wrap scrollable content so action buttons stay visible
+if (menu && !menu.querySelector('.chkdd-scroll')) {
+	const scroll = document.createElement('div');
+	scroll.className = 'chkdd-scroll';
+	const actions = [...menu.querySelectorAll(':scope > .chkdd-actions, :scope > div:last-child')];
+	const toWrap = [...menu.childNodes].filter(n => !actions.includes(n));
+	toWrap.forEach(n => scroll.appendChild(n));
+	menu.insertBefore(scroll, menu.firstChild);
+}
+
 function getExcludedBooks() {
 	return boxes.filter(b => b.checked).map(b => b.value);
+}
+
+const PREDICTION_MARKET_BOOKS = ["kal", "poly", "px", "nv"];
+function togglePredictionMarkets() {
+	const menu = document.getElementById('exclude-dd')?.querySelector('.chkdd-menu') || document.body;
+	const predBoxes = PREDICTION_MARKET_BOOKS.map(v => menu.querySelector(`input[value="${v}"]`)).filter(Boolean);
+	const allChecked = predBoxes.every(b => b.checked);
+	predBoxes.forEach(b => { b.checked = !allChecked; });
+	changeFilter();
 }
 if (excludeBtn) {
 	excludeBtn.addEventListener("click", (e) => {

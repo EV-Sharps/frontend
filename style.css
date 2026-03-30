@@ -1601,6 +1601,7 @@ h1 {
 }
 .wind, .weather {
 	height: 28px; width: 28px;
+	filter: brightness(0) invert(1);
 }
 .team-img {
 	height: 24px; width: 24px;

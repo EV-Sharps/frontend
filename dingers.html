@@ -290,6 +290,26 @@
 							<label for="custom_bookOdds_fl">Fliff</label>
 						</div>
 						<div>
+							<input id="custom_bookOdds_bol" type="checkbox">
+							<label for="custom_bookOdds_bol">BetOnline (BOL)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kal" type="checkbox">
+							<label for="custom_bookOdds_kal">Kalshi (KAL)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_poly" type="checkbox">
+							<label for="custom_bookOdds_poly">Polymarket (POLY)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_nv" type="checkbox">
+							<label for="custom_bookOdds_nv">NoVig (NV)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_px" type="checkbox">
+							<label for="custom_bookOdds_px">ProphetX (PX)</label>
+						</div>
+						<div>
 							<input id="custom_bookOdds_pn" type="checkbox">
 							<label for="custom_bookOdds_pn">Pinnacle</label>
 						</div>
@@ -1095,6 +1115,10 @@
 					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					

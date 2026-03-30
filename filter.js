@@ -198,7 +198,8 @@ function toggleBookOddsColumns() {
 	const bookOddsFields = ["bookOdds.circa", "bookOdds.fd", "bookOdds.b365", "bookOdds.dk",
 		"bookOdds.mgm", "bookOdds.espn", "bookOdds.cz", "bookOdds.fn",
 		"bookOdds.br", "bookOdds.hr", "bookOdds.bv", "bookOdds.re",
-		"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn"
+		"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn",
+		"bookOdds.px", "bookOdds.nv", "bookOdds.poly", "bookOdds.kal"
 	];
 	
 	const circaCol = TABLE.getColumn("bookOdds.circa");

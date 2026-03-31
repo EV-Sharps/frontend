@@ -2261,14 +2261,14 @@ function openCustomDevig() {
 	card.id = "custom-devig-card";
 	card.style.cssText = `
 	background:#111; color:#eee; border:1px solid #333; border-radius:10px;
-	width:min(560px,92vw); max-height:90vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+	width:min(650px,92vw); max-height:90vh; overflow:auto; padding:16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
 	`;
 	card.innerHTML = `
 	<h3 style="margin:0 0 8px">Custom Devig</h3>
 	<div id="weighting-body" style="display:flex;gap: 20px;">
 		<div style="display:flex;flex-direction:column;justify-content: center;align-items: center;gap:10px;">
 			<div id="weight-chart-section" style="display: flex; justify-content: center;">
-				<div id="weight-pie-chart" style="width:250px; height:250px;"></div>
+				<div id="weight-pie-chart" style="width:300px; height:300px;"></div>
 			</div>
 		</div>
 		<div id="book-weight-inputs"></div>

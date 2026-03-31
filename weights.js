@@ -1,5 +1,5 @@
 
-const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "bv", "cz", "fl", "br", "re"];
+const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "bv", "cz", "fl", "br", "re", "kal", "nv", "poly", "px"];
 const SESSION_WEIGHTS = {
 	"tds-pn+circa": {
 		pn: 0.4,
@@ -163,8 +163,8 @@ function renderWeightPieChart() {
 	}];
 
 	const layout = {
-		height: MOBILE ? 250 : 250,
-		width: MOBILE ? 250 : 250,
+		height: 300,
+		width: 300,
 		margin: { t: 0, b: 0, l: 0, r: 0 },
 		showlegend: false,
 		paper_bgcolor: 'rgba(0,0,0,0)',

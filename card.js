@@ -43,7 +43,7 @@ function applyFilters() {
 	const handicap = handicapSel ? handicapSel.value : "";
 
 	const filtered = MASTER_DATA.filter(row => {
-		if (!row.player || !row.player.includes(searchTerm)) return false;
+		if (row.player && !row.player.includes(searchTerm)) return false;
 		if (handicap !== "" && String(row.handicap) !== String(handicap)) return false;
 		return true;
 	});
@@ -464,6 +464,9 @@ function updateExistingCard(card, rowData) {
 	let teamImg = getTeamImg(sport, team);
 	let player = title(rowData.player);
 	let gameImg = getGameImgs(rowData, {});
+	if (gameImg) {
+		gameImg = gameImg.join(" @ ");
+	}
 	let propDisplay = rowData.prop.toUpperCase();
 
 	const isTeamTotal = rowData.prop === "home_total" || rowData.prop === "away_total";
@@ -477,6 +480,8 @@ function updateExistingCard(card, rowData) {
 			player = teamTotalTeam.trim().toUpperCase();
 		}
 		propDisplay = "TEAM TOTAL";
+	} else if (rowData.prop.includes("total")) {
+		teamImg = gameImg;
 	} else if (PAGE.includes("ncaa")) {
 		if (!["reb", "3ptm", "pts", "ast"].includes(rowData.prop)) {
 			player = rowData.gameId || rowData.game;
@@ -543,7 +548,7 @@ function updateExistingCard(card, rowData) {
 			<!-- Matchup ranks -->
 			<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
 				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.95rem;display: flex;">${gameImg.join("")}</div>
+					<div style="font-weight:700; font-size:0.95rem;display: flex;">${gameImg}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">Game</div>
 				</div>
 				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.oppRank)}; font-weight:600; font-size:0.85rem;">

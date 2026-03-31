@@ -424,6 +424,7 @@ async function handleSession() {
 		initChkddActions();
 		fetchDingersData();
 		//countdown();
+		renderFilters();
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {

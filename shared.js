@@ -1158,7 +1158,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
-	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx').replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />` : "";
+	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx').replace("hr_az", "hr").replace("hr_oh", "hr")}.png' alt='${book}' title='${book}' />` : "";
 	
 	// Get ROI color for vertical slice and W-L record
 	let extra = "";
@@ -1251,7 +1251,7 @@ const evBookFormatter = function(cell, params, rendered) {
 		<div class='${cls}'>
 			<span class='evbook-odds'>${line}</span>
 			<span class='evbook-implied'>${implied}%</span>
-			<img class='book-img' src='logos/${book.replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />
+			<img class='book-img' src='logos/${book.replace("hr_az", "hr").replace("hr_oh", "hr")}.png' alt='${book}' title='${book}' />
 		</div>
 	`;
 }
@@ -1327,7 +1327,7 @@ function getTeamImg(sport, team) {
 }
 
 function getBookImgs(books) {
-	return books.map(book => book == "best" ? "" : `<img class='book-img' src='logos/${book.replace("hr_az", "hr")}.png' alt='${book}' title='${book}' />`).join("");
+	return books.map(book => book == "best" ? "" : `<img class='book-img' src='logos/${book.replace("hr_az", "hr").replace("hr_oh", "hr")}.png' alt='${book}' title='${book}' />`).join("");
 }
 
 const brlFormatter = function(cell) {
@@ -3122,7 +3122,7 @@ function renderGoalPropsTable(playerData) {
 
 		html += `
 			<tr style="border-bottom: 1px solid #2a2e39;">
-				<td style="padding: ${cellPad}; font-weight: 600;display:flex;align-items:center;gap:4px; position: sticky; left: 0; background: #1a1d24; z-index: 1;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase().replace("hr_az", "hr")}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
+				<td style="padding: ${cellPad}; font-weight: 600;display:flex;align-items:center;gap:4px; position: sticky; left: 0; background: #1a1d24; z-index: 1;"><img class='book-img' style="width:16px;height:16px;" src='logos/${bookName.toLowerCase().replace("hr_az", "hr").replace("hr_oh", "hr")}.png' alt='${bookName}' title='${bookName}' />${bookName}</td>
 				${cells}
 			</tr>
 		`;

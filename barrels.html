@@ -203,8 +203,8 @@
 
 		function renderTable(data) {
 			if (ALL == undefined) {
-				data = data.filter(r => parseInt(r.bip) >= 20);
-				data = data.filter(r => parseInt(r.barrel_ct) >= 3);
+				//data = data.filter(r => parseInt(r.bip) >= 20);
+				//data = data.filter(r => parseInt(r.barrel_ct) >= 3);
 			}
 
 			if (PLAYERS) {
@@ -303,8 +303,8 @@
 						{title: "Avg", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
 						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 						{title: "100+", field: "tot100+", formatter: percentileFormatter, width: 45, sorter: "number"},
-						{title: "L5", field: "game_trends.exit_velo_100.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
-						{title: "L3", field: "game_trends.exit_velo_100.3G", formatter: percentileFormatter, width: 45, sorter: "number"},
+						{title: "L5 100+", field: "game_trends.exit_velo_100.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+						{title: "L3 100+", field: "game_trends.exit_velo_100.3G", formatter: percentileFormatter, width: 45, sorter: "number"},
 					]},
 					{title: "Launch<br>Angle", field: "launch_angle_avg", formatter: percentileFormatter, width: 55, sorter: "number", visible: false},
 					{title: "Distance", columns: [
@@ -333,12 +333,18 @@
 					{field:"book", type:"!=", value: ""},
 					//{field:"game_trends.hard_hit_ct.5GPercentile", type:">=", value: 75},
 					{field:"barrel_ctPercentile", type:">=", value: 50},
-					{field:"game_trends.barrel_ct.5G", type:">", value: 0},
+					{field:"game_trends.barrel_ct.3G", type:">", value: 0},
 				]);
 				TABLE.setSort([
 					{column: "homerLogs.pa.z_median", dir: "desc"},
 					//{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				]);
+				TABLE.getColumns().map(col => {
+					let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G"];
+					if (!arr.includes(col.getField())) {
+						col.hide();
+					}
+				});
 			} else {
 				TABLE.setFilter();
 				TABLE.setSort([

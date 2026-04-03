@@ -214,6 +214,10 @@
 							<label for="custom_bookOdds_hr">Hard Rock</label>
 						</div>
 						<div>
+							<input id="custom_bookOdds_hr_oh" type="checkbox">
+							<label for="custom_bookOdds_hr_oh">Hard Rock (OH)</label>
+						</div>
+						<div>
 							<input id="custom_bookOdds_kambi" type="checkbox">
 							<label for="custom_bookOdds_kambi">Kambi (BB)</label>
 						</div>
@@ -361,6 +365,7 @@
 						<label><input type="checkbox" value="br"> BR</label>
 						<label><input type="checkbox" value="bv"> BV</label>
 						<label><input type="checkbox" value="hr"> HR</label>
+						<label><input type="checkbox" value="hr_oh"> HR (OH)</label>
 						<label><input type="checkbox" value="fl"> FL</label>
 						<label><input type="checkbox" value="kambi"> Kambi</label>
 						<label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
@@ -742,6 +747,7 @@
 					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `HR OH<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr_oh"], short=true)}`, field: "bookOdds.hr_oh",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},

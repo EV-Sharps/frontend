@@ -198,7 +198,7 @@
 					{title: "HR Allowed", columns: [
 						//{title: "Total<br><div style='position:relative;width:100%;'><span style='position:absolute;left:1px;font-size:0.5rem;'>L</span><span style='position:absolute;right:1px;font-size:0.5rem;'>R</span></div>", field: "percs.home_run", width: 55, formatter: allowedFormatter },
 						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
-						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},
+						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter, sorter: "number"},
 					]},
 					//{title: "PA", field: "pa", width: 45 },
 					{title: "ERA", field: "p_era", width: 45, formatter: eraFormatter, visible: false },
@@ -214,6 +214,7 @@
 					{title: "Weather<br><a href='#'></a>", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					{
 						title: "HR Pitch History - Old → Recent",
+						width: 140,
 						columns: [
 							{
 								title: "LHB",

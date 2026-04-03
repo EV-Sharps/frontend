@@ -13,7 +13,7 @@ let HEATMAP = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT;
+let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO;
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -3453,12 +3453,13 @@ function parseURLParams() {
 	VIG = URLParams.get("vig") || "";
 	MIN = URLParams.get("min") || "";
 	MAX = URLParams.get("max") || "";
+	L3 = URLParams.get("L3");
 	SIDE = URLParams.get("side") ?? "both";
 	REQUIRED = URLParams.get("required") || "";
 	TEAMS = URLParams.get("teams") || "";
 	CURRENT_VIEW = URLParams.get("view") || "table";
 	TEAM = URLParams.get("team") || "det";
-	ALL = URLParams.get("all") || "";
+	ALL = URLParams.get("all");
 	PLAYERS = URLParams.get("players") || "";
 	HARD_HIT = URLParams.get("HH") || "";
 

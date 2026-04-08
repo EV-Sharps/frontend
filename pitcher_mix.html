@@ -19,20 +19,53 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
-		#tables {
+		.batter-list {
 			display: flex;
-			width: 80%;
-			justify-content: space-evenly;
-			overflow: hidden;
+			flex-direction: row;
+			gap: 5px;
+			overflow-x: auto;
+			margin: 8px 0 4px;
+			padding-bottom: 4px;
+			scroll-snap-type: x mandatory;
+			-webkit-overflow-scrolling: touch;
 		}
-		#lefties, #righties {
-			overflow-y: auto;
+		.batter-list::-webkit-scrollbar { height: 4px; }
+		.batter-list::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+		.batter-item {
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			padding: 5px 9px;
+			border-radius: 7px;
+			cursor: pointer;
+			background: #0b1220;
+			border: 1px solid #1f2937;
+			color: #e5e7eb;
+			font-size: 12.5px;
+			white-space: nowrap;
+			flex-shrink: 0;
+			scroll-snap-align: start;
 		}
+		.batter-item:hover { background: #0f172a; }
+		.batter-item.active { border-color: #a78bfa; background: #1e1b4b; }
+		.batter-item .hand { color: #a78bfa; font-size: 11px; flex-shrink: 0; }
+		.batter-detail-header {
+			font-size: 14px;
+			font-weight: 600;
+			color: #e5e7eb;
+			padding: 6px 0 6px;
+		}
+		.batter-ps-toggle { display: flex; gap: 4px; }
+		.ps-btn {
+			padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+			background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+		}
+		.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
 		#table {
 			width: auto;
 		}
 		.table {
-			max-height: 150px;
+			max-height: none;
 		}
 		#pitcher-name, #team-pitcher-name {
 			text-align: center;
@@ -46,8 +79,10 @@
 			width: 80%;
   			justify-content: space-evenly;
 		}
+		.split-panel { min-width: 0; flex: 1; max-width: 550px; }
 		#team-pitcher-tables, #pitcher-tables {
 			display: flex;
+			overflow: hidden;
 			justify-content: space-evenly;
 		}
 		#team-pitcher-tables, .team-pitcher {
@@ -89,6 +124,12 @@
 			text-decoration: none;
 		}
 		.team img{width:28px;height:28px;object-fit:contain}
+		.team-btn{
+			display:flex;flex-direction:column;align-items:center;gap:2px;
+			background:none;border:none;cursor:pointer;padding:0;
+		}
+		.team-btn img{width:28px;height:28px;object-fit:contain}
+		.team-btn .code{font-size:11px;text-transform:uppercase;color:#c7d2fe}
 		.code{font-size:11px;text-transform:uppercase;color:#c7d2fe}
 		.at{font-size:10px;color:#94a3b8}
 		.chev { opacity:.6 }
@@ -104,20 +145,15 @@
 			margin-bottom: 0;
 		}
 		@media (max-width: 768px) {
-			#table {
-				flex: 1;
-			}
 			#pitcher-container {
 				display: flex;
 				flex-wrap: wrap;
-			}
-			#pitcher-container, #tables {
 				width: 100%;
 			}
 			.splits-toggle {
 				display: flex;
 			}
-			.split-panel, #pitcher-tables  {
+			.split-panel, #pitcher-tables {
 				width: 100%;
 			}
 			.toggle-btn.is-active{ border-color:#ffd45a; box-shadow:inset 0 0 0 1px rgba(255,212,90,.35); }
@@ -149,15 +185,12 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
-				<div class="select-wrapper">
+				<div class="select-wrapper" style="display:none">
 					<select id="side-select">
 						<option value="both">vs Both</option>
 						<option value="l">vs LHB</option>
 						<option value="r">vs RHB</option>
 					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
 				</div>
 			</div>
 			<div id="auth-buttons">
@@ -218,7 +251,18 @@
 								<h4>vs LHB</h4>
 								<div id="pitcher-hr-l"></div>
 							</div>
-							<div id="pitcher-table-l"></div>	
+							<div id="pitcher-table-l"></div>
+							<div id="batter-list-l" class="batter-list"></div>
+							<div id="batter-detail-l" class="batter-detail">
+								<div style="display:flex;justify-content:space-between;align-items:center">
+									<div id="batter-detail-header-l" class="batter-detail-header"></div>
+									<div id="batter-ps-toggle-l" class="batter-ps-toggle" data-side="l" style="display:none">
+										<button class="ps-btn" data-ps="l">vs LHP</button>
+										<button class="ps-btn" data-ps="r">vs RHP</button>
+									</div>
+								</div>
+								<div id="batter-detail-table-l"></div>
+							</div>
 						</div>
 						<div class="split-panel is-hidden" id="panel-r" role="tabpanel" aria-labelledby="tab-r">
 							<div style="display: flex; justify-content: space-between;">
@@ -226,18 +270,29 @@
 								<div id="pitcher-hr-r"></div>
 							</div>
 							<div id="pitcher-table-r"></div>
+							<div id="batter-list-r" class="batter-list"></div>
+							<div id="batter-detail-r" class="batter-detail">
+								<div style="display:flex;justify-content:space-between;align-items:center">
+									<div id="batter-detail-header-r" class="batter-detail-header"></div>
+									<div id="batter-ps-toggle-r" class="batter-ps-toggle" data-side="r" style="display:none">
+										<button class="ps-btn" data-ps="l">vs LHP</button>
+										<button class="ps-btn" data-ps="r">vs RHP</button>
+									</div>
+								</div>
+								<div id="batter-detail-table-r"></div>
+							</div>
 						</div>
 					</div>
 					<h3 id="team-pitcher-name" class="team-pitcher"></h3>
 					<div id="team-pitcher-tables" class="team-pitcher">
-						<div class="split-panel" id="panel-l" role="tabpanel" aria-labelledby="tab-l">
+						<div class="split-panel" id="team-panel-l">
 							<div style="display: flex; justify-content: space-between;">
 								<h4>vs LHB</h4>
 								<div id="team-pitcher-hr-l"></div>
 							</div>
-							<div id="team-pitcher-table-l"></div>	
+							<div id="team-pitcher-table-l"></div>
 						</div>
-						<div class="split-panel is-hidden" id="panel-r" role="tabpanel" aria-labelledby="tab-r">
+						<div class="split-panel is-hidden" id="team-panel-r">
 							<div style="display: flex; justify-content: space-between;">
 								<h4>vs RHB</h4>
 								<div id="team-pitcher-hr-r"></div>
@@ -245,10 +300,6 @@
 							<div id="team-pitcher-table-r"></div>
 						</div>
 					</div>
-				</div>
-				<div id="tables">
-					<div id="lefties"></div>
-					<div id="righties" class="is-hidden"></div>
 				</div>
 				<div id="watermark">
 					<img src="logos/logo.png">
@@ -275,57 +326,80 @@
 			document.querySelector("#watermark").style.width = "20%";
 		}
 
-		document.querySelector("#side-select").value = SIDE;
-		document.querySelector("#side-select").addEventListener("change", (event) => {
-			SIDE = event.target.value;
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-			params.set("side", SIDE);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			formatMix(RES);
-			TABLE.setData(RES);
-		})
+		document.querySelector("#side-select").style.display = "none";
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
+		window.addEventListener("popstate", () => {
+			const team = new URLSearchParams(window.location.search).get("team") || "lad";
+			if (ALL_DATA) switchTeam(team);
+		});
+
 		handleSession();
 
+		let ALL_DATA = null;
+
 		function fetchMixData() {
-			renderTable([]);
-			fetch(API_BASE+`/api/pitcher_mix?team=${TEAM}`, {
+			fetch(API_BASE+`/api/pitcher_mix`, {
 				headers: {
 					Authorization: `Bearer ${ACCESS_TOKEN}`
 				}
 			}).then(response => response.json()).then(data => {
-				data = data.data;
-				formatMix(data);
-				RES = data;
+				ALL_DATA = data;
 				renderGames(data.games);
-				renderPitcherTable(data.pitcher);
-				renderPitcherTable(data.team_pitcher, "team-");
-				renderTable(data.batters);
-
-				setTimeout(function() {
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (SIDE) {
-						/*
-						let col = SIDE === "both" ? "percs.hr_rate_percentile" : `percs.hr_${SIDE}_rate`
-						TABLE.setSort([
-							{column: col, dir: "desc"}
-						])
-						*/
-					}
-					if (GAME) {
-						document.querySelector("#team-pitcher-tables").style.display = "flex";
-						document.querySelectorAll(".team-pitcher").forEach(r => r.style.display = "flex");
-					}
-				}, 200);
+				switchTeam(TEAM);
 			}).catch(err => console.log(err));
+		}
+
+		function switchTeam(team) {
+			TEAM = team;
+			const params = new URLSearchParams(window.location.search);
+			params.set("team", TEAM);
+			history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+
+			// highlight active game card
+			document.querySelectorAll(".game-card").forEach(c => {
+				c.classList.toggle("popular", c.dataset.teams?.split(",").includes(TEAM));
+			});
+
+			// clear batter lists + details
+			for (const side of ["l","r"]) {
+				document.querySelector(`#batter-list-${side}`).innerHTML = "";
+				document.querySelector(`#batter-detail-header-${side}`).innerHTML = "";
+				try { Tabulator.findTable(`#batter-detail-table-${side}`)?.[0]?.destroy(); } catch(e) {}
+				document.querySelector(`#batter-detail-table-${side}`).innerHTML = "";
+				SELECTED_BATTER[side] = null;
+				SELECTED_PS[side] = null;
+				document.getElementById(`batter-ps-toggle-${side}`).style.display = "none";
+			}
+
+			// destroy old pitcher Tabulator instances
+			["pitcher-table-l","pitcher-table-r","team-pitcher-table-l","team-pitcher-table-r"].forEach(id => {
+				const el = document.getElementById(id);
+				if (el) {
+					try { Tabulator.findTable("#"+id)?.[0]?.destroy(); } catch(e) {}
+					el.innerHTML = "";
+				}
+			});
+
+			const teamData = ALL_DATA.teams?.[TEAM];
+			if (!teamData) return;
+			const enriched = { ...teamData, games: ALL_DATA.games };
+			formatMix(enriched);
+			RES = enriched;
+			renderPitcherTable(enriched.pitcher);
+			renderPitcherTable(enriched.team_pitcher, "team-");
+			renderTable(enriched.batters);
+
+			setTimeout(function() {
+				if (PRETTY != undefined) pretty_();
+				if (GAME) {
+					document.querySelector("#team-pitcher-tables").style.display = "flex";
+					document.querySelectorAll(".team-pitcher").forEach(r => r.style.display = "flex");
+				}
+			}, 200);
 		}
 
 		function safe(n){ return Number.isFinite(n) ? n : 0; }
@@ -344,19 +418,22 @@
 						...stats,
 						n: stats["#"] || 0,
 						percent: stats["%"] || 0,
-						hr: stats.home_run || 0,
-						brl: stats.is_barrel || 0,
-						hh: stats.is_hard_hit || 0
 					}
 				});
 				pitcher[`pitch_table_${side}`] = entries;
 			}
 		}
 
+		let PITCHER_HAND = "r";
+		const SELECTED_PS = { l: null, r: null };
+
 		function formatMix(data) {
 			const pitcher = data.pitcher;
 			const team_pitcher = data.team_pitcher;
 			SIDE = pitcher.pitch_hand?.toLowerCase() || "both";
+			PITCHER_HAND = SIDE === "l" || SIDE === "r" ? SIDE : "r";
+			SELECTED_PS.l = PITCHER_HAND;
+			SELECTED_PS.r = PITCHER_HAND;
 
 			transformPitcher(pitcher);
 			transformPitcher(team_pitcher);			
@@ -368,31 +445,17 @@
 			document.querySelector("#team-pitcher-hr-r").textContent = team_pitcher?.hr_pitch_r;
 
 			const top_pitches = getTopPitches(pitcher);
-			const throws = pitcher.pitch_hand?.toLowerCase();
 			const batters = data.batters || [];
-			for (const row of batters.sort((a,b) => b.hr_pitch?.length - a.hr_pitch?.length)) {
-				const section = row.pitch[SIDE];
-				if (!section) continue;
-
-				const entries = Object.entries(section).map(([type, stats]) => {
-					let num = top_pitches[row.pitch_hand.toLowerCase()];
-					if (num) {
-						num = num.indexOf(type) === -1 ? 0 : num.indexOf(type) + 1;
-					} else {
-						num = "";
-					}
-					return {
-						type: type,
-						...stats,
-						n: stats["#"] || 0,
-						percent: stats["%"] || 0,
-						hr: stats.home_run || 0,
-						brl: stats.is_barrel || 0,
-						hh: stats.is_hard_hit || 0,
-						pitch_num: num
-					}
-				});
-				row["pitch_table"] = entries;
+			for (const row of batters) {
+				for (const side of ["l", "r"]) {
+					const section = row.pitch[side];
+					if (!section) continue;
+					row[`pitch_table_${side}`] = Object.entries(section).map(([type, stats]) => {
+						let num = top_pitches[side];
+						num = num ? (num.indexOf(type) === -1 ? 0 : num.indexOf(type) + 1) : "";
+						return { type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0, pitch_num: num };
+					});
+				}
 			}
 		}
 
@@ -406,62 +469,129 @@
 			return map;
 		} 
 
-		function renderTable(data) {
-			const tables = document.querySelector("#tables");
-			const leftTable = document.querySelector("#lefties");
-			const rightTable = document.querySelector("#righties");
-			for (row of data) {
-				const tableId = `table-${row.player.replaceAll(" ", "-")}`;
-				const div = document.createElement("div");
-				div.className = "batter-container";
-				div.innerHTML = `
-					<div style="display: flex; justify-content: space-between;align-items: flex-end;">
-						<h3>${title(row.player)} (${row.pitch_hand.replace("B", "S")})</h3>
-						<div>${(row[`hr_pitch_${SIDE}`] || []).slice(-7).join(",")}</div>
-					</div>
-					<div id="${tableId}" class="table"></div>
-				`
-				let which = "r";
-				if (row.pitch_hand == "L" || (row.pitch_hand == "B" && SIDE == "r")) {
-					leftTable.appendChild(div);
-					which = "l";
-				} else {
-					rightTable.appendChild(div);
-				}
-				TABLE = new Tabulator("#"+tableId, {
-					tooltipsHeader: true,
-					placeholder:"Data Loading...",
-					layout: "fitDataFill",
-					responsiveLayout: MOBILE ? "" : "",
-					autoResize: true,
-					data: row.pitch_table,
-					initialSort: [
-						{ column:"n", dir:"desc" },
-					],
-					columnDefaults: {
-						vertAlign: "middle",
-						hozAlign: "center",
-						resizable: false,
-						headerSortStartingDir: "desc"
-					},
-					groupToggleElement: "header",
-					columns: [
-						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left" },
-						{ title:"#", field:"n", sorter:"number", width:50 },
-						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
-						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
-						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title: "Home Runs", columns: [
-							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
-							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						]},
-						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-					],
-				});
+		// PropFinder-style background color based on percentile
+		// High percentile = green (batter advantage); low = red (pitcher advantage)
+		// Pass formatterParams: {invert: true} for pitcher-advantage metrics (K%, WHIFF%)
+		function getPitchBgColor(pct) {
+			if (pct == null) return "";
+			if (pct >= 80) return "rgba(46,160,67,0.85)";
+			if (pct >= 65) return "rgba(46,160,67,0.45)";
+			if (pct >= 40) return "";
+			if (pct >= 25) return "rgba(200,56,46,0.45)";
+			return "rgba(200,56,46,0.85)";
+		}
+
+		const bgPitchFormatter = function(cell, params, rendered) {
+			const data = cell.getRow().getData();
+			const field = cell.getField();
+			let val = cell.getValue();
+
+			let display;
+			if (["ba", "woba", "slg", "iso"].includes(field)) {
+				display = avgFormatter(cell);
+			} else {
+				display = (val != null && val !== "") ? parseFloat(val).toFixed(1) + "%" : "";
 			}
+
+			let pct = data[field + "_pct"];
+			if (params && params.invert && pct != null) pct = 100 - pct;
+
+			rendered(function() {
+				const el = cell.getElement();
+				const bg = getPitchBgColor(pct);
+				el.style.background = bg;
+				el.style.color = bg ? "#0f0f0f" : "";
+				el.style.fontWeight = bg ? "600" : "";
+			});
+
+			return display || "";
+		};
+
+		const MIX_COLS = [
+			{ title:"Type", field:"type", width:90, formatter: pitchFormatter, hozAlign: "left", frozen: MOBILE },
+			{ title:"#", field:"n", sorter:"number", width:45 },
+			{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+			{ title:"BA", field:"ba", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"WOBA", field:"woba", sorter:"number", width:55, formatter: bgPitchFormatter },
+			{ title:"SLG", field:"slg", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"ISO", field:"iso", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"HR%", field:"hr_rate", sorter:"number", width:52, formatter: bgPitchFormatter },
+			{ title:"K%", field:"k_rate", sorter:"number", width:50, formatter: bgPitchFormatter, formatterParams: {invert: true} },
+			{ title:"WHIFF%", field:"whiff_rate", sorter:"number", width:62, formatter: bgPitchFormatter, formatterParams: {invert: true} },
+		];
+
+		const BATTER_DATA = { l: {}, r: {} };
+		const SELECTED_BATTER = { l: null, r: null };
+
+		function renderTable(data) {
+			BATTER_DATA.l = {};
+			BATTER_DATA.r = {};
+
+			for (const row of data) {
+				const isSwitch = row.pitch_hand === "B";
+				if (isSwitch || row.pitch_hand === "L") {
+					if (row.pitch_table_l?.length) BATTER_DATA.l[row.player] = row;
+				}
+				if (isSwitch || row.pitch_hand === "R") {
+					if (row.pitch_table_r?.length) BATTER_DATA.r[row.player] = row;
+				}
+			}
+
+			for (const side of ["l", "r"]) {
+				const list = document.querySelector(`#batter-list-${side}`);
+				list.innerHTML = "";
+				for (const row of Object.values(BATTER_DATA[side])) {
+					const item = document.createElement("div");
+					item.className = "batter-item";
+					item.dataset.player = row.player;
+					const hand = row.pitch_hand.replace("B", "S");
+					item.innerHTML = `<span>${title(row.player)}</span><span class="hand">${hand}</span>`;
+					item.onclick = () => selectBatter(row.player, side);
+					list.appendChild(item);
+				}
+				const keys = Object.keys(BATTER_DATA[side]);
+				const restore = SELECTED_BATTER[side] && BATTER_DATA[side][SELECTED_BATTER[side]];
+				selectBatter(restore ? SELECTED_BATTER[side] : keys[0], side);
+			}
+		}
+
+		function selectBatter(player, side, ps) {
+			if (!player || !BATTER_DATA[side]?.[player]) return;
+			if (ps) SELECTED_PS[side] = ps;
+			const pitcherSide = SELECTED_PS[side] || PITCHER_HAND;
+			SELECTED_BATTER[side] = player;
+			const row = BATTER_DATA[side][player];
+
+			document.querySelectorAll(`#batter-list-${side} .batter-item`).forEach(el => {
+				el.classList.toggle("active", el.dataset.player === player);
+			});
+
+			const hand = row.pitch_hand.replace("B", "S");
+			document.querySelector(`#batter-detail-header-${side}`).innerHTML =
+				`${title(player)} <span style="color:#a78bfa;font-weight:400">${hand}</span>`;
+
+			const toggle = document.getElementById(`batter-ps-toggle-${side}`);
+			toggle.style.display = "flex";
+			toggle.querySelectorAll(".ps-btn").forEach(b => {
+				b.classList.toggle("is-active", b.dataset.ps === pitcherSide);
+			});
+
+			const tableId = `#batter-detail-table-${side}`;
+			try { Tabulator.findTable(tableId)?.[0]?.destroy(); } catch(e) {}
+			document.querySelector(tableId).innerHTML = "";
+
+			new Tabulator(tableId, {
+				layout: "fitData",
+				data: row[`pitch_table_${pitcherSide}`],
+				initialSort: [{ column:"n", dir:"desc" }],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc",
+				},
+				columns: MIX_COLS,
+			});
 		}
 
 		function logoSrc(code) {
@@ -471,34 +601,37 @@
 
 		function renderGames(data) {
 			const games = document.querySelector("#games");
-			for (game of data) {
+			games.innerHTML = "";
+			for (const game of data) {
 				const [a,h] = game.toUpperCase().split(" @ ");
+				const al = a.toLowerCase(), hl = h.toLowerCase();
 				const div = document.createElement("div");
-				div.className = `game-card ${[a,h].includes(TEAM.toUpperCase()) ? "popular" : ""}`;
+				div.className = `game-card ${[al,hl].includes(TEAM) ? "popular" : ""}`;
+				div.dataset.teams = `${al},${hl}`;
 				div.innerHTML = `
 				<div class="pair">
-					<a class="team" href="/pitcher_mix${HTML}?team=${a.toLowerCase()}">
+					<button class="team-btn" onclick="switchTeam('${al}')">
 						<img src="${logoSrc(a)}" alt="${a} logo" />
 						<span class="code">${a}</span>
-					</a>
+					</button>
 					<span class="at">@</span>
-					<a class="team" href="/pitcher_mix${HTML}?team=${h.toLowerCase()}">
+					<button class="team-btn" onclick="switchTeam('${hl}')">
 						<img src="${logoSrc(h)}" alt="${h} logo" />
 						<span class="code">${h}</span>
-					</a>
+					</button>
 				</div>`;
 				games.appendChild(div);
 			}
 		}
 
 		function renderPitcherTable(data, prefix="") {
-			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand})`;
+			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand}HP)`;
 			for (side of ["l", "r"]) {
 				const tableId = `${prefix}pitcher-table-${side}`;
 				TABLE = new Tabulator("#"+tableId, {
 					tooltipsHeader: true,
 					placeholder:"Data Loading...",
-					layout: "fitDataFill",
+					layout: "fitData",
 					responsiveLayout: MOBILE ? "" : "",
 					autoResize: true,
 					data: data[`pitch_table_${side}`],
@@ -511,24 +644,7 @@
 						resizable: false,
 						headerSortStartingDir: "desc"
 					},
-					groupToggleElement: "header",
-					columns: [
-						{ title:"Type", field:"type", width:75, formatter: pitchFormatter, hozAlign: "left",
-							frozen: MOBILE ? true : false
-						},
-						{ title:"#", field:"n", sorter:"number", width:50 },
-						{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
-						{ title:"BA", field:"ba", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"WOBA", field:"woba", sorter:"number", width:45, formatter: pitchPercentileFormatter, visible: true },
-						{ title:"SLG", field:"slg", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"ISO", field:"iso", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title: "Home Runs", columns: [
-							{ title:"HR", field:"hr", sorter:"number", width:40, formatter: pitchPercentileFormatter },
-							{ title:"Rate", field:"hr_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						]},
-						{ title:"BRL", field:"brl_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-						{ title:"HH", field:"hh_rate", sorter:"number", width:45, formatter: pitchPercentileFormatter },
-					],
+					columns: MIX_COLS,
 				});
 			}
 		}
@@ -549,30 +665,30 @@
 		prev.onclick = () => gamesEl.scrollBy({ left: -scrollByPx, behavior: "smooth" });
 		next.onclick = () => gamesEl.scrollBy({ left:  scrollByPx, behavior: "smooth" });
 
+		document.querySelectorAll(".batter-ps-toggle").forEach(toggle => {
+			toggle.addEventListener("click", e => {
+				const btn = e.target.closest(".ps-btn");
+				if (!btn) return;
+				const side = toggle.dataset.side;
+				selectBatter(SELECTED_BATTER[side], side, btn.dataset.ps);
+			});
+		});
+
 		(function initSplitsToggle(){
 			const toggle = document.getElementById('pitcher-splits-toggle');
-			const panels = {
-				l: document.getElementById('panel-l'),
-				r: document.getElementById('panel-r'),
-				lefties: document.getElementById("lefties"),
-				righties: document.getElementById("righties"),
-			};
+			const panelL = document.getElementById('panel-l');
+			const panelR = document.getElementById('panel-r');
 
 			toggle.addEventListener('click', (e) => {
 				const btn = e.target.closest('.toggle-btn');
 				if (!btn) return;
-
-				// update active button
 				toggle.querySelectorAll('.toggle-btn').forEach(b => {
-				 	b.classList.toggle('is-active', b === btn);
+					b.classList.toggle('is-active', b === btn);
 					b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
 				});
-
 				const side = btn.dataset.target;
-				lefties.classList.toggle("is-hidden", side === "r");
-				righties.classList.toggle("is-hidden", side === "l");
-				panels.l.classList.toggle('is-hidden', side !== 'l');
-				panels.r.classList.toggle('is-hidden', side !== 'r');
+				panelL.classList.toggle('is-hidden', side !== 'l');
+				panelR.classList.toggle('is-hidden', side !== 'r');
 			});
 		})();
 	</script>

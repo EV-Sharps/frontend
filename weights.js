@@ -393,6 +393,10 @@ async function initDevPicker(data){
 			continue;
 		} else if (PAGE == "dingers" && prop !== "hr") {
 			continue;
+		} else if (PAGE == "mlb" && prop === "hr") {
+			continue;
+		} else if (PAGE == "strikeouts" && prop !== "k") {
+			continue;
 		} else if (dev.includes("re")) {
 			//continue;
 		}

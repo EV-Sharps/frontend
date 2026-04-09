@@ -240,6 +240,24 @@ async function saveExcludeHelper(key) {
   }, 3000);
 } 
 
+async function saveState() {
+	if (!CURR_USER) return;
+	const state = document.querySelector("#state-select").value;
+	const status = document.querySelector("#state-save-status");
+	status.textContent = "Saving...";
+	const newData = { ...CURR_USER.metadata, state };
+	const { error } = await SB.from('profiles')
+		.update({ metadata: newData })
+		.eq('id', CURR_SESSION.user.id);
+	if (error) {
+		status.textContent = "Error saving";
+	} else {
+		CURR_USER.metadata = newData;
+		status.textContent = "✅ Saved!";
+		setTimeout(() => status.textContent = "", 3000);
+	}
+}
+
 async function saveAllExcludeBooks() {
 	saveExcludeHelper("all");
 }

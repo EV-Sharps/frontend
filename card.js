@@ -511,7 +511,7 @@ function updateExistingCard(card, rowData) {
 		</div>
 	`;
 
-	const allBooksHtml = renderAllBooks(rowData.bookOdds, book);
+	const allBooksHtml = renderAllBooks(rowData.bookOdds, book, rowData.links);
 
 	header.innerHTML = `
 		<div class="card-row player-prop-row">${playerRowContent}</div>

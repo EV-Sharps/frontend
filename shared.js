@@ -240,7 +240,7 @@ function downloadCSV() {
 }
 
 const timeAgoFormatter = function(cell) {
-	return timeAgo(cell.getValue(), short=true);
+	return timeAgo(cell.getValue(), true);
 }
 
 function timeAgo(timestamp, short=false) {
@@ -291,6 +291,12 @@ function groupByGame() {
 	}
 }
 
+function resolveLink(url) {
+	if (!url) return url;
+	const state = CURR_USER?.metadata?.state || "ny";
+	return state ? url.replaceAll("{state}", state) : url;
+}
+
 const evOddsFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const odds = cell.getValue();
@@ -304,6 +310,22 @@ const evOddsFormatter = function(cell) {
 		return `<div class='blurred'>${cell.getValue()}</div>`;
 	}
 
+	// extract book from field "bookOdds.{book}" and check for a deep-link
+	const field = cell.getField();
+	let link = null;
+	if (data.links && field.startsWith("bookOdds.")) {
+		const book = field.split(".")[1];
+		link = resolveLink(data.links[book]) || null;
+	}
+
+	const wrap = (inner) => link
+		? `<div style="position:relative;display:inline-block;width:100%;">
+			${inner}
+			<a href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+				style="position:absolute;bottom:0px;right:0px;font-size:10px;font-weight:700;line-height:1;text-decoration:none;color:#6b7280;" title="Add to betslip">+</a>
+		</div>`
+		: inner;
+
 	let res = odds;
 	let idx = data.under ? 1 : 0;
 	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0)) {
@@ -311,16 +333,16 @@ const evOddsFormatter = function(cell) {
 		if (odds.includes("/")) {
 			let [o,u] = odds.split("/");
 			if (data.under) {
-				res = `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`
+				res = `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`;
 			} else {
-				res = `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`
+				res = `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`;
 			}
-			return res;
+			return wrap(res);
 		}
-		return `<span style='color:${cls}'>${odds}</span>`;
+		return wrap(`<span style='color:${cls}'>${odds}</span>`);
 	}
 
-	return res;
+	return wrap(res);
 }
 
 const oddsFormatter = function(cell) {

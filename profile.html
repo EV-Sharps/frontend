@@ -175,6 +175,57 @@
 						</div>
 					</div>
 					<div id="discord-error"></div>
+					<!-- Betslip Settings -->
+					<div class="profile-links">
+						<h3>Betslip Settings</h3>
+						<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+							<label for="state-select" style="font-size:0.9rem;">State</label>
+							<div class="select-wrapper" style="width:120px">
+								<select id="state-select">
+									<option value="">-- Select --</option>
+									<option value="AZ">Arizona</option>
+									<option value="CO">Colorado</option>
+									<option value="CT">Connecticut</option>
+									<option value="DC">Washington DC</option>
+									<option value="IL">Illinois</option>
+									<option value="IN">Indiana</option>
+									<option value="IA">Iowa</option>
+									<option value="KS">Kansas</option>
+									<option value="KY">Kentucky</option>
+									<option value="LA">Louisiana</option>
+									<option value="MA">Massachusetts</option>
+									<option value="MD">Maryland</option>
+									<option value="MI">Michigan</option>
+									<option value="MS">Mississippi</option>
+									<option value="MO">Missouri</option>
+									<option value="MT">Montana</option>
+									<option value="NE">Nebraska</option>
+									<option value="NV">Nevada</option>
+									<option value="NH">New Hampshire</option>
+									<option value="NJ">New Jersey</option>
+									<option value="NY">New York</option>
+									<option value="NC">North Carolina</option>
+									<option value="OH">Ohio</option>
+									<option value="OR">Oregon</option>
+									<option value="PA">Pennsylvania</option>
+									<option value="PR">Puerto Rico</option>
+									<option value="RI">Rhode Island</option>
+									<option value="TN">Tennessee</option>
+									<option value="VT">Vermont</option>
+									<option value="VA">Virginia</option>
+									<option value="WA">Washington</option>
+									<option value="WV">West Virginia</option>
+									<option value="WY">Wyoming</option>
+								</select>
+								<svg class="select-arrow" viewBox="0 0 20 20">
+									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+								</svg>
+							</div>
+							<button class="link-btn" onclick="saveState()" style="margin:0">Save</button>
+							<span id="state-save-status" style="font-size:0.85rem;color:#4ade80"></span>
+						</div>
+						<p style="font-size:0.78rem;color:#6b7280;margin:0">Used to generate direct betslip links for your state.</p>
+					</div>
 					<!-- Quick Links -->
 					<div class="profile-links">
 						<h3>Account Actions</h3>
@@ -205,6 +256,8 @@
 			if (CURR_USER?.discord_id) {
 				document.querySelector("#link-discord-btn").textContent = "Change Discord";
 			}
+			const savedState = CURR_USER?.metadata?.state || "";
+			if (savedState) document.querySelector("#state-select").value = savedState;
 		});
 
 		const linkBtn = document.getElementById("link-discord-btn");

@@ -840,6 +840,18 @@ body::before {
 	font-weight: bold;
 	color: #e0e0e0;
 }
+a.book-betslip-link {
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
+a.book-betslip-link:hover {
+	background: rgba(100,181,246,0.12);
+	border-radius: 6px;
+}
+a.book-betslip-link:hover .book-odd-value {
+	color: #64b5f6;
+}
 
 /* Collapsed Body (Stats Row) */
 .card-body-collapsed {

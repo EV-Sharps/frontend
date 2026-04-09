@@ -53,6 +53,7 @@ let PAGE_DROPDOWN = `
 	<option value="preview">🔍 Pitcher Preview</option>
 	<option value="pitcher_mix">📰 Pitcher Mix</option>
 	<option value="feed">📡 Feed</option>
+	<option value="trends">📊 Trends</option>
 	<option value="movement?sport=mlb">📉 Movement (Sharps)</option>
 	<option value="bets?sport=mlb">🎟️ Bets (Sharps)</option>
 	<!-- 
@@ -575,7 +576,7 @@ const gapFormatter = function(cell) {
 
 function getPercentileColor(field, value) {
 	if (!value) return "";
-	if (["preview"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field)) {
+	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike"].includes(field)) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field.split(".").at(-1))) {
 		value = 100 - value;

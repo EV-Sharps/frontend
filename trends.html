@@ -73,16 +73,11 @@
 		#left-body {
 			height: 100%;
 		}
-		#table {
-		}
 		#all {
 			justify-content: normal;
 		}
 		#all h2 {
 			margin-top: 0.75rem;
-		}
-		#table, #updated-container {
-			
 		}
 		#left-body {
 			width: 100%;
@@ -127,7 +122,10 @@
 						<option value="1d">Daily HR/G</option>
 						<option value="1d-hr">Daily HR Count
 						<option value="weather">Early Season Weather Effect</option>
-					<option value="monthly">Monthly Avg</option>
+					<option value="monthly">Monthly HR/G Avg</option>
+					<option value="brl-1d">1-Day BRL/G</option>
+					<option value="brl-3d">3-Day BRL/G</option>
+					<option value="monthly-brl">Monthly BRL/G Avg</option>
 					</select>
 					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 				</div>
@@ -183,7 +181,13 @@
 			} else if (g == "weather") {
 				plotWeatherGraph(RES);
 			} else if (g == "monthly") {
-				plotMonthlyBar(RES);
+				plotMonthlyBar(RES, "hr/g");
+			} else if (g == "brl-1d") {
+				plotGraph(RES, 1, "brl/g");
+			} else if (g == "brl-3d") {
+				plotGraph(RES, 3, "brl/g");
+			} else if (g == "monthly-brl") {
+				plotMonthlyBar(RES, "brl/g");
 			}
 		});
 
@@ -255,9 +259,10 @@
 				}
 			});
 
+			const graphLabel = graph === "hr" ? "HR Count" : graph === "brl/g" ? "BRL/G" : "HR/G";
 			const title = regression
 				? `HR/G Regression by Year`
-				: `${movingAvg}-Day ${graph === "hr" ? "HR Count" : "HR/G"} — Year over Year`;
+				: `${movingAvg}-Day ${graphLabel} — Year over Year`;
 
 			const layout = {
 				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
@@ -347,15 +352,17 @@
 			setTimeout(() => Plotly.Plots.resize('table'), 100);
 		}
 
-		function plotMonthlyBar(res) {
+		function plotMonthlyBar(res, field="hr/g") {
 			const MONTH_LABELS = { "03": "Mar", "04": "Apr", "05": "May", "06": "Jun", "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct" };
-			// collect per-month HR/G across all qualifying years
+			const label = field === "brl/g" ? "BRL/G" : "HR/G";
+			// collect per-month values across all qualifying years
 			const monthVals = {}; // month -> [yearly averages]
 			Object.keys(res).filter(y => !SKIP_YEARS.includes(y)).forEach(year => {
 				MONTHS.forEach(month => {
 					if (!res[year]?.[month]) return;
 					const d = res[year][month];
-					const valid = d["hr/g"].filter((_, i) => d.g[i] >= MIN_GAMES);
+					if (!d[field]) return;
+					const valid = d[field].filter((_, i) => d.g[i] >= MIN_GAMES);
 					if (valid.length === 0) return;
 					const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
 					if (!monthVals[month]) monthVals[month] = [];
@@ -392,7 +399,7 @@
 					text: means.map(v => v.toFixed(2)),
 					textposition: "outside",
 					textfont: { size: 13, color: "#e4e4e7" },
-					hovertemplate: "<b>%{x}</b><br>Avg HR/G: %{y:.2f}<extra></extra>",
+					hovertemplate: `<b>%{x}</b><br>Avg ${label}: %{y:.2f}<extra></extra>`,
 					showlegend: false
 				},
 				// invisible scatter for year-by-year dots per month
@@ -413,7 +420,7 @@
 				plot_bgcolor: "#0f0f11",
 				paper_bgcolor: "#0f0f11",
 				title: {
-					text: `MLB HR/G by Month — Avg across last 10 seasons<br><span style="font-size:12px;color:#a1a1aa">April is ~${diffPct}% below peak. Cold weather limits home run production.</span>`,
+					text: `MLB ${label} by Month — Avg across last 10 seasons<br><span style="font-size:12px;color:#a1a1aa">April is ~${diffPct}% below peak.</span>`,
 					font: { size: 15, color: "#f4f4f5" },
 					x: 0.5
 				},
@@ -463,7 +470,13 @@
 				} else if (GRAPH == "1d-hr") {
 					plotGraph(res, 1, "hr");
 				} else if (GRAPH == "monthly") {
-					plotMonthlyBar(res);
+					plotMonthlyBar(res, "hr/g");
+				} else if (GRAPH == "brl-1d") {
+					plotGraph(res, 1, "brl/g");
+				} else if (GRAPH == "brl-3d") {
+					plotGraph(res, 3, "brl/g");
+				} else if (GRAPH == "monthly-brl") {
+					plotMonthlyBar(res, "brl/g");
 				} else {
 					plotGraph(res, 3);
 				}

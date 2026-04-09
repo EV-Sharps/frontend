@@ -375,7 +375,7 @@ async function handleSession() {
 		fetchStatsData();
 	} else if (PAGE == "pitcher_mix") {
 		fetchMixData();
-	} else if (PAGE == "preview") {
+	} else if (PAGE == "preview" || PAGE == "preview_k") {
 		fetchPreviewData();
 	} else if (PAGE == "pricing") {
 		document.querySelector("#pricing").style.display = "none";

@@ -3484,7 +3484,7 @@ function parseURLParams() {
 	TEAM = URLParams.get("team") || "det";
 	ALL = URLParams.get("all");
 	PLAYERS = URLParams.get("players") || "";
-	HARD_HIT = URLParams.get("HH") || "";
+	HARD_HIT = URLParams.get("HH");
 
 	function defaultOU() {
 		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";

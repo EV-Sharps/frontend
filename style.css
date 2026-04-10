@@ -789,6 +789,27 @@ body::before {
 	font-weight: bold;
 }
 
+.devig-fair-val {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	border: 1px dotted rgba(255,255,255,0.4);
+	border-radius: 5px;
+	padding: 2px 8px;
+	line-height: 1.2;
+}
+.devig-fair-odds {
+	font-size: 1.05em;
+	font-weight: bold;
+	color: #e0e0e0;
+}
+.devig-fair-label {
+	font-size: 0.65em;
+	opacity: 0.6;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
 /* 3. All Books Row (Bottom Visible Row) */
 .all-books-row {
 	display: flex;
@@ -834,7 +855,12 @@ body::before {
 }
 .book-odd-item.is-best-book {
 	/* Highlight the best odds in this row, maybe a bold white */
-	border-bottom: 2px solid #64b5f6; 
+	border-bottom: 2px solid #64b5f6;
+}
+.book-odd-item.is-devig-book {
+	border: 1px dotted rgba(255,255,255,0.45);
+	border-radius: 5px;
+	padding: 2px 8px;
 }
 .book-odd-value.is-best-book {
 	font-weight: bold;

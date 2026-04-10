@@ -419,31 +419,36 @@ function createNewCard(rowData, uniqueId) {
 
 function renderAllBooks(bookOdds, bestBook) {
 	const orderedKeys = [
-		'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365', 
+		'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365',
 		'cz', 'fn', 'hr', 'bv', 'kambi', 'bol', 're', 'fl',
 		'nv', 'kal', 'px', 'poly'
 	];
 
 	let html = '';
-	
+
 	if (!bookOdds || typeof bookOdds !== 'object') {
 		return '';
 	}
+
+	const devigBooks = (typeof DEVIG === 'string' && DEVIG)
+		? DEVIG.split(";")[0].split("+").filter(Boolean)
+		: [];
 
 	for (const bookKey of orderedKeys) {
 		const odds = bookOdds[bookKey];
 		// Only render if the odds are available (not null, undefined, or empty string)
 		if (odds !== null && odds !== undefined && odds !== "") {
 			const isBest = bookKey === bestBook ? 'is-best-book' : '';
+			const isDevig = devigBooks.includes(bookKey) ? 'is-devig-book' : '';
 			html += `
-				<div class="book-odd-item ${isBest}">
+				<div class="book-odd-item ${isBest} ${isDevig}">
 					<img class="book-logo-small" src='logos/${bookKey}.png' alt='${bookKey}' title='${bookKey}' />
 					<span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>
 				</div>
 			`;
 		}
 	}
-	
+
 	return html;
 }
 

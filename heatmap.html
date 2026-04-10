@@ -203,6 +203,7 @@
 				<div class="select-wrapper">
 					<label class="select-label" for="selSport">Sport</label>
 					<select id="selSport" class="select">
+						<option value="mlb">⚾ MLB</option>
 						<option value="nba">🏀 NBA</option>
 						<option value="nhl">🏒 NHL</option>
 						<option value="nfl">🏈 NFL</option>
@@ -742,6 +743,7 @@
 			if (SPORT == "nba") PROP = "reb";
 			else if (SPORT == "nhl") PROP = "atgs";
 			else if (SPORT == "nfl") PROP = "attd";
+			else if (SPORT == "mlb") PROP = "hr";
 			//updateHeatmap();
 			init();
 		});

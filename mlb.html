@@ -17,9 +17,6 @@
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
-	<link rel="stylesheet" href="https://unpkg.com/intro.js/themes/introjs-modern.css">
-	<script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
 	<link href="style.css" rel="stylesheet">
 	<style>
 		#table {
@@ -768,6 +765,15 @@
 					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{field: "game", visible: false},
+					{
+						title: "Game Logs<br> ➡️ Most Recent",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					{title: "Pitcher", field: "pitcherCols", columns: [
 						{title: "Name", field: "pitcher", width: 80, formatter: pitcherFormatter},

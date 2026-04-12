@@ -3328,120 +3328,141 @@ function getRowROI(rowData) {
 	return null;
 }
 
-function buildTourSteps() {
-	const steps = [];
-
-	const evEl = colHeader("ev");
-	const book = colHeader("book");
-	const bookSel = document.getElementById("book-select");
-	const devigSel = document.getElementById("devig-button");
-	const requiredInput = document.getElementById("required-button");
-	const exclude = document.getElementById("exclude-dd");
-	const fv = colHeader("fairVal");
-	const implied = colHeader("implied");
-	const kelly = colHeader("kelly");
-	const hr_pa = colHeader("percs.hr_pa");
-	const fd = colHeader("bookOdds.fd");
-
-	steps.push({
-		element: document.querySelector("#table"),
-		title: "How to use this table",
-		intro: "This is a +Expected Value (+EV) odds finder.",
-		position: "right"
-	});
-
-	if (evEl) steps.push({
-		element: evEl,
+const HELP_ITEMS = [
+	{
 		title: "Expected Value (EV%)",
-		intro: "Your edge vs the market based on sportsbook's projections & current best line. Green = positive edge. Start here",
-		position: "right"
-	});
-
-	if (book) steps.push({
-		element: book,
+		desc: "Your edge over the market. Calculated by comparing the best available odds to the fair value from your chosen devig books. Green = positive edge — start here.",
+		getEl: () => colHeader("ev")
+	},
+	{
 		title: "Best Book",
-		intro: "Which sportsbook price is driving the EV. Use it to know where to place the bet.",
-		position: "right"
-	});
-
-	if (bookSel) steps.push({
-		element: bookSel,
-		title: "Book Filter",
-		intro: "Show prices from one book only.",
-		position: "bottom"
-	});
-
-	if (exclude) steps.push({
-		element: exclude,
-		title: "Exclude Books",
-		intro: "Remove books you don't have access to for this table or all tables.",
-		position: "bottom"
-	});
-
-	if (devigSel) steps.push({
-		element: devigSel,
-		title: "Devig Filter",
-		intro: "Choose the sharp sportsbooks (devig books) you trust to set the most accurate odds and remove the vigorish (vig) and determine the true 'Fair Value' line.<br>Circa and Pinnacle are a good start.",
-		position: "bottom"
-	});
-
-	if (requiredInput) steps.push({
-		element: requiredInput,
-		title: "Required Books",
-		intro: "Only show plays where these books have prices available. Useful for ensuring access to lines.",
-		position: "bottom"
-	});
-
-	if (fv) steps.push({
-		element: fv,
+		desc: "The sportsbook offering the best price driving the EV. This is where you should place the bet.",
+		getEl: () => colHeader("book")
+	},
+	{
 		title: "Fair Value (FV)",
-		intro: "Fair odds after removing the sportsbook inbuilt \"fees\" (vig). Odds above the fair value = +EV",
-		position: "right"
-	});
-
-	if (implied) steps.push({
-		element: implied,
-		title: "Implied",
-		intro: "Fair Value formatted as an implied percentage. This is what the devig book thinks this play has of hitting",
-		position: "right"
-	});
-
-	if (kelly) steps.push({
-		element: kelly,
+		desc: "The true odds after removing the sportsbook's built-in margin (vig). Any line better than Fair Value is +EV.",
+		getEl: () => colHeader("fairVal")
+	},
+	{
+		title: "Implied %",
+		desc: "Fair Value as a win probability. e.g. +200 FV = 33.3% implied. What the devig books believe this prop's true chance of hitting is.",
+		getEl: () => colHeader("implied")
+	},
+	{
 		title: "¼ Kelly (QK)",
-		intro: "Stake sizing with 25% Kelly for steadier growth and lower variance.",
-		position: "right"
-	});
-
-	if (fd) steps.push({
-		element: fd,
-		title: "Odds",
-		intro: "Formatted as over/under. Highlighted in green indicates a +EV line.",
-		position: "right"
-	});
-
-	if (hr_pa) steps.push({
-		element: hr_pa,
-		title: "Pitcher HR/PA %",
-		intro: "Home Runs allowed to batters per plate appearance showing LHB - Total - RHB splits.",
-		position: "right"
-	});
-
-	return steps;
-}
+		desc: "Recommended bet size using 25% of the Kelly Criterion. Balances growth and variance. Only shown when EV is positive.",
+		getEl: () => colHeader("kelly")
+	},
+	{
+		title: "Odds Columns",
+		desc: "Each book's current price formatted as over/under (e.g. +450/-570). Cells highlighted in green are +EV lines at that book. + auto adds this play to your betslip.",
+		getEl: () => colHeader("bookOdds.fd") || colHeader("bookOdds.dk")
+	},
+	{
+		title: "Preset Devigs",
+		desc: "Backtested devig combinations ranked by ROI. Each preset shows which books to devig against and the historical win/loss record at that prop. Click to load a preset instantly.",
+		getEl: () => document.querySelector(".dev-chip-wrap")
+	},
+	{
+		title: "Book Filter",
+		desc: "Limit results to plays available at a specific sportsbook. Useful if you only have access to certain books.",
+		getEl: () => document.getElementById("book-select")
+	},
+	{
+		title: "Exclude Books",
+		desc: "Remove books from best book entirely — for this page or all pages. Use this if you don't have an account at a book.",
+		getEl: () => document.getElementById("exclude-dd")
+	},
+	{
+		title: "Devig Filter",
+		desc: "The sharp books used to calculate Fair Value. Only their lines are used to strip the vig. Circa and Pinnacle are recommended starting points. Customize any combo of devigs here.",
+		getEl: () => document.getElementById("devig-button")
+	},
+	{
+		title: "Required Books",
+		desc: "Only show plays where all selected books have a price available to devig against.",
+		getEl: () => document.getElementById("required-button")
+	},
+	{
+		title: "Customize",
+		desc: "Show or hide columns to fit your workflow. Set a default devig everytime the page loads. Settings can be saved to your profile so they persist across sessions.",
+		getEl: () => document.getElementById("customize")
+	}
+];
 
 function startHelpTour() {
-	const steps = buildTourSteps();
-	const tour = introJs.tour().setOptions({
-		steps,
-		showButtons: true,
-		showStepNumbers: true,
-		exitOnOverlayClick: true,
-		//tooltipClass: "introjs-modern",
-		//highlightClass: "introjs-highlight"
+	if (document.querySelector(".help-pin")) { endHelpTour(); return; }
+
+	const scrollY = window.scrollY;
+	const scrollX = window.scrollX;
+	const active = HELP_ITEMS.map((item, i) => ({ item, el: item.getEl(), n: i + 1 })).filter(x => x.el);
+
+	// Dim backdrop
+	const backdrop = document.createElement("div");
+	backdrop.className = "help-pin";
+	backdrop.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9997;cursor:pointer;";
+	backdrop.addEventListener("click", endHelpTour);
+	document.body.appendChild(backdrop);
+
+	// Ring + badge on each element
+	active.forEach(({ el, n }) => {
+		const rect = el.getBoundingClientRect();
+
+		const ring = document.createElement("div");
+		ring.className = "help-pin";
+		ring.style.cssText = `
+			position:absolute;
+			top:${rect.top + scrollY - 3}px;left:${rect.left + scrollX - 3}px;
+			width:${rect.width + 6}px;height:${rect.height + 6}px;
+			border:2px solid #64b5f6;border-radius:5px;
+			pointer-events:none;z-index:9999;
+		`;
+		document.body.appendChild(ring);
+
+		const badge = document.createElement("div");
+		badge.className = "help-pin help-badge";
+		badge.textContent = n;
+		badge.style.cssText = `
+			position:absolute;
+			top:${rect.top + scrollY - 10}px;left:${rect.right + scrollX - 10}px;
+			z-index:10000;pointer-events:none;
+		`;
+		document.body.appendChild(badge);
 	});
-	tour.start();
+
+	// Fixed legend panel
+	const panel = document.createElement("div");
+	panel.className = "help-pin";
+	panel.id = "help-legend";
+	panel.innerHTML = `
+		<div id="help-legend-header">
+			<span>How It Works</span>
+			<button id="help-legend-close">&times;</button>
+		</div>
+		<div id="help-legend-body">
+			${active.map(({ item, n }) => `
+				<div class="help-legend-row">
+					<div class="help-badge help-badge-static">${n}</div>
+					<div>
+						<div class="help-legend-title">${item.title}</div>
+						<div class="help-legend-desc">${item.desc}</div>
+					</div>
+				</div>
+			`).join("")}
+		</div>
+	`;
+	document.body.appendChild(panel);
+	panel.querySelector("#help-legend-close").addEventListener("click", endHelpTour);
+
+	const onKey = e => { if (e.key === "Escape") { endHelpTour(); document.removeEventListener("keydown", onKey); } };
+	document.addEventListener("keydown", onKey);
 }
+
+function endHelpTour() {
+	document.querySelectorAll(".help-pin").forEach(el => el.remove());
+}
+
 
 function debounce(fn, delay = 400) {
 	let timeout;

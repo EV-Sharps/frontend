@@ -266,8 +266,8 @@
 						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
 						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number"},
 						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 						{title: "SD", field: "homerLogs.pa.sd", width: 40, formatter: blurFormatter},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 					]},
 					{title: "Barrels", columns: [
 						//{title: "Test", field: "brlCntTest", width: 45, sorter: "number"},
@@ -336,7 +336,7 @@
 					//{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				]);
 				TABLE.getColumns().map(col => {
-					let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G"];
+					let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", "homerLogs.pa.sd"];
 					if (!arr.includes(col.getField())) {
 						col.hide();
 					}

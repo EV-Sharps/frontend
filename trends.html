@@ -458,7 +458,12 @@
 		}
 
 		async function fetchFeed(render=false) {
-			fetch("month_xy.json")
+			//fetch("month_xy.json")
+			fetch(API_BASE+"/api/trends", {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			})
 			.then(response => response.json())
 			.then(res => {
 				if (GRAPH == "weather") { plotWeatherGraph(res); } else if (GRAPH == "1d") {

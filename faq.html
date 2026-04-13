@@ -3,40 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FAQ — Most Asked Questions</title>
+  <title>FAQ,Most Asked Questions</title>
   <link href="style.css" rel="stylesheet">
   <style>
     /* Lightweight page-specific styling */
-    .wrap{max-width:1200px;margin:1.25rem auto;padding:1rem}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .wrap{max-width:1200px;width:100%;margin:0 auto;padding:1rem;height:100vh;display:flex;flex-direction:column;box-sizing:border-box}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-shrink:0}
     header h1{margin:0;font-size:1.25rem}
     .toolbar{margin-left:auto;display:flex;gap:8px;align-items:center}
     .search{padding:8px 10px;border-radius:8px;border:1px solid #2b2f3a;background:#0b0f14;color:var(--text)}
-    .layout{display:flex;gap:16px}
-    .q-list{width:320px;max-height:70vh;overflow:auto;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    .layout{display:flex;gap:16px;flex:1;min-height:0}
+    .q-list{width:320px;flex-shrink:0;overflow:auto;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
     .q-item{padding:10px;border-radius:8px;margin-bottom:8px;cursor:pointer;background:transparent;display:block;border:1px solid transparent}
     .q-item:hover{background:rgba(255,255,255,0.02)}
     .q-item.active{background:linear-gradient(180deg,var(--accent),#1554d6);color:#041226;border-color:rgba(255,255,255,0.06)}
     .q-summary{font-size:0.9rem;color:var(--muted);margin-top:4px}
-    .detail{flex:1;max-height:70vh;overflow:auto;padding:12px;border-radius:8px;background:linear-gradient(180deg,#071018,#041018);border:1px solid rgba(255,255,255,0.03)}
+    .detail{flex:1;overflow:auto;padding:12px;border-radius:8px;background:linear-gradient(180deg,#071018,#041018);border:1px solid rgba(255,255,255,0.03)}
     .answer-card{padding:12px;border-radius:8px;background:var(--card);margin-bottom:12px;border:1px solid rgba(255,255,255,0.02)}
     .answer-card h3{margin:0 0 8px 0}
     .meta{font-size:12px;color:var(--muted);margin-bottom:8px}
     .controls{display:flex;gap:8px;margin-bottom:8px}
     .btn{background:#15314a;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
     .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-    @media (max-width:880px){ 
+    @media (max-width:880px){
         .layout{flex-direction:column}
-        .q-list{width:100%;max-height:220px}
-        .detail{max-height:50vh}
-
-        .wrap {
-            padding-top:0;
-            margin-top: 5px;
-        }
-        header h1 {
-            font-size: 0.95rem;
-        }
+        .q-list{width:100%;flex-shrink:0;max-height:220px}
+        .detail{flex:1;min-height:0}
+        .wrap{padding-top:0;margin-top:5px}
+        header h1{font-size:0.95rem}
     }
   </style>
 </head>
@@ -64,7 +58,7 @@
   </div>
 
   <script>
-    // Minimal FAQ data — replace/add items as needed
+    // Minimal FAQ data,replace/add items as needed
     const FAQ = [
         {
             id: "q-where-to-sign-up",
@@ -95,6 +89,48 @@
           <div>
             <p>"Devig" refers to the bookmaker's vig or margin, which is the built-in profit margin that bookmakers include in their odds. Understanding devig is crucial for evaluating the true value of a bet and its potential impact on expected value (EV) calculations.</p>
             <p>You can find the most profitable devigs from the site <a href="/cheat?sport=nhl">here</a></p>
+          </div>`
+      },
+      {
+        id: "q-devig-methods",
+        q: 'What is the difference between Probit, Worst-Case, Power, Multiplicative, and Additive devig methods?',
+        summary: 'How each method removes the vig and when to use each one.',
+        answer: `
+          <p class="meta">Short: Each method makes a different assumption about how the bookmaker distributes their margin. Worst-Case is the default and most conservative,Probit is best for HR/dinger props.</p>
+          <div>
+            <p>When a book posts a line like <strong>+150 / -180</strong>, the implied probabilities sum to more than 100%,that excess is the vig (margin). To find the "true" probability you need to remove it. Different methods make different assumptions about how the book built that margin in.</p>
+
+            <h4 style="margin:12px 0 6px">Additive</h4>
+            <p>Assumes the bookmaker added the same flat amount of margin to both sides equally. Best suited for close to 50/50 markets like game totals or spreads. At skewed odds it tends to overestimate favorites and underestimate underdogs, so it's less reliable for player props with long odds.</p>
+
+            <h4 style="margin:12px 0 6px">Multiplicative</h4>
+            <p>Assumes the bookmaker applied the same <em>percentage</em> margin to each side relative to its true probability. The most widely used method in the industry,it handles skewed markets well and never produces impossible results. A solid general-purpose choice for most props.</p>
+
+            <h4 style="margin:12px 0 6px">Power</h4>
+            <p>A more nuanced version of multiplicative. It finds the exact scaling factor that makes both sides sum to 100%, applying slightly more conservative treatment to the favorite than multiplicative does. Results land between multiplicative and additive. Reliable across a wide range of odds and markets.</p>
+
+            <h4 style="margin:12px 0 6px">Probit</h4>
+            <p>Removes the vig in a statistical space that assumes outcomes follow a normal bell curve distribution,which is a reasonable model for props like home runs, where a player has a true underlying rate and results cluster around it. Probit tends to push probabilities slightly closer to 50/50 compared to other methods, making it more aggressive at long odds. It has historically been the best-performing devig method for HR/dinger props on this site. Use it cautiously for other markets,it can overstate edge when outcomes don't follow a normal distribution.</p>
+
+            <h4 style="margin:12px 0 6px">Worst-Case (Default)</h4>
+            <p>Rather than committing to one method, Worst-Case runs all three (Power, Multiplicative, Additive) and takes whichever gives you the <strong>least edge</strong>. A play only shows as +EV if it clears every model. This makes it the most conservative option,you'll see fewer plays, but each one has passed a higher bar. <strong>Start here if you're new to the tool or want to minimize false positives.</strong></p>
+
+            <h4 style="margin:12px 0 6px">When to use each</h4>
+            <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:4px">
+              <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                <th style="text-align:left;padding:6px 8px">Method</th>
+                <th style="text-align:left;padding:6px 8px">Best for</th>
+                <th style="text-align:left;padding:6px 8px">Avoid when</th>
+              </tr></thead>
+              <tbody>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:6px 8px">Worst-Case</td><td style="padding:6px 8px">General use, new to the tool, conservative bankroll</td><td style="padding:6px 8px">You want to see maximum opportunity (will filter more lines)</td></tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:6px 8px">Multiplicative</td><td style="padding:6px 8px">Balanced markets, most props, industry standard baseline</td><td style="padding:6px 8px">Very skewed props (e.g. +800 longshots)</td></tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:6px 8px">Power</td><td style="padding:6px 8px">Similar to multiplicative but slightly more conservative on favorites</td><td style="padding:6px 8px">—</td></tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:6px 8px">Additive</td><td style="padding:6px 8px">Near-50/50 markets (spreads, totals, game props)</td><td style="padding:6px 8px">Heavily skewed odds,will understate underdogs</td></tr>
+                <tr><td style="padding:6px 8px">Probit</td><td style="padding:6px 8px">HR / dinger props,historically best ROI for this market</td><td style="padding:6px 8px">Non-normally distributed outcomes; can be too aggressive at long odds</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:10px">The Preset Devigs panel (Preloads button in the Devig filter) shows backtested ROI for every method × book × prop combination so you can see which method has performed best for a specific market on historical data.</p>
           </div>`
       },
       {

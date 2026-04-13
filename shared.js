@@ -35,7 +35,7 @@ function getToday() {
 let PAGE_DROPDOWN = `
 	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
 	<option value="dingers">💣 Dingers</option>
-	<option value="strikeouts">💨 Ks (Sharps)</option>
+	<option value="strikeouts">💨 Ks (FREE)</option>
 
 	<!--
 	<option value="main?sport=mlb">⚾ Preseason</option>

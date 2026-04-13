@@ -32,127 +32,222 @@ function getToday() {
 <option value="profile">👤 Profile</option>
 	<option value="pricing">💳 Pricing</option>
 	*/
-let PAGE_DROPDOWN = `
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">⚾⚾⚾ MLB ⚾⚾⚾</option>
-	<option value="dingers">💣 Dingers</option>
-	<option value="strikeouts">💨 Ks (FREE)</option>
+const PAGE_SECTIONS = [
+	{
+		key: "mlb", label: "⚾ MLB",
+		pages: [
+			{ label: "💣 Dingers", value: "dingers" },
+			{ label: "💨 Ks (FREE)", value: "strikeouts" },
+			{ label: "🎯 Props", value: "mlb", sharp: true },
+			{ label: "🏆 Main", value: "main?sport=mlb", sharp: true },
+			{ label: "⚾ Live", value: "live?sport=mlb", sharp: true },
+			{ label: "💣💣 2+ HR", value: "dingers2" },
+			{ label: "🔮 Futures", value: "futures" },
+			{ label: "🆚 BvP", value: "bvp" },
+			{ label: "📊 Stats", value: "stats" },
+			{ label: "🏏 Barrels", value: "barrels" },
+			{ label: "🔍 Pitcher Preview", value: "preview" },
+			{ label: "📰 Pitcher Mix", value: "pitcher_mix" },
+			{ label: "📡 Feed", value: "feed" },
+			{ label: "📊 Trends", value: "trends" },
+			{ label: "📉 Movement", value: "movement?sport=mlb", sharp: true },
+			{ label: "🎟️ Bets", value: "bets?sport=mlb", sharp: true },
+		]
+	},
+	{
+		key: "nba", label: "🏀 NBA",
+		pages: [
+			{ label: "🏀 All Props", value: "nba", sharp: true },
+			{ label: "🏆 Main", value: "main?sport=nba", sharp: true },
+			{ label: "🏀 Live", value: "live?sport=nba", sharp: true },
+			{ label: "🏀 KOTC", value: "kotc" },
+			{ label: "📊 Results", value: "analysis?sport=nba" },
+			{ label: "3PTM (Free)", value: "threes" },
+			{ label: "PTS/REB/AST", value: "pts" },
+			{ label: "🏀 CBB", value: "ncaab" },
+		]
+	},
+	{
+		key: "nhl", label: "🏒 NHL",
+		pages: [
+			{ label: "🏒 Goals", value: "atgs" },
+			{ label: "🏒 2+ Goals", value: "atgs2" },
+			{ label: "🏒 Props", value: "nhl", sharp: true },
+			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
+			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
+			{ label: "📊 Results", value: "analysis?sport=nhl" },
+		]
+	},
+	{
+		key: "other", label: "🌐 Other",
+		pages: [
+			{ label: "⚾ NCAA", value: "baseball_ncaa" },
+			{ label: "⚽ Soccer", value: "soccer" },
+			{ label: "🥊 UFC", value: "ufc" },
+			{ label: "🗺️ Heat Map", value: "heatmap" },
+			{ label: "📋 Cheat Sheets", value: "cheat" },
+			{ label: "⚾ Outliers", value: "outliers?sport=mlb" },
+			{ label: "🏀 Outliers", value: "outliers?sport=nba" },
+			{ label: "🏒 Outliers", value: "outliers?sport=nhl" },
+		]
+	},
+	{
+		key: "account", label: "👤",
+		pages: [
+			{ label: "❓ FAQ", value: "faq" },
+			{ label: "👤 Profile", value: "profile" },
+			{ label: "💳 Pricing", value: "pricing" },
+		]
+	}
+];
 
-	<!--
-	<option value="main?sport=mlb">⚾ Preseason</option>
-	<option value="wbc">🌎 WBC</option>
-	-->
+let _ppRenderGrid = null;
 
-	<option value="mlb">🎯 Props (Sharps)</option>
-	<option value="main?sport=mlb">🏆 Main (Sharps)</option>
-	<option value="live?sport=mlb">⚾ Live (Sharps)</option>
-	<option value="dingers2">💣💣 2+ HR</option>
-	<option value="futures">🔮 Futures</option>
-	<option value="bvp">🆚 BvP</option>
-	<option value="stats">📊 Stats</option>
-	<option value="barrels">🏏 Barrels (due)</option>
-	<option value="preview">🔍 Pitcher Preview</option>
-	<option value="pitcher_mix">📰 Pitcher Mix</option>
-	<option value="feed">📡 Feed</option>
-	<option value="trends">📊 Trends</option>
-	<option value="movement?sport=mlb">📉 Movement (Sharps)</option>
-	<option value="bets?sport=mlb">🎟️ Bets (Sharps)</option>
-	<!-- 
-	<option disabled style="font-weight:bold; color:#ccc;text-align: center;">🏈🏈🏈 NFL 🏈🏈🏈</option>
-	<option value="tds">🏈 TDs (Free)</option>
-	<option value="live?sport=nfl">🏈 Live (Sharps)</option>
-	<option value="nfl">🎯 Props (Sharps)</option>
-	<option value="analysis?sport=nfl">🏈 Results</option>
-	<option value="movement?sport=nfl">📉 Movement (Sharps)</option>
-	<option value="main?sport=nfl">🏆 Main (Sharps)</option>
-	<option value="backfields">🏈 Backfields</option>
-	-->
-	<!-- <option value="ranks">📋 Fantasy Ranks</option> -->
-	<!-- <option value="futures">🔮 Futures</option> -->
-	<!--
-	 <option value="feed">📡 Feed</option>
-	<option value="mlb">🎯 Props (Sharps)</option>
-	<option value="main">🏆 Main (Sharps)</option>
-	<option value="bets">🎟️ Bets (Sharps)</option>
-	<option value="movement">📉 Movement (Sharps)</option>
-	<option value="bvp">🆚 BvP</option>
-	<option value="stats">📊 Stats</option>
-	<option value="barrels">🏏 Barrels (due)</option>
-	<option value="preview">🔍 Pitcher Preview</option>
-	<option value="pitcher_mix">📰 Pitcher Mix</option>
-	-->
-	<option disabled style="font-weight:bold; color:#ccc;">🏒🏀 MISC ⛳⚽</option>
-	<!-- <option value="golf">⛳ GOLF Props</option> -->
-	<option value="atgs">🏒 Goals</option>
-	<option value="live?sport=nhl">🏒 Live (Sharps)</option>
-	<option value="atgs2">🏒 2+ Goals</option>
-	<option value="nhl">🏒 NHL Props (Sharps)</option>
-	<option value="main?sport=nhl">🏒 Main (Sharps)</option>
-	<option value="analysis?sport=nhl">🏒 Results</option>
-	<option value="threes">🏀 3PTM (Free) </option>
-	<option value="pts">🏀 PTS/REB/AST (Analyst) </option>
-	<option value="nba">🏀 All NBA Props (Sharps)</option>
-	<option value="main?sport=nba">🏀 Main (Sharps)</option>
-	<option value="live?sport=nba">🏀 NBA Live (Sharps)</option>
-	<option value="kotc">🏀 KOTC</option>
-	<option value="analysis?sport=nba">🏀 Results</option>
-	<!-- 
-	<option value="ncaafprops">🏈 CFB Props</option>
-	<option value="ncaaf">🏈 CFB Main (Sharps)</option>
-	-->
-	<option value="ncaab">🏀 CBB (Sharps)</option>
-	<option value="baseball_ncaa">⚾ NCAA (Sharps)</option>
-	<option value="soccer">⚽ Soccer</option>
-	<option value="ufc">🥊 UFC</option>
-	<option value="outliers?sport=mlb">⚾ Outliers</option>
-	<option value="outliers?sport=nba">🏀 Outliers</option>
-	<option value="outliers?sport=nfl">🏈 Outliers</option>
-	<option value="outliers?sport=nhl">🏒 Outliers</option>
-	<option value="cheat">Cheat Sheets</option>
-	<option value="heatmap">🗺️ Heat Map</option>
-	<option disabled style="font-weight:bold; color:#ccc;">👤💳 Account 👤💳</option>
-	<option value="faq">❓ FAQ</option>
-	<option value="profile">👤 Profile</option>
-	<option value="pricing">💳 Pricing</option>
-`;
+function getPageFavorites() {
+	if (CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
+	try { return JSON.parse(localStorage.getItem("page_favorites") || "[]"); } catch(e) { return []; }
+}
+
+function togglePageFav(value) {
+	let favs = getPageFavorites();
+	favs = favs.includes(value) ? favs.filter(f => f !== value) : [...favs, value];
+	localStorage.setItem("page_favorites", JSON.stringify(favs));
+	if (CURR_USER) {
+		if (!CURR_USER.metadata) CURR_USER.metadata = {};
+		CURR_USER.metadata.page_favorites = favs;
+		if (typeof savePageFavorites === "function") savePageFavorites(favs);
+	}
+	// Update all star buttons in panel for this value
+	document.querySelectorAll("#page-picker-panel .pp-star").forEach(btn => {
+		if (btn.dataset.val === value) btn.classList.toggle("starred", favs.includes(value));
+	});
+	// Re-render if currently on favorites tab
+	const activeTabEl = document.querySelector("#page-picker-panel .pp-tab.active");
+	if (activeTabEl?.dataset.key === "favorites" && _ppRenderGrid) {
+		_ppRenderGrid("favorites");
+	}
+}
 
 setTimeout(() => {
-	let selectId = MOBILE ? "#mobile-header" : "#header";
-	if (MOBILE && document.querySelectorAll("#mobile-header").length == 0) {
-		selectId = "#header";
+	buildPagePicker();
+}, 200);
+
+function buildPagePicker() {
+	const selectEl = document.getElementById("page-select");
+	if (!selectEl) return;
+	const wrapper = selectEl.closest(".select-wrapper") || selectEl.parentElement;
+	if (!wrapper) return;
+
+	// Current page value for highlighting
+	let currentVal = PAGE;
+	if (PAGE === "props") currentVal = SPORT;
+	else if (PAGE === "outliers") currentVal = `outliers?sport=${SPORT}`;
+	else if (PAGE === "live") currentVal = `live?sport=${SPORT}`;
+	else if (PAGE === "analysis") currentVal = `analysis?sport=${SPORT}`;
+	else if (PAGE === "movement") currentVal = `movement?sport=${SPORT}`;
+	else if (PAGE === "bets" && SPORT === "nfl") currentVal = "bets?sport=nfl";
+	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
+
+	// Active tab: favorites if any saved, else current sport
+	const sportToTab = { mlb: "mlb", nba: "nba", nhl: "nhl", ncaab: "nba" };
+	const hasFavs = getPageFavorites().length > 0;
+	const activeTab = hasFavs ? "favorites" : (sportToTab[SPORT] || "mlb");
+
+	// Create trigger button (replaces select wrapper)
+	const btn = document.createElement("button");
+	btn.id = "page-picker-btn";
+	btn.innerHTML = `Pages <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:middle;margin-left:2px"><path d="M5 8l5 5 5-5"/></svg>`;
+	wrapper.replaceWith(btn);
+
+	// Build panel
+	const panel = document.createElement("div");
+	panel.id = "page-picker-panel";
+
+	const ALL_TABS = [{ key: "favorites", label: "⭐" }, ...PAGE_SECTIONS];
+
+	const tabsEl = document.createElement("div");
+	tabsEl.id = "page-picker-tabs";
+	ALL_TABS.forEach(section => {
+		const tab = document.createElement("button");
+		tab.className = "pp-tab" + (section.key === activeTab ? " active" : "");
+		tab.dataset.key = section.key;
+		tab.textContent = section.label;
+		tab.addEventListener("click", () => {
+			panel.querySelectorAll(".pp-tab").forEach(t => t.classList.remove("active"));
+			tab.classList.add("active");
+			renderGrid(section.key);
+		});
+		tabsEl.appendChild(tab);
+	});
+	panel.appendChild(tabsEl);
+
+	const grid = document.createElement("div");
+	grid.id = "page-picker-grid";
+	panel.appendChild(grid);
+	document.body.appendChild(panel);
+
+	function makeRow(page) {
+		const isCurrent = page.value === currentVal;
+		const isStarred = getPageFavorites().includes(page.value);
+		return `<button class="pp-page-btn${isCurrent ? " current-page" : ""}${page.sharp ? " pp-sharp" : ""}" onclick="changePage('${page.value}');closePicker()">
+			<span class="pp-label">${page.label}</span>
+			<span class="pp-star${isStarred ? " starred" : ""}" data-val="${page.value}" onclick="event.stopPropagation();togglePageFav('${page.value}')">★</span>
+		</button>`;
 	}
-	let select = document.querySelector(selectId+" #page-select");
-	if (!select) {
-		select = document.getElementById("page-select");
+
+	function renderGrid(sportKey) {
+		if (sportKey === "favorites") {
+			const favVals = getPageFavorites();
+			if (favVals.length === 0) {
+				const mlbPages = PAGE_SECTIONS.find(s => s.key === "mlb")?.pages || [];
+				grid.innerHTML = `<div class="pp-fav-hint">Star pages to save favorites</div>` +
+					mlbPages.map(makeRow).join("");
+			} else {
+				const pages = favVals.map(val => {
+					for (const s of PAGE_SECTIONS) {
+						const found = s.pages.find(p => p.value === val);
+						if (found) return found;
+					}
+					return null;
+				}).filter(Boolean);
+				grid.innerHTML = pages.map(makeRow).join("");
+			}
+		} else {
+			const section = PAGE_SECTIONS.find(s => s.key === sportKey);
+			if (!section) return;
+			grid.innerHTML = section.pages.map(makeRow).join("");
+		}
 	}
-	select.addEventListener("change", (event) => {
-		const page = event.target.value;
-		changePage(page);
+
+	_ppRenderGrid = renderGrid;
+	renderGrid(activeTab);
+
+	btn.addEventListener("click", e => {
+		e.stopPropagation();
+		if (panel.style.display === "block") {
+			panel.style.display = "none";
+		} else {
+			// Re-render active tab to pick up fresh auth/favorites data
+			const activeTabEl = panel.querySelector(".pp-tab.active");
+			if (activeTabEl) renderGrid(activeTabEl.dataset.key);
+			panel.style.display = "block";
+			const rect = btn.getBoundingClientRect();
+			const pw = panel.offsetWidth;
+			let left = rect.left + rect.width / 2 - pw / 2;
+			left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+			panel.style.left = left + "px";
+			panel.style.top = (rect.bottom + 6) + "px";
+		}
 	});
 
-	if (PAGE == "disclaimer") {
-		PAGE_DROPDOWN += `<option value="${PAGE}">${title(PAGE)}</option>`;
-	}
-	select.innerHTML = PAGE_DROPDOWN;
-	if (PAGE == "props") {
-		select.value = SPORT;
-	} else if (PAGE == "dingers" && KAMBI) {
-		select.value = "kambi";
-	} else if (PAGE == "outliers") {
-		select.value = `outliers?sport=${SPORT}`;
-	} else if (PAGE == "live") {
-		select.value = `live?sport=${SPORT}`;
-	} else if (PAGE == "analysis") {
-		select.value = `analysis?sport=${SPORT}`;
-	} else if (PAGE == "movement") {
-		select.value = `movement?sport=${SPORT}`;
-	} else if (PAGE == "bets" && SPORT === "nfl") {
-		select.value = "bets?sport=nfl";
-	} else if (PAGE == "main") {
-		select.value = `main?sport=${SPORT}`;
-	} else {
-		select.value = PAGE;
-	}
-}, 200);
+	document.addEventListener("click", () => { panel.style.display = "none"; });
+	panel.addEventListener("click", e => e.stopPropagation());
+}
+
+function closePicker() {
+	const panel = document.getElementById("page-picker-panel");
+	if (panel) panel.style.display = "none";
+}
 
 function openProfile() {
 	changePage("profile");

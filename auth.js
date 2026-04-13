@@ -20,6 +20,10 @@ async function upsertProfile(session) {
 
 	CURR_SESSION = session;
 	CURR_USER = data;
+	// Sync page favorites from Supabase into localStorage
+	if (data?.metadata?.page_favorites?.length) {
+		localStorage.setItem("page_favorites", JSON.stringify(data.metadata.page_favorites));
+	}
 	if (error) {
 		console.error("Error fetching profile: ", error);
 		return;
@@ -123,6 +127,16 @@ function fillPricing(tier) {
 			btn.classList.remove('current-btn');
 		}
 	});
+}
+
+async function savePageFavorites(favs) {
+	if (!CURR_USER || !CURR_SESSION) return;
+	const metadata = { ...CURR_USER.metadata, page_favorites: favs };
+	const { error } = await SB.from('profiles')
+		.update({ metadata })
+		.eq('id', CURR_SESSION.user.id);
+	if (error) console.error('savePageFavorites error:', error);
+	else CURR_USER.metadata = metadata;
 }
 
 async function saveCustomDevigs() {

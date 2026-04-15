@@ -104,7 +104,7 @@ const PAGE_SECTIONS = [
 let _ppRenderGrid = null;
 
 function getPageFavorites() {
-	if (CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
+	if (CURR_USER && CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
 	try { return JSON.parse(localStorage.getItem("page_favorites") || "[]"); } catch(e) { return []; }
 }
 

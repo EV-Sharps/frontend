@@ -177,7 +177,7 @@ function renderBookSelect() {
 	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
 	let bookSel = document.getElementById("book-select");
 
-	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi", "kal", "nv", "px", "poly"];
+	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi", "pn", "kal", "nv", "px", "poly"];
 
 	if (["dingers", "mlb"].includes(PAGE)) {
 		books.push("hr_oh");
@@ -187,7 +187,7 @@ function renderBookSelect() {
 
 	if (PAGE === "main") {
 		books.push("hr_oh");
-		books.push("hr_az");
+		if (!books.includes("hr_az")) books.push("hr_az");
 	}
 
 	bookSel.innerHTML = `

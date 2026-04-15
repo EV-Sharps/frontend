@@ -445,6 +445,7 @@ async function handleSession() {
 	} else if (PAGE == "main" || PAGE == "soccer") {
 		initChkddActions();
 		fetchMain();
+		renderFilters();
 		initExcluded();
 		renderTable([]);
 		setInterval(() => {

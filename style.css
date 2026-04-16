@@ -1805,7 +1805,7 @@ nav {
 	display: flex;
 }
 #card-modal-inner {
-	max-width: 420px;
+	max-width: 450px;
 	width: 92vw;
 	max-height: 90vh;
 	overflow-y: auto;

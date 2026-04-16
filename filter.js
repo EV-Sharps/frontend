@@ -50,7 +50,7 @@ function onChkddChange(menu) {
 			filterDevPickerByProps(CHKDD_STATE[id]);
 		}
 	}
-	changeFilter?.();
+	if (typeof TABLE !== 'undefined' && TABLE) changeFilter?.();
 }
 
 document.addEventListener("change", (e) => {

@@ -1206,6 +1206,11 @@
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
+				if (ODDS_HIDDEN) {
+					TABLE.getColumns().forEach(col => {
+						if (col.getField()?.startsWith('bookOdds.')) col.hide();
+					});
+				}
 				if (!loaded) {
 					TABLE.setHeaderFilterValue("handicap", "0.5");
 					changeFilter();

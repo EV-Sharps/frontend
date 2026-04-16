@@ -2,10 +2,16 @@
 let CURR_USER, CURR_SESSION;
 let ENABLE_AUTH = true;
 let SAVE_DISCORD;
-const SB = supabase.createClient(
-	'https://nkdhryqpiulrepmphwmt.supabase.co',
-	'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt'
-);
+let SB;
+
+try {
+	SB = supabase.createClient(
+		'https://nkdhryqpiulrepmphwmt.supabase.co',
+		'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt'
+	);
+} catch (e) {
+
+}
 
 async function logout() {
 	await SB.auth.signOut();

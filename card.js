@@ -522,9 +522,9 @@ function updateExistingCard(card, rowData) {
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
-		<div class="card-body-collapsed"></div>
+		
 		<!-- Top metrics -->
-			<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
+		<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
 				<div class="metric-pill">
 					<div style="font-weight:700; font-size:0.8rem;">${rowData.fairVal > 0 ? "+"+rowData.fairVal : rowData.fairVal}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>
@@ -538,6 +538,7 @@ function updateExistingCard(card, rowData) {
 					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
 				</div>
 			</div>
+		<div class="card-body-collapsed"></div>
 		<div class="card-arrow-container">
 			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
 				<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

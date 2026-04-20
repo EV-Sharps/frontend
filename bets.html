@@ -144,6 +144,15 @@
 				[wl, units] = RES[SPORT].record.szn.split(" ");
 				document.querySelector("#record-szn .w-l").textContent = wl;
 				document.querySelector("#record-szn .units").textContent = units;
+
+				if (units) {
+					const num = parseFloat(units.match(/-?\d+(\.\d+)?/)[0]);
+					if (num < 0) {
+						document.querySelector("#record-szn .units").style.color = "red";
+					} else {
+						document.querySelector("#record-szn .units").style.color = "green";
+					}
+				}
 			}
 			[wl, units] = RES[SPORT].record.today.split(" ");
 			document.querySelector("#record-today .w-l").textContent = wl;

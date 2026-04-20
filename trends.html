@@ -210,6 +210,7 @@
 			"#8e44ad", "#ffcc00", "#34caff", "#5eff72",
 			"#ff5e84", "#c388ff"
 		];
+		const DASH_PATTERNS = ["solid", "dash", "dot", "dashdot"];
 
 		function getYearData(res, year, graph) {
 			const xVals = [], yVals = [];
@@ -239,13 +240,14 @@
 				const color = YEAR_COLORS[idx % YEAR_COLORS.length];
 				const ySmooth = movingAverage(yVals, movingAvg);
 
+				const dash = isCurrent ? "solid" : DASH_PATTERNS[Math.floor(idx / YEAR_COLORS.length) % DASH_PATTERNS.length];
 				if (regression) {
 					const regY = linearRegression(yVals.map((_, i) => i), yVals).predictedY;
 					traces.push({
 						x: xVals, y: regY,
 						name: year, mode: "lines",
 						hovertemplate: `${year} %{x|%b %d}<br>${graph}: %{y:.2f}<extra></extra>`,
-						line: { color, width: isCurrent ? 3 : 1.5, dash: isCurrent ? "solid" : "dot" },
+						line: { color, width: isCurrent ? 3 : 1.5, dash },
 						opacity: isCurrent ? 1 : 0.5
 					});
 				} else {
@@ -254,7 +256,7 @@
 						y: graph === "hr" ? yVals : ySmooth,
 						name: year, mode: "lines",
 						hovertemplate: `${year} %{x|%b %d}<br>${graph}: %{y:.2f}<extra></extra>`,
-						line: { color, width: isCurrent ? 3 : 1 },
+						line: { color, width: isCurrent ? 3 : 1, dash },
 						opacity: isCurrent ? 1 : 0.35
 					});
 				}

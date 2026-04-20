@@ -1,5 +1,6 @@
 
 const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "hr_oh", "bv", "cz", "fl", "br", "re", "kal", "nv", "poly", "px"];
+let DEV_WINDOW = "All";
 const SESSION_WEIGHTS = {
 	"tds-pn+circa": {
 		pn: 0.4,
@@ -315,7 +316,7 @@ function getTopDevigs(bookArg = null) {
 		const devigs = books[book];
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
-			let stats = devigs[devigKey]["All"];
+			let stats = devigs[devigKey][DEV_WINDOW] || devigs[devigKey]["All"];
 			if (!stats) continue;
 			const parts = devigKey.split("-vs-");
 			const prop = parts[0] || devigKey;

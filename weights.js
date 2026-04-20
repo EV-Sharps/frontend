@@ -375,6 +375,53 @@ async function initDevPicker(data){
 	const picker = document.getElementById('dev-picker');
 	const hidden = document.getElementById('devig-select');
 	if (!picker) return;
+
+	// Build flex row wrapper once (select | updated label | picker)
+	if (!document.getElementById('dev-picker-row')) {
+		const row = document.createElement('div');
+		row.id = 'dev-picker-row';
+		picker.parentElement.insertBefore(row, picker);
+
+		const col = document.createElement('div');
+		col.className = 'dev-picker-col';
+		row.appendChild(col);
+
+		const sel = document.createElement('select');
+		sel.id = 'dev-window-select';
+		sel.className = 'dev-window-select';
+		sel.innerHTML = ['All','L14','L30','L60'].map(w =>
+			`<option value="${w}"${w === DEV_WINDOW ? ' selected' : ''}>${w}</option>`
+		).join('');
+		sel.addEventListener('change', () => {
+			DEV_WINDOW = sel.value;
+			initDevPicker(getTopDevigs(BOOK || "best"));
+		});
+		col.appendChild(sel);
+
+		const upd = document.createElement('span');
+		upd.id = 'dev-record-upd';
+		upd.className = 'dev-record-upd';
+		col.appendChild(upd);
+
+		row.appendChild(picker);
+	} else {
+		document.getElementById('dev-window-select').value = DEV_WINDOW;
+	}
+
+	// Update the "Updated" label from RECORD_UPD global
+	const updEl = document.getElementById('dev-record-upd');
+	if (updEl) {
+		try {
+			if (typeof RECORD_UPD !== 'undefined' && RECORD_UPD) {
+				const d = new Date(RECORD_UPD);
+				const label = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour12: true });
+				updEl.textContent = `upd: ${label}`;
+			} else {
+				updEl.textContent = '';
+			}
+		} catch(e) { updEl.textContent = ''; }
+	}
+
 	picker.innerHTML = '';
 	if (hidden) hidden.innerHTML = '';
 
@@ -425,7 +472,7 @@ async function initDevPicker(data){
 		try {
 			let rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[METHOD||"worst"][BOOK||"best"]) ? RECORD[METHOD||"worst"][BOOK||"best"][`${prop}-vs-${dev}`] : null;
 			if (rec) {
-				rec = rec["All"];
+				rec = rec[DEV_WINDOW] || rec["All"];
 				const wins = rec.wins ?? rec.w ?? 0;
 				const losses = rec.losses ?? rec.l ?? 0;
 				const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');

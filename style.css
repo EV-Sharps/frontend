@@ -474,9 +474,15 @@ body::before {
 	min-width: 0;
 }
 
-.dev-window-select {
+.dev-picker-col {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	flex: 0 0 auto;
-	align-self: center;
+	padding-right: 3px;
+}
+
+.dev-window-select {
 	width: auto !important;
 	height: auto !important;
 	background: #172027;
@@ -488,7 +494,14 @@ body::before {
 	padding: 3px 6px;
 	cursor: pointer;
 	outline: none;
-	margin-left: 6px;
+	margin: 4px 0 0 6px;
+}
+
+.dev-record-upd {
+	font-size: 10px;
+	color: var(--text-muted, #6b7280);
+	white-space: nowrap;
+	margin: 2px 0 0 6px;
 }
 
 .book-picker,
@@ -1997,6 +2010,24 @@ nav {
 	display: inline-block;
 	width: auto;
 	max-width: initial;
+}
+
+#dev-picker-wrapper {
+	display: flex;
+}
+
+#dev-picker-window {
+	display: flex;
+	flex-direction: column;
+	height: auto;
+	justify-content: center;
+	padding: 0 6px;
+}
+
+#dev-picker-window-select {
+	width: 100%;
+	height: auto;
+	min-width: 4ch;
 }
 
 .select-label {

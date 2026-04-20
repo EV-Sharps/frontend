@@ -506,7 +506,7 @@
 			</div>
 		</header>
 		<main>
-			<div class="select-wrapper">
+			<div>
 				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
 
 				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
@@ -780,6 +780,26 @@
 						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},
 						{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},
 						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
+					]},
+					{title: "Batter Metrics", columns: [
+						{title: "HR/PA%", field: "batter_percs.hr_pa", width: 60, formatter: allowedFormatter },
+						{title: "HR", field: "batter_percs.home_run", width: 60, formatter: allowedFormatter },
+						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
+						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: percentileFormatter },
+						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter },
+					]},
+					{title: "Pitcher Metrics", columns: [
+						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
+						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					]},
 				]
 			});

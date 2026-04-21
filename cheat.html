@@ -335,7 +335,7 @@
 
 <div class="header">
 	<h1>Prop Betting Performance</h1>
-	<p>Data tracked: Nov 11th, 2025 - Apr 12th, 2026</p>
+	<p>Data tracked: Nov 11th, 2025 - <span id="record-end-date">Apr 12th, 2026</span></p>
 </div>
 
 <div class="controls">
@@ -400,6 +400,7 @@
 		<label for="window-select" class="select-label">Window</label>
 		<select id="window-select" class="select" onchange="renderDashboard()">
 			<option value="All">All</option>
+			<option value="L7">L7</option>
 			<option value="L14">L14</option>
 			<option value="L30">L30</option>
 			<option value="L60">L60</option>
@@ -486,6 +487,15 @@
 
 	let RECORD_ALL = RECORD;
 	let RECORD_LONG_TMP = null;
+
+	// Set end date from RECORD_UPD
+	try {
+		if (typeof RECORD_UPD !== 'undefined' && RECORD_UPD) {
+			const d = new Date(RECORD_UPD);
+			const label = d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+			document.getElementById('record-end-date').textContent = label;
+		}
+	} catch(e) {}
 
 	const selMethod = document.getElementById('method-select');
 	METHOD = METHOD || 'probit';

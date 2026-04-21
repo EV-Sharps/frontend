@@ -722,6 +722,7 @@
 						<div class="select-wrapper">
 						<select id="btwn-select">
 							<option value="pa">PA Btwn</option>
+							<option value="odds">Odds</option>
 							<option value="feed">Feed</option>
 						</select>
 						<svg class="select-arrow" viewBox="0 0 20 20">
@@ -761,10 +762,77 @@
 				plotHRGap(showGames=true);
 			} else if (event.target.value == "feed") {
 				renderFeed();
+			} else if (event.target.value == "odds") {
+				plotOddsChart();
 			} else {
 				plotHRGap();
 			}
 		});
+
+		function plotOddsChart() {
+			const data = TABLE.getSelectedData()[0];
+			if (!data) return;
+			const chart = data.oddsChart;
+			const el = document.getElementById('chart');
+
+			if (!chart || chart.length === 0) {
+				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
+				return;
+			}
+
+			// Collect all books (exclude ts and *_under keys)
+			const bookSet = new Set();
+			chart.forEach(entry => {
+				Object.keys(entry).forEach(k => {
+					if (k !== 'ts' && !k.endsWith('_under')) bookSet.add(k);
+				});
+			});
+
+			const now = new Date();
+			const BOOK_COLORS = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
+			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
+			const books = [...bookSet];
+			const tooMany = books.length > BOOK_COLORS.length;
+
+			const traces = books.map((book, i) => {
+				// gather points where this book has data
+				const pts = chart
+					.filter(e => e[book] != null)
+					.map(e => ({ x: new Date(e.ts), y: e[book] }));
+				if (pts.length === 0) return null;
+				// extend to now with last known value
+				const xs = [...pts.map(p => p.x), now];
+				const ys = [...pts.map(p => p.y), pts.at(-1).y];
+				const color = BOOK_COLORS[i % BOOK_COLORS.length];
+				const dash = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
+				const labels = new Array(xs.length).fill('');
+				//labels[pts.length - 1] = book.toUpperCase();
+				return {
+					x: xs, y: ys,
+					name: book.toUpperCase(),
+					mode: 'lines+markers+text',
+					text: labels,
+					textposition: 'top center',
+					textfont: { size: 10, color },
+					line: { color, width: 2, dash },
+					marker: { size: 5, color },
+					hovertemplate: `%{x|%I:%M %p}<br>${book.toUpperCase()}: %{y}<extra></extra>`
+				};
+			}).filter(Boolean);
+
+			const layout = {
+				title: { text: `${title(data.player)}: HR Over Odds`, font: { size: 13 } },
+				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
+				font: { color: '#e8e6e3' },
+				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
+				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
+				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
+				margin: { l: 45, r: 10, t: 50, b: 40 },
+				hovermode: 'x unified'
+			};
+
+			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
+		}
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
 			let field = event.target.value;
@@ -1266,7 +1334,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa", "bookOdds.pn",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"},
@@ -1293,7 +1361,7 @@
 				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
-			let header = `🎯 Circa's top 10 Implied HR hitters (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🎯 Circa/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 

@@ -389,7 +389,7 @@ async function initDevPicker(data){
 		const sel = document.createElement('select');
 		sel.id = 'dev-window-select';
 		sel.className = 'dev-window-select';
-		sel.innerHTML = ['All','L14','L30','L60'].map(w =>
+		sel.innerHTML = ['All', 'L7', 'L14','L30','L60'].map(w =>
 			`<option value="${w}"${w === DEV_WINDOW ? ' selected' : ''}>${w}</option>`
 		).join('');
 		sel.addEventListener('change', () => {

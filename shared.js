@@ -52,6 +52,7 @@ const PAGE_SECTIONS = [
 			{ label: "📊 Trends", value: "trends" },
 			{ label: "📉 Movement", value: "movement?sport=mlb", sharp: true },
 			{ label: "🎟️ Bets", value: "bets?sport=mlb", sharp: true },
+			{ label: "📝 Recap", value: "recap" }
 		]
 	},
 	{

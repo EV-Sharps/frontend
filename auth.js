@@ -427,6 +427,12 @@ async function handleSession() {
 	} else if (PAGE == "sb") {
 		renderTable([]);
 		fetchSBData();
+	} else if (PAGE == "recap") {
+		initChkddActions();
+		fetchProps();
+		//renderFilters();
+		initExcluded();
+		renderTable([]);
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();
 		renderTable([]);

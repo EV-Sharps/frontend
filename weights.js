@@ -429,7 +429,14 @@ async function initDevPicker(data){
 		return;
 	}
 	for (row of data) {
-		const [prop, dev] = row.devig.split("-vs-");
+		let prop, dev;
+		if (!row.devig.includes("-vs-")) {
+			prop = "hr"; dev = row.devig;
+		} else {
+			[prop, dev] = row.devig.split("-vs-");
+		}
+
+		console.log(prop);
 		// wrapper holds the chip button and the small record line beneath
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';
@@ -439,7 +446,7 @@ async function initDevPicker(data){
 			continue; // skip atgs/fgs/lgs for nhl page
 		} else if (PAGE == "threes" && prop !== "3ptm") {
 			continue;
-		} else if (PAGE == "dingers" && prop !== "hr") {
+		} else if (["dingers", "recap"].includes(PAGE) && prop !== "hr") {
 			continue;
 		} else if (PAGE == "mlb" && prop === "hr") {
 			continue;

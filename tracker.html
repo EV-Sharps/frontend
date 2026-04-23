@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>+EV Sharps</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+<style type="text/css">
+	.game-img { height: 18px; width: 18px; }
+	#table { width: 100%; }
+	#right-body { justify-content: center; }
+	#chart { max-height: 400px; margin-top: 0.5rem; }
+
+	/* Search + customize bar */
+	#tracker-search-wrap {
+		padding: 0.4rem 0.5rem;
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	#tracker-customize-btn {
+		flex-shrink: 0;
+		padding: 0.35rem 0.65rem;
+		background: var(--bg-secondary, #1e2130);
+		border: 1px solid var(--border, #374151);
+		border-radius: 6px;
+		color: var(--text-muted, #6b7280);
+		cursor: pointer;
+		font-size: 0.82rem;
+	}
+	#tracker-customize-btn:hover { border-color: #3b82f6; color: #e5e7eb; }
+
+	/* Customize overlay */
+	#customize-overlay {
+		display: none;
+		position: absolute;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background: rgba(0,0,0,0.7);
+		z-index: 400;
+		align-items: flex-start;
+		justify-content: center;
+		padding-top: 3rem;
+	}
+	#customize-overlay.open { display: flex; }
+	#customize-panel {
+		background: linear-gradient(160deg, #0d3b66 0%, #021526 100%);
+		border-radius: 8px;
+		padding: 1.5rem;
+		width: 420px;
+		max-width: 95vw;
+		max-height: 80vh;
+		overflow-y: auto;
+		box-shadow: 0 0 20px rgba(0,0,0,0.4);
+	}
+	#customize-panel h2 { text-align: center; margin: 0 0 1rem; font-size: 1rem; }
+	#customize-panel h3 { font-size: 0.85rem; text-align: center; margin: 0 0 0.5rem; }
+	#cust-items {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+	#cust-items > div { min-width: 140px; }
+	#cust-items div > div {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-bottom: 0.3rem;
+		font-size: 0.82rem;
+	}
+	#cust-items input[type=checkbox] { cursor: pointer; }
+	#cust-items label { cursor: pointer; }
+	.cust-actions {
+		display: flex;
+		justify-content: center;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+	.cust-actions button {
+		padding: 0.4rem 1.1rem;
+		border: none;
+		border-radius: 5px;
+		background: #007bff;
+		color: #fff;
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+	.cust-actions button:hover { background: #0056b3; }
+	#tracker-search {
+		width: 100%;
+		max-width: 340px;
+		padding: 0.4rem 0.7rem;
+		background: var(--bg-secondary, #1e2130);
+		border: 1px solid var(--border, #374151);
+		border-radius: 6px;
+		color: var(--text, #e5e7eb);
+		font-size: 0.85rem;
+		box-sizing: border-box;
+	}
+	#tracker-search:focus { outline: none; border-color: #3b82f6; }
+	#tracker-search::placeholder { color: var(--text-muted, #6b7280); }
+
+	#search-dropdown {
+		display: none;
+		position: absolute;
+		top: calc(100% - 2px);
+		left: 0.5rem;
+		width: 340px;
+		max-width: calc(100vw - 1rem);
+		background: var(--bg, #111827);
+		border: 1px solid var(--border, #374151);
+		border-radius: 0 0 6px 6px;
+		z-index: 200;
+		max-height: 260px;
+		overflow-y: auto;
+	}
+	#search-dropdown.open { display: block; }
+	.search-result {
+		padding: 0.45rem 0.75rem;
+		cursor: pointer;
+		font-size: 0.82rem;
+		border-bottom: 1px solid var(--border, #374151);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.search-result:last-child { border-bottom: none; }
+	.search-result:hover { background: rgba(59,130,246,0.15); }
+	.search-result-player { font-weight: 600; }
+	.search-result-meta { color: var(--text-muted, #6b7280); font-size: 0.75rem; }
+
+	/* Add-bet modal */
+	#add-bet-backdrop {
+		display: none;
+		position: fixed;
+		inset: 0;
+		background: rgba(0,0,0,0.6);
+		z-index: 500;
+		align-items: center;
+		justify-content: center;
+	}
+	#add-bet-backdrop.open { display: flex; }
+	#add-bet-modal {
+		background: var(--bg, #111827);
+		border: 1px solid var(--border, #374151);
+		border-radius: 10px;
+		padding: 1.25rem 1.5rem;
+		width: 360px;
+		max-width: 95vw;
+		max-height: 85vh;
+		overflow-y: auto;
+		position: relative;
+	}
+	#add-bet-modal h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+	#add-bet-modal .meta { color: var(--text-muted, #6b7280); font-size: 0.78rem; margin-bottom: 1rem; }
+	.modal-close {
+		position: absolute; top: 0.75rem; right: 1rem;
+		background: none; border: none;
+		color: var(--text-muted, #6b7280); font-size: 1.2rem; cursor: pointer; line-height: 1;
+	}
+	.modal-close:hover { color: var(--text, #e5e7eb); }
+
+	/* Book odds picker grid */
+	.odds-grid-label { font-size: 0.72rem; color: var(--text-muted, #6b7280); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+	.odds-grid {
+		display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;
+	}
+	.odds-chip {
+		padding: 0.3rem 0.55rem;
+		border-radius: 5px;
+		border: 1px solid var(--border, #374151);
+		background: var(--bg-secondary, #1e2130);
+		color: var(--text, #e5e7eb);
+		font-size: 0.8rem;
+		cursor: pointer;
+		display: flex; flex-direction: column; align-items: center; gap: 1px;
+		min-width: 52px;
+	}
+	.odds-chip:hover { border-color: #3b82f6; }
+	.odds-chip.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); color: #93c5fd; }
+	.odds-chip .chip-book { font-size: 0.68rem; color: var(--text-muted, #6b7280); }
+	.odds-chip.selected .chip-book { color: #93c5fd; }
+
+	.divider { text-align: center; color: var(--text-muted, #6b7280); font-size: 0.75rem; margin: 0.5rem 0; }
+
+	.manual-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+	.manual-row input, .manual-row select {
+		flex: 1; padding: 0.4rem 0.5rem;
+		background: var(--bg-secondary, #1e2130);
+		border: 1px solid var(--border, #374151);
+		border-radius: 5px; color: var(--text, #e5e7eb); font-size: 0.85rem;
+	}
+	.manual-row input:focus, .manual-row select:focus { outline: none; border-color: #3b82f6; }
+	.manual-row input::placeholder { color: var(--text-muted, #6b7280); }
+
+	.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+	.modal-actions button {
+		padding: 0.4rem 1rem; border-radius: 5px;
+		border: 1px solid var(--border, #374151);
+		cursor: pointer; font-size: 0.85rem;
+	}
+	#add-bet-save {
+		background: #3b82f6; color: #fff; border-color: #3b82f6; font-weight: 600;
+	}
+	#add-bet-save:hover { opacity: 0.85; }
+	#add-bet-cancel { background: transparent; color: var(--text-muted, #6b7280); }
+	#add-bet-remove {
+		background: transparent; color: #ef4444; border-color: #ef4444; margin-right: auto;
+	}
+
+	@media (max-width: 1350px) {
+		#table-container { justify-content: normal; }
+		#table-container, #table { width: 100%; }
+	}
+	@media (max-width: 600px) {
+		#right-body.mobile-open { width: 100vw !important; max-width: 100vw !important; flex: 1 1 auto; }
+		#right-body.mobile-open #chart,
+		#right-body.mobile-open #chart .js-plotly-plot,
+		#right-body.mobile-open #chart svg { width: 100% !important; max-width: 100% !important; max-height: none; }
+	}
+</style>
+<body>
+	<div id="app">
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+			</div>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+				    <div class="gsi-material-button-icon">
+				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+				        <path fill="none" d="M0 0h48v48H0z"></path>
+				      </svg>
+				    </div>
+				    <span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+				<span id="username" class="loggedIn username"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="hide-username" onclick="hideUsername()">Hide</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
+			<!-- Player search + customize -->
+			<div id="tracker-search-wrap">
+				<input id="tracker-search" type="text" placeholder="Search to add a player...">
+				<label style="font-size:0.78rem;color:var(--text-muted,#9ca3af);white-space:nowrap;display:flex;align-items:center;gap:0.3rem;">
+					Devig:
+					<select id="tracker-devig-select" style="font-size:0.78rem;padding:2px 4px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:4px;">
+						<option value="">Market</option>
+						<option value="pn">Pinnacle</option>
+						<option value="circa">Circa</option>
+						<option value="fd">FanDuel</option>
+						<option value="dk">DraftKings</option>
+						<option value="b365">Bet365</option>
+						<option value="mgm">MGM</option>
+						<option value="espn">ESPN</option>
+						<option value="cz">Caesars</option>
+						<option value="hr">Hard Rock</option>
+						<option value="nv">NoVig</option>
+						<option value="pn+circa">PN+Circa</option>
+						<option value="pn+fd">PN+FD</option>
+					</select>
+				</label>
+				<button id="tracker-customize-btn" onclick="openCustomize()">⚙️</button>
+				<div id="search-dropdown"></div>
+			</div>
+
+			<!-- Customize overlay -->
+			<div id="customize-overlay">
+				<div id="customize-panel">
+					<h2>Customize Columns</h2>
+					<div id="cust-items">
+						<div>
+							<h3>Book Odds</h3>
+							<div><input id="cust_circa"  type="checkbox"><label for="cust_circa">Circa</label></div>
+							<div><input id="cust_fd"     type="checkbox"><label for="cust_fd">FanDuel</label></div>
+							<div><input id="cust_b365"   type="checkbox"><label for="cust_b365">Bet365</label></div>
+							<div><input id="cust_dk"     type="checkbox"><label for="cust_dk">DraftKings</label></div>
+							<div><input id="cust_mgm"    type="checkbox"><label for="cust_mgm">MGM</label></div>
+							<div><input id="cust_espn"   type="checkbox"><label for="cust_espn">ESPN</label></div>
+							<div><input id="cust_cz"     type="checkbox"><label for="cust_cz">Caesars</label></div>
+							<div><input id="cust_fn"     type="checkbox"><label for="cust_fn">Fanatics</label></div>
+							<div><input id="cust_br"     type="checkbox"><label for="cust_br">BetRivers</label></div>
+							<div><input id="cust_hr"     type="checkbox"><label for="cust_hr">Hard Rock</label></div>
+							<div><input id="cust_kal"    type="checkbox"><label for="cust_kal">Kalshi</label></div>
+							<div><input id="cust_pn"     type="checkbox"><label for="cust_pn">Pinnacle</label></div>
+							<div><input id="cust_kambi"  type="checkbox"><label for="cust_kambi">Kambi</label></div>
+							<div><input id="cust_bol"    type="checkbox"><label for="cust_bol">BetOnline</label></div>
+							<div><input id="cust_nv"     type="checkbox"><label for="cust_nv">NoVig</label></div>
+						</div>
+					</div>
+					<div class="cust-actions">
+						<button onclick="closeCustomize()">Close</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="table-container">
+				<div id="table"></div>
+				<div id="right-body" class="body">
+					<div style="display:flex;align-items:center;gap:6px;">
+						<div class="select-wrapper">
+							<select id="btwn-select">
+								<option value="odds">Odds</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
+					</div>
+					<div id="chart"></div>
+				</div>
+			</div>
+		</main>
+	</div>
+
+	<!-- Add/Edit bet modal -->
+	<div id="add-bet-backdrop">
+		<div id="add-bet-modal">
+			<button class="modal-close" onclick="closeAddBet()">×</button>
+			<h3 id="abt-player"></h3>
+			<div class="meta" id="abt-meta"></div>
+
+			<div class="odds-grid-label">Pick odds from book</div>
+			<div class="odds-grid" id="abt-odds-grid"></div>
+
+			<div class="divider">— or enter manually —</div>
+			<div class="manual-row">
+				<input type="number" id="abt-manual-odds" placeholder="Odds (e.g. +755)">
+				<select id="abt-manual-book">
+					<option value="">Book</option>
+					<option value="circa">Circa</option>
+					<option value="fd">FanDuel</option>
+					<option value="b365">Bet365</option>
+					<option value="dk">DraftKings</option>
+					<option value="mgm">MGM</option>
+					<option value="espn">ESPN</option>
+					<option value="cz">Caesars</option>
+					<option value="fn">Fanatics</option>
+					<option value="br">BetRivers</option>
+					<option value="hr">Hard Rock</option>
+					<option value="kal">Kalshi</option>
+					<option value="pn">Pinnacle</option>
+					<option value="kambi">Kambi</option>
+					<option value="bol">BetOnline</option>
+					<option value="nv">NoVig</option>
+					<option value="px">ProphetX</option>
+					<option value="poly">Polymarket</option>
+					<option value="bv">Bovada</option>
+					<option value="re">Rebet</option>
+					<option value="fl">Fliff</option>
+				</select>
+			</div>
+
+			<div class="modal-actions">
+				<button id="add-bet-remove" style="display:none" onclick="removeBet()">Remove</button>
+				<button id="add-bet-cancel" onclick="closeAddBet()">Cancel</button>
+				<button id="add-bet-save"   onclick="saveBet()">Save</button>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript" src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "tracker";
+		parseURLParams();
+		SPORT = "mlb";
+
+		handleSession();
+
+		// ── State ────────────────────────────────────────────────────────
+		let ALL_ROWS = [];   // full API dataset
+		let BETS = [
+			{ dt: "2026-04-23", game: "pit @ tex", player: "brandon nimmo", odds: 624, book: "kal" }
+		];
+		let _addBetRow = null;  // row being added/edited in modal
+
+		// ── Metadata ─────────────────────────────────────────────────────
+		function loadBetsFromMetadata() {
+			if (CURR_USER?.metadata?.bets?.length) BETS = CURR_USER.metadata.bets;
+		}
+
+		async function persistBets() {
+			if (!CURR_USER || !CURR_SESSION) return;
+			const metadata = { ...(CURR_USER.metadata || {}), bets: BETS };
+			const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
+			if (!error) CURR_USER.metadata = metadata;
+		}
+
+		// ── Matching ─────────────────────────────────────────────────────
+		function findBet(row) {
+			const rPlayer = (row.player || "").toLowerCase().trim();
+			return BETS.find(b => {
+				const bPlayer = (b.player || "").toLowerCase().trim();
+				return rPlayer.includes(bPlayer) || bPlayer.includes(rPlayer);
+			});
+		}
+
+		function bettedRows() {
+			return ALL_ROWS
+				.map(row => {
+					const bet = findBet(row);
+					if (!bet) return null;
+					return { ...row, _bet: bet, _betOdds: bet.odds, _betBook: bet.book };
+				})
+				.filter(Boolean);
+		}
+
+		// ── Fetch ─────────────────────────────────────────────────────────
+		async function fetchTrackerData() {
+			fetch(API_BASE + "/api/tracker", {
+				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+			}).then(r => r.json()).then(data => {
+				RES = data;
+				UPDATED[PAGE] = data.updated || {};
+				loadBetsFromMetadata();
+				const raw = data.data || data;
+				ALL_ROWS = Array.isArray(raw)
+					? raw
+					: Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
+				refreshTable();
+			}).catch(err => console.log(err));
+		}
+
+		function refreshTable() {
+			const rows = bettedRows();
+			if (TABLE) {
+				TABLE.setData(rows);
+			} else {
+				renderTable(rows);
+			}
+		}
+
+		// ── EV helpers ───────────────────────────────────────────────────
+		let CIRCA_DEVIG = "circa"; // "market" = use fairVal, else a bookOdds key
+
+		const ALL_BOOK_KEYS = ["fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv","px","poly","bv","re","fl"];
+
+		function toImplied(odds) {
+			if (!odds) return null;
+			odds = Number(odds);
+			return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
+		}
+
+		function calcEV(prob, betOdds) {
+			if (!prob || !betOdds) return null;
+			betOdds = Number(betOdds);
+			const payout = betOdds > 0 ? betOdds / 100 : 100 / Math.abs(betOdds);
+			return (prob * (1 + payout) - 1) * 100;
+		}
+
+		function getTrackerWeights(devigKey) {
+			const books = devigKey ? devigKey.split("+") : [...ALL_BOOK_KEYS, "circa", "pn"];
+			const w = {};
+			books.forEach(b => w[b] = 1);
+			return w;
+		}
+
+		function computeDevigged(row, devigKey) {
+			const prevDevig = DEVIG;
+			DEVIG = devigKey ?? DEVIG;
+			const fv = averageDevigs(row.bookOdds || {}, null, row.under, getTrackerWeights(devigKey));
+			DEVIG = prevDevig;
+			return isFinite(fv) ? fv : null;
+		}
+
+		function getMarketFairProb(row) {
+			return computeDevigged(row, DEVIG) ?? toImplied(row.fairVal);
+		}
+
+		function getFairProb(row) {
+			if (CIRCA_DEVIG === "market") return getMarketFairProb(row);
+			return computeDevigged(row, CIRCA_DEVIG) ?? toImplied((row.bookOdds || {})[CIRCA_DEVIG]);
+		}
+
+		function getBestMarketOdds(row) {
+			const bo = row.bookOdds || {};
+			let best = null;
+			ALL_BOOK_KEYS.forEach(k => {
+				const o = bo[k];
+				if (!o) return;
+				if (best === null || Number(o) > Number(best)) best = o;
+			});
+			return best;
+		}
+
+		function evCalcFormatter(cell, prob, betOdds) {
+			const ev = calcEV(prob, betOdds);
+			if (ev == null) return "";
+			const pct = ev.toFixed(1);
+			const color = ev >= 0 ? "#22c55e" : "#ef4444";
+			return `<span style="color:${color};font-weight:600">${ev >= 0 ? "+" : ""}${pct}%</span>`;
+		}
+
+		function refreshCircaEVCol() {
+			if (!TABLE) return;
+			TABLE.redraw(true);
+		}
+
+		// ── Table ─────────────────────────────────────────────────────────
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				placeholder: "Search above to add players to track.",
+				layout: "fitDataFill",
+				autoResize: true,
+				data: data,
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				rowFormatter: function(row) {
+					//row.getElement().style.background = "rgba(59,130,246,0.08)";
+					//row.getElement().style.borderLeft = "3px solid #3b82f6";
+				},
+				columns: [
+					{
+						title: "My<br>Odds",
+						field: "_betOdds",
+						width: 65,
+						sorter: "number",
+						formatter: function(cell) {
+							const v = cell.getValue();
+							if (v == null) return "";
+							return `<span style="color:#3b82f6;font-weight:600">${v > 0 ? "+" : ""}${v}</span>`;
+						}
+					},
+					{
+						title: "My<br>Book",
+						field: "_betBook",
+						width: 55,
+						formatter: function(cell) {
+							const v = cell.getValue();
+							if (!v) return "";
+							return `<span style="color:#3b82f6;font-weight:600">${v.toUpperCase()}</span>`;
+						}
+					},
+					{
+						title: "Market<br>EV",
+						field: "_marketEV",
+						width: 70,
+						sorter: function(a, b, aRow, bRow) {
+							const evA = calcEV(getMarketFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
+							const evB = calcEV(getMarketFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
+							return evA - evB;
+						},
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							return evCalcFormatter(cell, getMarketFairProb(d), getBestMarketOdds(d));
+						}
+					},
+					{
+						title: `Circa EV<br><select id="circa-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+							<option value="market">Market</option>
+							<option value="pn">Pinnacle</option>
+							<option value="fd">FanDuel</option>
+							<option value="dk">DraftKings</option>
+							<option value="circa" selected>Circa</option>
+							<option value="b365">Bet365</option>
+							<option value="mgm">MGM</option>
+							<option value="espn">ESPN</option>
+							<option value="cz">Caesars</option>
+							<option value="hr">Hard Rock</option>
+							<option value="nv">NoVig</option>
+						</select>`,
+						field: "_circaEV",
+						width: 90,
+						sorter: function(a, b, aRow, bRow) {
+							const evA = calcEV(getFairProb(aRow.getData()), (aRow.getData().bookOdds || {}).circa) ?? -999;
+							const evB = calcEV(getFairProb(bRow.getData()), (bRow.getData().bookOdds || {}).circa) ?? -999;
+							return evA - evB;
+						},
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							return evCalcFormatter(cell, getFairProb(d), (d.bookOdds || {}).circa);
+						}
+					},
+					{
+						title: "Best Book",
+						field: "book",
+						width: MOBILE ? 75 : 75,
+						formatter: bestBookFormatter,
+						formatterParams: { book: BOOK },
+						responsive: 0
+					},
+					{
+						title: "Player",
+						field: "player",
+						formatter: playerFormatter,
+						width: MOBILE ? 90 : 140,
+						formatterParams: { sport: "mlb" },
+						hozAlign: "left",
+						responsive: 0,
+						frozen: true
+					},
+					{
+						title: "Line",
+						field: "handicap",
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							return `${d.under ? "u" : "o"}${cell.getValue()}`;
+						},
+						width: 60
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairVal",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						responsive: 0
+					},
+					{ title: `Circa`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `FD`,    field: "bookOdds.fd",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: `B365`,  field: "bookOdds.b365",  width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `DK`,    field: "bookOdds.dk",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: `MGM`,   field: "bookOdds.mgm",   width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `ESPN`,  field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `CZ`,    field: "bookOdds.cz",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: `FN`,    field: "bookOdds.fn",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: `BR`,    field: "bookOdds.br",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `HR`,    field: "bookOdds.hr",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `PN`,    field: "bookOdds.pn",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `Kambi`, field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `BOL`,   field: "bookOdds.bol",   width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: `NoVig`, field: "bookOdds.nv",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{title: "<a href='https://www.x.com/BallparkPal' target='new'  onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'  onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
+					{ title: "Game",  field: "game", visible: false },
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				rowClick(row);
+			});
+
+			applyColumnPrefs(loadColumnPrefs());
+
+			// Wire circa-devig dropdown after Tabulator renders the header
+			setTimeout(() => {
+				const sel = document.getElementById("circa-devig-select");
+				if (sel) {
+					sel.value = CIRCA_DEVIG;
+					sel.addEventListener("change", function() {
+						CIRCA_DEVIG = this.value;
+						TABLE.redraw(true);
+					});
+				}
+			}, 100);
+
+			// Wire tracker-devig dropdown (Market EV devig)
+			const devigSel = document.getElementById("tracker-devig-select");
+			if (devigSel) {
+				devigSel.value = DEVIG || "";
+				devigSel.addEventListener("change", function() {
+					DEVIG = this.value;
+					if (TABLE) TABLE.redraw(true);
+				});
+			}
+		}
+
+		// ── Customize ────────────────────────────────────────────────────
+		const CUST_STORAGE_KEY = "tracker-columns";
+		// field id → table column field
+		const CUST_COLS = {
+			circa: "bookOdds.circa", fd: "bookOdds.fd", b365: "bookOdds.b365",
+			dk: "bookOdds.dk", mgm: "bookOdds.mgm", espn: "bookOdds.espn",
+			cz: "bookOdds.cz", fn: "bookOdds.fn", br: "bookOdds.br",
+			hr: "bookOdds.hr", kal: "bookOdds.kal", pn: "bookOdds.pn",
+			kambi: "bookOdds.kambi", bol: "bookOdds.bol", nv: "bookOdds.nv"
+		};
+		// default visible set
+		const CUST_DEFAULT = new Set(["circa","fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv"]);
+
+		function loadColumnPrefs() {
+			try {
+				const saved = JSON.parse(localStorage.getItem(CUST_STORAGE_KEY));
+				if (saved && Array.isArray(saved)) return new Set(saved);
+			} catch(e) {}
+			return new Set(CUST_DEFAULT);
+		}
+
+		function saveColumnPrefs(visible) {
+			localStorage.setItem(CUST_STORAGE_KEY, JSON.stringify([...visible]));
+		}
+
+		function applyColumnPrefs(visible) {
+			Object.entries(CUST_COLS).forEach(([id, field]) => {
+				const col = TABLE?.getColumn(field);
+				if (!col) return;
+				visible.has(id) ? col.show() : col.hide();
+			});
+		}
+
+		function openCustomize() {
+			const visible = loadColumnPrefs();
+			Object.keys(CUST_COLS).forEach(id => {
+				const el = document.getElementById("cust_" + id);
+				if (el) el.checked = visible.has(id);
+			});
+			document.getElementById("customize-overlay").classList.add("open");
+		}
+
+		function closeCustomize() {
+			document.getElementById("customize-overlay").classList.remove("open");
+		}
+
+		document.getElementById("customize-overlay").addEventListener("click", function(e) {
+			if (e.target === this) closeCustomize();
+		});
+
+		document.querySelectorAll("#cust-items input[type=checkbox]").forEach(cb => {
+			cb.addEventListener("change", function() {
+				const id = this.id.replace("cust_", "");
+				const field = CUST_COLS[id];
+				if (!field) return;
+				const col = TABLE?.getColumn(field);
+				if (!col) return;
+				this.checked ? col.show() : col.hide();
+				// persist
+				const visible = loadColumnPrefs();
+				this.checked ? visible.add(id) : visible.delete(id);
+				saveColumnPrefs(visible);
+			});
+		});
+
+		// ── Search ────────────────────────────────────────────────────────
+		const searchInput = document.getElementById("tracker-search");
+		const dropdown   = document.getElementById("search-dropdown");
+
+		searchInput.addEventListener("input", function() {
+			const q = this.value.trim().toLowerCase();
+			dropdown.innerHTML = "";
+			if (!q || q.length < 2 || !ALL_ROWS.length) {
+				dropdown.classList.remove("open");
+				return;
+			}
+			const matches = ALL_ROWS.filter(r =>
+				(r.player || "").toLowerCase().includes(q)
+			).slice(0, 20);
+
+			if (!matches.length) {
+				dropdown.classList.remove("open");
+				return;
+			}
+
+			matches.forEach(row => {
+				const div = document.createElement("div");
+				div.className = "search-result";
+				const player = row.player ? row.player.split(' ').map(w => w[0].toUpperCase()+w.slice(1)).join(' ') : "";
+				const ou = row.under ? "u" : "o";
+				div.innerHTML = `
+					<span class="search-result-player">${player}</span>
+					<span class="search-result-meta">${row.game || ""} &nbsp;${ou}${row.handicap || ""}</span>
+				`;
+				div.addEventListener("mousedown", function(e) {
+					e.preventDefault();
+					openAddBet(row);
+					searchInput.value = "";
+					dropdown.classList.remove("open");
+				});
+				dropdown.appendChild(div);
+			});
+			dropdown.classList.add("open");
+		});
+
+		searchInput.addEventListener("blur", function() {
+			setTimeout(() => dropdown.classList.remove("open"), 150);
+		});
+
+		// ── Add/Edit bet modal ────────────────────────────────────────────
+		const BOOK_KEYS = ["circa","fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv"];
+
+		function openAddBet(row) {
+			_addBetRow = row;
+			const existing = findBet(row);
+
+			const player = row.player ? row.player.split(' ').map(w => w[0].toUpperCase()+w.slice(1)).join(' ') : "";
+			const ou = row.under ? "u" : "o";
+			document.getElementById("abt-player").textContent = player;
+			document.getElementById("abt-meta").textContent = `${row.game || ""} · ${ou}${row.handicap || ""}`;
+
+			// Book odds chips
+			const grid = document.getElementById("abt-odds-grid");
+			grid.innerHTML = "";
+			const bookOdds = row.bookOdds || {};
+			BOOK_KEYS.forEach(bk => {
+				const val = bookOdds[bk];
+				if (val == null) return;
+				const chip = document.createElement("div");
+				chip.className = "odds-chip" + (existing?.book === bk ? " selected" : "");
+				chip.dataset.book = bk;
+				chip.dataset.odds = val;
+				chip.innerHTML = `<span>${val > 0 ? "+" : ""}${val}</span><span class="chip-book">${bk.toUpperCase()}</span>`;
+				chip.addEventListener("click", function() {
+					grid.querySelectorAll(".odds-chip").forEach(c => c.classList.remove("selected"));
+					chip.classList.add("selected");
+					document.getElementById("abt-manual-odds").value = "";
+					document.getElementById("abt-manual-book").value = "";  // resets select to "Book"
+				});
+				grid.appendChild(chip);
+			});
+
+			// Pre-fill manual if existing bet isn't from a known book chip
+			document.getElementById("abt-manual-odds").value = existing && !BOOK_KEYS.includes(existing.book) ? existing.odds : "";
+			document.getElementById("abt-manual-book").value = existing && !BOOK_KEYS.includes(existing.book) ? existing.book : "";
+
+			document.getElementById("add-bet-remove").style.display = existing ? "" : "none";
+			document.getElementById("add-bet-backdrop").classList.add("open");
+		}
+
+		function closeAddBet() {
+			document.getElementById("add-bet-backdrop").classList.remove("open");
+			_addBetRow = null;
+		}
+
+		function saveBet() {
+			if (!_addBetRow) return;
+
+			// Determine odds + book from chip or manual
+			const selectedChip = document.getElementById("abt-odds-grid").querySelector(".odds-chip.selected");
+			let odds, book;
+			if (selectedChip) {
+				odds = Number(selectedChip.dataset.odds);
+				book = selectedChip.dataset.book;
+			} else {
+				odds = Number(document.getElementById("abt-manual-odds").value);
+				book = document.getElementById("abt-manual-book").value.trim().toLowerCase();
+			}
+			if (!odds || !book) return;
+
+			// Remove existing bet for same player then add new
+			const rPlayer = (_addBetRow.player || "").toLowerCase().trim();
+			BETS = BETS.filter(b => {
+				const bp = (b.player || "").toLowerCase().trim();
+				return !rPlayer.includes(bp) && !bp.includes(rPlayer);
+			});
+			BETS.push({
+				dt: new Date().toISOString().slice(0, 10),
+				game: _addBetRow.game || "",
+				player: _addBetRow.player || "",
+				odds,
+				book
+			});
+
+			closeAddBet();
+			refreshTable();
+			persistBets();
+		}
+
+		function removeBet() {
+			if (!_addBetRow) return;
+			const rPlayer = (_addBetRow.player || "").toLowerCase().trim();
+			BETS = BETS.filter(b => {
+				const bp = (b.player || "").toLowerCase().trim();
+				return !rPlayer.includes(bp) && !bp.includes(rPlayer);
+			});
+			closeAddBet();
+			refreshTable();
+			persistBets();
+		}
+
+		// Close backdrop click
+		document.getElementById("add-bet-backdrop").addEventListener("click", function(e) {
+			if (e.target === this) closeAddBet();
+		});
+
+		// ── Right panel (odds chart) ──────────────────────────────────────
+		function closeRightBody() {
+			const right = document.querySelector("#right-body");
+			const left  = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			right.style.display = "none";
+			right.classList.remove("mobile-open");
+			left.style.width  = "100%";
+			table.style.display = "";
+			setTimeout(() => { left.style.width = "100%"; }, 40);
+		}
+
+		function rowClick(row) {
+			const right = document.querySelector("#right-body");
+			const left  = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			const sel   = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				closeRightBody();
+			} else {
+				row.select();
+				if (MOBILE) {
+					table.style.display = "none";
+					right.classList.add("mobile-open");
+				} else {
+					left.style.width = "50%";
+				}
+				right.style.display = "flex";
+				setTimeout(() => plotOddsChart(), 50);
+			}
+		}
+
+		function plotOddsChart() {
+			const data = TABLE.getSelectedData()[0];
+			if (!data) return;
+			const chart = data.oddsChart;
+			const el = document.getElementById('chart');
+
+			if (!chart || chart.length === 0) {
+				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
+				return;
+			}
+
+			const bookSet = new Set();
+			chart.forEach(entry => {
+				Object.keys(entry).forEach(k => { if (k !== 'ts' && !k.endsWith('_under')) bookSet.add(k); });
+			});
+
+			const now = new Date();
+			const BOOK_COLORS  = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
+			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
+			const books   = [...bookSet];
+			const tooMany = books.length > BOOK_COLORS.length;
+
+			const traces = books.map((book, i) => {
+				const pts = chart.filter(e => e[book] != null).map(e => ({ x: new Date(e.ts), y: e[book] }));
+				if (!pts.length) return null;
+				const xs    = [...pts.map(p => p.x), now];
+				const ys    = [...pts.map(p => p.y), pts.at(-1).y];
+				const color = BOOK_COLORS[i % BOOK_COLORS.length];
+				const dash  = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
+				return {
+					x: xs, y: ys, name: book.toUpperCase(), mode: 'lines+markers',
+					line: { color, width: 2, dash }, marker: { size: 5, color },
+					hovertemplate: `%{x|%I:%M %p}<br>${book.toUpperCase()}: %{y}<extra></extra>`
+				};
+			}).filter(Boolean);
+
+			const playerName = data.player ? data.player.split(' ').map(w => w[0].toUpperCase()+w.slice(1)).join(' ') : '';
+			const layout = {
+				title: { text: `${playerName}: HR Over Odds`, font: { size: 13 } },
+				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
+				font: { color: '#e8e6e3' },
+				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
+				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
+				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
+				margin: { l: 45, r: 10, t: 50, b: 40 },
+				hovermode: 'x unified'
+			};
+
+			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
+			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+		}
+	</script>
+</body>
+</html>

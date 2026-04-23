@@ -73,6 +73,20 @@
 			min-width: auto;
 		}
 	}
+	@media (max-width: 600px) {
+		#right-body.mobile-open {
+			width: 100vw !important;
+			max-width: 100vw !important;
+			flex: 1 1 auto;
+		}
+		#right-body.mobile-open #chart,
+		#right-body.mobile-open #chart .js-plotly-plot,
+		#right-body.mobile-open #chart svg {
+			width: 100% !important;
+			max-width: 100% !important;
+			max-height: none;
+		}
+	}
 </style>
 <body>
 	<div id="app">
@@ -729,7 +743,7 @@
 							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 						</svg>
 					</div>
-						<button onclick="TABLE.deselectRow(); document.querySelector('#right-body').style.display='none'; document.querySelector('#table-container').style.width='100%';" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
+						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
 										<div id="chart"></div>
 				</div>
@@ -832,6 +846,7 @@
 			};
 
 			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
+			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
 		}
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
@@ -1287,6 +1302,19 @@
 			});
 		}
 
+		function closeRightBody() {
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			right.style.display = "none";
+			right.classList.remove("mobile-open");
+			left.style.width = "100%";
+			table.style.display = "";
+			setTimeout(() => {
+				left.style.width = "100%";
+			}, 40);
+		}
+
 		function rowClick(row) {
 			const data = row.getData();
 			const right = document.querySelector("#right-body");
@@ -1296,21 +1324,18 @@
 			const sel = TABLE.getSelectedRows();
 			TABLE.deselectRow();
 			if (sel.length > 0 && sel[0] == row) {
-				right.style.display = "none";
-				left.style.width = "100%";
-				table.style.width = "100%";
-				setTimeout(() => {
-					table.style.width = "100%";
-					tableContainer.style.width = "100%";
-				}, 40);
+				closeRightBody();
 			} else {
 				row.select();
-				left.style.width = MOBILE ? "100%" : "50%";
+				if (MOBILE) {
+					table.style.display = "none";
+					right.classList.add("mobile-open");
+				} else {
+					left.style.width = "50%";
+				}
 				right.style.display = "flex";
-				table.style.width = "100%";
-				tableContainer.style.width = "100%";
 				document.querySelector("#btwn-select").value = "pa";
-				plotHRGap();
+				setTimeout(() => plotHRGap(), 50);
 			}
 		}
 

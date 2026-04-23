@@ -436,7 +436,6 @@ async function initDevPicker(data){
 			[prop, dev] = row.devig.split("-vs-");
 		}
 
-		console.log(prop);
 		// wrapper holds the chip button and the small record line beneath
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';

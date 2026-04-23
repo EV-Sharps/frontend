@@ -433,6 +433,9 @@ async function handleSession() {
 		//renderFilters();
 		initExcluded();
 		renderTable([]);
+	} else if (PAGE == "tracker") {
+		fetchTrackerData();
+		renderTable([]);
 	} else if (PAGE == "bets" || PAGE == "movement") {
 		fetchPlays();
 		renderTable([]);

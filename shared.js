@@ -95,6 +95,7 @@ const PAGE_SECTIONS = [
 	{
 		key: "account", label: "👤",
 		pages: [
+			{ label: "📋 My Bets", value: "tracker" },
 			{ label: "❓ FAQ", value: "faq" },
 			{ label: "👤 Profile", value: "profile" },
 			{ label: "💳 Pricing", value: "pricing" },
@@ -1584,7 +1585,7 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers", "dingers2", "recap", "strikeouts", "backfields"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "dingers2", "recap", "strikeouts", "backfields", "tracker"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";

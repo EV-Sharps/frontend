@@ -179,7 +179,7 @@ function renderBookSelect() {
 
 	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi", "pn", "kal", "nv", "px", "poly"];
 
-	if (["dingers", "mlb"].includes(PAGE)) {
+	if (["dingers", "dingers2", "mlb"].includes(PAGE)) {
 		books.push("hr_oh");
 	} else if (["nba", "threes", "pts"]) {
 		books.push("hr_az");

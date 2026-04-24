@@ -567,6 +567,7 @@
 
 		const BATTER_DATA = { l: {}, r: {} };
 		const SELECTED_BATTER = { l: null, r: null };
+		const BATTER_MODE = { l: "stats", r: "stats" };
 
 		function renderTable(data) {
 			BATTER_DATA.l = {};
@@ -602,10 +603,16 @@
 
 		function selectBatter(player, side, ps) {
 			if (!player || !BATTER_DATA[side]?.[player]) return;
-			if (ps) SELECTED_PS[side] = ps;
-			const pitcherSide = SELECTED_PS[side] || PITCHER_HAND;
-			SELECTED_BATTER[side] = player;
 			const row = BATTER_DATA[side][player];
+			const isSwitch = row.pitch_hand === "B";
+			if (ps) {
+				SELECTED_PS[side] = ps;
+			} else {
+				// Switch hitters bat opposite of panel side: LHB panel → bats left → faces RHP
+				SELECTED_PS[side] = isSwitch ? (side === "l" ? "r" : "l") : PITCHER_HAND;
+			}
+			const pitcherSide = SELECTED_PS[side];
+			SELECTED_BATTER[side] = player;
 
 			document.querySelectorAll(`#batter-list-${side} .batter-item`).forEach(el => {
 				el.classList.toggle("active", el.dataset.player === player);
@@ -615,28 +622,90 @@
 			document.querySelector(`#batter-detail-header-${side}`).innerHTML =
 				`${title(player)} <span style="color:#a78bfa;font-weight:400">${hand}</span>`;
 
-			const toggle = document.getElementById(`batter-ps-toggle-${side}`);
-			toggle.style.display = "flex";
-			toggle.querySelectorAll(".ps-btn").forEach(b => {
+			const psToggle = document.getElementById(`batter-ps-toggle-${side}`);
+			psToggle.style.display = "flex";
+			psToggle.querySelectorAll(".ps-btn").forEach(b => {
 				b.classList.toggle("is-active", b.dataset.ps === pitcherSide);
 			});
 
-			const tableId = `#batter-detail-table-${side}`;
-			try { Tabulator.findTable(tableId)?.[0]?.destroy(); } catch(e) {}
-			document.querySelector(tableId).innerHTML = "";
-
-			new Tabulator(tableId, {
-				layout: "fitData",
-				data: row[`pitch_table_${pitcherSide}`],
-				initialSort: [{ column:"n", dir:"desc" }],
-				columnDefaults: {
-					vertAlign: "middle",
-					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc",
-				},
-				columns: MIX_COLS,
+			// Show BBE button only if data exists for this side
+			const bbeData = row[`bbe_${pitcherSide}`];
+			const bbeBtn = document.querySelector(`#batter-mode-toggle-${side} [data-mode="bbe"]`);
+			if (bbeBtn) bbeBtn.style.display = bbeData?.length ? "" : "none";
+			// If BBE was hidden but mode was bbe, reset to stats
+			if (!bbeData?.length && BATTER_MODE[side] === "bbe") {
+				BATTER_MODE[side] = "stats";
+			}
+			// Sync mode button active state
+			document.querySelectorAll(`#batter-mode-toggle-${side} .mode-btn`).forEach(b => {
+				b.classList.toggle("is-active", b.dataset.mode === BATTER_MODE[side]);
 			});
+
+			if (BATTER_MODE[side] === "bbe") {
+				document.getElementById(`batter-detail-table-${side}`).style.display = "none";
+				renderBBE(side, bbeData);
+			} else {
+				document.getElementById(`batter-bbe-${side}`).style.display = "none";
+				const tableId = `#batter-detail-table-${side}`;
+				document.querySelector(tableId).style.display = "";
+				try { Tabulator.findTable(tableId)?.[0]?.destroy(); } catch(e) {}
+				document.querySelector(tableId).innerHTML = "";
+				new Tabulator(tableId, {
+					layout: "fitData",
+					data: row[`pitch_table_${pitcherSide}`],
+					initialSort: [{ column:"n", dir:"desc" }],
+					columnDefaults: {
+						vertAlign: "middle",
+						hozAlign: "center",
+						resizable: false,
+						headerSortStartingDir: "desc",
+					},
+					columns: MIX_COLS,
+				});
+			}
+		}
+
+		const BB_TYPE = { fly_ball:"FB", line_drive:"LD", ground_ball:"GB", popup:"PU" };
+		const EVENTS = {
+			home_run:"HR", single:"1B", double:"2B", triple:"3B",
+			field_out:"Out", force_out:"Out", strikeout:"K", walk:"BB",
+			fielders_choice:"FC", sac_fly:"SF", hit_by_pitch:"HBP", double_play:"DP"
+		};
+
+		function eventClass(evt) {
+			if (evt === "home_run") return "bbe-result-hr";
+			if (["single","double","triple"].includes(evt)) return "bbe-result-hit";
+			return "bbe-result-out";
+		}
+
+		function renderBBE(side, bbeData) {
+			const el = document.getElementById(`batter-bbe-${side}`);
+			el.style.display = "";
+			if (!bbeData?.length) {
+				el.innerHTML = '<div style="color:#6b7280;font-size:0.8rem;padding:6px">No BBE data</div>';
+				return;
+			}
+			const rows = [...bbeData].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 15);
+			el.innerHTML = `<table class="bbe-table">
+				<thead><tr>
+					<th>Date</th><th>Pitcher</th><th>Pitch</th>
+					<th>EV</th><th>LA</th><th>Type</th><th>Dist</th><th>Result</th>
+				</tr></thead>
+				<tbody>${rows.map(r => {
+					const evt = r.events || "";
+					const cls = eventClass(evt);
+					return `<tr>
+						<td>${(r.date||"").slice(5)}</td>
+						<td style="text-align:left">${title(r.pitcher||"")}</td>
+						<td><strong>${r.pitch_type||""}</strong></td>
+						<td>${r.ev != null ? r.ev : ""}</td>
+						<td>${r.la != null ? r.la : ""}</td>
+						<td>${BB_TYPE[r.bb_type] || r.bb_type || ""}</td>
+						<td>${r.distance || ""}</td>
+						<td class="${cls}">${EVENTS[evt] || evt}</td>
+					</tr>`;
+				}).join("")}</tbody>
+			</table>`;
 		}
 
 		function logoSrc(code) {
@@ -716,6 +785,16 @@
 				if (!btn) return;
 				const side = toggle.dataset.side;
 				selectBatter(SELECTED_BATTER[side], side, btn.dataset.ps);
+			});
+		});
+
+		document.querySelectorAll(".batter-mode-toggle").forEach(toggle => {
+			toggle.addEventListener("click", e => {
+				const btn = e.target.closest(".mode-btn");
+				if (!btn) return;
+				const side = toggle.id.replace("batter-mode-toggle-", "");
+				BATTER_MODE[side] = btn.dataset.mode;
+				selectBatter(SELECTED_BATTER[side], side);
 			});
 		});
 

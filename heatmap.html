@@ -310,6 +310,7 @@
 	</div>
 	<script src="plotly-3.0.0.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script>
 		PAGE = "heatmap";
@@ -485,6 +486,17 @@
 			initDevPicker(RES["xy"][cfg.prop][cfg.bookLabel]);
 
 			let bets = RES["xy"][cfg.prop][cfg.bookLabel][cfg.devLabel];
+
+			// Convert columnar format {ev:[...], odds:[...], ...} → [{ev, odds, ...}, ...]
+			if (bets && !Array.isArray(bets)) {
+				const keys = Object.keys(bets);
+				const len = bets[keys[0]]?.length || 0;
+				bets = Array.from({length: len}, (_, i) => {
+					const row = {};
+					keys.forEach(k => row[k] = bets[k][i]);
+					return row;
+				});
+			}
 
 			// adjust for sport-specific ranges (optional)
 			// filter to display range

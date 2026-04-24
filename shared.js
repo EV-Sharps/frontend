@@ -3394,8 +3394,19 @@ function getRowROI(rowData) {
 			const bookData = propData[rowData.book] || propData['best'];
 			if (!bookData) return null;
 
-			const devigData = bookData[DEVIG];
+			let devigData = bookData[DEVIG];
 			if (!devigData) return null;
+
+			// Convert columnar format {ev:[...], odds:[...], ...} → [{ev, odds, ...}, ...]
+			if (!Array.isArray(devigData)) {
+				const keys = Object.keys(devigData);
+				const len = devigData[keys[0]]?.length || 0;
+				devigData = Array.from({length: len}, (_, i) => {
+					const row = {};
+					keys.forEach(k => row[k] = devigData[k][i]);
+					return row;
+				});
+			}
 
 			// Find bets in this bin
 			const betsInBin = devigData.filter(b => {

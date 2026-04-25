@@ -275,14 +275,14 @@
 						{title: "L5", field: "game_trends.barrel_ct.5GPercentile", visible: false},
 						{title: "L3", field: "game_trends.barrel_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter},
 						{title: "Rate", field: "barrels_per_bip", width: 55, sorter: "number", formatter: percentileFormatter},
-						{title: "L5", field: "game_trends.barrels_per_bip.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: false},
+						{title: "L5 Δ", field: "game_trends.barrels_per_bip.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: false},
 					]},
 					{title: "Hard Hit", columns: [
 						{title: "Total", field: "hard_hit_ct", width: 55, sorter: "number", formatter: percentileFormatter},
 						{title: "L5", field: "game_trends.hard_hit_ct.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: true},
 						{title: "L3", field: "game_trends.hard_hit_ct.3G", width: 40, sorter: "number", formatter: percentileFormatter},
 						{title: "Rate", field: "hard_hit_percent", width: 55, sorter: "number", formatter: percentileFormatter},
-						{title: "L5", field: "game_trends.hard_hit_percent.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: false},
+						{title: "L5 Δ", field: "game_trends.hard_hit_percent.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: false},
 						//
 						{title: "", field: "game_trends.barrel_ct.3G", visible: false},
 						{title: "", field: "game_trends.hard_hit_ct.5GPercentile", visible: false},
@@ -296,7 +296,7 @@
 					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 55, sorter: "number", formatter: percentileFormatter},
 					{title: "Exit Velocity", columns: [
 						{title: "Avg", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
-						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: true},
 						{title: "100+", field: "tot100+", formatter: percentileFormatter, width: 45, sorter: "number"},
 						{title: "L5 100+", field: "game_trends.exit_velo_100.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 						{title: "L3 100+", field: "game_trends.exit_velo_100.3G", formatter: percentileFormatter, width: 45, sorter: "number"},
@@ -468,6 +468,43 @@
 					continue;
 				}
 				tweet.push(`${title(row.player)} (${row["game_trends"]["hard_hit_ct"]["3G"]}): +${row.line} ${row.book.toUpperCase()}`);
+			}
+			console.log(tweet.join("\n"));
+		}
+
+		function velo() {
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrels_per_bip", "hard_hit_percent", "exit_velocity_avg", "tot100+", "game_trends.exit_velocity_avg.5G", "game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.barrels_per_bip.5G"];
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				} else {
+					col.show();
+				}
+			});
+
+			TABLE.setFilter([
+				{field:"book", type:"!=", value: ""},
+			]);
+
+			TABLE.setSort([
+				{column: "exit_velocity_avg", dir: "desc"},
+				{column: "game_trends.exit_velocity_avg.5G", dir: "desc"},
+			]);
+
+			const rows = TABLE.getData("active");
+			let currentRank = 1;
+			let tweet = [];
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+				if (i > 0 && row["game_trends"]["exit_velocity_avg"]["5G"] !== prev["game_trends"]["exit_velocity_avg"]["5G"]) {
+					currentRank++;
+				}
+
+				if (currentRank > 10) {
+					continue;
+				}
+				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"]["5G"]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
 		}

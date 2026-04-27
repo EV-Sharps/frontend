@@ -178,6 +178,10 @@
 					<button onclick="document.getElementById('record-summary-modal').classList.remove('open')" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
 				</span>
 			</h3>
+			<div id="record-sport-toggle" style="display:none;gap:4px;margin-bottom:6px;">
+				<button data-sport="mlb"      onclick="_summarySport='mlb';      buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB</button>
+				<button data-sport="mlb_open" onclick="_summarySport='mlb_open'; buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB Open</button>
+			</div>
 			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:8px;">
 				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">All</button>
 				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L7</button>
@@ -886,10 +890,11 @@
 		let _summaryRecord = null;
 		let _summaryMethod = 'probit';
 		let _summaryWindow = 'All';
+		let _summarySport = 'mlb';
 
-		// Filter record.js MLB data to only hr- devigKeys
+		// Filter record.js data to only hr- devigKeys for the selected sport
 		function buildHRSeasonRecord() {
-			const sportRecord = SEASON_RECORD?.mlb;
+			const sportRecord = SEASON_RECORD?.[_summarySport];
 			if (!sportRecord) return null;
 			const filtered = {};
 			Object.keys(sportRecord).forEach(method => {
@@ -925,6 +930,12 @@
 			if (winToggle) {
 				winToggle.querySelectorAll('button').forEach(b => {
 					b.style.opacity = b.dataset.window === win ? '1' : '0.4';
+				});
+			}
+			const sportToggle = document.getElementById('record-sport-toggle');
+			if (sportToggle) {
+				sportToggle.querySelectorAll('button').forEach(b => {
+					b.style.opacity = b.dataset.sport === _summarySport ? '1' : '0.4';
 				});
 			}
 
@@ -1018,6 +1029,7 @@
 						btn.className = 'record-summary-btn';
 						btn.textContent = 'Records';
 						btn.onclick = () => {
+							document.getElementById('record-sport-toggle').style.display = 'none';
 							renderRecordSummary(data.record);
 							document.getElementById('record-summary-modal').classList.add('open');
 						};
@@ -1027,6 +1039,7 @@
 						btnSeason.onclick = () => {
 							const hrRecord = buildHRSeasonRecord();
 							if (!hrRecord) return;
+							document.getElementById('record-sport-toggle').style.display = 'flex';
 							renderRecordSummary(hrRecord);
 							document.getElementById('record-summary-modal').classList.add('open');
 						};

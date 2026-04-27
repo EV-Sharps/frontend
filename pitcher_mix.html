@@ -485,9 +485,12 @@
 					const section = row.pitch[side];
 					if (!section) continue;
 					row[`pitch_table_${side}`] = Object.entries(section).map(([type, stats]) => {
-						let num = top_pitches[side];
-						num = num ? (num.indexOf(type) === -1 ? 0 : num.indexOf(type) + 1) : "";
-						return { type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0, pitch_num: num };
+						const getNum = (s) => {
+							const arr = top_pitches[s];
+							return arr ? (arr.indexOf(type) === -1 ? 0 : arr.indexOf(type) + 1) : "";
+						};
+						return { type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0,
+							pitch_num_l: getNum("l"), pitch_num_r: getNum("r") };
 					});
 				}
 			}
@@ -650,9 +653,12 @@
 				document.querySelector(tableId).style.display = "";
 				try { Tabulator.findTable(tableId)?.[0]?.destroy(); } catch(e) {}
 				document.querySelector(tableId).innerHTML = "";
+				const pitchTableData = (row[`pitch_table_${pitcherSide}`] || []).map(r => ({
+						...r, pitch_num: r[`pitch_num_${side}`] ?? ""
+					}));
 				new Tabulator(tableId, {
 					layout: "fitData",
-					data: row[`pitch_table_${pitcherSide}`],
+					data: pitchTableData,
 					initialSort: [{ column:"n", dir:"desc" }],
 					columnDefaults: {
 						vertAlign: "middle",

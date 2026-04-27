@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏈 Ranks</title>
+	<title>⚾ Stadium Ranks</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -14,19 +14,13 @@
 	<script type="text/javascript" src="flatpickr.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link href="style.css" rel="stylesheet">
 	<style>
-		#table {
-			width: auto;
-		}
-		@media (max-width: 600px) {
-			#table {
-				flex: 1;
-			}
-		}
+		#table { width: auto; }
+		@media (max-width: 600px) { #table { flex: 1; } }
 	</style>
 </head>
 
@@ -46,297 +40,275 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
 			<div id="center-dropdown">
-				<div id="page-select-wrapper" class="select-wrapper">
+				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
 					<select id="page-select"></select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="select-wrapper">
-					<select id="pos-select">
-						<option value="all">All Pos</option>
-						<option value="qb">QB</option>
-						<option value="rb">RB</option>
-						<option value="wr">WR</option>
-						<option value="te">TE</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="select-wrapper">
-					<select id="format-select">
-						<option value="half">½ PPR</option>
-						<option value="full">1 PPR</option>
-						<option value="std">STD</option>
-					</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
 				<button onclick="downloadCSV()">💾 CSV</button>
 			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+				    <div class="gsi-material-button-icon">
+				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+				        <path fill="none" d="M0 0h48v48H0z"></path>
+				      </svg>
+				    </div>
+				    <span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="username loggedIn"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="hide-username" onclick="hideUsername()">Hide</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
 		</header>
 		<main>
-			<div>
-				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
+			<div style="padding:0.25rem 0.5rem;font-size:0.75rem;color:#6b7280;text-align:center;">Stadium HR Rank: 🟢 1 = most HR-friendly &nbsp;🔴 30 = least HR-friendly</div>
 
-				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
-			</div>
 			<div id="table-container">
-				<div>Average between FPros, Circa, FD, DK, ESPN, MGM, CZ</div>
-				<div id="updated">Updated: </div>
 				<div id="table"></div>
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
 			</div>
-			<div id="right-body" class="body">
-			</div>	
 		</main>
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</div>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "ranks";
-		let RES = null;
-		let TABLE = null;
-		let HISTORICAL = {};
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let DATE = URLParams.get("date");
-		let MARK = URLParams.get("mark");
-		let TODAY = getToday();
-		let SPORT = "nfl";
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
-		let BVP = URLParams.get("bvp");
-		let PRETTY = URLParams.get("pretty");
-		let FORMAT = URLParams.get("format") || "half";
-		let POS = URLParams.get("pos") || "ALL";
-		//let LAST = URLParams.get("last") != undefined;
-		let LAST = false;
-		let YEAR = new Date();
-		YEAR = YEAR.getFullYear();
 
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-			});
-		});
+		parseURLParams();
+		SPORT = "mlb";
 
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
+			document.querySelector("#table-container").style["max-height"] = "initial";
+			document.querySelector("#watermark").style.width = "15%";
 		}
 
-		document.querySelector("#pos-select").value = "all";
-		document.querySelector("#pos-select").addEventListener("change", (event) => {
-			let pos = event.target.value.toUpperCase();
-
-			const params = new URLSearchParams(window.location.search);
-			params.set("pos", pos);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			POS = pos.toLowerCase();
-			selectPosition(pos);
-		});
-
-		function selectPosition(pos) {
-			if (pos == "ALL") {
-				TABLE.setFilter();
-				return;
-			}
-			if (pos) {
-				TABLE.setFilter([
-					{field:"pos", type:"=", value: pos}
-				]);
-				if (pos == "QB" || pos == "ALL") {
-					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.showColumn(x));
-				} else {
-					["both.pass_td", "both.pass_yd", "both.int"].map(x => TABLE.hideColumn(x));
-				}
-			}
+		if (PRETTY != undefined) {
+			document.querySelector("html").style.overflow = "initial";
+			document.querySelector("body").style.overflow = "initial";
+			document.querySelector("main").style.overflow = "initial";
+			document.querySelector("#table-container").style.overflow = "initial";
 		}
-
-		document.querySelector("#format-select").value = FORMAT;
-		document.querySelector("#format-select").addEventListener("change", (event) => {
-			let format = event.target.value;
-			const params = new URLSearchParams(window.location.search);
-			params.set("format", format);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-
-			TABLE.hideColumn(`${FORMAT}_pts`);
-			TABLE.showColumn(`${format}_pts`);
-			FORMAT = format;
-			TABLE.setData(TABLE.getData());
-			TABLE.setSort([
-				{"column": `${format}_pts`, "dir": "desc"}
-			]);
-		});
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		fetchData();
+		handleSession();
 
-		function fetchData() {
-			let s = SPORT;
+		// Build flat game rows from per-pitcher preview data
+		function buildGameRows(data) {
+			const map = {};
+			data.forEach(row => {
+				const g = row.game;
+				if (!g) return;
+				if (!map[g]) {
+					// Parse home team from "AWAY @ HOME ..." format
+					const atIdx = g.indexOf(" @ ");
+					const homeTeam = atIdx >= 0 ? g.slice(atIdx + 3).trim().split(/\s+/)[0] : null;
+					map[g] = {
+						game: g,
+						homeTeam,
+						away: null,
+						home: null,
+						stadiumRank: row.stadiumRank,
+						stadiumRankLeft: row.stadiumRankLeft,
+						stadiumRankRight: row.stadiumRankRight,
+						bpp: row.bpp,
+						weather: row.weather,
+					};
+				}
+				// Determine side by matching pitcher's team against parsed home team
+				const isHome = map[g].homeTeam && row.team === map[g].homeTeam;
+				if (isHome) {
+					map[g].home = row;
+				} else {
+					map[g].away = row;
+				}
+			});
+			// Flatten to sortable fields
+			// percs copied as away_percs / home_percs so allowedFormatter can read
+			// via field "away_percs.home_run" → data.away_percs.home_run
+			return Object.values(map).map(g => {
+				const row = {
+					game: g.game,
+					stadiumRank: g.stadiumRank,
+					stadiumRankLeft: g.stadiumRankLeft,
+					stadiumRankRight: g.stadiumRankRight,
+					bpp: g.bpp,
+					weather: g.weather,
+					away_player: title(g.away?.player) ?? null,
+					away_pitch_hand: g.away?.pitch_hand ?? null,
+					away_team: g.away?.team ?? null,
+					away_era: g.away?.p_era ?? null,
+					away_hr_l: g.away?.hr_pitch_l ?? null,
+					away_hr_r: g.away?.hr_pitch_r ?? null,
+					home_player: title(g.home?.player) ?? null,
+					home_pitch_hand: g.home?.pitch_hand ?? null,
+					home_team: g.home?.team ?? null,
+					home_era: g.home?.p_era ?? null,
+					home_hr_l: g.home?.hr_pitch_l ?? null,
+					home_hr_r: g.home?.hr_pitch_r ?? null,
+				};
+				if (g.away?.percs) row.away_percs = g.away.percs;
+				if (g.home?.percs) row.home_percs = g.home.percs;
+				return row;
+			});
+		}
+
+		function fetchPreviewData() {
 			renderTable([]);
-			fetch(API_BASE+`/api/ranks`, {
+			fetch(API_BASE+`/api/preview?sport=${SPORT}`, {
 				headers: { "Accept": "application/vnd.github.v3.raw" }
-			}).then(response => response.json()).then(data => {
-				document.querySelector("#updated").innerText = "Updated: "+timeAgo(data.data.updated);
-				data = data.data.data;
+			}).then(r => r.json()).then(data => {
+				data = data.data;
 				RES = data;
-				renderTable(data);
-				setTimeout(function() {
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (POS) {
-						selectPosition(POS);
-					}
-				}, 200);
+				renderTable(buildGameRows(data));
+				if (PRETTY != undefined) setTimeout(pretty_, 200);
 			}).catch(err => console.log(err));
+		}
+
+		// Stadium rank: 1 = most HR-friendly (green), 30 = least (red)
+		function rankFormatter(cell) {
+			const v = cell.getValue();
+			if (v == null || v === "") return "";
+			const n = parseInt(v);
+			if (!isFinite(n)) return v;
+			// color: rank 1-10 green, 11-20 neutral, 21-30 red
+			let color;
+			if (n <= 10) color = `hsl(${Math.round(120 - (n-1)*6)}, 65%, 45%)`;       // green shades
+			else if (n <= 20) color = "#9ca3af";                                         // gray
+			else color = `hsl(${Math.round(20 - (n-21)*2)}, 65%, 48%)`;                // red shades
+			return `<span style="font-weight:600;color:${color}">${n}</span>`;
+		}
+
+		function pitcherCellFormatter(cell, playerField, eraField) {
+			const row = cell.getRow().getData();
+			const name = row[playerField];
+			if (!name) return `<span style="color:#4b5563">—</span>`;
+			return `
+			<div class="player-cell">
+				<span style="font-weight:500">${name}</span>
+				<div class="bats">${row[eraField] || ""}</div>
+			</div>
+			`;
+		}
+
+function hrHistFormatter(cell, lField, rField) {
+			const row = cell.getRow().getData();
+			const l = row[lField]?.slice(-5) ?? [];
+			const r = row[rField]?.slice(-5) ?? [];
+			if (!l.length && !r.length) return "";
+			return `<span style="font-size:0.72rem;color:#d1d5db">L:${l.join(",")} R:${r.join(",")}</span>`;
 		}
 
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
-				//ajaxURL: "https://raw.githubusercontent.com/dailyev/props/main/static/dailyev/evArr.json",
+				placeholder: "Data Loading...",
 				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
 				data: data,
-				initialSort: [
-					{column: "half_pts", dir: "desc"},
-				],
+				initialSort: [{column: "stadiumRank", dir: "asc"}],
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc"
+					headerSortStartingDir: "asc",
 				},
-				rowFormatter: function(row) {
-					if (row.getData().prop == "separator") {
-						row.getElement().style.backgroundColor = "#d3d3d3";
-						row.getElement().style.height = "5px";
-						//row.getElement().innerHTML = "";
-					}
-				},
-				//groupBy: "game",
-				groupHeader: function(value, count, data, group){
-					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
-				},
-				groupToggleElement: "header",
 				columns: [
-					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
-					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
-					
 					{
-						title: "Books<br>ECR",
-						field: "rankMut",
-						width: 45,
-						formatter: (cell) => {
-							const data = cell.getRow().getData();
-							return `${data.pos}${cell.getValue()}`;
-						},
-						mutatorData: (value, data) => {
-							return data[`rank_${FORMAT}`];
-						},
-						sorter: "number",
-						headerSortStartingDir: "asc"
-					},
-					{
-						title: "Player",
-						field: "player",
+						title: "Game", field: "game",
+						hozAlign: "left", width: MOBILE ? 110 : 160,
 						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
-					},
-					{title: "½ PPR<br>Pts", field: "half_pts", width: 55, sorter: "number", visible: FORMAT == "half" ? true : false },
-					{title: "1 PPR<br>Pts", field: "full_pts", width: 55, sorter: "number", visible: FORMAT == "full" ? true : false },
-					{title: "STD<br>Pts", field: "std_pts", width: 55, sorter: "number", visible: FORMAT == "std" ? true : false },
-
-					{
-						title: "FPros<br>ECR",
-						field: "ecrMut",
-						width: 55,
-						formatter: (cell) => {
-							const data = cell.getRow().getData();
-							return `${data.pos}${cell.getValue()}`;
-						},
-						mutatorData: (value, data) => {
-							let post = "";
-							if (FORMAT != "half") {
-								post += `_${FORMAT}`;
-							}
-							return data["ecr"][`rank_ecr${post}`];
-						},
-						sorter: "number",
-						headerSortStartingDir: "asc"
+						formatter: gameFormatter,
+						formatterParams: {text: true}
 					},
 					{
-						title: "ECR<br>Diff",
-						field: "diffMut",
-						width: 40,
-						formatter: diffFormatter,
-						mutatorData: (value, data) => {
-							return data[`rank_diff_${FORMAT}`];
-						},
-						sorter: "number"
+						title: "Stadium<br>HR Rank", field: "stadiumRank",
+						width: 60, sorter: "number", headerSortStartingDir: "asc",
+						formatter: stadiumRankFormatter,
 					},
-					{title: "Yahoo<br>ADP", field: "yahooADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
-					{title: "Sleeper<br>ADP", field: "sleeperADP", width: 55, sorter: "number",headerSortStartingDir: "asc" },
-					{title: "Passing", columns: [
-						{title: "Yards", field: "both.pass_yd", width: 60 },
-						{title: "TDs", field: "both.pass_td", width: 60 },
-						{title: "Int", field: "both.int", width: 60 },	
+					{
+						title: "Weather", field: "weather",
+						formatter: windFormatter, hozAlign: "left",
+					},
+					{
+						title: "<a href='https://www.x.com/BallparkPal' target='new' onclick='event.stopPropagation()'>@BPP</a><br>Factor",
+						field: "bpp", width: 55, sorter: "number",
+						formatter: bppFormatter,
+					},
+					{
+						title: "Away Pitcher", field: "away_player",
+						hozAlign: "left", width: 120,
+						formatter: function(cell) { return pitcherCellFormatter(cell, "away_player", "away_pitch_hand"); }
+					},
+					{title: "Away HR Allowed", columns: [
+						{title: "Total", field: "away_percs.home_run", width: 55, sorter: "number", formatter: allowedFormatter},
+						{title: "HR/PA%", field: "away_percs.hr_pa", width: 65, sorter: "number", formatter: allowedFormatter},
 					]},
-					{title: "Receiving", columns: [
-						{title: "Yards", field: "both.rec_yd", width: 60 },
-						{title: "TDs", field: "both.rec_td", width: 60 },
+					{
+						title: "Away<br>HR History", field: "away_hr_l",
+						width: 130, hozAlign: "left",
+						formatter: function(cell) { return hrHistFormatter(cell, "away_hr_l", "away_hr_r"); },
+						headerSort: false,
+						visible: false
+					},
+					{
+						title: "Home Pitcher", field: "home_player",
+						hozAlign: "left", width: MOBILE ? 100 : 150,
+						formatter: function(cell) { return pitcherCellFormatter(cell, "home_player", "home_pitch_hand"); }
+					},
+					{title: "Home HR Allowed", columns: [
+						{title: "Total", field: "home_percs.home_run", width: 55, sorter: "number", formatter: allowedFormatter},
+						{title: "HR/PA%", field: "home_percs.hr_pa", width: 65, sorter: "number", formatter: allowedFormatter},
 					]},
-					,
-					{title: "Rushing", columns: [
-						{title: "Yards", field: "both.rush_yd", width: 60 },
-						{title: "TDs", field: "both.rush_td", width: 60 },
-					]}
+					{
+						title: "Home<br>HR History", field: "home_hr_l",
+						width: 130, hozAlign: "left",
+						formatter: function(cell) { return hrHistFormatter(cell, "home_hr_l", "home_hr_r"); },
+						headerSort: false,
+						visible: false,
+					},
+					
 				]
 			});
 		}
-
-		function groupByGame() {
-			if (!TABLE.options.groupBy) {
-				TABLE.setGroupBy("game");
-			} else {
-				TABLE.setGroupBy();
-			}
-		}
-
-		window.addEventListener('popstate', (event) => {
-			const format = event.state?.format || new URLSearchParams(location.search).get('format') || 'half';
-			const pos = event.state?.pos || new URLSearchParams(location.search).get('pos') || 'all';
-			FORMAT = format;
-			//TABLE.updateData(TABLE.getData());
-			TABLE.setSort([
-				{column: `${FORMAT}_pts`, dir: "desc"}
-			]);
-			selectPosition(pos.toUpperCase());
-			//TABLE.redraw(true);
-		});
 	</script>
 </body>
 </html>

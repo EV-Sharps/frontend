@@ -19,14 +19,28 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link href="style.css" rel="stylesheet">
 	<style>
-		#table {
-			width: auto;
+		#table { width: auto; }
+		@media (max-width: 600px) { #table { flex: 1; } }
+#customize-overlay {
+			display: none; position: fixed; inset: 0;
+			background: rgba(0,0,0,0.6); z-index: 1000;
+			align-items: flex-start; justify-content: center; padding-top: 60px;
 		}
-		@media (max-width: 600px) {
-			#table {
-				flex: 1;
-			}
+		#customize-overlay.open { display: flex; }
+		#customize-panel {
+			background: var(--bg,#111827); border: 1px solid var(--border,#374151);
+			border-radius: 10px; padding: 1rem 1.2rem; max-width: 540px; width: 95%;
+			max-height: 80vh; overflow-y: auto;
 		}
+		#customize-panel h2 { margin: 0 0 0.8rem; font-size: 1rem; color: #e5e7eb; }
+		.cust-group { margin-bottom: 0.75rem; }
+		.cust-group-title { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+		.cust-group-row { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+		.cust-group-row label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; color: #d1d5db; cursor: pointer; }
+		.cust-group-row input[type=checkbox] { accent-color: #3b82f6; }
+		.cust-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
+		.cust-actions button { padding: 0.35rem 0.9rem; border-radius: 6px; border: none; cursor: pointer; background: #1d4ed8; color: #fff; font-size: 0.83rem; }
+		.cust-actions button:hover { background: #1e40af; }
 	</style>
 </head>
 
@@ -67,6 +81,7 @@
 					</svg>
 				</div>
 				<button onclick="downloadCSV()">💾 CSV</button>
+				<button onclick="openCustomize()">⚙️ Customize</button>
 			</div>
 			<div id="auth-buttons">
 				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -98,6 +113,75 @@
 			</div>
 		</header>
 		<main>
+			<div style="padding:0.25rem 0.5rem;font-size:0.75rem;color:#6b7280;text-align: center;">🟢 green = favorable for batter HRs &nbsp;🔴 red = unfavorable</div>
+
+			<!-- Customize overlay -->
+			<div id="customize-overlay">
+				<div id="customize-panel">
+					<h2>Customize Columns</h2>
+					<div id="cust-items">
+						<div class="cust-group">
+							<div class="cust-group-title">Power / Contact</div>
+							<div class="cust-group-row">
+								<label><input type="checkbox" id="cust_brl"> BRL%</label>
+								<label><input type="checkbox" id="cust_ev"> Exit Velo</label>
+								<label><input type="checkbox" id="cust_hh"> Hard Hit%</label>
+								<label><input type="checkbox" id="cust_ss"> Sweet Spot%</label>
+								<label><input type="checkbox" id="cust_la"> Avg LA</label>
+								<label><input type="checkbox" id="cust_blasts"> Blast%</label>
+								<label><input type="checkbox" id="cust_sq_up"> Sq Up%</label>
+								<label><input type="checkbox" id="cust_swing_spd"> Swing Spd</label>
+								<label><input type="checkbox" id="cust_fast_swing"> Fast Swing%</label>
+							</div>
+						</div>
+						<div class="cust-group">
+							<div class="cust-group-title">Expected Stats</div>
+							<div class="cust-group-row">
+								<label><input type="checkbox" id="cust_xslg"> xSLG</label>
+								<label><input type="checkbox" id="cust_xiso"> xISO</label>
+								<label><input type="checkbox" id="cust_xwoba"> xwOBA</label>
+								<label><input type="checkbox" id="cust_xwobacon"> xwOBAcon</label>
+								<label><input type="checkbox" id="cust_xba"> xBA</label>
+								<label><input type="checkbox" id="cust_xbadiff"> xBA Diff</label>
+								<label><input type="checkbox" id="cust_xslgdiff"> xSLG Diff</label>
+							</div>
+						</div>
+						<div class="cust-group">
+							<div class="cust-group-title">Batted Ball</div>
+							<div class="cust-group-row">
+								<label><input type="checkbox" id="cust_fly"> Fly%</label>
+								<label><input type="checkbox" id="cust_pull"> Pull%</label>
+								<label><input type="checkbox" id="cust_gb"> GB%</label>
+								<label><input type="checkbox" id="cust_ld"> LD%</label>
+							</div>
+						</div>
+						<div class="cust-group">
+							<div class="cust-group-title">Pitch Run Value</div>
+							<div class="cust-group-row">
+								<label><input type="checkbox" id="cust_rv_fb"> RV Fastball</label>
+								<label><input type="checkbox" id="cust_rv_br"> RV Breaking</label>
+								<label><input type="checkbox" id="cust_rv_os"> RV Offspeed</label>
+							</div>
+						</div>
+						<div class="cust-group">
+							<div class="cust-group-title">Traditional</div>
+							<div class="cust-group-row">
+								<label><input type="checkbox" id="cust_slg"> SLG</label>
+								<label><input type="checkbox" id="cust_iso"> ISO</label>
+								<label><input type="checkbox" id="cust_woba"> wOBA</label>
+								<label><input type="checkbox" id="cust_k_pct"> K%</label>
+								<label><input type="checkbox" id="cust_bb_pct"> BB%</label>
+								<label><input type="checkbox" id="cust_babip"> BABIP</label>
+								<label><input type="checkbox" id="cust_era"> ERA</label>
+							</div>
+						</div>
+					</div>
+					<div class="cust-actions">
+						<button onclick="closeCustomize()">Done</button>
+					</div>
+				</div>
+			</div>
+
 			<div id="table-container">
 				<div id="table"></div>
 				<div id="watermark">
@@ -154,89 +238,161 @@
 			}).catch(err => console.log(err));
 		}
 
+		const rvFormatter = function(cell) {
+			const v = parseFloat(cell.getValue());
+			if (!isFinite(v)) return "";
+			const cls = v > 0 ? "positive" : v < 0 ? "negative" : "";
+			return `<div class="${cls}">${v > 0 ? "+" : ""}${v.toFixed(1)}</div>`;
+		};
+
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
+				placeholder:"Data Loading...",
 				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
 				data: data,
-				initialSort: [
-					{column: "percs.hr_pa", dir: "desc"},
-				],
+				initialSort: [{column: "percs.hr_pa", dir: "desc"}],
 				columnDefaults: {
 					vertAlign: "middle",
 					hozAlign: "center",
-					//resizable: false,
 					headerSortStartingDir: "desc"
 				},
-				//groupBy: "game",
 				groupHeader: function(value, count, data, group){
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
 				columns: [
-					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
-					//{title: "EV", field: "ev",  width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0},
 					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE || LAST ? 100 : 140,
+						title: "Player", field: "player", headerFilter: "input",
+						formatter: playerFormatter, width: MOBILE || LAST ? 100 : 140,
 						formatterParams:{ sport: SPORT, noProp: true, fullName: true, lastName: LAST },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
+						hozAlign: "left", responsive: 0, frozen: MOBILE ? true : false
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "PA", field: "pa", width: 40},
 					{title: "HR Allowed", columns: [
-						//{title: "Total<br><div style='position:relative;width:100%;'><span style='position:absolute;left:1px;font-size:0.5rem;'>L</span><span style='position:absolute;right:1px;font-size:0.5rem;'>R</span></div>", field: "percs.home_run", width: 55, formatter: allowedFormatter },
-						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter },
+						{title: "Total", field: "percs.home_run", width: 55, formatter: allowedFormatter},
 						{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter, sorter: "number"},
 					]},
-					//{title: "PA", field: "pa", width: 45 },
-					{title: "ERA", field: "p_era", width: 45, formatter: eraFormatter, visible: false },
-					{title: "xBA", field: "xba", width: 45, formatter: baFormatter, visible: false },
-					{title: "xwOBA", field: "xwoba", width: 45, formatter: xwobaFormatter, visible: false },
-					//{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 45, formatter: summaryFormatter, visible: true },
-					{title: "Fly%", field: "flyballs_percent", width: 45, formatter: percentileFormatter, visible: true },
-					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: true },
-					{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 45, formatter: percentileFormatter },
-					{title: "Hard<br>Hit", field: "hard_hit_percent", width: 45, formatter: percentileFormatter },
-					{title: "BRL%", field: "barrel_batted_rate", width: 45, formatter: percentileFormatter },
-					{title: "<a href='https://www.x.com/BallparkPal' target='new'  onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'  onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
-					{title: "Weather<br><a href='#'></a>", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					{title: "Stadium<br>Rank", field: "stadiumRank", formatter: stadiumRankFormatter, width: 60},
+					{title: "HR", field: "home_run", width: 45, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "HR<br>vs R", field: "hr_r", width: 50, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "HR<br>vs L", field: "hr_l", width: 50, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "Rate<br>vs R", field: "hr_r_rate", width: 50, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "Rate<br>vs L", field: "hr_l_rate", width: 50, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "BRL%", field: "barrel_batted_rate", width: 48, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Exit<br>Velo", field: "exit_velocity_avg", width: 48, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Hard<br>Hit", field: "hard_hit_percent", width: 48, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 52, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Avg LA", field: "launch_angle_avg", width: 48, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Blast%", field: "blasts_swing", width: 52, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Sq Up%", field: "squared_up_swing", width: 52, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Swing<br>Spd", field: "avg_swing_speed", width: 52, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Fast<br>Swing", field: "fast_swing_rate", width: 52, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "xSLG", field: "xslg", width: 50, sorter: "number", formatter: xwobaFormatter, visible: false},
+					{title: "xISO", field: "xiso", width: 50, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "xwOBA", field: "xwoba", width: 52, sorter: "number", formatter: xwobaFormatter, visible: false},
+					{title: "xwOBA<br>con", field: "xwobacon", width: 55, sorter: "number", formatter: xwobaFormatter, visible: false},
+					{title: "xBA", field: "xba", width: 45, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "xBA<br>Diff", field: "xbadiff", width: 50, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "xSLG<br>Diff", field: "xslgdiff", width: 52, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "Fly%", field: "flyballs_percent", width: 45, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "Pull%", field: "pull_percent", width: 48, sorter: "number", formatter: percentileFormatter, visible: true},
+					{title: "GB%", field: "groundballs_percent", width: 45, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "LD%", field: "linedrives_percent", width: 45, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "RV<br>FB", field: "pitch_run_value_fastball", width: 45, sorter: "number", formatter: rvFormatter, visible: false},
+					{title: "RV<br>BR", field: "pitch_run_value_breaking", width: 45, sorter: "number", formatter: rvFormatter, visible: false},
+					{title: "RV<br>OS", field: "pitch_run_value_offspeed", width: 45, sorter: "number", formatter: rvFormatter, visible: false},
+					{title: "SLG", field: "slg_percent", width: 45, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "ISO", field: "isolated_power", width: 45, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "wOBA", field: "woba", width: 50, sorter: "number", formatter: xwobaFormatter, visible: false},
+					{title: "K%", field: "k_percent", width: 42, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "BB%", field: "bb_percent", width: 42, sorter: "number", formatter: percentileFormatter, visible: false},
+					{title: "BABIP", field: "babip", width: 50, sorter: "number", formatter: baFormatter, visible: false},
+					{title: "ERA", field: "p_era", width: 45, sorter: "number", formatter: eraFormatter, visible: false},
+					{title: "<a href='https://www.x.com/BallparkPal' target='new' onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new' onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
 					{
-						title: "HR Pitch History - Old → Recent",
-						width: 140,
+						title: "HR Pitch History - Old → Recent", width: 140,
 						columns: [
-							{
-								title: "LHB",
-								field: "hr_pitch_l",
-								formatter: function(cell) {
-									return cell.getValue()?.slice(-5).join(",");
-								},
-								hozAlign: "left"
-							},
-							{
-								title: "RHB",
-								field: "hr_pitch_r",
-								formatter: function(cell) {
-									return cell.getValue()?.slice(-5).join(",");
-								},
-								hozAlign: "left"
-							}
+							{title: "LHB", field: "hr_pitch_l", formatter: function(cell) { return cell.getValue()?.slice(-5).join(","); }, hozAlign: "left"},
+							{title: "RHB", field: "hr_pitch_r", formatter: function(cell) { return cell.getValue()?.slice(-5).join(","); }, hozAlign: "left"}
 						]
 					},
-					
 				]
+			});
+			applyColumnPrefs(loadColumnPrefs());
+		}
+
+		// Customize
+		const CUST_STORAGE_KEY = "preview-columns";
+		const CUST_COLS = {
+			hr: "home_run", hr_r: "hr_r", hr_l: "hr_l", hr_r_rate: "hr_r_rate", hr_l_rate: "hr_l_rate",
+			brl: "barrel_batted_rate", ev: "exit_velocity_avg", hh: "hard_hit_percent",
+			ss: "sweet_spot_percent", la: "launch_angle_avg", blasts: "blasts_swing",
+			sq_up: "squared_up_swing", swing_spd: "avg_swing_speed", fast_swing: "fast_swing_rate",
+			xslg: "xslg", xiso: "xiso", xwoba: "xwoba", xwobacon: "xwobacon",
+			xba: "xba", xbadiff: "xbadiff", xslgdiff: "xslgdiff",
+			fly: "flyballs_percent", pull: "pull_percent", gb: "groundballs_percent", ld: "linedrives_percent",
+			rv_fb: "pitch_run_value_fastball", rv_br: "pitch_run_value_breaking", rv_os: "pitch_run_value_offspeed",
+			slg: "slg_percent", iso: "isolated_power", woba: "woba",
+			k_pct: "k_percent", bb_pct: "bb_percent", babip: "babip", era: "p_era",
+		};
+		const CUST_DEFAULT = new Set(["brl", "ev", "hh", "ss", "la", "fly", "pull"]);
+
+		function loadColumnPrefs() {
+			try {
+				const saved = JSON.parse(localStorage.getItem(CUST_STORAGE_KEY));
+				if (saved && Array.isArray(saved)) return new Set(saved);
+			} catch(e) {}
+			return new Set(CUST_DEFAULT);
+		}
+
+		function saveColumnPrefs(visible) {
+			localStorage.setItem(CUST_STORAGE_KEY, JSON.stringify([...visible]));
+		}
+
+		function applyColumnPrefs(visible) {
+			Object.entries(CUST_COLS).forEach(([id, field]) => {
+				const col = TABLE?.getColumn(field);
+				if (!col) return;
+				visible.has(id) ? col.show() : col.hide();
 			});
 		}
 
-		function groupByGame() {
+		function openCustomize() {
+			const visible = loadColumnPrefs();
+			Object.keys(CUST_COLS).forEach(id => {
+				const el = document.getElementById("cust_" + id);
+				if (el) el.checked = visible.has(id);
+			});
+			document.getElementById("customize-overlay").classList.add("open");
+		}
+
+		function closeCustomize() {
+			document.getElementById("customize-overlay").classList.remove("open");
+		}
+
+		document.getElementById("customize-overlay").addEventListener("click", function(e) {
+			if (e.target === this) closeCustomize();
+		});
+
+		document.querySelectorAll("#cust-items input[type=checkbox]").forEach(cb => {
+			cb.addEventListener("change", function() {
+				const id = this.id.replace("cust_", "");
+				const field = CUST_COLS[id];
+				if (!field) return;
+				const col = TABLE?.getColumn(field);
+				if (!col) return;
+				this.checked ? col.show() : col.hide();
+				const visible = loadColumnPrefs();
+				this.checked ? visible.add(id) : visible.delete(id);
+				saveColumnPrefs(visible);
+			});
+		});
+
+					function groupByGame() {
 			if (!TABLE.options.groupBy) {
 				TABLE.setGroupBy("game");
 			} else {

@@ -47,6 +47,7 @@ const PAGE_SECTIONS = [
 			{ label: "📊 Stats", value: "stats" },
 			{ label: "🏏 Barrels", value: "barrels" },
 			{ label: "🔍 Pitcher Preview", value: "preview" },
+			{ label: "💨 Pitcher Ks Preview", value: "preview_k" },
 			{ label: "📰 Pitcher Mix", value: "pitcher_mix" },
 			{ label: "📡 Feed", value: "feed" },
 			{ label: "📊 Trends", value: "trends" },
@@ -588,6 +589,9 @@ const allowedFormatter = function(cell) {
 
 	let percent = "";
 	let p = "";
+	if (PAGE == "ranks" && !data[which]) {
+		return "";
+	}
 	let percentile = data[which][field+"_percentile"];
 	if (field == "hr_pa") {
 		p = "_rate";
@@ -695,7 +699,7 @@ const gapFormatter = function(cell) {
 
 function getPercentileColor(field, value) {
 	if (!value) return "";
-	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike"].includes(field)) {
+	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike", "pull_percent", "blasts_swing", "squared_up_swing", "avg_swing_speed"].includes(field)) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
@@ -1593,12 +1597,13 @@ const playerFormatter = function(cell, params, rendered) {
 		let s = ["feed", "dingers", "dingers2", "barrels"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";
-		let t = sport.includes("ncaa") ? data.teamId : data.team;
+		let t = sport.includes("ncaa") ? data.teamId : data.team?.replace("-gm2", "");
 		if (TEAM) {
 			//t = TEAM;
 		}
+		let dbl = data.team?.includes("-gm2") ? "<span class='dbl-badge'>2</span>" : "";
 		if (t) {
-			gameContainer = `<img class='team-img' src='logos/${s}/${t}.png' alt='${t}' title='${t}' />`;
+			gameContainer = `${dbl}<img class='team-img' src='logos/${s}/${t}.png' alt='${t}' title='${t}' />`;
 		}
 	} else {
 		gameContainer = getGameImgs(data, params).join("");
@@ -1713,9 +1718,14 @@ function getGameImgs(data, params) {
 	if (sport == "props") {
 		sport = "nfl";
 	}
+	let badge1 = "", badge2 = "";
+	if (data.game.includes("-gm2")) {
+		badge1 = "<span class='dbl-badge'>2</span>";
+		badge2 = "<span class='dbl-badge'>2</span>";
+	}
 	return [
-		`<img class='game-img away' src='logos/${sport}/${away}.png' alt='${awayAlt}' title='${awayAlt}' />`,
-		`<img class='game-img home' src='logos/${sport}/${home}.png' alt='${homeAlt}' title='${homeAlt}' />`
+		`${badge1}<img class='game-img away' src='logos/${sport}/${away.replace("-gm2", "")}.png' alt='${awayAlt}' title='${awayAlt}' />`,
+		`${badge2}<img class='game-img home' src='logos/${sport}/${home.replace("-gm2", "")}.png' alt='${homeAlt}' title='${homeAlt}' />`
 	];
 }
 
@@ -1725,9 +1735,13 @@ const gameFormatter = function(cell, params, rendered) {
 		return "";
 	}
 	const gameImgs = getGameImgs(data, params);
+	let txt = "";
+	if (params.text) {
+		txt = ` ${data.game.toUpperCase()}`;
+	}
 	return `
 		<div class='game-cell'>
-			${gameImgs.join("")}
+			${gameImgs.join("")} ${txt}
 		</div>
 	`;
 }

@@ -260,9 +260,20 @@ function hrHistFormatter(cell, lField, rField) {
 						formatterParams: {text: true}
 					},
 					{
-						title: "Stadium<br>HR Rank", field: "stadiumRank",
-						width: 60, sorter: "number", headerSortStartingDir: "asc",
-						formatter: stadiumRankFormatter,
+						title: "Stadium HR Ranks", columns: [
+							{title: "Total", field: "stadiumRank", sorter: "number", width: 50, formatter: function(cell) {
+								const v = cell.getValue(); if (v == null || v === "") return "";
+								return `<span style="color:${getOppRankColor(v)}">${v}</span>`;
+							}},
+							{title: "LHB", field: "stadiumRankLeft", sorter: "number", width: 50, formatter: function(cell) {
+								const v = cell.getValue(); if (v == null || v === "") return "";
+								return `<span style="color:${getOppRankColor(v)}">${v}</span>`;
+							}},
+							{title: "RHB", field: "stadiumRankRight", sorter: "number", width: 50, formatter: function(cell) {
+								const v = cell.getValue(); if (v == null || v === "") return "";
+								return `<span style="color:${getOppRankColor(v)}">${v}</span>`;
+							}},
+						]
 					},
 					{
 						title: "Weather", field: "weather",

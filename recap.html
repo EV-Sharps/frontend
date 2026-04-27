@@ -14,6 +14,8 @@
 	<script src="jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+	<script src="record.js"></script>
+	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null;</script>
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
@@ -176,6 +178,13 @@
 					<button onclick="document.getElementById('record-summary-modal').classList.remove('open')" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
 				</span>
 			</h3>
+			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:8px;">
+				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">All</button>
+				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L7</button>
+				<button data-window="L14"  onclick="_summaryWindow='L14'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L14</button>
+				<button data-window="L30"  onclick="_summaryWindow='L30'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L30</button>
+				<button data-window="L60"  onclick="_summaryWindow='L60'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L60</button>
+			</div>
 			<table id="record-summary-table"></table>
 		</div>
 	</div>
@@ -876,6 +885,24 @@
 
 		let _summaryRecord = null;
 		let _summaryMethod = 'probit';
+		let _summaryWindow = 'All';
+
+		// Filter record.js MLB data to only hr- devigKeys
+		function buildHRSeasonRecord() {
+			const sportRecord = SEASON_RECORD?.mlb;
+			if (!sportRecord) return null;
+			const filtered = {};
+			Object.keys(sportRecord).forEach(method => {
+				filtered[method] = {};
+				Object.keys(sportRecord[method]).forEach(book => {
+					const hrKeys = Object.keys(sportRecord[method][book]).filter(k => k.startsWith('hr-'));
+					if (!hrKeys.length) return;
+					filtered[method][book] = {};
+					hrKeys.forEach(k => { filtered[method][book][k] = sportRecord[method][book][k]; });
+				});
+			});
+			return filtered;
+		}
 
 		function renderRecordSummary(record) {
 			_summaryRecord = record;
@@ -885,13 +912,19 @@
 		function _renderSummaryTable() {
 			const record = _summaryRecord;
 			if (!record) return;
-			const win = DEV_WINDOW || 'All';
+			const win = _summaryWindow || 'All';
 			const m = _summaryMethod;
 			const table = document.getElementById('record-summary-table');
 			const toggle = document.getElementById('record-summary-toggle');
 			if (toggle) {
 				toggle.querySelectorAll('button').forEach(b => {
 					b.style.opacity = b.dataset.method === m ? '1' : '0.4';
+				});
+			}
+			const winToggle = document.getElementById('record-window-toggle');
+			if (winToggle) {
+				winToggle.querySelectorAll('button').forEach(b => {
+					b.style.opacity = b.dataset.window === win ? '1' : '0.4';
 				});
 			}
 
@@ -908,7 +941,7 @@
 
 			const roiCell = (book, devig) => {
 				const stats = record[m]?.[book]?.[devig];
-				const s = stats ? (stats[win] || stats['All']) : null;
+				const s = stats ? (stats[win] ?? null) : null;
 				if (!s) return `<td>—</td>`;
 				const roi = s.roi ?? '';
 				const cls = roi > 0 ? 'roi-pos' : roi < 0 ? 'roi-neg' : '';
@@ -988,8 +1021,18 @@
 							renderRecordSummary(data.record);
 							document.getElementById('record-summary-modal').classList.add('open');
 						};
+						const btnSeason = document.createElement('button');
+						btnSeason.className = 'record-summary-btn';
+						btnSeason.textContent = 'Season';
+						btnSeason.onclick = () => {
+							const hrRecord = buildHRSeasonRecord();
+							if (!hrRecord) return;
+							renderRecordSummary(hrRecord);
+							document.getElementById('record-summary-modal').classList.add('open');
+						};
 						col.innerHTML = '';
 						col.appendChild(btn);
+						col.appendChild(btnSeason);
 					}
 				}
 

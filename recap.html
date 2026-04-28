@@ -189,6 +189,7 @@
 			</div>
 			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:8px;">
 				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">All</button>
+				<button data-window="L3"   onclick="_summaryWindow='L3';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L3</button>
 				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L7</button>
 				<button data-window="L14"  onclick="_summaryWindow='L14'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L14</button>
 				<button data-window="L30"  onclick="_summaryWindow='L30'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L30</button>
@@ -963,6 +964,7 @@
 				const cls = roi > 0 ? 'roi-pos' : roi < 0 ? 'roi-neg' : '';
 				const sign = roi > 0 ? '+' : '';
 				const w = s.wins ?? 0, l = s.losses ?? 0;
+				if (w+l == 0) return `<td>—</td>`;
 				return `<td class="${cls}"><div>${sign}${roi}%</div><div style="font-size:9px;opacity:0.6;">${w}W-${l}L</div></td>`;
 			};
 

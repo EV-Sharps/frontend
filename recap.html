@@ -187,13 +187,23 @@
 				<button data-sport="mlb"      onclick="_summarySport='mlb';      buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB</button>
 				<button data-sport="mlb_open" onclick="_summarySport='mlb_open'; buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB Open</button>
 			</div>
-			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:8px;">
+			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:6px;">
 				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">All</button>
 				<button data-window="L3"   onclick="_summaryWindow='L3';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L3</button>
 				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L7</button>
 				<button data-window="L14"  onclick="_summaryWindow='L14'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L14</button>
 				<button data-window="L30"  onclick="_summaryWindow='L30'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L30</button>
 				<button data-window="L60"  onclick="_summaryWindow='L60'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L60</button>
+			</div>
+			<div style="display:flex;gap:12px;margin-bottom:8px;">
+				<div id="record-display-toggle" style="display:flex;gap:4px;">
+					<button data-display="roi"   onclick="_summaryDisplay='roi';   _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">ROI</button>
+					<button data-display="units" onclick="_summaryDisplay='units'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Units</button>
+				</div>
+				<div id="record-betting-toggle" style="display:flex;gap:4px;">
+					<button data-betting="flat"  onclick="_summaryBetting='flat';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Flat</button>
+					<button data-betting="kelly" onclick="_summaryBetting='kelly'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Kelly</button>
+				</div>
 			</div>
 			<table id="record-summary-table"></table>
 		</div>
@@ -897,6 +907,8 @@
 		let _summaryMethod = 'probit';
 		let _summaryWindow = 'All';
 		let _summarySport = 'mlb';
+		let _summaryDisplay = 'roi';
+		let _summaryBetting = 'flat';
 
 		// Filter record.js data to only hr- devigKeys for the selected sport
 		function buildHRSeasonRecord() {
@@ -956,16 +968,38 @@
 			const books = ['best', ...bookSet];
 			const devigs = [...devigSet].sort();
 
+			// Sync display/betting toggles
+			const displayToggle = document.getElementById('record-display-toggle');
+			if (displayToggle) displayToggle.querySelectorAll('button').forEach(b => {
+				b.style.opacity = b.dataset.display === _summaryDisplay ? '1' : '0.4';
+			});
+			const bettingToggle = document.getElementById('record-betting-toggle');
+			if (bettingToggle) bettingToggle.querySelectorAll('button').forEach(b => {
+				b.style.opacity = b.dataset.betting === _summaryBetting ? '1' : '0.4';
+			});
+
 			const roiCell = (book, devig) => {
 				const stats = record[m]?.[book]?.[devig];
 				const s = stats ? (stats[win] ?? null) : null;
 				if (!s) return `<td>—</td>`;
-				const roi = s.roi ?? '';
-				const cls = roi > 0 ? 'roi-pos' : roi < 0 ? 'roi-neg' : '';
-				const sign = roi > 0 ? '+' : '';
 				const w = s.wins ?? 0, l = s.losses ?? 0;
 				if (w+l == 0) return `<td>—</td>`;
-				return `<td class="${cls}"><div>${sign}${roi}%</div><div style="font-size:9px;opacity:0.6;">${w}W-${l}L</div></td>`;
+				// Pick value based on toggles: flat/kelly × roi/units
+				let val, suffix, isRoi;
+				if (_summaryDisplay === 'roi') {
+					val = _summaryBetting === 'kelly' ? (s.kelly_roi ?? null) : (s.roi ?? null);
+					suffix = '%';
+					isRoi = true;
+				} else {
+					val = _summaryBetting === 'kelly' ? (s.kelly ?? null) : (s.profit ?? null);
+					suffix = 'u';
+					isRoi = false;
+				}
+				if (val === null || val === undefined) return `<td>—</td>`;
+				const cls = val > 0 ? 'roi-pos' : val < 0 ? 'roi-neg' : '';
+				const sign = val > 0 ? '+' : '';
+				const disp = isRoi ? `${sign}${val}${suffix}` : `${sign}${val.toFixed(2)}${suffix}`;
+				return `<td class="${cls}"><div>${disp}</div><div style="font-size:9px;opacity:0.6;">${w}W-${l}L</div></td>`;
 			};
 
 			const fmtDevig = d => d.replace(/^[^-]+-vs-/, '');

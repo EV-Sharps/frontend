@@ -706,6 +706,8 @@ const DEFAULT_DEVIGS = [
 	{ name: "BOL", value: "bol;1", group: "100% Weight" },
 	{ name: "B365", value: "b365;1", group: "100% Weight" },
 	{ name: "BV", value: "bv;1", group: "100% Weight" },
+	{ name: "KAL", value: "kal;1", group: "100% Weight" },
+	{ name: "NV", value: "nv;1", group: "100% Weight" },
 
 	{ name: "FD/DK 50% Equal", value: "fd+dk;1+1", group: "Split Weights" },
 	{ name: "PN/Circa 50% Equal", value: "pn+circa;1+1", group: "Split Weights" },

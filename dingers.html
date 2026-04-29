@@ -395,12 +395,40 @@
 							<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
 						</div>
 						<div>
+							<input id="custom_savant_launch_angle_avg" type="checkbox">
+							<label for="custom_savant_launch_angle_avg">Avg LA</label>
+						</div>
+						<div>
 							<input id="custom_savant_hard_hit_percent" type="checkbox">
 							<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
 						</div>
 						<div>
 							<input id="custom_savant_barrels_per_bip" type="checkbox">
 							<label for="custom_savant_barrels_per_bip">Barrel %</label>
+						</div>
+						<div>
+							<input id="custom_savant_avg_swing_speed" type="checkbox">
+							<label for="custom_savant_avg_swing_speed">Swing Sp</label>
+						</div>
+						<div>
+							<input id="custom_savant_blasts_swing" type="checkbox">
+							<label for="custom_savant_blasts_swing">Blasts %</label>
+						</div>
+						<div>
+							<input id="custom_savant_flyballs_percent" type="checkbox">
+							<label for="custom_savant_flyballs_percent">FB %</label>
+						</div>
+						<div>
+							<input id="custom_savant_pull_percent" type="checkbox">
+							<label for="custom_savant_pull_percent">Pull %</label>
+						</div>
+						<div>
+							<input id="custom_savant_squared_up_swing" type="checkbox">
+							<label for="custom_savant_squared_up_swing">Sq Up %</label>
+						</div>
+						<div>
+							<input id="custom_savant_meatball_percent" type="checkbox">
+							<label for="custom_savant_meatball_percent">Meatball %</label>
 						</div>
 					</div>
 					<!-- Pitcher Data -->
@@ -1238,18 +1266,25 @@
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
 						{title: "EVelo", field: "savant.exit_velocity_avg", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
+						{title: "Avg LA", field: "savant.launch_angle_avg", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
 						{title: "HH%", field: "savant.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : false },
 						{title: "BRL%", field: "savant.barrels_per_bip", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
+						{title: "Swing Sp", field: "savant.avg_swing_speed", width: 45, formatter: percentileFormatter },
+						{title: "Blasts%", field: "savant.blasts_swing", width: 45, formatter: percentileFormatter },
+						{title: "FB%", field: "savant.flyballs_percent", width: 45, formatter: percentileFormatter },
+						{title: "Pull%", field: "savant.pull_percent", width: 45, formatter: percentileFormatter },
+						{title: "SqUp%", field: "savant.squared_up_swing", width: 45, formatter: percentileFormatter },
+						{title: "Meat%", field: "savant.meatball_percent", width: 45, formatter: percentileFormatter },
 					]},
 					{title: "Pitcher Metrics", columns: [
 						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
 						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
-						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
-						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
-						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
-						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : false },
-						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter, visible: HISTORICAL ? false : true },
+						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter },
+						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter },
+						{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter },
+						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter },
+						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					]},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
 					{title: "Stadium<br>Rank", field: "stadiumRank", formatter: stadiumRankFormatter, width: 60, visible: HISTORICAL ? false : true},

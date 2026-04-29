@@ -261,7 +261,90 @@
 						</div>
 					</div>
 					<!-- ETC -->
-					
+					<!-- Savant --> 
+					<div>
+						<h3>Adv. Batter Data</h3>
+						<div>
+							<input id="custom_batter_percs_hr_pa" type="checkbox">
+							<label for="custom_batter_percs_hr_pa">HR/PA %</label>
+						</div>
+						<div>
+							<input id="custom_batter_percs_home_run" type="checkbox">
+							<label for="custom_batter_percs_home_run">HR</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_ba" type="checkbox">
+							<label for="custom_savant_est_ba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_woba" type="checkbox">
+							<label for="custom_savant_est_woba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_sweet_spot_percent" type="checkbox">
+							<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_savant_exit_velocity_avg" type="checkbox">
+							<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
+						</div>
+						<div>
+							<input id="custom_savant_hard_hit_percent" type="checkbox">
+							<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_savant_barrels_per_bip" type="checkbox">
+							<label for="custom_savant_barrels_per_bip">Barrel %</label>
+						</div>
+					</div>
+					<!-- Pitcher Data -->
+					<div>
+						<h3>Adv. Pitcher Data</h3>
+						<div>
+							<input id="custom_pitcherData_p_era" type="checkbox">
+							<label for="custom_pitcherData_p_era">ERA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xba" type="checkbox">
+							<label for="custom_pitcherData_xba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xwoba" type="checkbox">
+							<label for="custom_pitcherData_xwoba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_flyballs_percent" type="checkbox">
+							<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
+							<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
+							<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
+							<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
+							<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
+						</div>
+					</div>
+					<!-- MISC -->
+					<div>
+						<h3>Misc</h3>
+						<div>
+							<input id="custom_logs" type="checkbox">
+							<label for="custom_logs">Logs</label>
+						</div>
+						<div>
+							<input id="custom_order" type="checkbox">
+							<label for="custom_order">Batting Order</label>
+						</div>
+					</div>
 				</div>
 				<div class="loggedOut">
 					<div style="padding: 0.5rem;text-align: center;">
@@ -765,15 +848,7 @@
 					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{field: "game", visible: false},
-					{
-						title: "Game Logs<br> ➡️ Most Recent",
-						field: "logs",
-						width:160,
-						formatter: chartFormatter,
-						formatterParams:{type:"bar"},
-						responsive: 3,
-						visible: MOBILE ? false : true
-					},
+					
 					{title: "Bat<br>Order", field: "order",  width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter},
 					{title: "Pitcher", field: "pitcherCols", columns: [
 						{title: "Name", field: "pitcher", width: 80, formatter: pitcherFormatter},
@@ -801,6 +876,15 @@
 						{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter },
 						{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter },
 					]},
+					{
+						title: "Game Logs<br> ➡️ Most Recent",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					},
 				]
 			});
 

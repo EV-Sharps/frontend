@@ -288,6 +288,7 @@
 						{title: "", field: "game_trends.hard_hit_ct.5GPercentile", visible: false},
 						{title: "", field: "game_trends.hard_hit_ct.3GPercentile", visible: false},
 					]},
+					{title: "HRs", field: "home_runs", visible: false, width: 45},
 					{title: "Close Calls", columns: [
 						{title: "Total", field: "homerLogs.close", width: 45, sorter: "number", formatter: blurFormatter},
 						{title: "L7", field: "homerLogs.close7", width: 45, sorter: "number", formatter: blurFormatter, visible: false},
@@ -507,6 +508,17 @@
 				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"]["5G"]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
+		}
+
+		function test() {
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "tot100+", "home_runs"];
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				} else {
+					col.show();
+				}
+			});
 		}
 
 		function pretty_() {

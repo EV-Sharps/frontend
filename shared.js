@@ -703,6 +703,8 @@ function getPercentileColor(field, value) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
+	} else if (field.includes("savant") && ["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent"].includes(field.split(".").at(-1))) {
+		value = 100 - value;
 	}
 	// bright green
 	if (value >= 95) return '#00ff66';

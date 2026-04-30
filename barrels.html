@@ -295,6 +295,9 @@
 						{title: "L3", field: "homerLogs.close3", width: 45, sorter: "number", formatter: blurFormatter},
 					]},
 					{title: "Sweet<br>Spot", field: "sweet_spot_percent", width: 55, sorter: "number", formatter: percentileFormatter},
+					{title: "FB%", field: "flyballs_percent", width: 55, sorter: "number", formatter: percentileFormatter},
+					{title: "Pull%", field: "pull_percent", width: 55, sorter: "number", formatter: percentileFormatter},
+					{title: "SqUp%", field: "squared_up_swing", width: 55, sorter: "number", formatter: percentileFormatter},
 					{title: "Exit Velocity", columns: [
 						{title: "Avg", field: "exit_velocity_avg", formatter: percentileFormatter, width: 45, sorter: "number"},
 						{title: "L5 Δ", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: true},
@@ -475,7 +478,7 @@
 
 		function velo() {
 			TABLE.getColumns().map(col => {
-				let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrels_per_bip", "hard_hit_percent", "exit_velocity_avg", "tot100+", "game_trends.exit_velocity_avg.5G", "game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.barrels_per_bip.5G"];
+				let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrels_per_bip", "hard_hit_percent", "exit_velocity_avg", "tot100+", "game_trends.exit_velocity_avg.5G", "game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.barrels_per_bip.5G", "pull_percent", "flyballs_percent"];
 				if (!arr.includes(col.getField())) {
 					col.hide();
 				} else {

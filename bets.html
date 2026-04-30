@@ -117,6 +117,68 @@
 	<script type="text/javascript">
 		PAGE = "bets";
 
+		let BETS_DEVIG = "";
+
+		const BETS_BOOK_KEYS = ["fd","b365","dk","mgm","espn","cz","fn","hr","kambi","kal","pn","nv","px","circa"];
+
+		function betsToImplied(odds) {
+			odds = Number(odds);
+			if (!odds) return null;
+			return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
+		}
+
+		function betsCalcEV(prob, betOdds) {
+			if (!prob || !betOdds) return null;
+			betOdds = Number(betOdds);
+			const payout = betOdds > 0 ? betOdds / 100 : 100 / Math.abs(betOdds);
+			return (prob * (1 + payout) - 1) * 100;
+		}
+
+		function betsGetFairProb(row) {
+			const bo = row.evData?.bookOdds || {};
+			if (row.evData?.circa) bo.circa = row.evData.circa;
+			const prevDevig = DEVIG;
+			const prevMethod = METHOD;
+			DEVIG = BETS_DEVIG;
+			METHOD = "probit";
+			const fv = averageDevigs(bo, null, row.ouIdx === 1, { [BETS_DEVIG]: 1 });
+			DEVIG = prevDevig;
+			METHOD = prevMethod;
+			return isFinite(fv) ? fv : null;
+		}
+
+		function betsGetBestOdds(row) {
+			const bo = row.evData?.bookOdds || {};
+			if (row.evData?.circa) bo.circa = row.evData.circa;
+			return Number(bo[row.book]) || null;
+		}
+
+		function betsEvCalcFormatter(cell, prob, betOdds) {
+			const ev = betsCalcEV(prob, betOdds);
+			if (ev == null) return "";
+			const pct = ev.toFixed(1);
+			const color = ev >= 0 ? "#22c55e" : "#ef4444";
+			cell.getElement().style.color = color;
+			return `${ev >= 0 ? "+" : ""}${pct}%`;
+		}
+
+		const MKT_DEVIG_SELECT = `<select id="mkt-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+			<option value="">Market</option>
+			<option value="pn">Pinnacle</option>
+			<option value="circa">Circa</option>
+			<option value="fd">FanDuel</option>
+			<option value="dk">DraftKings</option>
+			<option value="mgm">MGM</option>
+			<option value="fn">FanNation</option>
+			<option value="espn">ESPN</option>
+			<option value="hr">Hard Rock</option>
+			<option value="b365">Bet365</option>
+			<option value="cz">Caesars</option>
+			<option value="kal">Kalshi</option>
+			<option value="nv">NoVig</option>
+			<option value="px">ProphetX</option>
+		</select>`;
+
 		parseURLParams();
 		let sport_select = document.querySelector("#sport-select");
 		sport_select.value = SPORT;
@@ -196,6 +258,7 @@
 			if (data.length == 0) {
 				ph = "No Bets (yet)";
 			}
+			if (TABLE) TABLE.destroy();
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
     			placeholder: ph,
@@ -306,12 +369,21 @@
 						responsive: 0
 					},
 					{
-						title: "Market<br>+EV",
+						title: `Market<br>+EV<br>${MKT_DEVIG_SELECT}`,
 						field: "mkt_ev",
-						width: MOBILE ? 45 : 60,
-						sorter: "number",
+						width: MOBILE ? 60 : 75,
+						sorter: function(a, b, aRow, bRow) {
+							if (!BETS_DEVIG) return (a ?? -999) - (b ?? -999);
+							const evA = betsCalcEV(betsGetFairProb(aRow.getData()), betsGetBestOdds(aRow.getData())) ?? -999;
+							const evB = betsCalcEV(betsGetFairProb(bRow.getData()), betsGetBestOdds(bRow.getData())) ?? -999;
+							return evA - evB;
+						},
 						responsive: 0,
-						formatter: evFormatter
+						formatter: function(cell) {
+							if (!BETS_DEVIG) return evFormatter(cell);
+							const d = cell.getRow().getData();
+							return betsEvCalcFormatter(cell, betsGetFairProb(d), betsGetBestOdds(d));
+						}
 					},
 					{
 						title: "Market<br>¼ Kelly",
@@ -339,6 +411,17 @@
 					{title: `PX`, field: "evData.bookOdds.px",  width: 80, sorter: "number"},
 				]
 			});
+
+			setTimeout(() => {
+				const sel = document.getElementById("mkt-devig-select");
+				if (sel) {
+					sel.value = BETS_DEVIG;
+					sel.addEventListener("change", function() {
+						BETS_DEVIG = this.value;
+						if (TABLE) TABLE.redraw(true);
+					});
+				}
+			}, 100);
 		}
 	</script>
 </body>

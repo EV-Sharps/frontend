@@ -45,6 +45,17 @@
 		max-height: 400px;
 		margin-top: 0.5rem;
 	}
+	#mix-panel {
+		overflow-y: auto;
+		padding: 4px 0;
+		width: 100%;
+	}
+	.batter-ps-toggle { display: flex; gap: 4px; }
+	.ps-btn {
+		padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+	}
+	.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
 	
 	#table {
 		width: 100%;
@@ -766,6 +777,7 @@
 							<option value="pa">PA Btwn</option>
 							<option value="odds">Odds</option>
 							<option value="feed">Feed</option>
+							<option value="mix">Mix</option>
 						</select>
 						<svg class="select-arrow" viewBox="0 0 20 20">
 							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -774,6 +786,7 @@
 						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
 										<div id="chart"></div>
+					<div id="mix-panel" style="display:none;"></div>
 				</div>
 			</div>
 		</main>
@@ -800,14 +813,20 @@
 
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
-			if (event.target.value == "g") {
-				plotHRGap(showGames=true);
-			} else if (event.target.value == "feed") {
-				renderFeed();
-			} else if (event.target.value == "odds") {
-				plotOddsChart();
+			if (event.target.value == "mix") {
+				const d = TABLE.getSelectedData()[0];
+				if (d) fetchAndShowMix(d);
 			} else {
-				plotHRGap();
+				_mixShowChart();
+				if (event.target.value == "g") {
+					plotHRGap(showGames=true);
+				} else if (event.target.value == "feed") {
+					renderFeed();
+				} else if (event.target.value == "odds") {
+					plotOddsChart();
+				} else {
+					plotHRGap();
+				}
 			}
 		});
 
@@ -1337,6 +1356,201 @@
 			});
 		}
 
+		// ── Pitcher Mix ─────────────────────────────────────────────────────
+		let PITCHER_MIX_CACHE = null;
+		let MIX_SELECTED_PS = "r";
+
+		const bgPitchFormatter = function(cell) {
+			const field = cell.getField();
+			let val = cell.getValue() || 0;
+			let display;
+			if (["ba", "woba", "slg", "iso"].includes(field)) {
+				display = avgFormatter(cell);
+			} else if (field === "home_run") {
+				display = val;
+			} else if (["percent", "k_rate", "whiff_rate", "brl_rate", "hh_rate", "fb_rate", "gb_rate", "hr_rate"].includes(field)) {
+				display = val ? val.toFixed(1) + "%" : "";
+			} else {
+				display = val ? val.toFixed(1) : "";
+			}
+			const pct = cell.getRow().getData()[field + "_pct"];
+			let bg = "";
+			if (pct != null) {
+				if (pct >= 80) bg = "rgba(46,160,67,0.85)";
+				else if (pct >= 65) bg = "rgba(46,160,67,0.45)";
+				else if (pct < 25) bg = "rgba(200,56,46,0.85)";
+				else if (pct < 40) bg = "rgba(200,56,46,0.45)";
+			}
+			if (bg) cell.getElement().style.background = bg;
+			return display || "";
+		};
+
+		const MIX_COLS = [
+			{ title:"Type", field:"type", width:90, formatter: pitchFormatter, hozAlign: "left", frozen: true },
+			{ title:"#", field:"n", sorter:"number", width:45 },
+			{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+			{ title:"BA", field:"ba", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"WOBA", field:"woba", sorter:"number", width:55, formatter: bgPitchFormatter },
+			{ title:"SLG", field:"slg", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"ISO", field:"iso", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"HR", field:"home_run", sorter:"number", width:40, formatter: bgPitchFormatter },
+			{ title:"HR%", field:"hr_rate", sorter:"number", width:52, formatter: bgPitchFormatter },
+			{ title:"K%", field:"k_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"WHIFF%", field:"whiff_rate", sorter:"number", width:62, formatter: bgPitchFormatter },
+			{ title:"EV", field:"avg_ev", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"LA", field:"avg_la", sorter:"number", width:45, formatter: bgPitchFormatter },
+			{ title:"Brl%", field:"brl_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"HH%", field:"hh_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"FB%", field:"fb_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"GB%", field:"gb_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+		];
+
+		function _mixGetTopPitches(pitcher) {
+			const map = {};
+			for (const which of ["l", "r"]) {
+				if (!pitcher?.[`pitch_table_${which}`]) continue;
+				map[which] = pitcher[`pitch_table_${which}`].sort((a,b) => b.n - a.n).map(r => r.type);
+			}
+			return map;
+		}
+
+		function _mixTransformPitcher(pitcher) {
+			for (const side of ["l", "r"]) {
+				if (!pitcher?.pitch?.[side]) continue;
+				pitcher[`pitch_table_${side}`] = Object.entries(pitcher.pitch[side]).map(([type, stats]) => ({
+					type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0,
+				}));
+			}
+		}
+
+		function _mixProcessData(data) {
+			const result = {};
+			Object.entries(data.teams || {}).forEach(([team, teamData]) => {
+				_mixTransformPitcher(teamData.pitcher);
+				const top = _mixGetTopPitches(teamData.pitcher);
+				const batters = (teamData.batters || []).map(row => {
+					const b = { ...row };
+					for (const side of ["l", "r"]) {
+						if (!row.pitch?.[side]) continue;
+						b[`pitch_table_${side}`] = Object.entries(row.pitch[side]).map(([type, stats]) => {
+							const getNum = s => { const arr = top[s]; return arr ? (arr.indexOf(type) + 1 || 0) : ""; };
+							return { type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0,
+								pitch_num_l: getNum("l"), pitch_num_r: getNum("r") };
+						});
+					}
+					return b;
+				});
+				result[team] = {
+					pitcher: teamData.pitcher,
+					battersByName: Object.fromEntries(batters.map(b => [b.player, b])),
+				};
+			});
+			return result;
+		}
+
+		function fetchAndShowMix(rowData) {
+			document.getElementById('chart').style.display = 'none';
+			document.getElementById('mix-panel').style.display = '';
+			if (PITCHER_MIX_CACHE) {
+				showMixPanel(rowData);
+				return;
+			}
+			document.getElementById('mix-panel').innerHTML = '<div style="color:#9ca3af;padding:8px;font-size:12px;">Loading mix data…</div>';
+			fetch(API_BASE + '/api/pitcher_mix', { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } })
+				.then(r => r.json())
+				.then(data => { PITCHER_MIX_CACHE = _mixProcessData(data); showMixPanel(rowData); })
+				.catch(() => { document.getElementById('mix-panel').innerHTML = '<div style="color:#f87171;padding:8px;font-size:12px;">Failed to load mix data.</div>'; });
+		}
+
+		function showMixPanel(rowData) {
+			const teamData = PITCHER_MIX_CACHE?.[rowData.team];
+			const batter = teamData?.battersByName?.[rowData.player];
+			const pitcher = teamData?.pitcher;
+			const pitcherLR = rowData.pitcherLR?.toLowerCase() || pitcher?.pitch_hand?.toLowerCase() || "r";
+			MIX_SELECTED_PS = pitcherLR;
+			const panel = document.getElementById('mix-panel');
+			document.getElementById('chart').style.display = 'none';
+
+			if (!batter) {
+				panel.innerHTML = `<div style="color:#9ca3af;padding:8px;font-size:12px;">No mix data for ${rowData.player}.</div>`;
+				return;
+			}
+
+			const hand = batter.pitch_hand?.replace("B", "S") || "";
+			const pitcherName = rowData.pitcher || pitcher?.player || '';
+			const flexDir = MOBILE ? 'column' : 'row';
+			panel.innerHTML = `
+				<div style="font-size:12px;font-weight:600;color:#e5e7eb;padding:2px 0 2px;">
+					${title(rowData.player)} <span style="color:#a78bfa;font-weight:400">${hand}</span>
+					<span style="color:#9ca3af;font-weight:400;margin-left:6px;">vs ${title(pitcherName)} <span style="color:#a78bfa;">${pitcherLR.toUpperCase()}HP</span></span>
+				</div>
+				<div class="batter-ps-toggle" style="margin:6px 0 8px;">
+					<button class="ps-btn ${pitcherLR==='l'?'is-active':''}" data-ps="l" onclick="mixSetPS('l')">vs LHP</button>
+					<button class="ps-btn ${pitcherLR==='r'?'is-active':''}" data-ps="r" onclick="mixSetPS('r')">vs RHP</button>
+				</div>
+				<div id="mix-tables" style="display:flex;flex-direction:${flexDir};gap:12px;align-items:flex-start;">
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Pitcher Mix</div>
+						<div id="mix-pitcher-table"></div>
+					</div>
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Batter vs Pitcher</div>
+						<div id="mix-table"></div>
+					</div>
+				</div>`;
+			_renderMixTables(batter, pitcher, pitcherLR);
+		}
+
+		function mixSetPS(ps) {
+			MIX_SELECTED_PS = ps;
+			document.querySelectorAll('#mix-panel .ps-btn').forEach(b => b.classList.toggle('is-active', b.dataset.ps === ps));
+			const d = TABLE.getSelectedData()[0];
+			if (!d) return;
+			const teamData = PITCHER_MIX_CACHE?.[d.team];
+			const batter = teamData?.battersByName?.[d.player];
+			if (batter) _renderMixTables(batter, teamData?.pitcher, ps);
+		}
+
+		function _mixBuild(el, data, sortCol) {
+			try { Tabulator.findTable(el)?.[0]?.destroy(); } catch(e) {}
+			document.querySelector(el).innerHTML = '';
+			if (!data?.length) {
+				document.querySelector(el).innerHTML = '<div style="color:#9ca3af;font-size:11px;padding:4px 0;">No data.</div>';
+				return;
+			}
+			new Tabulator(el, {
+				layout: "fitData",
+				data,
+				initialSort: [{ column: sortCol || "n", dir: "desc" }],
+				columnDefaults: { vertAlign:"middle", hozAlign:"center", resizable:false, headerSortStartingDir:"desc" },
+				columns: MIX_COLS,
+			});
+		}
+
+		function _renderMixTables(batter, pitcher, pitcherSide) {
+			// batter's batting side (for pitch_num lookup)
+			let side;
+			if (batter.pitch_hand === "B") side = pitcherSide === "r" ? "l" : "r";
+			else side = batter.pitch_hand?.toLowerCase() || "r";
+
+			// pitcher table: pitcher's usage vs the batter's batting hand
+			const pitcherTableData = pitcher?.[`pitch_table_${side}`] || [];
+
+			// batter table: batter's stats vs this pitcher's hand
+			const batterTableData = (batter[`pitch_table_${pitcherSide}`] || []).map(r => ({
+				...r, pitch_num: r[`pitch_num_${side}`] ?? ""
+			}));
+
+			_mixBuild("#mix-pitcher-table", pitcherTableData, "n");
+			_mixBuild("#mix-table", batterTableData, "n");
+		}
+
+		function _mixShowChart() {
+			document.getElementById('chart').style.display = '';
+			document.getElementById('mix-panel').style.display = 'none';
+		}
+		// ── End Pitcher Mix ──────────────────────────────────────────────────
+
 		function closeRightBody() {
 			const right = document.querySelector("#right-body");
 			const left = document.querySelector("#table-container");
@@ -1369,8 +1583,13 @@
 					//left.style.width = "50%";
 				}
 				right.style.display = "flex";
-				document.querySelector("#btwn-select").value = "pa";
-				setTimeout(() => plotHRGap(), 50);
+				const curSel = document.querySelector("#btwn-select").value;
+				if (curSel === "mix") {
+					fetchAndShowMix(data);
+				} else {
+					document.querySelector("#btwn-select").value = "pa";
+					setTimeout(() => plotHRGap(), 50);
+				}
 			}
 		}
 

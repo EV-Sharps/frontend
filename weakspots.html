@@ -129,6 +129,58 @@
       min-width: 220px;
     }
     #profile-chart { width: 100%; }
+
+    /* ── Collapsible extra charts ── */
+    .extra-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .extra-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid #334155;
+    }
+    .extra-header:hover { background: #243449; }
+    .extra-toggle-icon {
+      font-size: 12px;
+      color: #94a3b8;
+      transition: transform 0.2s;
+    }
+    .extra-header .eh-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+    .extra-header .eh-hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-left: 4px;
+    }
+    .extra-body {
+      display: none;
+      padding: 12px 14px;
+    }
+    .extra-body.open { display: block; }
+    .chart-headline {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .chart-headline strong { color: #f1f5f9; }
+    .chart-scroll {
+      overflow-y: auto;
+      max-height: 520px;
+      border: 1px solid #334155;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <!-- Google tag (gtag.js) -->
@@ -150,6 +202,69 @@
     <div class="chart-wrap" id="wrap-pearson"></div>
     <div class="chart-wrap" id="wrap-persist"></div>
     <div class="chart-wrap" id="wrap-rtm"></div>
+  </div>
+
+  <!-- Chart 5: Slot Tracker -->
+  <div class="extra-section" id="tracker-section">
+    <div class="extra-header" onclick="toggleExtra('tracker')">
+      <span class="extra-toggle-icon" id="tracker-toggle-icon">▶</span>
+      <span class="eh-title">Where Did My Weakspot Go? - Rank Tracker</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="tracker-body">
+      <div class="chart-headline" id="tracker-headline"></div>
+      <div class="chart-scroll" id="tracker-scroll">
+        <div id="wrap-tracker"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 6: Sample Size Reality Check -->
+  <div class="extra-section" id="samplesize-section">
+    <div class="extra-header" onclick="toggleExtra('samplesize')">
+      <span class="extra-toggle-icon" id="samplesize-toggle-icon">▶</span>
+      <span class="eh-title">Sample Size Reality Check</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="samplesize-body">
+      <div class="chart-headline">
+        Each slot has ~50–80 ABs per year. <strong>A ±0.100 OPS swing is meaningless noise</strong> at that sample size -
+        you can't reliably distinguish a .650 OPS slot from a .750 OPS slot.
+      </div>
+      <div id="wrap-samplesize"></div>
+    </div>
+  </div>
+
+  <!-- Chart 7: Rebuttal – Inversion Rate -->
+  <div class="extra-section" id="rebuttal-inv-section">
+    <div class="extra-header" onclick="toggleExtra('rebuttal-inv')">
+      <span class="extra-toggle-icon" id="rebuttal-inv-toggle-icon">▶</span>
+      <span class="eh-title">'Pitchers Fixed Their Weakspot' - Or Regression to the mean?</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="rebuttal-inv-body">
+      <div class="chart-headline">
+        <strong>Pitchers don't consciously fix slot #2.</strong><br>
+        If 2nd-worst inverts at the same rate as worst, the cause is math (regression to mean), not coaching.
+      </div>
+      <div id="wrap-rebuttal-inv"></div>
+    </div>
+  </div>
+
+  <!-- Chart 8: Rebuttal – OPS Delta by Slot Rank -->
+  <div class="extra-section" id="rebuttal-delta-section">
+    <div class="extra-header" onclick="toggleExtra('rebuttal-delta')">
+      <span class="extra-toggle-icon" id="rebuttal-delta-toggle-icon">▶</span>
+      <span class="eh-title">Did Pitchers Improve Their Weakspot More Than Other Slots? (Control: 2nd-worst)</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="rebuttal-delta-body">
+      <div class="chart-headline">
+        Regression to mean alone predicts the worst slot improves the most.
+        <strong>The 2nd-worst slot is the control group</strong> - if it also improves substantially, you're seeing math, not coaching.
+      </div>
+      <div id="wrap-rebuttal-delta"></div>
+    </div>
   </div>
 
   <div id="profiles-section">
@@ -186,6 +301,240 @@
     renderPersistence();
     renderRTM();
     buildPitcherSelector();
+  }
+
+  /* ── Chart 5: Slot Tracker ── */
+  function renderSlotTracker() {
+    const items = DATA.slot_tracker;
+    const narrs = DATA.narratives;
+    const avg = DATA.avg_worst_slot_rank_next_yr;
+
+    // sort by rank ascending so worst (1) is at top
+    const sorted = items.map((d, i) => ({ ...d, narrative: narrs[i] }))
+      .sort((a, b) => a.rank_in_yB - b.rank_in_yB);
+
+    const labels = sorted.map(d =>
+      d.name.replace(/\b\w/g, c => c.toUpperCase()) + '  ' + d.years
+    );
+
+    const dotColor = sorted.map(d => {
+      if (d.rank_in_yB <= 3) return '#f87171';
+      if (d.rank_in_yB <= 6) return '#94a3b8';
+      return '#34d399';
+    });
+
+    const trace = {
+      x: sorted.map(d => d.rank_in_yB),
+      y: labels,
+      text: sorted.map(d => d.narrative),
+      mode: 'markers',
+      type: 'scatter',
+      orientation: 'h',
+      marker: { color: dotColor, size: 8, opacity: 0.85 },
+      hovertemplate: '%{text}<extra></extra>'
+    };
+
+    const rowH = 20;
+    const chartH = Math.max(400, sorted.length * rowH + 80);
+
+    const layout = {
+      paper_bgcolor: '#1e293b',
+      plot_bgcolor: '#1e293b',
+      font: { color: '#e2e8f0', size: 10 },
+      height: chartH,
+      margin: { l: 260, r: 30, t: 30, b: 40 },
+      title: {
+        text: "Last year's weakness is this year's coin flip.",
+        font: { size: 12, color: '#f1f5f9' }
+      },
+      xaxis: {
+        title: { text: 'Rank of prior weakspot in year N+1  (1 = still worst, 9 = became best)', font: { size: 10, color: '#94a3b8' } },
+        range: [0.5, 9.5],
+        tickvals: [1,2,3,4,5,6,7,8,9],
+        gridcolor: '#334155',
+        zerolinecolor: '#475569',
+        tickfont: { color: '#94a3b8', size: 10 }
+      },
+      yaxis: {
+        gridcolor: '#334155',
+        automargin: true,
+        tickfont: { color: '#94a3b8', size: 9 }
+      },
+      shapes: [
+        { type: 'line', x0: 1, x1: 1, y0: 0, y1: 1, yref: 'paper',
+          line: { color: '#f87171', width: 1.5, dash: 'dash' } },
+        { type: 'line', x0: 5, x1: 5, y0: 0, y1: 1, yref: 'paper',
+          line: { color: '#64748b', width: 1, dash: 'dot' } }
+      ],
+      annotations: [
+        { x: 1, y: 1.01, yref: 'paper', xanchor: 'center', text: 'stayed worst', showarrow: false, font: { size: 9, color: '#f87171' } },
+        { x: 5, y: 1.01, yref: 'paper', xanchor: 'center', text: 'middle', showarrow: false, font: { size: 9, color: '#64748b' } }
+      ]
+    };
+
+    document.getElementById('tracker-headline').innerHTML =
+      `Average rank of the prior-year weakspot the following year: <strong>${avg} out of 9</strong>
+       &nbsp;(1 = still worst, 9 = became best slot). A true skill would cluster at 1.`;
+
+    Plotly.newPlot('wrap-tracker', [trace], layout, { displayModeBar: false });
+  }
+
+  /* ── Chart 6: Sample Size Reality Check ── */
+  function renderSampleSizes() {
+    const raw = DATA.sample_sizes.filter(d => d.ab >= 10 && d.ops_se != null);
+
+    // group by slot label for box plot
+    const slotOrder = [
+      'Batting #1','Batting #2','Batting #3','Batting #4','Batting #5',
+      'Batting #6','Batting #7','Batting #8','Batting #9'
+    ];
+
+    const traces = slotOrder.map(slot => {
+      const vals = raw.filter(d => d.slot === slot).map(d => d.ops_se);
+      return {
+        x: vals,
+        name: slot,
+        type: 'box',
+        orientation: 'h',
+        boxpoints: 'outliers',
+        marker: { color: '#6366f1', size: 3, opacity: 0.5 },
+        line: { color: '#818cf8', width: 1.5 },
+        fillcolor: 'rgba(99,102,241,0.15)',
+        hovertemplate: slot + '<br>SE: %{x:.3f}<extra></extra>'
+      };
+    });
+
+    const layout = {
+      paper_bgcolor: '#1e293b',
+      plot_bgcolor: '#1e293b',
+      font: { color: '#e2e8f0', size: 11 },
+      height: 380,
+      margin: { l: 90, r: 30, t: 40, b: 50 },
+      title: { text: 'Each slot has ~50–80 ABs - the margin of error is enormous', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: {
+        title: { text: 'OPS standard error (±SE)', font: { size: 10, color: '#94a3b8' } },
+        gridcolor: '#334155',
+        zerolinecolor: '#475569',
+        tickfont: { color: '#94a3b8', size: 10 }
+      },
+      yaxis: {
+        gridcolor: '#334155',
+        tickfont: { color: '#94a3b8', size: 10 }
+      },
+      showlegend: false,
+      shapes: [{
+        type: 'line', x0: 0.1, x1: 0.1, y0: 0, y1: 1, yref: 'paper',
+        line: { color: '#f97316', width: 2, dash: 'dash' }
+      }],
+      annotations: [{
+        x: 0.1, y: 1.04, yref: 'paper', xanchor: 'left',
+        text: '±0.100 - meaningless noise',
+        showarrow: false,
+        font: { size: 10, color: '#f97316' }
+      }]
+    };
+
+    Plotly.newPlot('wrap-samplesize', traces, layout, { displayModeBar: false, responsive: true });
+  }
+
+  /* ── Chart 7: Rebuttal – Inversion Rate ── */
+  function renderRebInversion() {
+    const d = DATA.rebuttal_inversion;
+    const chanceExpected = 100 * 2 / 9;
+
+    const bar = {
+      x: ['Worst slot inverted', '2nd-worst inverted', '3rd-worst inverted', 'Expected by chance'],
+      y: [d.worst_invert_pct, d.second_worst_invert_pct, d.third_worst_invert_pct, chanceExpected],
+      type: 'bar',
+      marker: { color: ['#f97316', '#4682b4', '#a78bfa', '#d1d5db'] },
+      text: [
+        d.worst_invert_pct.toFixed(1) + '%',
+        d.second_worst_invert_pct.toFixed(1) + '%',
+        d.third_worst_invert_pct.toFixed(1) + '%',
+        chanceExpected.toFixed(1) + '%'
+      ],
+      textposition: 'outside',
+      textfont: { color: '#e2e8f0', size: 12 },
+      hovertemplate: '%{x}: %{y:.1f}%<extra></extra>'
+    };
+
+    const layout = {
+      ...DARK,
+      title: { text: "pitchers fixed their weakspot?", font: { size: 12, color: '#f1f5f9' } },
+      yaxis: { ...DARK.yaxis, title: { text: 'Inversion rate (%)', font: { size: 10, color: '#94a3b8' } }, range: [0, 35] },
+      margin: { l: 60, r: 40, t: 60, b: 80 },
+      annotations: [
+        {
+          x: 'Worst slot inverted', y: d.worst_invert_pct + 3.5,
+          text: 'avg rank next yr: ' + d.avg_worst_rank_next_yr,
+          showarrow: false, font: { size: 10, color: '#f97316' }, xanchor: 'center'
+        },
+        {
+          x: '2nd-worst inverted', y: d.second_worst_invert_pct + 3.5,
+          text: 'avg rank next yr: ' + d.avg_second_worst_rank_next_yr,
+          showarrow: false, font: { size: 10, color: '#4682b4' }, xanchor: 'center'
+        },
+        {
+          x: '3rd-worst inverted', y: d.third_worst_invert_pct + 3.5,
+          text: 'avg rank next yr: ' + d.avg_third_worst_rank_next_yr,
+          showarrow: false, font: { size: 10, color: '#a78bfa' }, xanchor: 'center'
+        }
+      ]
+    };
+
+    Plotly.newPlot('wrap-rebuttal-inv', [bar], layout, CONF);
+  }
+
+  /* ── Chart 8: Rebuttal – OPS Delta by Slot Rank ── */
+  function renderRebDelta() {
+    const d = DATA.rebuttal_delta;
+    const labels = ['Worst slot', '2nd-worst slot', 'All other slots'];
+    const vals = [d.mean_worst_delta, d.mean_second_delta, d.mean_other_delta];
+    const colors = vals.map(v => v < 0 ? '#34d399' : '#f87171');
+
+    const bar = {
+      x: vals,
+      y: labels,
+      type: 'bar',
+      orientation: 'h',
+      marker: { color: colors },
+      text: vals.map(v => (v >= 0 ? '+' : '') + v.toFixed(3)),
+      textposition: 'outside',
+      textfont: { color: '#e2e8f0', size: 12 },
+      hovertemplate: '%{y}: %{x:.3f} OPS<extra></extra>'
+    };
+
+    const absMax = Math.max(...vals.map(Math.abs)) * 1.4;
+    const layout = {
+      ...DARK,
+      title: { text: 'Did pitchers improve their weakspot more than other slots? (Control: 2nd-worst)', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: { ...DARK.xaxis, title: { text: 'Mean OPS delta (year N+1 − year N)', font: { size: 10, color: '#94a3b8' } }, range: [-absMax, absMax * 0.5] },
+      yaxis: { ...DARK.yaxis, automargin: true },
+      margin: { l: 120, r: 80, t: 60, b: 50 },
+      shapes: [{
+        type: 'line', x0: 0, x1: 0, y0: -0.5, y1: 2.5,
+        line: { color: '#94a3b8', width: 1.5, dash: 'dash' }
+      }]
+    };
+
+    Plotly.newPlot('wrap-rebuttal-delta', [bar], layout, CONF);
+  }
+
+  /* ── Toggle helpers for collapsible sections ── */
+  const _extraRendered = {};
+  function toggleExtra(key) {
+    const body = document.getElementById(key + '-body');
+    const icon = document.getElementById(key + '-toggle-icon');
+    const isOpen = body.classList.toggle('open');
+    icon.style.transform = isOpen ? 'rotate(90deg)' : '';
+    icon.textContent = '▶';
+    if (isOpen && !_extraRendered[key]) {
+      _extraRendered[key] = true;
+      if (key === 'tracker') renderSlotTracker();
+      if (key === 'samplesize') renderSampleSizes();
+      if (key === 'rebuttal-inv') renderRebInversion();
+      if (key === 'rebuttal-delta') renderRebDelta();
+    }
   }
 
   /* ── Summary Cards ── */
@@ -353,7 +702,7 @@
       name: 'Slot in year N+1'
     };
 
-    // horizontal lines at pitcher_avg_n1 per point — group unique avg values
+    // horizontal lines at pitcher_avg_n1 per point - group unique avg values
     const avgGroups = {};
     for (let i = 0; i < n; i++) {
       const avg = rtm.pitcher_avg_n1[i];
@@ -424,7 +773,7 @@
     const layout = {
       ...DARK,
       title: {
-        text: pitcher.name.replace(/\b\w/g, c => c.toUpperCase()) + ' — OPS allowed by batting slot',
+        text: pitcher.name.replace(/\b\w/g, c => c.toUpperCase()) + ' - OPS allowed by batting slot',
         font: { size: 13, color: '#f1f5f9' }
       },
       xaxis: {

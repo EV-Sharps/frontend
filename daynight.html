@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚾ Day/Night Split Analysis</title>
+  <script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+  <link href="style.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="logos/icon.png">
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0 12px 40px;
+      overflow: auto;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 16px 0 4px;
+      color: #f1f5f9;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Summary Cards ── */
+    #summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 16px;
+      flex: 1;
+      min-width: 140px;
+    }
+    .card-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .card-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .card-value.verdict-noise { color: #34d399; font-size: 20px; }
+    .card-value.verdict-real  { color: #f87171; font-size: 20px; }
+
+    /* ── Chart Rows ── */
+    #chart-row1 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    #chart-row2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      #chart-row1 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      #chart-row2 { grid-template-columns: 1fr; }
+    }
+    .chart-wrap {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .chart-wrap .plotly-graph-div { width: 100% !important; }
+
+    /* ── Collapsible extra sections ── */
+    .extra-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .extra-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid #334155;
+    }
+    .extra-header:hover { background: #243449; }
+    .extra-toggle-icon {
+      font-size: 12px;
+      color: #94a3b8;
+      transition: transform 0.2s;
+    }
+    .extra-header .eh-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+    .extra-header .eh-hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-left: 4px;
+    }
+    .extra-body {
+      display: none;
+      padding: 12px 14px;
+    }
+    .extra-body.open { display: block; }
+    .chart-headline {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .chart-headline strong { color: #f1f5f9; }
+
+    /* ── Per-Batter Timeline ── */
+    #batter-selector {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      min-width: 220px;
+    }
+    #timeline-chart { width: 100%; }
+  </style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<body>
+  <h1>Day/Night Split Analysis</h1>
+  <p class="subtitle">Does hitting better in day games actually carry over year to year, or is it just noise?</p>
+
+  <div id="summary-row"></div>
+
+  <div id="chart-row1">
+    <div class="chart-wrap" id="wrap-scatter"></div>
+    <div class="chart-wrap" id="wrap-dist"></div>
+    <div class="chart-wrap" id="wrap-persist"></div>
+  </div>
+  <div id="chart-row2">
+    <div class="chart-wrap" id="wrap-outlier"></div>
+  </div>
+
+  <!-- Flip Rates Section -->
+  <div class="extra-section" id="fliprates-section">
+    <div class="extra-header" onclick="toggleExtra('fliprates')">
+      <span class="extra-toggle-icon" id="fliprates-toggle-icon">▶</span>
+      <span class="eh-title">Do Day Game Hitters Stay Day Game Hitters?</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="fliprates-body">
+      <div class="chart-headline">
+        A real day-game trait would mean the same batters consistently outperform at day every year.
+        <strong>Instead, most batters flip their preference almost every other season.</strong>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div id="wrap-flip-hist"></div>
+        <div id="wrap-flip-breakdown"></div>
+      </div>
+      <div style="margin-top:4px;">
+        <select id="flipbatter-selector" onchange="renderFlipTimeline()" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:4px 10px;border-radius:6px;font-size:13px;margin-bottom:10px;min-width:220px;"></select>
+        <div id="wrap-flip-timeline"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 5: Per-Batter Timeline -->
+  <div class="extra-section" id="timeline-section">
+    <div class="extra-header" onclick="toggleExtra('timeline')">
+      <span class="extra-toggle-icon" id="timeline-toggle-icon">▶</span>
+      <span class="eh-title">Individual Batter Day/Night Splits</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="timeline-body">
+      <div class="chart-headline">
+        The gap shifts around year to year with <strong>no real pattern</strong>. It's not like guys are consistently better or worse in one context.
+      </div>
+      <select id="batter-selector" onchange="renderTimeline()"></select>
+      <div id="timeline-chart"></div>
+    </div>
+  </div>
+
+  <!-- Chart 6: Sample Size Reality Check -->
+  <div class="extra-section" id="samplesize-section">
+    <div class="extra-header" onclick="toggleExtra('samplesize')">
+      <span class="extra-toggle-icon" id="samplesize-toggle-icon">▶</span>
+      <span class="eh-title">Sample Size Reality Check</span>
+      <span class="eh-hint">(click to expand)</span>
+    </div>
+    <div class="extra-body" id="samplesize-body">
+      <div class="chart-headline">
+        ~100 day ABs per season isn't a lot. <strong>The margin of error is around ±75 OPS points</strong> - most splits you see are just random variation dressed up as a pattern.
+      </div>
+      <div id="wrap-samplesize"></div>
+    </div>
+  </div>
+
+  <script>
+  const DARK = {
+    paper_bgcolor: '#1e293b',
+    plot_bgcolor: '#1e293b',
+    font: { color: '#e2e8f0', size: 11 },
+    xaxis: { gridcolor: '#334155', zerolinecolor: '#475569', tickfont: { color: '#94a3b8', size: 10 } },
+    yaxis: { gridcolor: '#334155', zerolinecolor: '#475569', tickfont: { color: '#94a3b8', size: 10 } },
+    margin: { l: 50, r: 20, t: 50, b: 50 }
+  };
+  const CONF = { responsive: true, displayModeBar: false };
+
+  let DATA = null;
+
+  async function init() {
+    const res = await fetch('daynight_analysis.json');
+    DATA = await res.json();
+    renderSummary();
+    renderScatter();
+    renderDist();
+    renderPersistence();
+    renderOutlier();
+    buildBatterSelector();
+  }
+
+  /* ── Summary Cards ── */
+  function renderSummary() {
+    const s = DATA.summary;
+    const verdict = s.verdict === 'NOISE' ? 'NOISE - splits are random' : s.verdict;
+    const verdictClass = s.verdict === 'NOISE' ? 'verdict-noise' : 'verdict-real';
+    const cards = [
+      { label: 'Verdict',              value: verdict,                                   cls: verdictClass },
+      { label: 'Players analyzed',      value: s.n_batters.toLocaleString(),              cls: '' },
+      { label: 'Mean Pearson r',        value: s.mean_r.toFixed(3),                       cls: '' },
+      { label: 'Direction persistence', value: s.dir_persistence_pct.toFixed(1) + '% (50% = coin flip)', cls: '' },
+      { label: 'Outlier repeat rate',   value: s.outlier_same_dir_pct.toFixed(1) + '%',  cls: '' },
+    ];
+    document.getElementById('summary-row').innerHTML = cards.map(c => `
+      <div class="card">
+        <div class="card-label">${c.label}</div>
+        <div class="card-value ${c.cls}">${c.value}</div>
+      </div>`).join('');
+  }
+
+  /* ── Chart 1: Year-N vs Year-N+1 Scatter ── */
+  function renderScatter() {
+    const sc = DATA.scatter_yn_yn1;
+    const reg = sc.regression;
+
+    const points = {
+      x: sc.x, y: sc.y, text: sc.labels,
+      mode: 'markers', type: 'scatter',
+      marker: { color: '#6366f1', opacity: 0.45, size: 5 },
+      hovertemplate: '%{text}<extra></extra>',
+      name: 'Batter-season pair'
+    };
+
+    const regLine = {
+      x: reg.x_range, y: reg.y_range,
+      mode: 'lines', type: 'scatter',
+      line: { color: '#f97316', width: 2 },
+      name: `Fit (slope=${reg.slope.toFixed(2)}, r=${reg.r.toFixed(2)})`
+    };
+
+    const allVals = [...sc.x, ...sc.y];
+    const lo = Math.min(...allVals) - 0.02;
+    const hi = Math.max(...allVals) + 0.02;
+
+    const diagLine = {
+      x: [lo, hi], y: [lo, hi],
+      mode: 'lines', type: 'scatter',
+      line: { color: '#64748b', width: 1, dash: 'dash' },
+      name: 'Perfect persistence (y=x)'
+    };
+
+    const layout = {
+      ...DARK,
+      title: { text: 'If splits were real, points would follow the diagonal', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: { ...DARK.xaxis, title: { text: 'Day−Night OPS diff (year N)', font: { size: 10, color: '#94a3b8' } }, range: [lo, hi] },
+      yaxis: { ...DARK.yaxis, title: { text: 'Day−Night OPS diff (year N+1)', font: { size: 10, color: '#94a3b8' } }, range: [lo, hi] },
+      legend: { font: { size: 9, color: '#94a3b8' }, bgcolor: 'transparent' },
+      shapes: [
+        { type: 'line', x0: 0, x1: 0, y0: lo, y1: hi, line: { color: '#475569', width: 1, dash: 'dash' } },
+        { type: 'line', x0: lo, x1: hi, y0: 0, y1: 0, line: { color: '#475569', width: 1, dash: 'dash' } }
+      ],
+      annotations: [{
+        x: reg.x_range[1], y: reg.y_range[1],
+        xanchor: 'right', yanchor: 'bottom',
+        text: `slope=${reg.slope.toFixed(2)} · r=${reg.r.toFixed(2)} · p=${reg.p_value < 0.001 ? '<0.001' : reg.p_value.toFixed(3)}`,
+        showarrow: false,
+        font: { size: 10, color: '#f97316' },
+        bgcolor: '#1e293b', borderpad: 3
+      }]
+    };
+
+    Plotly.newPlot('wrap-scatter', [points, diagLine, regLine], layout, CONF);
+  }
+
+  /* ── Chart 2: Distribution of Day−Night Diffs ── */
+  function renderDist() {
+    const dd = DATA.diff_distribution;
+
+    const posVals = dd.values.filter(v => v >= 0);
+    const negVals = dd.values.filter(v => v < 0);
+
+    const posBars = {
+      x: posVals, type: 'histogram', xbins: { size: 0.025 },
+      marker: { color: '#f97316', opacity: 0.8 }, name: 'Day better',
+      hovertemplate: 'diff: %{x:.2f}<br>count: %{y}<extra></extra>'
+    };
+    const negBars = {
+      x: negVals, type: 'histogram', xbins: { size: 0.025 },
+      marker: { color: '#3b82f6', opacity: 0.8 }, name: 'Night better',
+      hovertemplate: 'diff: %{x:.2f}<br>count: %{y}<extra></extra>'
+    };
+
+    const layout = {
+      ...DARK,
+      barmode: 'overlay',
+      title: { text: 'Most batters are basically even - the big splits are the exception', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: { ...DARK.xaxis, title: { text: 'Day OPS − Night OPS', font: { size: 10, color: '#94a3b8' } } },
+      yaxis: { ...DARK.yaxis, title: { text: 'Batter-seasons', font: { size: 10, color: '#94a3b8' } } },
+      legend: { font: { size: 9, color: '#94a3b8' }, bgcolor: 'transparent' },
+      shapes: [
+        { type: 'line', x0: 0, x1: 0, y0: 0, y1: 1, yref: 'paper', line: { color: '#94a3b8', width: 1.5, dash: 'dash' } },
+        { type: 'line', x0: dd.mean, x1: dd.mean, y0: 0, y1: 1, yref: 'paper', line: { color: '#facc15', width: 1.5, dash: 'dot' } }
+      ],
+      annotations: [
+        { x: 0, y: 1, yref: 'paper', xanchor: 'left', yanchor: 'top', text: '  zero', showarrow: false, font: { size: 9, color: '#94a3b8' } },
+        { x: dd.mean, y: 1, yref: 'paper', xanchor: 'left', yanchor: 'top', text: `  mean=${dd.mean.toFixed(3)}`, showarrow: false, font: { size: 9, color: '#facc15' } }
+      ]
+    };
+
+    Plotly.newPlot('wrap-dist', [posBars, negBars], layout, CONF);
+  }
+
+  /* ── Chart 3: Direction Persistence ── */
+  function renderPersistence() {
+    const dp = DATA.direction_persistence;
+
+    const bars = {
+      x: ['Actual persistence', 'Coin flip (50%)'],
+      y: [dp.actual_pct, dp.expected_pct],
+      type: 'bar',
+      marker: { color: ['#3b82f6', '#475569'] },
+      hovertemplate: '%{x}: %{y:.1f}%<extra></extra>'
+    };
+
+    const layout = {
+      ...DARK,
+      title: { text: "Does being a day-game hitter actually stick?", font: { size: 12, color: '#f1f5f9' } },
+      yaxis: {
+        ...DARK.yaxis,
+        title: { text: '% same direction year over year', font: { size: 10, color: '#94a3b8' } },
+        range: [0, Math.max(dp.actual_pct, dp.expected_pct) * 1.5]
+      },
+      shapes: [{
+        type: 'line', x0: -0.5, x1: 1.5, y0: dp.expected_pct, y1: dp.expected_pct,
+        line: { color: '#64748b', width: 1.5, dash: 'dash' }
+      }],
+      annotations: [{
+        x: 0, y: dp.actual_pct + 1.5,
+        text: `${dp.same_dir}/${dp.total} pairs`,
+        showarrow: false,
+        font: { size: 10, color: '#94a3b8' }
+      }]
+    };
+
+    Plotly.newPlot('wrap-persist', [bars], layout, CONF);
+  }
+
+  /* ── Chart 4: Outlier Regression to Mean ── */
+  function renderOutlier() {
+    const or = DATA.outlier_regression;
+
+    const colors = or.x.map((x, i) => (x * or.y[i] >= 0) ? '#34d399' : '#f87171');
+
+    const points = {
+      x: or.x, y: or.y, text: or.labels,
+      mode: 'markers', type: 'scatter',
+      marker: { color: colors, size: 5, opacity: 0.7 },
+      hovertemplate: '%{text}<extra></extra>',
+      showlegend: false
+    };
+
+    // invisible legend proxies
+    const legendSame = {
+      x: [null], y: [null], mode: 'markers', type: 'scatter',
+      marker: { color: '#34d399', size: 7 }, name: 'Same direction'
+    };
+    const legendFlip = {
+      x: [null], y: [null], mode: 'markers', type: 'scatter',
+      marker: { color: '#f87171', size: 7 }, name: 'Flipped'
+    };
+
+    const layout = {
+      ...DARK,
+      title: { text: 'The biggest splits shrink the next year', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: { ...DARK.xaxis, title: { text: 'Day−Night OPS diff (year N, outliers only)', font: { size: 10, color: '#94a3b8' } } },
+      yaxis: { ...DARK.yaxis, title: { text: 'Day−Night OPS diff (year N+1)', font: { size: 10, color: '#94a3b8' } } },
+      legend: { font: { size: 9, color: '#94a3b8' }, bgcolor: 'transparent' },
+      shapes: [
+        { type: 'line', x0: 0, x1: 0, y0: 0, y1: 1, yref: 'paper', line: { color: '#475569', width: 1, dash: 'dash' } },
+        { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0, line: { color: '#475569', width: 1, dash: 'dash' } }
+      ],
+      annotations: [{
+        x: 0.98, y: 0.97, xref: 'paper', yref: 'paper',
+        xanchor: 'right', yanchor: 'top',
+        text: `${or.same_dir_pct}% stayed same direction (n=${or.n})`,
+        showarrow: false,
+        font: { size: 10, color: '#facc15' },
+        bgcolor: '#1e293b', borderpad: 3
+      }]
+    };
+
+    Plotly.newPlot('wrap-outlier', [points, legendSame, legendFlip], layout, CONF);
+  }
+
+  /* ── Chart 5: Per-Batter Timeline ── */
+  function buildBatterSelector() {
+    const sel = document.getElementById('batter-selector');
+    DATA.profiles.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name.replace(/\b\w/g, c => c.toUpperCase());
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderTimeline() {
+    const idx = parseInt(document.getElementById('batter-selector').value);
+    const batter = DATA.profiles[idx];
+
+    const years = batter.years.filter(yr => yr.day_ops != null && yr.night_ops != null);
+    if (years.length === 0) return;
+
+    const xs = years.map(yr => yr.year);
+    const dayOps   = years.map(yr => yr.day_ops);
+    const nightOps = years.map(yr => yr.night_ops);
+    const upper = years.map(yr => Math.max(yr.day_ops, yr.night_ops));
+    const lower = years.map(yr => Math.min(yr.day_ops, yr.night_ops));
+
+    const bandLower = {
+      x: xs, y: lower,
+      mode: 'lines', type: 'scatter',
+      line: { width: 0 },
+      showlegend: false,
+      hoverinfo: 'skip'
+    };
+    const bandUpper = {
+      x: xs, y: upper,
+      mode: 'lines', type: 'scatter',
+      fill: 'tonexty',
+      fillcolor: 'rgba(99,102,241,0.15)',
+      line: { width: 0 },
+      name: 'Split gap',
+      hoverinfo: 'skip'
+    };
+    const dayLine = {
+      x: xs, y: dayOps,
+      mode: 'lines+markers', type: 'scatter',
+      name: 'Day OPS',
+      line: { color: '#f97316', width: 2 },
+      marker: { size: 5 },
+      hovertemplate: 'Day %{x}: %{y:.3f}<extra></extra>'
+    };
+    const nightLine = {
+      x: xs, y: nightOps,
+      mode: 'lines+markers', type: 'scatter',
+      name: 'Night OPS',
+      line: { color: '#3b82f6', width: 2 },
+      marker: { size: 5 },
+      hovertemplate: 'Night %{x}: %{y:.3f}<extra></extra>'
+    };
+
+    const layout = {
+      ...DARK,
+      title: {
+        text: batter.name.replace(/\b\w/g, c => c.toUpperCase()) + ': Day vs Night OPS by Year',
+        font: { size: 13, color: '#f1f5f9' }
+      },
+      xaxis: { ...DARK.xaxis, title: { text: 'Season', font: { size: 10, color: '#94a3b8' } }, dtick: 1 },
+      yaxis: { ...DARK.yaxis, title: { text: 'OPS', font: { size: 10, color: '#94a3b8' } } },
+      legend: { font: { size: 10, color: '#94a3b8' }, bgcolor: 'transparent' },
+      margin: { ...DARK.margin, b: 40 }
+    };
+
+    Plotly.newPlot('timeline-chart', [bandLower, bandUpper, dayLine, nightLine], layout, { ...CONF, responsive: true });
+  }
+
+  /* ── Chart 6: Sample Size Reality Check ── */
+  function renderSampleSizes() {
+    const raw = DATA.sample_sizes.filter(d => d.ab >= 10 && d.ops_se != null);
+    const slotOrder = ['day', 'night'];
+
+    const traces = slotOrder.map(slot => {
+      const vals = raw.filter(d => d.slot === slot).map(d => d.ops_se);
+      return {
+        x: vals,
+        name: slot.charAt(0).toUpperCase() + slot.slice(1),
+        type: 'box',
+        orientation: 'h',
+        boxpoints: 'outliers',
+        marker: { color: slot === 'day' ? '#f97316' : '#3b82f6', size: 3, opacity: 0.5 },
+        line: { color: slot === 'day' ? '#fb923c' : '#60a5fa', width: 1.5 },
+        fillcolor: slot === 'day' ? 'rgba(249,115,22,0.15)' : 'rgba(59,130,246,0.15)',
+        hovertemplate: slot + '<br>SE: %{x:.3f}<extra></extra>'
+      };
+    });
+
+    const layout = {
+      paper_bgcolor: '#1e293b',
+      plot_bgcolor: '#1e293b',
+      font: { color: '#e2e8f0', size: 11 },
+      height: 260,
+      margin: { l: 70, r: 40, t: 40, b: 50 },
+      title: { text: '~100 day ABs per season is not enough to trust the split', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: {
+        title: { text: 'OPS standard error (±SE)', font: { size: 10, color: '#94a3b8' } },
+        gridcolor: '#334155', zerolinecolor: '#475569',
+        tickfont: { color: '#94a3b8', size: 10 }
+      },
+      yaxis: { gridcolor: '#334155', tickfont: { color: '#94a3b8', size: 10 } },
+      showlegend: false,
+      shapes: [{
+        type: 'line', x0: 0.075, x1: 0.075, y0: 0, y1: 1, yref: 'paper',
+        line: { color: '#f97316', width: 2, dash: 'dash' }
+      }],
+      annotations: [{
+        x: 0.075, y: 1.04, yref: 'paper', xanchor: 'left',
+        text: '±75 OPS pts - too much noise to matter',
+        showarrow: false, font: { size: 10, color: '#f97316' }
+      }]
+    };
+
+    Plotly.newPlot('wrap-samplesize', traces, layout, { displayModeBar: false, responsive: true });
+  }
+
+  /* ── Flip Rates: Chart A — Histogram ── */
+  function renderFlipHist() {
+    const fr = DATA.flip_rates;
+    const rates = fr.batters.map(b => b.flip_rate);
+
+    // manually compute 10 bins (0.0–0.1, 0.1–0.2, ..., 0.9–1.0)
+    const counts = new Array(10).fill(0);
+    rates.forEach(r => { counts[Math.min(9, Math.floor(r * 10))]++; });
+    const centers = counts.map((_, i) => +(i * 0.1 + 0.05).toFixed(2));
+    const labels  = counts.map((_, i) => `${(i * 0.1).toFixed(1)}-${(i * 0.1 + 0.1).toFixed(1)}`);
+    const colors  = centers.map(c => (c < 0.25 || c >= 0.75) ? '#34d399' : '#475569');
+
+    const bars = {
+      x: centers, y: counts,
+      type: 'bar',
+      width: 0.09,
+      marker: { color: colors, opacity: 0.9 },
+      text: labels,
+      hovertemplate: 'Flip rate %{text}: %{y} batters<extra></extra>',
+      showlegend: false
+    };
+
+    const maxCount = Math.max(...counts);
+    const layout = {
+      ...DARK,
+      title: { text: 'Most batters flip their preference nearly every other year', font: { size: 12, color: '#f1f5f9' } },
+      xaxis: { ...DARK.xaxis, type: 'linear', title: { text: 'Flip rate (0 = never flips, 1 = always flips)', font: { size: 10, color: '#94a3b8' } }, range: [-0.05, 1.05], tickvals: [0, 0.25, 0.5, 0.75, 1.0], ticktext: ['0', '1/4', '1/2', '3/4', '1'] },
+      yaxis: { ...DARK.yaxis, title: { text: 'Batters', font: { size: 10, color: '#94a3b8' } } },
+      shapes: [{
+        type: 'line', x0: 0.5, x1: 0.5, y0: 0, y1: 1, yref: 'paper',
+        line: { color: '#facc15', width: 1.5, dash: 'dash' }
+      }],
+      annotations: [
+        { x: 0.5, xref: 'x', y: 1.04, yref: 'paper', xanchor: 'left', text: ' Coin flip baseline', showarrow: false, font: { size: 9, color: '#facc15' } },
+        { x: 0.98, y: 0.97, xref: 'paper', yref: 'paper', xanchor: 'right', yanchor: 'top',
+          text: `Mean flip rate: ${fr.mean_flip_rate.toFixed(3)}`,
+          showarrow: false, font: { size: 10, color: '#e2e8f0' }, bgcolor: '#1e293b', borderpad: 3 }
+      ]
+    };
+
+    Plotly.newPlot('wrap-flip-hist', [bars], layout, CONF);
+  }
+
+  /* ── Flip Rates: Chart B — Consistency Breakdown ── */
+  function renderFlipBreakdown() {
+    const fr = DATA.flip_rates;
+
+    const bars = {
+      x: ['Consistent day hitter', 'Consistent night hitter', 'Random flippers'],
+      y: [fr.consistent_day, fr.consistent_night, fr.random_flippers],
+      type: 'bar',
+      marker: { color: ['#f97316', '#4682b4', '#475569'] },
+      text: [fr.consistent_day, fr.consistent_night, fr.random_flippers],
+      textposition: 'outside',
+      textfont: { color: '#e2e8f0', size: 12 },
+      hovertemplate: '%{x}: %{y}<extra></extra>'
+    };
+
+    const layout = {
+      ...DARK,
+      title: { text: `Out of ${fr.n_batters} batters (3+ seasons), how many are truly consistent?`, font: { size: 12, color: '#f1f5f9' } },
+      yaxis: { ...DARK.yaxis, title: { text: 'Batters', font: { size: 10, color: '#94a3b8' } }, range: [0, fr.random_flippers * 1.25] },
+      margin: { l: 50, r: 20, t: 50, b: 80 }
+    };
+
+    Plotly.newPlot('wrap-flip-breakdown', [bars], layout, CONF);
+  }
+
+  /* ── Flip Rates: Chart C — Per-Batter Career Timeline ── */
+  function buildFlipBatterSelector() {
+    const sel = document.getElementById('flipbatter-selector');
+    const sorted = [...DATA.flip_rates.batters].sort((a, b) => b.n_consec_pairs - a.n_consec_pairs);
+    sorted.forEach((b, i) => {
+      const opt = document.createElement('option');
+      opt.value = DATA.flip_rates.batters.indexOf(b);
+      opt.textContent = b.name.replace(/\b\w/g, c => c.toUpperCase()) + ` (${b.n_consec_pairs} seasons, ${(b.flip_rate * 100).toFixed(0)}% flip)`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderFlipTimeline() {
+    const idx = parseInt(document.getElementById('flipbatter-selector').value);
+    const batter = DATA.flip_rates.batters[idx];
+    const yrs = batter.years;
+
+    const xs = yrs.map(y => y.year);
+    const diffs = yrs.map(y => y.diff);
+
+    // detect flip years (direction changed vs prior year)
+    const flipYears = new Set();
+    for (let i = 1; i < yrs.length; i++) {
+      if (yrs[i].direction !== yrs[i-1].direction) flipYears.add(i);
+    }
+
+    // positive fill (day better)
+    const posTrace = {
+      x: xs, y: diffs.map(d => Math.max(d, 0)),
+      mode: 'lines', type: 'scatter',
+      fill: 'tozeroy', fillcolor: 'rgba(249,115,22,0.25)',
+      line: { width: 0, shape: 'hv' },
+      showlegend: false, hoverinfo: 'skip'
+    };
+    // negative fill (night better)
+    const negTrace = {
+      x: xs, y: diffs.map(d => Math.min(d, 0)),
+      mode: 'lines', type: 'scatter',
+      fill: 'tozeroy', fillcolor: 'rgba(70,130,180,0.25)',
+      line: { width: 0, shape: 'hv' },
+      showlegend: false, hoverinfo: 'skip'
+    };
+    // main step line
+    const lineTrace = {
+      x: xs, y: diffs,
+      mode: 'lines+markers+text',
+      type: 'scatter',
+      line: { color: '#94a3b8', width: 2, shape: 'hv' },
+      marker: { color: diffs.map(d => d >= 0 ? '#f97316' : '#4682b4'), size: 8 },
+      text: yrs.map(y => y.direction === 'day' ? 'Day' : 'Night'),
+      textposition: 'top center',
+      textfont: { size: 9, color: '#94a3b8' },
+      name: 'Day-Night diff',
+      hovertemplate: '%{x}: %{y:.3f}<extra></extra>'
+    };
+    // flip markers
+    const flipXs = xs.filter((_, i) => flipYears.has(i));
+    const flipYs = diffs.filter((_, i) => flipYears.has(i));
+    const flipMarkers = {
+      x: flipXs, y: flipYs,
+      mode: 'markers', type: 'scatter',
+      marker: { symbol: 'x', color: '#f87171', size: 12, line: { width: 2 } },
+      name: 'Flip year',
+      hovertemplate: 'Flip: %{x}<extra></extra>'
+    };
+
+    const name = batter.name.replace(/\b\w/g, c => c.toUpperCase());
+    const layout = {
+      ...DARK,
+      title: {
+        text: `${name} - career day/night preference  (flips: ${batter.flips}/${batter.n_consec_pairs} seasons)`,
+        font: { size: 12, color: '#f1f5f9' }
+      },
+      xaxis: { ...DARK.xaxis, title: { text: 'Season', font: { size: 10, color: '#94a3b8' } }, dtick: 1 },
+      yaxis: { ...DARK.yaxis, title: { text: 'Day OPS - Night OPS', font: { size: 10, color: '#94a3b8' } } },
+      legend: { font: { size: 9, color: '#94a3b8' }, bgcolor: 'transparent' },
+      shapes: [{ type: 'line', x0: xs[0] - 0.5, x1: xs[xs.length-1] + 0.5, y0: 0, y1: 0, line: { color: '#475569', width: 1.5, dash: 'dash' } }],
+      margin: { l: 60, r: 20, t: 55, b: 50 }
+    };
+
+    Plotly.newPlot('wrap-flip-timeline', [posTrace, negTrace, lineTrace, flipMarkers], layout, CONF);
+  }
+
+  /* ── Toggle helpers ── */
+  const _extraRendered = {};
+  function toggleExtra(key) {
+    const body = document.getElementById(key + '-body');
+    const icon = document.getElementById(key + '-toggle-icon');
+    const isOpen = body.classList.toggle('open');
+    icon.style.transform = isOpen ? 'rotate(90deg)' : '';
+    icon.textContent = '▶';
+    if (isOpen && !_extraRendered[key]) {
+      _extraRendered[key] = true;
+      if (key === 'fliprates') { renderFlipHist(); renderFlipBreakdown(); buildFlipBatterSelector(); renderFlipTimeline(); }
+      if (key === 'timeline') { renderTimeline(); }
+      if (key === 'samplesize') renderSampleSizes();
+    }
+  }
+
+  init();
+  </script>
+</body>
+</html>

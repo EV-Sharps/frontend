@@ -741,7 +741,10 @@
   /* ── Per-Pitcher Profiles ── */
   function buildPitcherSelector() {
     const sel = document.getElementById('pitcher-selector');
-    DATA.profiles.forEach((p, i) => {
+    const sorted = DATA.profiles
+      .map((p, i) => ({ p, i }))
+      .sort((a, b) => a.p.name.localeCompare(b.p.name));
+    sorted.forEach(({ p, i }) => {
       const opt = document.createElement('option');
       opt.value = i;
       opt.textContent = p.name.replace(/\b\w/g, c => c.toUpperCase());
@@ -778,6 +781,7 @@
       },
       xaxis: {
         ...DARK.xaxis,
+        type: 'linear',
         title: { text: 'Batting order slot', font: { size: 10, color: '#94a3b8' } },
         tickvals: [1,2,3,4,5,6,7,8,9]
       },

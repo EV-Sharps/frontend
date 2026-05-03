@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Weakspot Tracker</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style type="text/css">
+		.tabulator-cell { height: 24px; }
+		#table { width: auto;height:80% }
+	</style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<body>
+<div id="app">
+	<header id="header">
+		<div id="title">
+			<h1>Weakspot Tracker</h1>
+		</div>
+		<div id="center-dropdown">
+			<div class="select-wrapper">
+				<label class="select-label">Min AB</label>
+				<input id="min-ab" type="number" value="10" min="0" style="width:60px;" oninput="applyFilters()">
+			</div>
+			<div class="select-wrapper">
+				<button id="homers-btn" onclick="toggleHomersFilter()" style="padding:3px 10px;border-radius:6px;border:1px solid #243449;background:#0b1220;color:#9ca3af;cursor:pointer;font-size:12px;font-weight:600;">Homers</button>
+			</div>
+			<div class="select-wrapper">
+				<label for="status-select" class="select-label">Status</label>
+				<select id="status-select" onchange="applyFilters()">
+					<option value="">All</option>
+					<option value="confirmed">Confirmed</option>
+					<option value="projected">Projected</option>
+				</select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+			<div class="select-wrapper">
+				<label for="team-select" class="select-label">Team</label>
+				<select id="team-select" onchange="applyFilters()">
+					<option value="">All</option>
+				</select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+		</div>
+		<div id="auth-buttons">
+			<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+				<img src="/logos/discord.png" alt="Discord logo">
+				<span class="btn-text">Sign in with Discord</span>
+			</button>
+			<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				<div class="gsi-material-button-state"></div>
+				<div class="gsi-material-button-content-wrapper">
+					<div class="gsi-material-button-icon">
+						<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display:block;">
+							<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+							<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+							<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+							<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+						</svg>
+					</div>
+					<span style="display:none;">Sign in with Google</span>
+				</div>
+			</button>
+			<span id="username" class="username loggedIn"></span>
+			<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+			<button id="hide-username" onclick="hideUsername()">Hide</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</header>
+	<main>
+		<div id="table-container">
+			<div id="table"></div>
+			<div class="filter-wrapper">
+				<input type="text" id="player-search" placeholder="Search pitcher or batter..." autocomplete="off">
+			</div>
+		</div>
+	</main>
+</div>
+
+<script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="auth.js"></script>
+<script type="text/javascript">
+	PAGE = "weakspots";
+	SPORT = "mlb";
+	parseURLParams();
+	handleSession();
+
+	let _allRows = [];
+	let _homersOnly = false;
+
+	let HIT_LIST = new Set([
+		"pete alonso", "ian happ", "myles straw", "lenyn sosa", "byron buxton",
+    "cody bellinger", "trent grisham"
+	]);
+
+	function toggleHomersFilter() {
+		_homersOnly = !_homersOnly;
+		const btn = document.getElementById('homers-btn');
+		btn.style.borderColor = _homersOnly ? '#f59e0b' : '#243449';
+		btn.style.color       = _homersOnly ? '#f59e0b' : '#9ca3af';
+		btn.style.background  = _homersOnly ? '#1c1a0e' : '#0b1220';
+		applyFilters();
+	}
+
+	function opsColor(ops) {
+		if (ops >= 0.950) return { bg: 'rgba(5,46,22,0.45)', fg: '#86efac' };
+		if (ops >= 0.850) return { bg: '', fg: '#e2e8f0' };
+		if (ops >= 0.750) return { bg: 'rgba(113,63,18,0.40)', fg: '#fde68a' };
+		if (ops >= 0.650) return { bg: 'rgba(124,45,18,0.50)',                     fg: '#fdba74'};
+		return                  { bg: 'rgba(127,29,29,0.55)',    fg: '#fca5a5' };
+	}
+
+	function buildRows(data) {
+		const rows = [];
+		for (const [team, d] of Object.entries(data)) {
+			if (!d.this_year?.slots) continue;
+			const careerBySlot = {};
+			(d.career?.slots || []).forEach(s => { careerBySlot[s.slot] = s; });
+			d.this_year.slots.forEach((slot, idx) => {
+				const batterRaw = d.batting?.[idx] || '';
+				const batter = batterRaw ? title(batterRaw) : '—';
+				const career = careerBySlot[slot.slot] ?? null;
+
+				rows.push({
+					team:        team.toUpperCase(),
+					pitcher:     title(d.pitcher),
+					status:      d.status || 'projected',
+					slot:        slot.slot,
+					batter,
+					ops:         slot.ops,
+					ab:          slot.ab,
+					hr:          slot.hr,
+					hr_ab:       slot.ab ? (slot.hr / slot.ab).toFixed(2) : 0,
+					careerOps:   career?.ops  ?? null,
+					careerAb:    career?.ab   ?? null,
+					careerHr:    career?.hr   ?? null,
+					careerHr_ab: career?.hr ? (career?.hr / career?.ab).toFixed(2) : 0,
+					delta:       career != null ? +(slot.ops - career.ops).toFixed(3) : null,
+					hitHr:       HIT_LIST.has(batterRaw.toLowerCase())
+				});
+			});
+		}
+		return rows;
+	}
+
+	function renderTable(rows) {
+    console.log(rows.filter(r => r.pitcher == "Cole Ragans"))
+		TABLE = new Tabulator('#table', {
+			data: rows,
+			layout: 'fitDataFill',
+			placeholder: 'No data.',
+			initialSort: [{ column: 'careerOps', dir: 'desc' }],
+			columnDefaults: {
+				vertAlign: 'middle',
+				hozAlign: 'center',
+				resizable: false,
+				headerSortStartingDir: 'desc'
+			},
+			rowFormatter(row) {
+				const data = row.getData();
+				const c = opsColor(data.ops);
+				if (c.bg) row.getElement().style.background = c.bg;
+				//if (data.hitHr) row.getCells().forEach(r => r.getElement().classList.add("homer"));
+			},
+			columns: [
+				{
+					title: 'Pitcher', field: 'pitcher', hozAlign: 'left', widthGrow: 2, minWidth: 120,
+          headerFilter: "input",
+					formatter(cell) {
+						const d = cell.getRow().getData();
+						const badge = d.status === 'confirmed'
+							? `<span style="background:#14532d;color:#4ade80;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px;">✓</span>`
+							: `<span style="background:#1e3a5f;color:#93c5fd;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px;">~</span>`;
+						return badge + cell.getValue();
+					}
+				},
+				{ title: 'Team', field: 'team', width: 65 },
+				{ title: 'Slot', field: 'slot', width: 55, sorter: 'number', 
+          headerFilter: "input", },
+				{
+					title: 'Batter', field: 'batter', hozAlign: 'left', widthGrow: 2, minWidth: 120,
+          headerFilter: "input"
+				},
+        {
+          title: "2026 Season",
+          columns: [
+            {
+              title: "OPS", field: 'ops', width: 85, sorter: 'number',
+              formatter(cell) {
+                const v = cell.getValue();
+                if (v == null) return '—';
+                const c = opsColor(v);
+                return `<span style="background:${c.bg||'transparent'};color:${c.fg};font-weight:700;padding:1px 7px;border-radius:4px;">${v.toFixed(3)}</span>`;
+              }
+            },
+            {
+              title: 'HR', field: 'hr', width: 52, sorter: 'number'
+            },
+            {
+              title: 'AB', field: 'ab', width: 52, sorter: 'number'
+            },
+            {
+              title: 'HR/AB', field: 'hr_ab', width: 52, sorter: 'number'
+            },
+          ]
+        },
+				{
+          title: "Career",
+          columns: [
+            {
+              title: 'OPS', field: 'careerOps', width: 85, sorter: 'number',
+              formatter(cell) {
+                const v = cell.getValue();
+                if (v == null) return '<span style="color:#334155">—</span>';
+                const c = opsColor(v);
+                return `<span style="color:${c.fg}">${v.toFixed(3)}</span>`;
+              }
+            },
+            {
+              title: 'HR', field: 'careerHr', width: 52, sorter: 'number'
+            },
+            {
+              title: 'AB', field: 'careerAb', width: 52, sorter: 'number'
+            },
+            {
+              title: 'HR_AB', field: 'careerHr_ab', width: 52, sorter: 'number'
+            },
+          ]
+        },
+				{
+					title: 'Δ Career', field: 'delta', width: 90, sorter: 'number',
+					formatter(cell) {
+						const v = cell.getValue();
+						if (v == null) return '<span style="color:#334155">—</span>';
+						const color = v > 0.075 ? '#94a3b8' : v < -0.075 ? '#34d399' : '#f87171';
+						return `<span style="color:${color};font-weight:600">${v > 0 ? '+' : ''}${v.toFixed(3)}</span>`;
+					},
+          visible: false
+				}
+			]
+		});
+
+		TABLE.on('dataLoaded', () => {
+			// sync player-search to filter name columns
+			document.getElementById('player-search').addEventListener('input', function() {
+				const q = this.value.toLowerCase();
+				TABLE.setData(_allRows.filter(r =>
+					applyRowFilters(r) &&
+					(!q || r.pitcher.toLowerCase().includes(q) || r.batter.toLowerCase().includes(q))
+				));
+			});
+		});
+	}
+
+	function applyRowFilters(r) {
+		const minAb  = 1;
+		const status = document.getElementById('status-select').value;
+		const team   = document.getElementById('team-select').value;
+		return r.ab >= minAb &&
+		       (!status || r.status === status) &&
+		       (!team   || r.team   === team) &&
+		       (!_homersOnly || r.hitHr);
+	}
+
+	function applyFilters() {
+		const q = document.getElementById('player-search').value.toLowerCase();
+		TABLE.setData(_allRows.filter(r =>
+			applyRowFilters(r) &&
+			(!q || r.pitcher.toLowerCase().includes(q) || r.batter.toLowerCase().includes(q))
+		));
+	}
+
+	function buildTeamFilter(rows) {
+		const sel = document.getElementById('team-select');
+		[...new Set(rows.map(r => r.team))].sort().forEach(t => {
+			const opt = document.createElement('option');
+			opt.value = t; opt.textContent = t;
+			sel.appendChild(opt);
+		});
+	}
+
+	function fetchWeakspotsData() {
+		fetch(API_BASE + '/api/weakspots', {
+			headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+		})
+		.then(r => r.json())
+		.then(data => {
+			_allRows = buildRows(data);
+			renderTable(_allRows);
+			buildTeamFilter(_allRows);
+		})
+		.catch(err => console.error('weakspots fetch failed', err));
+	}
+
+	fetchWeakspotsData();
+</script>
+</body>
+</html>

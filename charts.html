@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Dingers</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	<script src="jspdf.umd.min.js"></script>
+	<script src="jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<style type="text/css">
+	body, main {
+		overflow: auto;
+	}
+	#app {
+		height: 100%;
+	}
+	.game-img {
+		height: 18px; width: 18px;
+	}
+	.tabulator-cell {
+		height: 24px;
+	}
+	.player-cell .team-img {
+		margin-top: -2px;
+	}
+	#refresh-select {
+		padding: 0 0.5rem;
+		height: 24px;
+	}
+	#right-body {
+		justify-content: center;
+	}
+	#chart {
+		max-height: 400px;
+		margin-top: 0.5rem;
+	}
+	#mix-panel {
+		overflow-y: auto;
+		padding: 4px 0;
+		width: 100%;
+	}
+	.batter-ps-toggle { display: flex; gap: 4px; }
+	.ps-btn {
+		padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+	}
+	.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+	
+	#table {
+		width: 100%;
+	}
+	@media (max-width: 1850px) {
+		#table {
+			width: 100%;
+		}
+	}
+	@media (max-width: 1350px) {
+		#table-container {
+			justify-content: normal;
+		}
+		#table-container, #table {
+			width: 100%;
+		}
+	}
+	@media (max-width: 768px) {
+		#table {
+			min-width: none;
+		}
+		.disclaimer {
+			position: initial;
+		}
+		.game-container {
+			min-width: auto;
+		}
+	}
+	@media (max-width: 600px) {
+		#right-body.mobile-open {
+			width: 100vw !important;
+			max-width: 100vw !important;
+			flex: 1 1 auto;
+		}
+		#right-body.mobile-open #chart,
+		#right-body.mobile-open #chart .js-plotly-plot,
+		#right-body.mobile-open #chart svg {
+			width: 100% !important;
+			max-width: 100% !important;
+			max-height: none;
+		}
+	}
+	#tweet-bar {
+		display: none;
+		align-items: center;
+		gap: 8px;
+		padding: 4px 2px;
+		flex-wrap: wrap;
+	}
+	.tweet-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 4px 12px;
+		background: #000;
+		color: #fff;
+		border: none;
+		border-radius: 20px;
+		cursor: pointer;
+		font-size: 12px;
+		font-weight: 600;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.tweet-btn:hover { background: #222; }
+	.homer-pitch-badge { font-size: 12px; color: #94a3b8; }
+	.homer-pitch-badge strong { color: #fbbf24; }
+	#auto-mix-panel { width: 100%; overflow-y: auto; padding: 4px 0; }
+</style>
+<body>
+	<div id="app">
+		<div id="devig-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Select Devig Books</h3>
+					<button id="close-devig-modal">&times;</button>
+				</div>
+
+				<div style="display:flex;justify-content: space-evenly;">
+					<input type="text" id="devig-search" placeholder="Search by book or percentage..." class="search-input">
+					<div class="select-wrapper">
+						<label for="method-select" class="select-label">Method</label>
+						<select id="method-select">
+							<option value="" selected>Worst-Case</option>
+							<option value="add">Additive</option>
+							<option value="mult">Multiplicative</option>
+							<option value="power">Power</option>
+							<option value="probit">Probit</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+				</div>
+
+				<div id="devig-options-container" class="options-container">
+					</div>
+
+				<div class="action-footer">
+					<button id="add-custom-devig" class="btn-primary">+ Add Custom</button>
+					<button id="load-predefined-devigs" class="btn-secondary">Preloads</button>
+					<button onclick="closeDevig()">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="preloads-modal" class="modal" style="display:none;">
+            <div class="modal-content devig-panel">
+                <div class="modal-header">
+                    <h3>Preloads — Top Devigs</h3>
+                    <button id="close-preloads-modal">&times;</button>
+                </div>
+
+                <div id="preloads-list-container" class="options-container" style="max-height:520px;">
+                </div>
+
+                <div class="action-footer">
+                    <button id="preloads-close" class="btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+		<div id="prop-selector-modal" class="modal">
+			<div class="modal-content devig-panel">
+				<div class="modal-header">
+					<h3>Add Prop Tag to Devig</h3>
+					<button onclick="closePropSelectorModal()">x</button>
+				</div>
+				<div>
+					<span id="prop-selector-devig">Devig: Only FD/DK 50% Equal</span>
+				</div>
+				<div id="prop-selector-options-container" class="options-container">
+				</div>
+				<div class="action-footer">
+					<p>Select a stat category to add to the current devig.</p>
+				</div>
+			</div>
+		</div>
+		<div id="range-panel" class="range-panel hidden">
+			<div class="range-row">
+				<label>Min</label>
+				<input id="range-min" type="number" placeholder="Min odds">
+			</div>
+			<div class="range-row">
+				<label>Max</label>
+				<input id="range-max" type="number" placeholder="Max odds">
+			</div>
+
+			<div class="range-actions">
+				<button onclick="applyRange()">Apply</button>
+				<button onclick="clearRange()">Clear</button>
+			</div>
+		</div>
+		<div id="overlay">
+			<div class="overlay-content">
+				<div>
+					<h2 style="justify-content: center;">Customize (In Development)</h2>
+				</div>
+				<div style="justify-content: center;display: flex;gap: 1rem;">
+					<div style="display: flex;flex-direction: column;">
+						<label for="sort-select">Sort</label>
+						<div class="select-wrapper">
+							<select id="sort-select">
+								<option value="ev" selected>Expected Value (EV)</option>
+								<option value="curr_implied">Implied (FV)</option>
+								<option value="savant.barrels_per_bip">Barrel %</option>
+								<option value="savant.exit_velocity_avg">Exit Velocity</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+					<div style="display: flex;flex-direction: column;">
+						<label for="filter-select">Filter</label>
+						<div class="select-wrapper">
+							<select id="filter-select">
+								<option value="" selected>None</option>
+								<option value="game">Game</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+					<div style="display: flex;flex-direction: column;">
+						<label for="custom-devig-select">Devig</label>
+						<div class="select-wrapper">
+							<select id="custom-devig-select">
+								<option value="" selected>Market Avg</option>
+								<option value="fd">vs FD</option>
+								<option value="pn">vs PN</option>
+								<option value="circa">vs Circa</option>
+							</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+				</div>
+				<div id="items" style="display: flex;">
+					<div>
+						<h3>Expected Value</h3>
+						<div>
+							<input id="custom_ev" type="checkbox">
+							<label for="custom_ev">Expected Value</label>
+						</div>
+						<div>
+							<input id="custom_fairVal" type="checkbox">
+							<label for="custom_fairVal">Fair Value</label>
+						</div>
+						<div>
+							<input id="custom_implied" type="checkbox">
+							<label for="custom_implied">Implied</label>
+						</div>
+						<div>
+							<input id="custom_kelly" type="checkbox">
+							<label for="custom_kelly">¼ Kelly</label>
+						</div>
+					</div>
+					<!-- Player / Odds -->
+					<div>
+						<h3>Player & Odds</h3>
+						<div>
+							<input id="custom_player" type="checkbox" checked disabled>
+							<label for="custom_player">Player</label>
+						</div>
+						<div>
+							<input id="custom_book" type="checkbox" checked disabled>
+							<label for="custom_book">EV Book</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_fd">Fanduel</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_b365" type="checkbox">
+							<label for="custom_bookOdds_b365">Bet365</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_dk" type="checkbox">
+							<label for="custom_bookOdds_dk">Draftkings</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_mgm" type="checkbox">
+							<label for="custom_bookOdds_mgm">MGM</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_espn" type="checkbox">
+							<label for="custom_bookOdds_espn">ESPN</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_cz" type="checkbox">
+							<label for="custom_bookOdds_cz">Caesars</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fn" type="checkbox">
+							<label for="custom_bookOdds_fn">Fanatics</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_br" type="checkbox">
+							<label for="custom_bookOdds_br">BetRivers</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_hr" type="checkbox">
+							<label for="custom_bookOdds_hr">Hard Rock</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_hr_oh" type="checkbox">
+							<label for="custom_bookOdds_hr_oh">Hard Rock (OH)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kambi" type="checkbox">
+							<label for="custom_bookOdds_kambi">Kambi (BB)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bv" type="checkbox">
+							<label for="custom_bookOdds_bv">Bovada</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_re" type="checkbox">
+							<label for="custom_bookOdds_re">Rebet</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_fl" type="checkbox">
+							<label for="custom_bookOdds_fl">Fliff</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_bol" type="checkbox">
+							<label for="custom_bookOdds_bol">BetOnline (BOL)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_kal" type="checkbox">
+							<label for="custom_bookOdds_kal">Kalshi (KAL)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_poly" type="checkbox">
+							<label for="custom_bookOdds_poly">Polymarket (POLY)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_nv" type="checkbox">
+							<label for="custom_bookOdds_nv">NoVig (NV)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_px" type="checkbox">
+							<label for="custom_bookOdds_px">ProphetX (PX)</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_pn" type="checkbox">
+							<label for="custom_bookOdds_pn">Pinnacle</label>
+						</div>
+						<div>
+							<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+							<label for="custom_bookOdds_circa">Circa</label>
+						</div>
+					</div>
+					<!-- Vs Pitcher -->
+					<div>
+						<h3>Vs Pitcher</h3>
+						<div>
+							<input id="custom_pitcher" type="checkbox">
+							<label for="custom_pitcher">Pitcher</label>
+						</div>
+						<div>
+							<input id="custom_percs_hr_pa" type="checkbox">
+							<label for="custom_percs_hr_pa">HR/PA Rate</label>
+						</div>
+						<div>
+							<input id="custom_percs_home_run" type="checkbox">
+							<label for="custom_percs_home_run">Total HR</label>
+						</div>
+						<div>
+							<input id="custom_bvp" type="checkbox">
+							<label for="custom_bvp">Vs Pitcher</label>
+						</div>
+					</div>
+					<!-- BPP -->
+					<div>
+						<h3>Ballparkpal</h3>
+						<div>
+							<input id="custom_bpp" type="checkbox">
+							<label for="custom_bpp">BPP Game</label>
+						</div>
+						<!-- 
+						<div>
+							<input id="custom_playerFactor" type="checkbox">
+							<label for="custom_playerFactor">BPP Player</label>
+						</div>
+						-->
+					</div>
+					<!-- Savant --> 
+					<div>
+						<h3>Adv. Batter Data</h3>
+						<div>
+							<input id="custom_batter_percs_hr_pa" type="checkbox">
+							<label for="custom_batter_percs_hr_pa">HR/PA %</label>
+						</div>
+						<div>
+							<input id="custom_batter_percs_home_run" type="checkbox">
+							<label for="custom_batter_percs_home_run">HR</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_ba" type="checkbox">
+							<label for="custom_savant_est_ba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_est_woba" type="checkbox">
+							<label for="custom_savant_est_woba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_savant_sweet_spot_percent" type="checkbox">
+							<label for="custom_savant_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_savant_exit_velocity_avg" type="checkbox">
+							<label for="custom_savant_exit_velocity_avg">Exit Velo Avg</label>
+						</div>
+						<div>
+							<input id="custom_savant_launch_angle_avg" type="checkbox">
+							<label for="custom_savant_launch_angle_avg">Avg LA</label>
+						</div>
+						<div>
+							<input id="custom_savant_hard_hit_percent" type="checkbox">
+							<label for="custom_savant_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_savant_barrels_per_bip" type="checkbox">
+							<label for="custom_savant_barrels_per_bip">Barrel %</label>
+						</div>
+						<div>
+							<input id="custom_savant_avg_swing_speed" type="checkbox">
+							<label for="custom_savant_avg_swing_speed">Swing Sp</label>
+						</div>
+						<div>
+							<input id="custom_savant_blasts_swing" type="checkbox">
+							<label for="custom_savant_blasts_swing">Blasts %</label>
+						</div>
+						<div>
+							<input id="custom_savant_flyballs_percent" type="checkbox">
+							<label for="custom_savant_flyballs_percent">FB %</label>
+						</div>
+						<div>
+							<input id="custom_savant_pull_percent" type="checkbox">
+							<label for="custom_savant_pull_percent">Pull %</label>
+						</div>
+						<div>
+							<input id="custom_savant_squared_up_swing" type="checkbox">
+							<label for="custom_savant_squared_up_swing">Sq Up %</label>
+						</div>
+						<div>
+							<input id="custom_savant_meatball_percent" type="checkbox">
+							<label for="custom_savant_meatball_percent">Meatball %</label>
+						</div>
+					</div>
+					<!-- Pitcher Data -->
+					<div>
+						<h3>Adv. Pitcher Data</h3>
+						<div>
+							<input id="custom_pitcherData_p_era" type="checkbox">
+							<label for="custom_pitcherData_p_era">ERA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xba" type="checkbox">
+							<label for="custom_pitcherData_xba">xBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_xwoba" type="checkbox">
+							<label for="custom_pitcherData_xwoba">xwOBA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_flyballs_percent" type="checkbox">
+							<label for="custom_pitcherData_flyballs_percent">Flyballs %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_sweet_spot_percent" type="checkbox">
+							<label for="custom_pitcherData_sweet_spot_percent">Sweet Spot %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_exit_velocity_avg" type="checkbox">
+							<label for="custom_pitcherData_exit_velocity_avg">Exit Velocity Avg</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_hard_hit_percent" type="checkbox">
+							<label for="custom_pitcherData_hard_hit_percent">Hard Hit %</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_barrel_batted_rate" type="checkbox">
+							<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
+						</div>
+					</div>
+					<!-- MISC -->
+					<div>
+						<h3>Misc</h3>
+						<div>
+							<input id="custom_logs" type="checkbox">
+							<label for="custom_logs">Logs</label>
+						</div>
+						<div>
+							<input id="custom_order" type="checkbox">
+							<label for="custom_order">Batting Order</label>
+						</div>
+						<div>
+							<input id="custom_oppRank" type="checkbox">
+							<label for="custom_oppRank">Opp Ranks</label>
+						</div>
+						<div>
+							<input id="custom_stadiumRank" type="checkbox">
+							<label for="custom_stadiumRank">Stadium Ranks</label>
+						</div>
+						<div>
+							<input id="custom_weather" type="checkbox">
+							<label for="custom_weather">Weather</label>
+						</div>
+					</div>
+					<!-- Last Homer (DUE) -->
+					<div>
+						<h3>Last Homer (Due)</h3>
+						<div>
+							<input id="custom_homerLogs_pa_streak" type="checkbox">
+							<label for="custom_homerLogs_pa_streak">PA</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_med" type="checkbox">
+							<label for="custom_homerLogs_pa_med">Median</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_z_median" type="checkbox">
+							<label for="custom_homerLogs_pa_z_median">Z-score</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_avg" type="checkbox">
+							<label for="custom_homerLogs_pa_avg">Average</label>
+						</div>
+						<div>
+							<input id="custom_homerLogs_pa_z" type="checkbox">
+							<label for="custom_homerLogs_pa_z">Avg Z-score</label>
+						</div>
+					</div>
+				</div>
+				<div class="loggedOut">
+					<div style="padding: 0.5rem;text-align: center;">
+						<a href="/pricing" class="upgrade-link">Upgrade</a> to save table settings! ⚙️
+					</div>
+				</div>
+				<div style="display: flex;justify-content: center;align-items: center;">
+					<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
+					<span id="save-status" style="margin: 0.5rem 0"></span>
+					<button onclick="closeOverlay();">Close</button>
+				</div>
+			</div>
+		</div>
+		<header id="header">
+			<div id="title">
+				<h1>+EV Sharps</h1>
+				<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
+				  <!-- Icon -->
+				  <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+					<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
+				  </svg>
+				  <span class="help-label">Help</span>
+				</button>
+			</div>
+			<div id="view-toggle-container">
+				<div class="select-wrapper">
+					<label for="view-select" class="select-label">View</label>
+					<select id="view-select">
+						<option value="table" selected>Table</option>
+						<option value="mobile">Mobile</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+			<div id="center-dropdown">
+				<div class="select-wrapper">
+					<label for="page-select" class="select-label">Page</label>
+					<select id="page-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="select-wrapper">
+					<label for="book-select" class="select-label">Book</label>
+					<select id="book-select"></select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="chkdd" id="exclude-dd">
+					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+					  Exclude
+					</button>
+					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
+					  <label><input type="checkbox" value="fd"> FD</label>
+					  <label><input type="checkbox" value="dk"> DK</label>
+					  <label><input type="checkbox" value="b365"> B365</label>
+					  <label><input type="checkbox" value="mgm"> MGM</label>
+					  <label><input type="checkbox" value="espn"> ESPN</label>
+					  <label><input type="checkbox" value="cz"> CZ</label>
+					  <label><input type="checkbox" value="fn"> FN</label>
+					  <label><input type="checkbox" value="br"> BR</label>
+					  <label><input type="checkbox" value="bv"> BV</label>
+					  <label><input type="checkbox" value="hr"> HR</label>
+					  <label><input type="checkbox" value="hr_oh"> HR (OH)</label>
+					  <label><input type="checkbox" value="kambi"> Kambi</label>
+					  <label><input type="checkbox" value="re"> RE</label>
+					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <div style="border-top:1px solid #333;margin:4px 0;padding-top:4px;">
+					    <label><input type="checkbox" value="kal"> Kalshi (KAL)</label>
+					    <label><input type="checkbox" value="poly"> Polymarket (POLY)</label>
+					    <label><input type="checkbox" value="px"> ProphetX (PX)</label>
+					    <label><input type="checkbox" value="nv"> NoVig (NV)</label>
+					    <div class="chkdd-actions" style="justify-content:center;">
+					      <button type="button" onclick="togglePredictionMarkets()">Prediction Markets</button>
+					    </div>
+					  </div>
+					  <div class="chkdd-actions">
+						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="none">None</button>
+					  </div>
+					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
+						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+					  </div>
+					  <div>
+						<span id="exclude-status"></span>
+					  </div>
+					</div>
+				  </div>
+				<div class="select-wrapper">
+					<label for="devig-button" class="select-label">Devig</label>
+					<button id="devig-button" class="devig-display-btn">
+						<span id="devig-display-text">Market Avg</span>
+						<span class="dropdown-arrow">▼</span>
+					</button>
+				</div>
+				<div class="select-wrapper" style="display:none">
+					<label for="devig-select" class="select-label">Devig</label>
+					<select id="devig-select">
+						<option value="" selected>Market Avg</option>
+						<option value="fd;1">vs FD</option>
+						<option value="dk;1">vs DK</option>
+						<option value="espn;1">vs ESPN</option>
+						<option value="bol;1">vs BOL</option>
+						<option value="pn;1">vs PN</option>
+						<option value="circa;1">vs Circa</option>
+						<option value="espn+pn;1+1">ESPN/PN 50% Equal</option>
+						<option value="espn+pn+circa;1+1+1">Avg ESPN/PN/Circa 33% Equal</option>
+						<option value="only+espn+pn+circa;1+1+1">Only ESPN+PN+Circa 33% Equal</option>
+						<option value="pn+circa;1+1">PN/Circa 50% Equal</option>
+						<option id="custom-devig-option" value="custom">Add Custom...</option>
+						<option value="delete">Delete Custom...</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="chkdd" id="required-dd">
+					<label for="required-button" class="select-label">Required</label>
+					<button id="required-button" class="chkdd-btn" type="button" onclick="toggleDropdown('required-dd', event)">
+						All
+					</button>
+					<div class="chkdd-menu" id="required-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="any">Any</button>
+						</div>
+					</div>
+				</div>
+				<div class="select-wrapper">
+					<label for="boost-select" class="select-label">Boost</label>
+					<select id="boost-select">
+						<option value="0" selected>None</option>
+						<option value="10">10%</option>
+						<option value="20">20%</option>
+						<option value="25">25%</option>
+						<option value="30">30%</option>
+						<option value="50">50%</option>
+						<option value="no-sweat">No Sweat</option>
+						<option value="custom">Custom...</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<input id="boost-custom"
+					   type="number" min="0" step="5"
+					   placeholder="Custom %"
+					   style="display:none; width:7ch; margin-left:.5rem;" />
+				<div class="chkdd" id="prop-dd">
+					<label for="prop-dd-button" class="select-label">Prop</label>
+					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
+					<div class="chkdd-menu" id="prop-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
+				</div>
+				<div class="select-wrapper">
+					<label for="ou-select" class="select-label">O/U</label>
+					<select id="ou-select">
+						<option value="ou" selected>Both</option>
+						<option value="o">Overs</option>
+						<option value="u">Unders</option>
+					</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+				<div class="chkdd" id="game-dd">
+					<label for="game-dd-button" class="select-label">Game</label>
+					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
+					<div class="chkdd-menu" id="game-options">
+						<div class="chkdd-actions">
+							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="none">None</button>
+						</div>
+					</div>
+				</div>
+				<div class="select-wrapper">
+					<label id="range-label" class="select-label">Range</label>
+					<button id="range-btn" class="range-btn" onclick="toggleRange(event)">
+					Any
+					</button>
+				</div>
+				<div id="min-odds-wrapper" class="select-wrapper">
+				  <label for="min-odds" class="select-label">Min</label>
+				  <input id="min-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+
+				<div id="max-odds-wrapper" class="select-wrapper">
+				  <label for="max-odds" class="select-label">Max</label>
+				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
+			</div>
+			<div id="auth-buttons">
+				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+					<img src="/logos/discord.png" alt="Discord logo">
+					<span class="btn-text">Sign in with Discord</span>
+				</button>
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				  <div class="gsi-material-button-state"></div>
+				  <div class="gsi-material-button-content-wrapper">
+					<div class="gsi-material-button-icon">
+					  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+						<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+						<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+						<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+						<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+						<path fill="none" d="M0 0h48v48H0z"></path>
+					  </svg>
+					</div>
+					<span style="display: none;">Sign in with Google</span>
+				  </div>
+				</button>
+
+				<span id="username" class="username loggedIn"></span>
+				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+				<button id="hide-username" onclick="hideUsername()">Hide</button>
+				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+			</div>
+		</header>
+		<main>
+			<div id="dev-picker-wrapper">
+				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
+
+				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
+			</div>
+			<div id="table-container">
+				<div id="table"></div>
+				<div class="filter-wrapper">
+					<input type="text" id="player-search" placeholder="Search players..." autocomplete="off">
+				</div>
+				<div id="card-container"></div>
+				<div id="watermark">
+					<img src="logos/logo.png">
+				</div>
+				<div id="right-body" class="body">
+					<div style="display:flex;align-items:center;gap:6px;">
+						<div class="select-wrapper">
+						<select id="btwn-select">
+							<option value="pa">PA Btwn</option>
+							<option value="odds">Odds</option>
+							<option value="feed">Feed</option>
+							<option value="mix">Mix</option>
+						</select>
+						<svg class="select-arrow" viewBox="0 0 20 20">
+							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+						</svg>
+					</div>
+						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
+					</div>
+					<div id="tweet-bar">
+						<a id="tweet-link" class="tweet-btn" target="_blank" rel="noopener">
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.635L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+							Tweet
+						</a>
+						<span id="homer-pitch" class="homer-pitch-badge"></span>
+					</div>
+					<div id="chart"></div>
+					<div id="mix-panel" style="display:none;"></div>
+					<div id="auto-mix-panel"></div>
+				</div>
+			</div>
+		</main>
+		<footer class="site-footer">
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+		</footer>
+	</div>
+	<div id="card-modal-overlay">
+		<div id="card-modal-inner">
+			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
+		</div>
+	</div>
+	<script type="text/javascript" src="shared.js"></script>
+	<script src="auth.js"></script>
+	<script type="text/javascript">
+		PAGE = "charts";
+		let NOCACHE, BPP, KAMBI, NO365, HISTORICAL, NOBR, SIMPLE, PH;
+		parseURLParams();
+		SPORT = "mlb";
+
+		handleSession();
+
+		const selectId = "#header";
+
+		document.querySelector("#btwn-select").value = "pa";
+		document.querySelector("#btwn-select").addEventListener("change", function(event) {
+			if (event.target.value == "mix") {
+				const d = TABLE.getSelectedData()[0];
+				if (d) fetchAndShowMix(d);
+			} else {
+				_mixShowChart();
+				if (event.target.value == "g") {
+					plotHRGap(showGames=true);
+				} else if (event.target.value == "feed") {
+					renderFeed();
+				} else if (event.target.value == "odds") {
+					plotOddsChart();
+				} else {
+					plotHRGap();
+				}
+			}
+		});
+
+		function plotOddsChart() {
+			const data = TABLE.getSelectedData()[0];
+			if (!data) return;
+			const chart = data.oddsChart;
+			const el = document.getElementById('chart');
+
+			if (!chart || chart.length === 0) {
+				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
+				return;
+			}
+
+			// Collect all books (exclude ts and *_under keys)
+			const bookSet = new Set();
+			chart.forEach(entry => {
+				Object.keys(entry).forEach(k => {
+					if (k !== 'ts' && !k.endsWith('_under')) bookSet.add(k);
+				});
+			});
+
+			const now = new Date();
+			const BOOK_COLORS = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
+			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
+			const books = [...bookSet];
+			const tooMany = books.length > BOOK_COLORS.length;
+
+			const traces = books.map((book, i) => {
+				// gather points where this book has data
+				const pts = chart
+					.filter(e => e[book] != null)
+					.map(e => ({ x: new Date(e.ts), y: e[book] }));
+				if (pts.length === 0) return null;
+				// extend to now with last known value
+				const xs = [...pts.map(p => p.x), now];
+				const ys = [...pts.map(p => p.y), pts.at(-1).y];
+				const color = BOOK_COLORS[i % BOOK_COLORS.length];
+				const dash = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
+				const labels = new Array(xs.length).fill('');
+				//labels[pts.length - 1] = book.toUpperCase();
+				return {
+					x: xs, y: ys,
+					name: book.toUpperCase(),
+					mode: 'lines+markers+text',
+					text: labels,
+					textposition: 'top center',
+					textfont: { size: 10, color },
+					line: { color, width: 2, dash },
+					marker: { size: 5, color },
+					hovertemplate: `%{x|%I:%M %p}<br>${book.toUpperCase()}: %{y}<extra></extra>`
+				};
+			}).filter(Boolean);
+
+			const layout = {
+				title: { text: `${title(data.player)}: HR Over Odds`, font: { size: 13 } },
+				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
+				font: { color: '#e8e6e3' },
+				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
+				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
+				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
+				margin: { l: 45, r: 10, t: 50, b: 40 },
+				hovermode: 'x unified'
+			};
+
+			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
+			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+		}
+
+		document.querySelector("#sort-select").addEventListener("change", function(event) {
+			let field = event.target.value;
+			TABLE.setSort([
+				{column: field, dir: "desc"}
+			])
+		});
+
+		document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
+			checkbox.addEventListener("change", () => {
+				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+				if (checkbox.checked) {
+					TABLE.getColumn(field)?.show();
+				} else {
+					TABLE.getColumn(field)?.hide();
+				}
+			});
+		})
+
+		window.addEventListener("resize", () => {
+			MOBILE = window.innerWidth <= 600;
+		});
+
+		function parseData(data) {
+			UPDATED[PAGE] = data["updated"];
+			const games = data["games"];
+			data = data["data"];
+
+			let OLD = RES;
+			RES = data;
+		}
+
+		function getNextOpeningDay() {
+            // Default: use Apr 1 of current year (adjust to next year if already passed).
+            const now = new Date();
+            let year = now.getFullYear();
+            let opening = new Date(`${year}-03-26T18:15:00Z`);
+            return opening;
+        }
+
+        function formatTwo(n) { return String(n).padStart(2, '0'); }
+
+        let __countdownInterval = null;
+        let __savedTableContainerHTML = null;
+
+        function countdown() {
+            const container = document.getElementById('table-container');
+            if (!container) return;
+
+            // Save existing content once so we can restore if needed
+            if (__savedTableContainerHTML === null) {
+                __savedTableContainerHTML = container.innerHTML;
+            }
+
+            // Create overlay
+            container.innerHTML = `
+                <div id="countdown-overlay" style="
+                    display:flex;
+                    flex-direction:column;
+                    justify-content:center;
+                    align-items:center;
+                    min-height:320px;
+                    background:linear-gradient(180deg, #0f1724 0%, #071020 100%);
+                    color:#fff;
+                    padding:2rem;
+                    border-radius:8px;
+                ">
+                    <h1 style="font-size:1.8rem;margin:0 0 0.5rem;">Opening Day Countdown</h1>
+                    <div id="countdown-clock" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size:2.2rem; letter-spacing:1px;"></div>
+                    <div style="margin-top:.75rem; color: #cbd5e1;">We'll show the table automatically when Opening Day arrives.</div>
+                    <div style="margin-top:1rem;"><button id="countdown-refresh" style='padding:.5rem 1rem;border-radius:4px;border:none;background:#2563eb;color:#fff;cursor:pointer;'>Refresh Now</button></div>
+                </div>
+            `;
+
+            const opening = getNextOpeningDay();
+
+            function update() {
+                const now = new Date();
+                let diff = Math.max(0, opening.getTime() - now.getTime());
+
+                if (diff <= 0) {
+                    // countdown complete -> reload to let page fetch live data
+                    clearInterval(__countdownInterval);
+                    __countdownInterval = null;
+                    // restore original container while reloading quickly to avoid blank UI on slow reload
+                    container.innerHTML = __savedTableContainerHTML || '';
+                    // reload the page to fetch data (or you could call fetchDingersData() here)
+                    window.location.reload();
+                    return;
+                }
+
+                const sec = Math.floor(diff / 1000);
+                const days = Math.floor(sec / 86400);
+                const hours = Math.floor((sec % 86400) / 3600);
+                const minutes = Math.floor((sec % 3600) / 60);
+                const seconds = sec % 60;
+
+                const clock = document.getElementById('countdown-clock');
+                if (clock) {
+                    clock.innerText = `${days}d ${formatTwo(hours)}:${formatTwo(minutes)}:${formatTwo(seconds)}`;
+                }
+            }
+
+            // attach manual refresh button
+            document.getElementById('countdown-refresh')?.addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            // start/replace interval
+            if (__countdownInterval) {
+                clearInterval(__countdownInterval);
+            }
+            update();
+            __countdownInterval = setInterval(update, 1000);
+		}
+
+		async function fetchDingersData() {
+			let url = "/api/charts";
+			fetch(API_BASE+url, {
+				headers: {
+					Authorization: `Bearer ${ACCESS_TOKEN}`
+				}
+			}).then(response => response.json()).then(data => {
+				RES = data;
+
+				if (data["data"].length == 0) {
+					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+					TABLE.redraw(true);
+					return;
+				}
+
+				setTimeout(function() {
+					if (PRETTY != undefined) {
+						pretty_();
+					}
+					if (SIMPLE != undefined) {
+						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
+					}
+					updateHeaders();
+
+					if (IMP != undefined) {
+						implied();
+					}
+
+					if (!CSV_DOWNLOADED && CSV != undefined) {
+						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+						CSV_DOWNLOADED = true;
+					}
+
+					renderTable(data.data)
+				}, 500)
+				prefetchPitcherMix();
+				prefetchFeed();
+			}).catch(err => console.log(err));
+		}
+
+		let ODDS_HIDDEN = false;
+		function toggleBookOddsColumns() {
+			ODDS_HIDDEN = !ODDS_HIDDEN;
+			const btn = document.getElementById('book-odds-toggle');
+			if (ODDS_HIDDEN) {
+				TABLE.getColumns().forEach(col => {
+					if (col.getField()?.startsWith('bookOdds.')) col.hide();
+				});
+				if (btn) btn.textContent = '+';
+			} else {
+				TABLE.getColumns().forEach(col => {
+					if (col.getField()?.startsWith('bookOdds.')) col.show();
+				});
+				if (btn) btn.textContent = '−';
+			}
+		}
+
+		function hideCols() {
+			if (SPORT == "mlb" || SPORT.includes("futures")) {
+				const cols = ["totalSplits", "totalOver", "total10Over"];
+				if (PROP == "hr") {
+					cols.push("prop");
+				}
+				cols.forEach(col => TABLE.hideColumn(col));
+			}
+
+			if (SPORT == "mlbfutures") {
+				TABLE.showColumn("bookOdds.bv");
+			}
+		}
+
+		let loaded = false;
+		function renderTable(data) {
+			//data = data.filter(r => ["cal raleigh", "kyle schwarber"].includes(r.player));
+
+			data.sort((a,b) => {
+				return parseFloat(b.ev) || 0 - parseFloat(a.ev) || 0;
+			});
+			let first = [...data];
+			first.sort((a,b) => {
+				return parseInt(a.startSortable) - parseInt(b.startSortable);
+			});
+			let props = [...new Set(data.map(row => row.prop.toUpperCase()))];
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+    		placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "ev", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()} (${data[0].start})</span>`;
+				},
+				groupToggleElement: "header",
+				groupBy: "",
+				groupStartOpen: function (value) {
+					return value == first[0].game;
+				},
+				columns: [
+					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
+					{
+						title: "Expected<br>Value",
+						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: evFormatter,
+						responsive: 0
+					},
+					{
+						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
+						field: "book",
+						vertAlign:"bottom", width: MOBILE ? 75 : 75,
+						formatter: bestBookFormatter,
+						formatterParams:{book:BOOK},
+						responsive: 0
+					},
+					{
+						title: "Player",
+						field: "player",
+						headerFilter: "input",
+						formatter: playerFormatter,
+						width: MOBILE ? 90 : 140,
+						formatterParams:{
+							sport: SPORT
+						},
+						hozAlign: "left",
+						responsive: 0,
+						frozen: MOBILE ? true : true
+					},
+					{
+						title: "Line",
+						field: "handicap",
+						formatter: function(cell) {
+							const data = cell.getRow().getData();
+							const prop = data.prop;
+							let ou = data.under ? "u" : "o";
+							return `${ou}${cell.getValue()}`;
+						},
+						headerFilter:"list",
+						headerFilterParams:{
+							valuesLookup: true,
+							clearable: true,
+							placeholder: "All Props",
+							sort: "asc"
+						},
+						headerFilterFunc: function(headerValue, rowValue) {
+							if (headerValue == "All") {
+								return true;
+							}
+							return rowValue === headerValue;
+						},
+						width: 60
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairVal",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter,
+						responsive: 0
+					},
+					{
+						title: "Implied",
+						field: "implied",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: impliedFormatter,
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{
+						title: "¼ Kelly",
+						field: "kelly",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: function(cell) {
+							if (!cell.getValue()) {
+								return "";
+							}
+							return `${cell.getValue().toFixed(2)}u`;
+						},
+						responsive: 0,
+						visible: MOBILE ? false : true
+					},
+					{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter},
+					{title: "Diff", field: "bppDiff", visible: BPP ? true : false, width: 60, sorter: "number", formatter: percentFormatter},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter
+					},
+					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", visible: HISTORICAL ? false : true, formatter: evOddsFormatter},
+					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `HR OH<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr_oh",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: "<a href='https://www.x.com/BallparkPal' target='new'  onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'  onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
+					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true},
+					{title: "Stadium<br>Rank", field: "stadiumRank", formatter: stadiumRankFormatter, width: 60, visible: HISTORICAL ? false : true},
+					{title: "Last Homer (Due)", columns: [
+						//{title: "Gms", field: "homerLogs.last", width: 40, formatter: gapFormatter},
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: homerLogFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: homerLogFormatter},
+						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: homerLogFormatter, visible: false},
+						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},
+					]},
+					{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"},
+					{
+						title: "Game Logs<br> ➡️ Most Recent",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3,
+						visible: MOBILE ? false : true
+					}
+					//{title: "Last HR", field: "lastHR"},
+				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
+				rowClick(row);
+			});
+
+			TABLE.on("dataLoaded", function(data) {
+				showHideUserTable(loaded);
+				if (ODDS_HIDDEN) {
+					TABLE.getColumns().forEach(col => {
+						if (col.getField()?.startsWith('bookOdds.')) col.hide();
+					});
+				}
+				if (!loaded) {
+					TABLE.setHeaderFilterValue("handicap", "0.5");
+					changeFilter();
+				}
+				loaded = true;
+			});
+		}
+
+		// ── Pitcher Mix ─────────────────────────────────────────────────────
+		let PITCHER_MIX_CACHE = null;
+		let FEED_CACHE = {};
+		let FEED_LOADED = false;
+		let MIX_SELECTED_PS = "r";
+
+		function prefetchPitcherMix() {
+			if (PITCHER_MIX_CACHE) return;
+			fetch(API_BASE + '/api/pitcher_mix', { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } })
+				.then(r => r.json())
+				.then(data => { PITCHER_MIX_CACHE = _mixProcessData(data); })
+				.catch(() => {});
+		}
+
+		function prefetchFeed() {
+			if (FEED_LOADED) return;
+			FEED_LOADED = true;
+			fetch(API_BASE + '/api/feed', { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } })
+				.then(r => r.json())
+				.then(data => { Object.assign(FEED_CACHE, data); })
+				.catch(() => {});
+		}
+
+		// feed shape: { [game]: [ { player, result, pitch, evo, la, dist, dt, ... } ] }
+		function getLastHomerFromFeed(rowData) {
+			const player = rowData.player;
+			const homers = [];
+			for (const rows of Object.values(FEED_CACHE)) {
+				if (!Array.isArray(rows)) continue;
+				for (const row of rows) {
+					if (row.player === player && row.result === 'Home Run') {
+						homers.push({ ...row, pitch: row.pitch?.toUpperCase() });
+					}
+				}
+			}
+			homers.sort((a, b) => (b.dt || '').localeCompare(a.dt || ''));
+			return homers[0] || null;
+		}
+
+		function buildTweetText(rowData) {
+			const name = title(rowData.player);
+			const lines = [];
+			let oddsLine = `${name} HR`;
+			if (rowData.book && rowData.fairVal != null) {
+				oddsLine += ` | ${rowData.book.toUpperCase()} FV: ${rowData.fairVal > 0 ? '+' : ''}${rowData.fairVal}`;
+			}
+			if (rowData.ev != null) {
+				oddsLine += ` | EV: ${rowData.ev > 0 ? '+' : ''}${rowData.ev}%`;
+			}
+			lines.push(oddsLine);
+			const hr = getLastHomerFromFeed(rowData);
+			if (hr) {
+				const pitchName = pitchMap[hr.pitch] || hr.pitch || '?';
+				const parts = [`Last HR: ${pitchName}`];
+				if (hr.evo) parts.push(`${hr.evo} mph`);
+				if (hr.dist) parts.push(`${hr.dist} ft`);
+				if (hr.pitcher) parts.push(`off ${title(hr.pitcher)}`);
+				lines.push(parts.join(' | '));
+			}
+			lines.push(window.location.origin + '/charts');
+			return lines.join('\n');
+		}
+
+		function updateTweetBar(rowData) {
+			const bar = document.getElementById('tweet-bar');
+			const link = document.getElementById('tweet-link');
+			const pitchEl = document.getElementById('homer-pitch');
+			bar.style.display = 'flex';
+			link.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(buildTweetText(rowData))}`;
+			const hr = getLastHomerFromFeed(rowData);
+			if (hr) {
+				const pitchName = pitchMap[hr.pitch] || hr.pitch || '?';
+				const stats = [hr.evo ? `${hr.evo} mph` : null, hr.la != null ? `${hr.la}°` : null, hr.dist ? `${hr.dist} ft` : null].filter(Boolean).join(' · ');
+				pitchEl.innerHTML = `Last HR: <strong>${pitchName}</strong>${stats ? ` <span style="color:#64748b">${stats}</span>` : ''}`;
+			} else {
+				pitchEl.textContent = '';
+			}
+		}
+
+		function renderAutoMixPanel(rowData) {
+			const panel = document.getElementById('auto-mix-panel');
+			panel.innerHTML = '';
+			if (!PITCHER_MIX_CACHE) return;
+			const teamData = PITCHER_MIX_CACHE[rowData.team];
+			const batter = teamData?.battersByName?.[rowData.player];
+			const pitcher = teamData?.pitcher;
+			if (!batter || !pitcher) return;
+			const pitcherSide = rowData.pitcherLR?.toLowerCase() || pitcher?.pitch_hand?.toLowerCase() || 'r';
+			const hand = batter.pitch_hand?.replace('B', 'S') || '';
+			const pitcherName = rowData.pitcher || pitcher?.player || '';
+			const hr = getLastHomerFromFeed(rowData);
+			const filterPitch = hr?.pitch || null;
+			const flexDir = MOBILE ? 'column' : 'row';
+			const statsHtml = hr
+				? `<span style="color:#64748b;font-size:11px;margin-left:8px;">${[hr.evo ? `EV ${hr.evo} mph` : null, hr.la != null ? `LA ${hr.la}°` : null, hr.dist ? `${hr.dist} ft` : null].filter(Boolean).join(' · ')}</span>`
+				: '';
+			panel.innerHTML = `
+				<div style="font-size:11px;font-weight:600;color:#e5e7eb;padding:4px 0 2px;border-top:1px solid #1e293b;margin-top:6px;">
+					${title(rowData.player)} <span style="color:#a78bfa;font-weight:400">${hand}</span>
+					<span style="color:#9ca3af;font-weight:400;margin-left:6px;">vs ${title(pitcherName)} <span style="color:#a78bfa;">${pitcherSide.toUpperCase()}HP</span></span>
+					${filterPitch ? `<span style="color:#fbbf24;margin-left:8px;">${pitchMap[filterPitch] || filterPitch}</span>${statsHtml}` : ''}
+				</div>
+				<div class="batter-ps-toggle" id="auto-ps-toggle" style="margin:4px 0 6px;display:none">
+					<button class="ps-btn ${pitcherSide==='l'?'is-active':''}" data-ps="l" onclick="autoMixSetPS('l')">vs LHP</button>
+					<button class="ps-btn ${pitcherSide==='r'?'is-active':''}" data-ps="r" onclick="autoMixSetPS('r')">vs RHP</button>
+				</div>
+				<div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Pitcher Mix</div>
+						<div id="auto-mix-pitcher-table"></div>
+					</div>
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Batter vs Pitcher</div>
+						<div id="auto-mix-batter-table"></div>
+					</div>
+				</div>`;
+			_renderAutoMixTables(rowData, pitcherSide, filterPitch);
+		}
+
+		let _autoMixRow = null;
+		function autoMixSetPS(ps) {
+			if (!_autoMixRow) return;
+			document.querySelectorAll('#auto-ps-toggle .ps-btn').forEach(b => b.classList.toggle('is-active', b.dataset.ps === ps));
+			const hr = getLastHomerFromFeed(_autoMixRow);
+			_renderAutoMixTables(_autoMixRow, ps, hr?.pitch || null);
+		}
+
+		function _renderAutoMixTables(rowData, pitcherSide, filterPitch) {
+			const teamData = PITCHER_MIX_CACHE?.[rowData.team];
+			const batter = teamData?.battersByName?.[rowData.player];
+			const pitcher = teamData?.pitcher;
+			if (!batter || !pitcher) return;
+			let side;
+			if (batter.pitch_hand === 'B') side = pitcherSide === 'r' ? 'l' : 'r';
+			else side = batter.pitch_hand?.toLowerCase() || 'r';
+			let pitcherTableData = pitcher[`pitch_table_${side}`] || [];
+			let batterTableData = (batter[`pitch_table_${pitcherSide}`] || []).map(r => ({
+				...r, pitch_num: r[`pitch_num_${side}`] ?? ''
+			}));
+			if (filterPitch) {
+				const fp = filterPitch.toUpperCase();
+				pitcherTableData = pitcherTableData.filter(r => r.type?.toUpperCase() === fp);
+				batterTableData = batterTableData.filter(r => r.type?.toUpperCase() === fp);
+			}
+			_mixBuild('#auto-mix-pitcher-table', pitcherTableData, 'n');
+			_mixBuild('#auto-mix-batter-table', batterTableData, 'n');
+		}
+
+		const bgPitchFormatter = function(cell) {
+			const field = cell.getField();
+			let val = cell.getValue() || 0;
+			let display;
+			if (["ba", "woba", "slg", "iso"].includes(field)) {
+				display = avgFormatter(cell);
+			} else if (field === "home_run") {
+				display = val;
+			} else if (["percent", "k_rate", "whiff_rate", "brl_rate", "hh_rate", "fb_rate", "gb_rate", "hr_rate"].includes(field)) {
+				display = val ? val.toFixed(1) + "%" : "0%";
+			} else {
+				display = val ? val.toFixed(1) : "0";
+			}
+			const pct = cell.getRow().getData()[field + "_pct"];
+			let bg = "";
+			if (pct != null) {
+				if (pct >= 80) bg = "rgba(46,160,67,0.85)";
+				else if (pct >= 65) bg = "rgba(46,160,67,0.45)";
+				else if (pct < 25) bg = "rgba(200,56,46,0.85)";
+				else if (pct < 40) bg = "rgba(200,56,46,0.45)";
+			}
+			if (bg) cell.getElement().style.background = bg;
+			return display;
+		};
+
+		const MIX_COLS = [
+			{ title:"Type", field:"type", width:90, formatter: pitchFormatter, hozAlign: "left", frozen: true },
+			{ title:"#", field:"n", sorter:"number", width:45 },
+			{ title:"%", field:"percent", sorter:"number", formatter: percentFormatter, width:50 },
+			{ title:"BA", field:"ba", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"WOBA", field:"woba", sorter:"number", width:55, formatter: bgPitchFormatter },
+			{ title:"SLG", field:"slg", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"ISO", field:"iso", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"HR", field:"home_run", sorter:"number", width:40, formatter: bgPitchFormatter },
+			{ title:"HR%", field:"hr_rate", sorter:"number", width:52, formatter: bgPitchFormatter },
+			{ title:"K%", field:"k_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"WHIFF%", field:"whiff_rate", sorter:"number", width:62, formatter: bgPitchFormatter },
+			{ title:"EV", field:"avg_ev", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"LA", field:"avg_la", sorter:"number", width:45, formatter: bgPitchFormatter },
+			{ title:"Brl%", field:"brl_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"HH%", field:"hh_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"FB%", field:"fb_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+			{ title:"GB%", field:"gb_rate", sorter:"number", width:50, formatter: bgPitchFormatter },
+		];
+
+		function _mixGetTopPitches(pitcher) {
+			const map = {};
+			for (const which of ["l", "r"]) {
+				if (!pitcher?.[`pitch_table_${which}`]) continue;
+				map[which] = pitcher[`pitch_table_${which}`].sort((a,b) => b.n - a.n).map(r => r.type);
+			}
+			return map;
+		}
+
+		function _mixTransformPitcher(pitcher) {
+			for (const side of ["l", "r"]) {
+				if (!pitcher?.pitch?.[side]) continue;
+				pitcher[`pitch_table_${side}`] = Object.entries(pitcher.pitch[side]).map(([type, stats]) => ({
+					type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0,
+				}));
+			}
+		}
+
+		function _mixProcessData(data) {
+			const result = {};
+			Object.entries(data.teams || {}).forEach(([team, teamData]) => {
+				_mixTransformPitcher(teamData.pitcher);
+				const top = _mixGetTopPitches(teamData.pitcher);
+				const batters = (teamData.batters || []).map(row => {
+					const b = { ...row };
+					for (const side of ["l", "r"]) {
+						if (!row.pitch?.[side]) continue;
+						b[`pitch_table_${side}`] = Object.entries(row.pitch[side]).map(([type, stats]) => {
+							const getNum = s => { const arr = top[s]; return arr ? (arr.indexOf(type) + 1 || 0) : ""; };
+							return { type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0,
+								pitch_num_l: getNum("l"), pitch_num_r: getNum("r") };
+						});
+					}
+					return b;
+				});
+				result[team] = {
+					pitcher: teamData.pitcher,
+					battersByName: Object.fromEntries(batters.map(b => [b.player, b])),
+				};
+			});
+			return result;
+		}
+
+		function fetchAndShowMix(rowData) {
+			document.getElementById('chart').style.display = 'none';
+			document.getElementById('mix-panel').style.display = '';
+			if (PITCHER_MIX_CACHE) {
+				showMixPanel(rowData);
+				return;
+			}
+			document.getElementById('mix-panel').innerHTML = '<div style="color:#9ca3af;padding:8px;font-size:12px;">Loading mix data…</div>';
+			fetch(API_BASE + '/api/pitcher_mix', { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } })
+				.then(r => r.json())
+				.then(data => { PITCHER_MIX_CACHE = _mixProcessData(data); showMixPanel(rowData); })
+				.catch(() => { document.getElementById('mix-panel').innerHTML = '<div style="color:#f87171;padding:8px;font-size:12px;">Failed to load mix data.</div>'; });
+		}
+
+		function showMixPanel(rowData) {
+			const teamData = PITCHER_MIX_CACHE?.[rowData.team];
+			const batter = teamData?.battersByName?.[rowData.player];
+			const pitcher = teamData?.pitcher;
+			const pitcherLR = rowData.pitcherLR?.toLowerCase() || pitcher?.pitch_hand?.toLowerCase() || "r";
+			MIX_SELECTED_PS = pitcherLR;
+			const panel = document.getElementById('mix-panel');
+			document.getElementById('chart').style.display = 'none';
+
+			if (!batter) {
+				panel.innerHTML = `<div style="color:#9ca3af;padding:8px;font-size:12px;">No mix data for ${rowData.player}.</div>`;
+				return;
+			}
+
+			const hand = batter.pitch_hand?.replace("B", "S") || "";
+			const pitcherName = rowData.pitcher || pitcher?.player || '';
+			const flexDir = MOBILE ? 'column' : 'row';
+			panel.innerHTML = `
+				<div style="font-size:12px;font-weight:600;color:#e5e7eb;padding:2px 0 2px;">
+					${title(rowData.player)} <span style="color:#a78bfa;font-weight:400">${hand}</span>
+					<span style="color:#9ca3af;font-weight:400;margin-left:6px;">vs ${title(pitcherName)} <span style="color:#a78bfa;">${pitcherLR.toUpperCase()}HP</span></span>
+				</div>
+				<div class="batter-ps-toggle" style="margin:6px 0 8px;">
+					<button class="ps-btn ${pitcherLR==='l'?'is-active':''}" data-ps="l" onclick="mixSetPS('l')">vs LHP</button>
+					<button class="ps-btn ${pitcherLR==='r'?'is-active':''}" data-ps="r" onclick="mixSetPS('r')">vs RHP</button>
+				</div>
+				<div id="mix-tables" style="display:flex;flex-direction:${flexDir};gap:12px;align-items:flex-start;">
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Pitcher Mix</div>
+						<div id="mix-pitcher-table"></div>
+					</div>
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Batter vs Pitcher</div>
+						<div id="mix-table"></div>
+					</div>
+				</div>`;
+			_renderMixTables(batter, pitcher, pitcherLR);
+		}
+
+		function mixSetPS(ps) {
+			MIX_SELECTED_PS = ps;
+			document.querySelectorAll('#mix-panel .ps-btn').forEach(b => b.classList.toggle('is-active', b.dataset.ps === ps));
+			const d = TABLE.getSelectedData()[0];
+			if (!d) return;
+			const teamData = PITCHER_MIX_CACHE?.[d.team];
+			const batter = teamData?.battersByName?.[d.player];
+			if (batter) _renderMixTables(batter, teamData?.pitcher, ps);
+		}
+
+		function _mixBuild(el, data, sortCol) {
+			try { Tabulator.findTable(el)?.[0]?.destroy(); } catch(e) {}
+			document.querySelector(el).innerHTML = '';
+			if (!data?.length) {
+				document.querySelector(el).innerHTML = '<div style="color:#9ca3af;font-size:11px;padding:4px 0;">No data.</div>';
+				return;
+			}
+			new Tabulator(el, {
+				layout: "fitData",
+				data,
+				initialSort: [{ column: sortCol || "n", dir: "desc" }],
+				columnDefaults: { vertAlign:"middle", hozAlign:"center", resizable:false, headerSortStartingDir:"desc" },
+				columns: MIX_COLS,
+			});
+		}
+
+		function _renderMixTables(batter, pitcher, pitcherSide) {
+			// batter's batting side (for pitch_num lookup)
+			let side;
+			if (batter.pitch_hand === "B") side = pitcherSide === "r" ? "l" : "r";
+			else side = batter.pitch_hand?.toLowerCase() || "r";
+
+			// pitcher table: pitcher's usage vs the batter's batting hand
+			const pitcherTableData = pitcher?.[`pitch_table_${side}`] || [];
+
+			// batter table: batter's stats vs this pitcher's hand
+			const batterTableData = (batter[`pitch_table_${pitcherSide}`] || []).map(r => ({
+				...r, pitch_num: r[`pitch_num_${side}`] ?? ""
+			}));
+
+			_mixBuild("#mix-pitcher-table", pitcherTableData, "n");
+			_mixBuild("#mix-table", batterTableData, "n");
+		}
+
+		function _mixShowChart() {
+			document.getElementById('chart').style.display = '';
+			document.getElementById('mix-panel').style.display = 'none';
+		}
+		// ── End Pitcher Mix ──────────────────────────────────────────────────
+
+		function closeRightBody() {
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			right.style.display = "none";
+			right.classList.remove("mobile-open");
+			left.style.width = "100%";
+			table.style.display = "";
+			document.getElementById('tweet-bar').style.display = 'none';
+			document.getElementById('auto-mix-panel').innerHTML = '';
+			_autoMixRow = null;
+			setTimeout(() => {
+				left.style.width = "100%";
+			}, 40);
+		}
+
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#table-container");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				closeRightBody();
+			} else {
+				row.select();
+				if (MOBILE) {
+					table.style.display = "none";
+					right.classList.add("mobile-open");
+				} else {
+					//left.style.width = "50%";
+				}
+				right.style.display = "flex";
+				const curSel = document.querySelector("#btwn-select").value;
+				plotOddsChart();
+				_autoMixRow = data;
+				updateTweetBar(data);
+				renderAutoMixPanel(data);
+			}
+		}
+
+		function groupByTop() {
+			if (TABLE.options.groupBy === undefined || TABLE.options.groupBy == "game") {
+				TABLE.setGroupBy("game");
+				const groups = TABLE.getGroups();
+				groups.forEach(group => {
+					group.getRows().slice(3).forEach(row => {
+						row.getElement().style.display = "none";
+					});
+				});
+				TABLE.redraw();
+			} else {
+				TABLE.setGroupBy();
+				TABLE.getRows().forEach(r => r.getElement().style.display = "");
+			}
+		}
+
+		function implied() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa", "bookOdds.pn",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+			TABLE.setSort([
+				{column: "implied", dir: "desc"},
+				{field: "under", type:"=", value: false}
+			]);
+
+			const rows = TABLE.getData("active");
+			const tweet = [];
+
+			let currentRank = 1;
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+
+				// If not first, and impliedMut differs from previous, increment rank
+				if (i > 0 && row["implied"] !== prev["implied"]) {
+					currentRank++;
+				}
+
+				if (currentRank > 10) {
+					continue;
+				}
+
+				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
+			}
+			const today = new Date();
+			let header = `🎯 Circa/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
+			console.log(header+"\n\n"+tweet.join("\n"));
+		}
+
+		function pretty_() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			[`ev`, "curr_fv", "curr_implied", "curr_kelly", "player", "order", "pitcher", "percs.hr_pa", "bvs", "book", "bookOdds.circa", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+		}
+
+		window.addEventListener('popstate', (event) => {
+			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
+			const game = event.state?.game || new URLSearchParams(location.search).get('game') || '';
+			BOOK = book;
+			GAME = game;
+			changeFilter();
+		});
+
+		function closeCardModal() {
+			document.getElementById('card-modal-overlay').classList.remove('open');
+		}
+
+		document.addEventListener('keydown', e => {
+			if (e.key === 'Escape') closeCardModal();
+		});
+		document.getElementById('card-modal-overlay').addEventListener('click', e => {
+			if (e.target === document.getElementById('card-modal-overlay')) closeCardModal();
+		});
+	</script>
+	<script type="text/javascript" src="filter.js"></script>
+	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="weights.js"></script>
+</body>
+</html>

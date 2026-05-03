@@ -468,7 +468,7 @@ async function handleSession() {
 				fetchMain();
 			}
 		}, 30 * 1000);
-	} else if (PAGE == "dingers" || PAGE == "dingers2") {
+	} else if (["dingers", "dingers2", "charts"].includes(PAGE)) {
 		initChkddActions();
 		fetchDingersData();
 		//countdown();

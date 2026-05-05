@@ -382,7 +382,7 @@
 						formatter: function(cell) {
 							if (!BETS_DEVIG) return evFormatter(cell);
 							const d = cell.getRow().getData();
-							return betsEvCalcFormatter(cell, betsGetFairProb(d), betsGetBestOdds(d));
+							return betsEvCalcFormatter(cell, betsGetFairProb(d), d.odds);
 						}
 					},
 					{

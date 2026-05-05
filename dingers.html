@@ -390,6 +390,22 @@
 							<label for="custom_batter_percs_home_run">HR</label>
 						</div>
 						<div>
+							<input id="custom_savant_ba" type="checkbox">
+							<label for="custom_savant_ba">BA</label>
+						</div>
+						<div>
+							<input id="custom_savant_obp" type="checkbox">
+							<label for="custom_savant_obp">OBP</label>
+						</div>
+						<div>
+							<input id="custom_savant_slg_percent" type="checkbox">
+							<label for="custom_savant_slg_percent">SLG</label>
+						</div>
+						<div>
+							<input id="custom_savant_ops" type="checkbox">
+							<label for="custom_savant_ops">OPS</label>
+						</div>
+						<div>
 							<input id="custom_savant_est_ba" type="checkbox">
 							<label for="custom_savant_est_ba">xBA</label>
 						</div>
@@ -448,6 +464,18 @@
 						<div>
 							<input id="custom_pitcherData_p_era" type="checkbox">
 							<label for="custom_pitcherData_p_era">ERA</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_obp" type="checkbox">
+							<label for="custom_pitcherData_obp">OBP</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_slg_percent" type="checkbox">
+							<label for="custom_pitcherData_slg_percent">SLG</label>
+						</div>
+						<div>
+							<input id="custom_pitcherData_ops" type="checkbox">
+							<label for="custom_pitcherData_ops">OPS</label>
 						</div>
 						<div>
 							<input id="custom_pitcherData_xba" type="checkbox">
@@ -1281,6 +1309,10 @@
 					{title: "Batter Metrics", columns: [
 						{title: "HR/PA%", field: "batter_percs.hr_pa", width: 60, formatter: allowedFormatter },
 						{title: "HR", field: "batter_percs.home_run", width: 60, formatter: allowedFormatter },
+						{title: "BA", field: "savant.ba", width: 45, formatter: percentileFormatter },
+						{title: "OBP", field: "savant.on_base_percent", width: 45, formatter: percentileFormatter },
+						{title: "SLG", field: "savant.slg_percent", width: 45, formatter: percentileFormatter },
+						{title: "OPS", field: "savant.on_base_plus_slg", width: 45, formatter: percentileFormatter },
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "SwSp%", field: "savant.sweet_spot_percent", width: 45, formatter: percentileFormatter, visible: false },
@@ -1297,7 +1329,10 @@
 					]},
 					{title: "Pitcher Metrics", columns: [
 						{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false },
-						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: baFormatter, visible: false },
+						{title: "OBP", field: "pitcherData.on_base_percent", width: 45, formatter: percentileFormatter },
+						{title: "SLG", field: "pitcherData.slg_percent", width: 45, formatter: percentileFormatter },
+						{title: "OPS", field: "pitcherData.on_base_plus_slg", width: 45, formatter: percentileFormatter },
+						{title: "xBA", field: "pitcherData.xba", width: 45, formatter: percentileFormatter, visible: false },
 						{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false },
 						{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter },
 						{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter },

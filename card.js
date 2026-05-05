@@ -551,6 +551,15 @@ function updateExistingCard(card, rowData) {
 	const dvpPill = dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>`: "";
+	const bppPill = (PAGE === "dingers" && rowData.bpp) ? `<div class="metric-pill" style="color:${getHRFactorColor(parseInt(rowData.bpp))}; font-weight:600; font-size:0.85rem;">
+					${rowData.bpp} <span style="opacity:0.85; font-weight:500;">BPP</span>
+				</div>` : "";
+	const _w = (typeof RES !== "undefined" && RES?.weather?.[rowData.game]) || rowData.weather;
+	const weatherPill = (PAGE === "dingers" && _w) ? (
+		_w.wind === "roof"
+			? `<div class="metric-pill" style="font-size:0.85rem;">Roof</div>`
+			: `<div class="metric-pill" style="font-weight:600; font-size:0.85rem;"><img class="wind" src="logos/${_w.windLogo}" style="height:14px;vertical-align:middle;"> ${_w.wind} mph ${_w.temp}</div>`
+	) : "";
 	collapsedBody.innerHTML = `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
 
@@ -564,6 +573,8 @@ function updateExistingCard(card, rowData) {
 					${addSuffix(rowData.oppRank)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
 				</div>
 				${dvpPill}
+				${bppPill}
+				${weatherPill}
 			</div>
 
 			${PAGE === "dingers" ? renderDingersMetrics(rowData) : ""}

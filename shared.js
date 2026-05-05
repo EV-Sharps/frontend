@@ -701,9 +701,9 @@ function getPercentileColor(field, value) {
 	if (!value) return "";
 	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike", "pull_percent", "blasts_swing", "squared_up_swing", "avg_swing_speed"].includes(field)) {
 		value = 100 - value;
-	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent"].includes(field.split(".").at(-1))) {
+	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
-	} else if (field.includes("savant") && ["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent"].includes(field.split(".").at(-1))) {
+	} else if (field.includes("savant") && ["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent", "ba", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
 	}
 	// bright green
@@ -774,6 +774,10 @@ const percentileFormatter = function(cell) {
 			suffix = "%";
 		}
 		v = `${cell.getValue()}${suffix}`;
+	}
+
+	if (field.includes("on_base") || field.includes("slg") || ["savant.ba"].includes(field)) {
+		v = parseFloat(v.replace("%", "")).toFixed(3).replace(/^0/, "");
 	}
 	return `
 		<div class="${cls}" style="color:${color}">${v}</div>

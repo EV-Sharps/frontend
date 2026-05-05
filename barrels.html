@@ -315,7 +315,20 @@
 						{title: "Last", field: "homerLogs.lastClosest", width: 40, visible: MOBILE ? false : false},
 					]},
 					{title: "<a href='https://www.x.com/BallparkPal' target='new'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
-					{title: "", field: "barrel_ctPercentile", visible: false}
+					{title: "", field: "barrel_ctPercentile", visible: false},
+					{
+						title: "L5 Δ Trends", columns: [
+							{title: "Velo", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "HH%", field: "game_trends.hard_hit_percent.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "BRL%", field: "game_trends.barrels_per_bip.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "Blast%", field: "game_trends.blasts_swing.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "Pull%", field: "game_trends.pull_percent.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "FB%", field: "game_trends.flyballs_percent.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "SqUp%", field: "game_trends.squared_up_swing.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "SwSp%", field: "game_trends.sweet_spot_percent.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+						],
+						visible: false
+					}
 				]
 			});
 
@@ -437,6 +450,47 @@
 					continue;
 				}
 				tweet.push(`${title(row.player)} - ${row["game_trends"]["barrel_ct"]["3G"]}`);
+			}
+			console.log(tweet.join("\n"));
+		}
+
+		function trends() {
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "pitcher", "game_trends.exit_velocity_avg.5G", "game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.blasts_swing.5G", "game_trends.pull_percent.5G", "game_trends.squared_up_swing.5G", "game_trends.sweet_spot_percent.5G" ];
+				const field = col.getField();
+				const parent = col.getParentColumn();
+				if (["game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.exit_velocity_avg.5G"].includes(field)) {
+					parent?.getDefinition().title === "L5 Δ Trends" ? col.show() : col.hide();
+				} else if (!arr.includes(field)) {
+					col.hide();
+				} else {
+					col.show();
+				}
+			});
+
+			TABLE.setFilter([
+				{field:"book", type:"!=", value: ""},
+			]);
+
+			TABLE.setSort([
+				{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
+				{column: "game_trends.exit_velocity_avg.5G", dir: "desc"},
+			]);
+
+			const rows = TABLE.getData("active");
+			let currentRank = 1;
+			let tweet = [];
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+				if (i > 0 && row["game_trends"]["hard_hit_ct"]["3G"] !== prev["game_trends"]["hard_hit_ct"]["3G"]) {
+					currentRank++;
+				}
+
+				if (tweet.length > 10) {
+					continue;
+				}
+				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"]["5G"]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
 		}

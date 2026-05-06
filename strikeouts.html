@@ -13,6 +13,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link href="style.css" rel="stylesheet">
+	<script src="record-summary.js"></script>
 	<style>
 		#table {
 			width: 100%;
@@ -563,6 +564,10 @@
 
 		handleSession();
 
+		function buildKSeasonRecord() {
+			return buildSeasonRecord('k', typeof RECORD !== 'undefined' ? RECORD : null);
+		}
+
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
@@ -603,7 +608,9 @@
 					TABLE.redraw(true);
 					return;
 				}
-				
+
+				addRecordSummaryButtons(null, buildKSeasonRecord);
+
 				setTimeout(function() {
 					updateHeaders();
 					changeFilter();

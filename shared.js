@@ -398,17 +398,10 @@ function resolveLink(url) {
 const evOddsFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const odds = cell.getValue();
-	let cls = "";
 
-	if (!odds) {
-		return "";
-	}
+	if (!odds) return "";
+	if (data.blurred) return `<div class='blurred'>${odds}</div>`;
 
-	if (data.blurred) {
-		return `<div class='blurred'>${cell.getValue()}</div>`;
-	}
-
-	// extract book from field "bookOdds.{book}" and check for a deep-link
 	const field = cell.getField();
 	let link = null;
 	if (data.links && field.startsWith("bookOdds.")) {
@@ -416,31 +409,36 @@ const evOddsFormatter = function(cell) {
 		link = resolveLink(data.links[book]) || null;
 	}
 
-	const wrap = (inner) => link
-		? `<div style="position:relative;display:inline-block;width:100%;">
-			${inner}
-			<a href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
-				style="position:absolute;bottom:0px;right:0px;font-size:10px;font-weight:700;line-height:1;text-decoration:none;color:#6b7280;" title="Add to betslip">+</a>
-		</div>`
-		: inner;
-
+	// Build odds display (highlight +EV side)
 	let res = odds;
-	let idx = data.under ? 1 : 0;
+	const idx = data.under ? 1 : 0;
 	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0)) {
-		cls = "#00ff66";
+		const cls = "#00ff66";
 		if (odds.includes("/")) {
 			let [o,u] = odds.split("/");
-			if (data.under) {
-				res = `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`;
-			} else {
-				res = `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`;
-			}
-			return wrap(res);
+			res = data.under
+				? `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`
+				: `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`;
+		} else {
+			res = `<span style='color:${cls}'>${odds}</span>`;
 		}
-		return wrap(`<span style='color:${cls}'>${odds}</span>`);
 	}
 
-	return wrap(res);
+	// Liquidity tip: hover on desktop, tap on mobile
+	const bookKey = field.startsWith("bookOdds.") ? field.split(".")[1] : null;
+	const liq = bookKey ? data.liquidity?.[bookKey] : null;
+	if (Array.isArray(liq) && liq.length >= 2) {
+		res = `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${res}</span><span class="liq-tip">$${liq[0]}/$${liq[1]}</span></span>`;
+	}
+
+	if (link) {
+		return `<div style="position:relative;display:inline-block;width:100%;">
+			${res}
+			<a href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+				style="position:absolute;bottom:0px;right:0px;font-size:10px;font-weight:700;line-height:1;text-decoration:none;color:#6b7280;" title="Add to betslip">+</a>
+		</div>`;
+	}
+	return res;
 }
 
 const oddsFormatter = function(cell) {

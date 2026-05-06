@@ -504,6 +504,105 @@ body::before {
 	margin: 2px 0 0 6px;
 }
 
+#record-summary-modal {
+	display: none;
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,0.7);
+	z-index: 1000;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 60px;
+}
+#record-summary-modal.open { display: flex; }
+#record-summary-inner {
+	background: #0f1923;
+	border: 1px solid #2d3f50;
+	border-radius: 10px;
+	padding: 16px;
+	max-width: 95vw;
+	max-height: 80vh;
+	overflow: auto;
+}
+#record-summary-inner h3 {
+	margin: 0 0 12px;
+	font-size: 14px;
+	color: var(--text-main);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+#record-summary-inner h3 button {
+	background: none;
+	border: none;
+	color: #aaa;
+	font-size: 18px;
+	cursor: pointer;
+	line-height: 1;
+}
+#record-summary-table {
+	border-collapse: collapse;
+	font-size: 11px;
+	white-space: nowrap;
+}
+#record-summary-table th {
+	padding: 4px 8px;
+	color: var(--text-dim);
+	border-bottom: 1px solid #2d3f50;
+	text-align: center;
+	font-weight: 600;
+}
+#record-summary-table th.method-header {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #60a5fa;
+	border-bottom: none;
+	padding-bottom: 0;
+}
+#record-summary-table td {
+	padding: 2px 8px;
+	border-bottom: 1px solid rgba(255,255,255,0.04);
+	text-align: center;
+	color: var(--text-dim);
+	line-height: 1.3;
+}
+#record-summary-table td.devig-name,
+#record-summary-table th.devig-name {
+	text-align: left;
+	color: var(--text-main);
+	font-weight: 600;
+	position: sticky;
+	left: 0;
+	background: #0f1923;
+	z-index: 1;
+}
+#record-summary-table td.roi-pos { color: #4ade80; }
+#record-summary-table td.roi-neg { color: #f87171; }
+.record-summary-btn {
+	flex: 0 0 auto;
+	background: #172027;
+	color: var(--text-main);
+	border: 1px solid rgba(59,130,246,0.35);
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 3px 8px;
+	cursor: pointer;
+	margin: 4px 0 0 6px;
+}
+.record-summary-btn:hover { border-color: rgba(59,130,246,0.7); }
+
+.liq-tip {
+	display: none;
+	color: #9ca3af;
+	pointer-events: none;
+}
+.tabulator-cell:hover .liq-tip,
+.liq-host.liq-open .liq-tip { display: inline; }
+.tabulator-cell:hover .liq-odds,
+.liq-host.liq-open .liq-odds { display: none; }
+
 .book-picker,
 #dev-picker {
 	display: flex;

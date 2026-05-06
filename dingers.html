@@ -8,6 +8,7 @@
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
+	<script src="record-summary.js"></script>
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
 	<script src="jspdf.umd.min.js"></script>
@@ -837,6 +838,10 @@
 
 		handleSession();
 
+		function buildHRDingersSeasonRecord() {
+			return buildSeasonRecord('hr', typeof RECORD !== 'undefined' ? RECORD : null);
+		}
+
 		const selectId = "#header";
 
 		document.querySelector("#btwn-select").value = "pa";
@@ -1075,6 +1080,8 @@
 					TABLE.redraw(true);
 					return;
 				}
+
+				addRecordSummaryButtons(null, buildHRDingersSeasonRecord);
 
 				setTimeout(function() {
 					if (PRETTY != undefined) {

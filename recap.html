@@ -14,6 +14,7 @@
 	<script src="jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+	<script src="record-summary.js"></script>
 	<script src="record.js"></script>
 	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null;</script>
 </head>
@@ -80,134 +81,7 @@
 		}
 	}
 </style>
-<style>
-	#record-summary-modal {
-		display: none;
-		position: fixed;
-		inset: 0;
-		background: rgba(0,0,0,0.7);
-		z-index: 1000;
-		align-items: flex-start;
-		justify-content: center;
-		padding-top: 60px;
-	}
-	#record-summary-modal.open { display: flex; }
-	#record-summary-inner {
-		background: #0f1923;
-		border: 1px solid #2d3f50;
-		border-radius: 10px;
-		padding: 16px;
-		max-width: 95vw;
-		max-height: 80vh;
-		overflow: auto;
-	}
-	#record-summary-inner h3 {
-		margin: 0 0 12px;
-		font-size: 14px;
-		color: var(--text-main);
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	#record-summary-inner h3 button {
-		background: none;
-		border: none;
-		color: #aaa;
-		font-size: 18px;
-		cursor: pointer;
-		line-height: 1;
-	}
-	#record-summary-table {
-		border-collapse: collapse;
-		font-size: 11px;
-		white-space: nowrap;
-	}
-	#record-summary-table th {
-		padding: 4px 8px;
-		color: var(--text-dim);
-		border-bottom: 1px solid #2d3f50;
-		text-align: center;
-		font-weight: 600;
-	}
-	#record-summary-table th.method-header {
-		font-size: 10px;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #60a5fa;
-		border-bottom: none;
-		padding-bottom: 0;
-	}
-	#record-summary-table td {
-		padding: 2px 8px;
-		border-bottom: 1px solid rgba(255,255,255,0.04);
-		text-align: center;
-		color: var(--text-dim);
-		line-height: 1.3;
-	}
-	#record-summary-table td.devig-name,
-	#record-summary-table th.devig-name {
-		text-align: left;
-		color: var(--text-main);
-		font-weight: 600;
-		position: sticky;
-		left: 0;
-		background: #0f1923;
-		z-index: 1;
-	}
-	#record-summary-table td.roi-pos { color: #4ade80; }
-	#record-summary-table td.roi-neg { color: #f87171; }
-	.record-summary-btn {
-		flex: 0 0 auto;
-		background: #172027;
-		color: var(--text-main);
-		border: 1px solid rgba(59,130,246,0.35);
-		border-radius: 6px;
-		font-size: 11px;
-		font-weight: 600;
-		padding: 3px 8px;
-		cursor: pointer;
-		margin: 4px 0 0 6px;
-	}
-	.record-summary-btn:hover { border-color: rgba(59,130,246,0.7); }
-</style>
 <body>
-	<div id="record-summary-modal" onclick="if(event.target===this)this.classList.remove('open')">
-		<div id="record-summary-inner">
-			<h3>
-				<span>Record Summary</span>
-				<span style="display:flex;align-items:center;gap:8px;">
-					<span id="record-summary-toggle" style="display:flex;gap:4px;">
-						<button data-method="probit" onclick="_summaryMethod='probit';_renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Probit</button>
-						<button data-method="worst" onclick="_summaryMethod='worst';_renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Worst</button>
-					</span>
-					<button onclick="document.getElementById('record-summary-modal').classList.remove('open')" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
-				</span>
-			</h3>
-			<div id="record-sport-toggle" style="display:none;gap:4px;margin-bottom:6px;">
-				<button data-sport="mlb"      onclick="_summarySport='mlb';      buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB</button>
-				<button data-sport="mlb_open" onclick="_summarySport='mlb_open'; buildHRSeasonRecord()&&renderRecordSummary(buildHRSeasonRecord())" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">MLB Open</button>
-			</div>
-			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:6px;">
-				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">All</button>
-				<button data-window="L3"   onclick="_summaryWindow='L3';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L3</button>
-				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L7</button>
-				<button data-window="L14"  onclick="_summaryWindow='L14'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L14</button>
-				<button data-window="L30"  onclick="_summaryWindow='L30'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L30</button>
-				<button data-window="L60"  onclick="_summaryWindow='L60'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">L60</button>
-			</div>
-			<div style="display:flex;gap:12px;margin-bottom:8px;">
-				<div id="record-display-toggle" style="display:flex;gap:4px;">
-					<button data-display="roi"   onclick="_summaryDisplay='roi';   _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">ROI</button>
-					<button data-display="units" onclick="_summaryDisplay='units'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Units</button>
-				</div>
-				<div id="record-betting-toggle" style="display:flex;gap:4px;">
-					<button data-betting="flat"  onclick="_summaryBetting='flat';  _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Flat</button>
-					<button data-betting="kelly" onclick="_summaryBetting='kelly'; _renderSummaryTable()" style="background:#172027;border:1px solid rgba(59,130,246,0.35);color:var(--text-main);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">Kelly</button>
-				</div>
-			</div>
-			<table id="record-summary-table"></table>
-		</div>
-	</div>
 	<div id="app">
 		<div id="devig-modal" class="modal">
 			<div class="modal-content devig-panel">
@@ -903,118 +777,8 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		let _summaryRecord = null;
-		let _summaryMethod = 'probit';
-		let _summaryWindow = 'All';
-		let _summarySport = 'mlb';
-		let _summaryDisplay = 'roi';
-		let _summaryBetting = 'flat';
-
-		// Filter record.js data to only hr- devigKeys for the selected sport
 		function buildHRSeasonRecord() {
-			const sportRecord = SEASON_RECORD?.[_summarySport];
-			if (!sportRecord) return null;
-			const filtered = {};
-			Object.keys(sportRecord).forEach(method => {
-				filtered[method] = {};
-				Object.keys(sportRecord[method]).forEach(book => {
-					const hrKeys = Object.keys(sportRecord[method][book]).filter(k => k.startsWith('hr-'));
-					if (!hrKeys.length) return;
-					filtered[method][book] = {};
-					hrKeys.forEach(k => { filtered[method][book][k] = sportRecord[method][book][k]; });
-				});
-			});
-			return filtered;
-		}
-
-		function renderRecordSummary(record) {
-			_summaryRecord = record;
-			_renderSummaryTable();
-		}
-
-		function _renderSummaryTable() {
-			const record = _summaryRecord;
-			if (!record) return;
-			const win = _summaryWindow || 'All';
-			const m = _summaryMethod;
-			const table = document.getElementById('record-summary-table');
-			const toggle = document.getElementById('record-summary-toggle');
-			if (toggle) {
-				toggle.querySelectorAll('button').forEach(b => {
-					b.style.opacity = b.dataset.method === m ? '1' : '0.4';
-				});
-			}
-			const winToggle = document.getElementById('record-window-toggle');
-			if (winToggle) {
-				winToggle.querySelectorAll('button').forEach(b => {
-					b.style.opacity = b.dataset.window === win ? '1' : '0.4';
-				});
-			}
-			const sportToggle = document.getElementById('record-sport-toggle');
-			if (sportToggle) {
-				sportToggle.querySelectorAll('button').forEach(b => {
-					b.style.opacity = b.dataset.sport === _summarySport ? '1' : '0.4';
-				});
-			}
-
-			// Collect books and devigs for selected method
-			const bookSet = new Set();
-			const devigSet = new Set();
-			const methodBooks = record[m] || {};
-			Object.keys(methodBooks).forEach(b => {
-				if (b !== 'best') bookSet.add(b);
-				Object.keys(methodBooks[b] || {}).forEach(d => devigSet.add(d));
-			});
-			const books = ['best', ...bookSet];
-			const devigs = [...devigSet].sort();
-
-			// Sync display/betting toggles
-			const displayToggle = document.getElementById('record-display-toggle');
-			if (displayToggle) displayToggle.querySelectorAll('button').forEach(b => {
-				b.style.opacity = b.dataset.display === _summaryDisplay ? '1' : '0.4';
-			});
-			const bettingToggle = document.getElementById('record-betting-toggle');
-			if (bettingToggle) bettingToggle.querySelectorAll('button').forEach(b => {
-				b.style.opacity = b.dataset.betting === _summaryBetting ? '1' : '0.4';
-			});
-
-			const roiCell = (book, devig) => {
-				const stats = record[m]?.[book]?.[devig];
-				const s = stats ? (stats[win] ?? null) : null;
-				if (!s) return `<td>—</td>`;
-				const w = s.wins ?? 0, l = s.losses ?? 0;
-				if (w+l == 0) return `<td>—</td>`;
-				// Pick value based on toggles: flat/kelly × roi/units
-				let val, suffix, isRoi;
-				if (_summaryDisplay === 'roi') {
-					val = _summaryBetting === 'kelly' ? (s.kelly_roi ?? null) : (s.roi ?? null);
-					suffix = '%';
-					isRoi = true;
-				} else {
-					val = _summaryBetting === 'kelly' ? (s.kelly ?? null) : (s.profit ?? null);
-					suffix = 'u';
-					isRoi = false;
-				}
-				if (val === null || val === undefined) return `<td>—</td>`;
-				const cls = val > 0 ? 'roi-pos' : val < 0 ? 'roi-neg' : '';
-				const sign = val > 0 ? '+' : '';
-				const disp = isRoi ? `${sign}${val}${suffix}` : `${sign}${val.toFixed(2)}${suffix}`;
-				return `<td class="${cls}"><div>${disp}</div><div style="font-size:9px;opacity:0.6;">${w}W-${l}L</div></td>`;
-			};
-
-			const fmtDevig = d => d.replace(/^[^-]+-vs-/, '');
-
-			// Rows = Betting Book, Columns = Devig
-			let html = '<thead><tr><th class="devig-name">Book ↓ &nbsp; Devig →</th>';
-			devigs.forEach(d => { html += `<th>${fmtDevig(d)}</th>`; });
-			html += '</tr></thead><tbody>';
-			books.forEach(b => {
-				html += `<tr><td class="devig-name">${b.toUpperCase()}</td>`;
-				devigs.forEach(d => { html += roiCell(b, d); });
-				html += '</tr>';
-			});
-			html += '</tbody>';
-			table.innerHTML = html;
+			return buildSeasonRecord('hr', SEASON_RECORD?.[_summarySport]);
 		}
 
 		function buildDevPickerData(record, bookArg = null) {
@@ -1060,33 +824,13 @@
 				renderBookSelect();
 				if (data.record) {
 					initDevPicker(buildDevPickerData(data.record));
-					// Replace dev-picker-col content with summary button
 					const col = document.getElementById('dev-picker-col') || document.querySelector('.dev-picker-col');
 					if (col) {
 						col.style.display = 'flex';
 						col.style.flexDirection = 'column';
 						col.style.alignItems = 'flex-start';
-						const btn = document.createElement('button');
-						btn.className = 'record-summary-btn';
-						btn.textContent = 'Yest';
-						btn.onclick = () => {
-							document.getElementById('record-sport-toggle').style.display = 'none';
-							renderRecordSummary(data.record);
-							document.getElementById('record-summary-modal').classList.add('open');
-						};
-						const btnSeason = document.createElement('button');
-						btnSeason.className = 'record-summary-btn';
-						btnSeason.textContent = 'Season';
-						btnSeason.onclick = () => {
-							const hrRecord = buildHRSeasonRecord();
-							if (!hrRecord) return;
-							document.getElementById('record-sport-toggle').style.display = 'flex';
-							renderRecordSummary(hrRecord);
-							document.getElementById('record-summary-modal').classList.add('open');
-						};
 						col.innerHTML = '';
-						col.appendChild(btn);
-						col.appendChild(btnSeason);
+						addRecordSummaryButtons(data.record, buildHRSeasonRecord, { showSportToggle: true, containerEl: col });
 					}
 				}
 

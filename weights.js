@@ -445,6 +445,8 @@ async function initDevPicker(data){
 			continue; // skip atgs/fgs/lgs for nhl page
 		} else if (PAGE == "threes" && prop !== "3ptm") {
 			continue;
+		} else if (PAGE == "pts" && !["pts", "reb", "ast"].includes(prop)) {
+			continue;
 		} else if (["dingers", "dingers2", "recap"].includes(PAGE) && prop !== "hr") {
 			continue;
 		} else if (PAGE == "mlb" && prop === "hr") {

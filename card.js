@@ -417,7 +417,7 @@ function createNewCard(rowData, uniqueId) {
 	return card;
 }
 
-function renderAllBooks(bookOdds, bestBook) {
+function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 	const orderedKeys = [
 		'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365',
 		'cz', 'fn', 'hr', 'bv', 'kambi', 'bol', 're', 'fl',
@@ -436,14 +436,18 @@ function renderAllBooks(bookOdds, bestBook) {
 
 	for (const bookKey of orderedKeys) {
 		const odds = bookOdds[bookKey];
-		// Only render if the odds are available (not null, undefined, or empty string)
 		if (odds !== null && odds !== undefined && odds !== "") {
 			const isBest = bookKey === bestBook ? 'is-best-book' : '';
 			const isDevig = devigBooks.includes(bookKey) ? 'is-devig-book' : '';
+			const liq = liquidity?.[bookKey];
+			const liqHtml = Array.isArray(liq) && liq.length >= 2
+				? `<span class="book-odd-liq">$${liq[0]}/$${liq[1]}</span>`
+				: '';
 			html += `
 				<div class="book-odd-item ${isBest} ${isDevig}">
 					<img class="book-logo-small" src='logos/${bookKey}.png' alt='${bookKey}' title='${bookKey}' />
 					<span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>
+					${liqHtml}
 				</div>
 			`;
 		}
@@ -516,7 +520,7 @@ function updateExistingCard(card, rowData) {
 		</div>
 	`;
 
-	const allBooksHtml = renderAllBooks(rowData.bookOdds, book, rowData.links);
+	const allBooksHtml = renderAllBooks(rowData.bookOdds, book, rowData.links, rowData.liquidity);
 
 	header.innerHTML = `
 		<div class="card-row player-prop-row">${playerRowContent}</div>

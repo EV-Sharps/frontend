@@ -989,6 +989,11 @@ body::before {
 	font-weight: normal;
 	margin-top: 2px;
 }
+.book-odd-liq {
+	font-size: 0.65em;
+	color: #9ca3af;
+	margin-top: 1px;
+}
 .book-odd-item.is-best-book {
 	/* Highlight the best odds in this row, maybe a bold white */
 	border-bottom: 2px solid #64b5f6;

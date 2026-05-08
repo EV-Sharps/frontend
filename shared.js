@@ -701,7 +701,7 @@ function getPercentileColor(field, value) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
-	} else if (field.includes("savant") && ["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent", "ba", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
+	} else if ((field.includes("savant") || PAGE == "barrels") && (["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent", "ba", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1)))) {
 		value = 100 - value;
 	}
 	// bright green
@@ -751,6 +751,8 @@ const percentileFormatter = function(cell) {
 		percentile = data["pitcher_hr_rate_percentile"];
 	} else if (["hr_pa", "hr_l", "hr_r", "hr_l_rate", "hr_r_rate", "home_run"].includes(field)) {
 		percentile = data[`${field}_percentile`];
+	} else if (PAGE == "barrels" && field == "on_base_plus_slg") {
+		percentile = data.batter_percs[`${field}_percentile`];
 	}
 
 	const color = getPercentileColor(field, percentile);

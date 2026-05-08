@@ -137,6 +137,7 @@
 
 		parseURLParams();
 		SPORT = "mlb";
+		DEVIG = "circa+nv";
 
 		if (TOGGLE_PERCENTILE) {
 			document.querySelector("#percentiles-btn").innerText = "Raw Values";
@@ -181,7 +182,8 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
-				renderTable(data);
+				//renderTable(data);
+				changeFilter();
 				setTimeout(() => {
 					if (PRETTY != undefined) {
 						pretty_();
@@ -238,6 +240,14 @@
 				},
 				groupToggleElement: "header",
 				columns: [
+					{
+						title: "Circa/NV<br>EV",
+						field: "ev",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: evFormatter,
+						responsive: 0
+					},
 					{title: "Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, responsive: 0},
 					{
 						title: "Player",
@@ -255,6 +265,7 @@
 					},
 					{title: "Pitcher", field: "pitcher", width: 90, formatter: pitcherFormatter},
 					//{title: "BIP", field: "bip", width: 55, sorter: "number"},
+					{title: "OPS", field: "on_base_plus_slg", formatter: percentileFormatter, width: 45, sorter: "number"},
 					{title: "Last Homer (Due)", columns: [
 						//{title: "Gms", field: "homerLogs.g.streak", width: 40, formatter: gapFormatter},
 						//{title: "Avg", field: "homerLogs.gamesBtwnAvg", width: 40},
@@ -317,8 +328,25 @@
 					{title: "<a href='https://www.x.com/BallparkPal' target='new'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
 					{title: "", field: "barrel_ctPercentile", visible: false},
 					{
+						title: "L3 Δ Trends", columns: [
+							{title: "OPS", field: "game_trends.on_base_plus_slg.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "Velo", field: "game_trends.exit_velocity_avg.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "LA", field: "game_trends.launch_angle_avg.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "HH%", field: "game_trends.hard_hit_percent.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "BRL%", field: "game_trends.barrels_per_bip.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "Blast%", field: "game_trends.blasts_swing.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "Pull%", field: "game_trends.pull_percent.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "FB%", field: "game_trends.flyballs_percent.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "SqUp%", field: "game_trends.squared_up_swing.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "SwSp%", field: "game_trends.sweet_spot_percent.3G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+						],
+						visible: false
+					},
+					{
 						title: "L5 Δ Trends", columns: [
+							{title: "OPS", field: "game_trends.on_base_plus_slg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 							{title: "Velo", field: "game_trends.exit_velocity_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
+							{title: "LA", field: "game_trends.launch_angle_avg.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 							{title: "HH%", field: "game_trends.hard_hit_percent.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 							{title: "BRL%", field: "game_trends.barrels_per_bip.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
 							{title: "Blast%", field: "game_trends.blasts_swing.5G", formatter: percentileFormatter, width: 45, sorter: "number", visible: false},
@@ -352,7 +380,7 @@
 					//{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				]);
 				TABLE.getColumns().map(col => {
-					let arr = ["book", "player", "pitcher", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", "homerLogs.pa.sd"];
+					let arr = ["ev", "book", "player", "pitcher", "on_base_plus_slg", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", "homerLogs.pa.sd"];
 					if (!arr.includes(col.getField())) {
 						col.hide();
 					}
@@ -455,12 +483,13 @@
 		}
 
 		function trends() {
+			let window = "5";
 			TABLE.getColumns().map(col => {
-				let arr = ["book", "player", "pitcher", "game_trends.exit_velocity_avg.5G", "game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.blasts_swing.5G", "game_trends.pull_percent.5G", "game_trends.squared_up_swing.5G", "game_trends.sweet_spot_percent.5G" ];
+				let arr = ["ev", "book", "player", "pitcher", `game_trends.exit_velocity_avg.${window}G`, `game_trends.barrels_per_bip.${window}G`, `game_trends.hard_hit_percent.${window}G`, `game_trends.blasts_swing.${window}G`, `game_trends.pull_percent.${window}G`, `game_trends.squared_up_swing.${window}G`, `game_trends.sweet_spot_percent.${window}G`, `game_trends.launch_angle_avg.${window}G` ];
 				const field = col.getField();
 				const parent = col.getParentColumn();
-				if (["game_trends.barrels_per_bip.5G", "game_trends.hard_hit_percent.5G", "game_trends.exit_velocity_avg.5G"].includes(field)) {
-					parent?.getDefinition().title === "L5 Δ Trends" ? col.show() : col.hide();
+				if ([`game_trends.barrels_per_bip.${window}G`, `game_trends.hard_hit_percent.${window}G`, `game_trends.exit_velocity_avg.${window}G`].includes(field)) {
+					parent?.getDefinition().title === `L${window} Δ Trends` ? col.show() : col.hide();
 				} else if (!arr.includes(field)) {
 					col.hide();
 				} else {
@@ -473,8 +502,8 @@
 			]);
 
 			TABLE.setSort([
-				{column: "game_trends.hard_hit_ct.5G", dir: "desc"},
-				{column: "game_trends.exit_velocity_avg.5G", dir: "desc"},
+				{column: `game_trends.hard_hit_ct.${window}G`, dir: "desc"},
+				{column: `game_trends.exit_velocity_avg.${window}G`, dir: "desc"},
 			]);
 
 			const rows = TABLE.getData("active");
@@ -490,7 +519,7 @@
 				if (tweet.length > 10) {
 					continue;
 				}
-				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"]["5G"]}): +${row.line} ${row.book.toUpperCase()}`);
+				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"][`${window}G`]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
 		}
@@ -589,6 +618,104 @@
 					col.hide();
 				}
 			});
+		}
+
+		function changeFilter(render = true) {
+			let [w,l,profit,kellyProfit] = [0,0,0,0];
+			let devigBook = "circa+nv";
+			let boost = 0;
+			let book = "";
+			let ou = "";
+			let minOdds = "";
+			let maxOdds = "";
+			const requiredBooks = [];
+			let props = [];
+			let games = [];
+			let excluded = [];
+			let weights = {
+				nv: 1,
+				circa: 1
+			}
+
+			if (!RES) {
+				return;
+			}
+
+			RES.forEach(row => {
+				const bookOdds = { ...row.bookOdds };
+				let avg = getAverageImplied(bookOdds, row.under);
+				if (avg == null) {
+					row["ev"] = null;
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+				const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
+				const presentBooks = comboList.filter(k => bookOdds[k]).length;
+				row["present"] = presentBooks;
+
+				if (requiredBooks.length > 0) {
+					const hasAllRequired = requiredBooks.every(book => bookOdds[book]);
+					if (!hasAllRequired) {
+						row["ev"] = null;
+						row["fairVal"] = "";
+						row["implied"] = "";
+						row["kelly"] = "";
+						return;
+					}
+				}
+
+				let ex = [...excluded];
+				ex.push("pn"); ex.push("circa");
+				if (devigBook) {
+					ex.push(devigBook);
+				}
+				if (book) {
+					ex = ex.filter(b => b !== book);
+				}
+				const highest = highestOver(bookOdds, ex, boost, book, row.under);
+				if (!isFinite(highest.value)) {
+					row["ev"] = null;
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+
+				let ou = avg.avgAmerican.toString();
+				let avgDevig = averageDevigs(bookOdds, highest.book, row.under, weights);
+
+				if (row.player == "ian cole" && row.prop == "atgs" && row.handicap == "0.5" && row.ouIdx == 0) {
+					//console.log(row.bookOdds, avgDevig)
+				}
+
+				if (!isFinite(avgDevig)) {
+					row["ev"] = null;
+					row["fairVal"] = "";
+					row["implied"] = "";
+					row["kelly"] = "";
+					return;
+				}
+
+				let line = highest.value >= 0 ? highest.value : 10000 / Math.abs(highest.value);
+				let ev = avgDevig * line + (1 - avgDevig) * -100;
+				let fairVal;
+				const dec = 1 / avgDevig;
+				if (dec >= 2) {
+					row["fairVal"] = Math.round((dec - 1) * 100);
+				} else {
+					row["fairVal"] = Math.round(-100 / (dec - 1));
+				}
+
+				row["book"] = highest.book;
+				row["line"] = highest.value;
+				row["ev"] = ev.toFixed(1);
+				row["implied"] = round2(avgDevig * 100);
+				row["kelly"] = getKelly(highest.value, ev);
+			});
+
+			renderTable(RES);
 		}
 	</script>
 </body>

@@ -253,6 +253,10 @@ function updateHeaders() {
 		}
 		let html = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' />`;
 
+		if (book == "kal") {
+			html += `<a href='https://kalshi.com/r/evdingers' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='position:absolute;bottom:13px;left:0;font-size:10px;color:#9ca3af;text-decoration:none;'>Referral</a>`;
+		}
+
 		let ta = timeAgo(UPDATED[PAGE][book], short=true);
 		if (ta) {
 			html += `<span class='time-hdrs' style='font-size:0.7rem;'>${ta.replace(" ago", "")}</span>`;

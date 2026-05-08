@@ -244,22 +244,22 @@ function sliceLogs(logs, interval) {
 	return { slicedLogs, slicedIndices };
 }
 
-function renderTrends(trends) {
+function renderTrends(trends, prop) {
 	const LABELS = {
 		lyr: "'24-25",
 		szn: "'25-26"
 	};
 	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
+	const isHomer = prop === 'hr';
 	const pills = ORDER
 		.filter(k => trends?.[k])
 		.map(k => {
 			const { w = 0, t = 0, p = 0 } = trends[k];
 			const label = LABELS[k] ?? k;
 
-			const tone =
-				p >= 60 ? "good" :
-				p >= 45 ? "mid"  :
-				"bad";
+			const tone = isHomer
+				? (p >= 30 ? "good" : p >= 15 ? "mid" : "bad")
+				: (p >= 60 ? "good" : p >= 45 ? "mid" : "bad");
 
 			return `
 				<div class="trend-pill">
@@ -443,10 +443,14 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 			const liqHtml = Array.isArray(liq) && liq.length >= 2
 				? `<span class="book-odd-liq">$${liq[0]}/$${liq[1]}</span>`
 				: '';
+			const link = typeof resolveLink === 'function' ? resolveLink(links?.[bookKey]) : null;
+			const betslipLink = link
+				? `<a href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="book-betslip-card" title="Add to betslip">+</a>`
+				: '';
 			html += `
 				<div class="book-odd-item ${isBest} ${isDevig}">
 					<img class="book-logo-small" src='logos/${bookKey}.png' alt='${bookKey}' title='${bookKey}' />
-					<span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>
+					<span style="display:flex;align-items:center;gap:2px;"><span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>${betslipLink}</span>
 					${liqHtml}
 				</div>
 			`;
@@ -588,7 +592,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(rowData.hitRates || {})}
+					${renderTrends(rowData.hitRates || {}, rowData.prop)}
 				</div>
 			</div>
 		</div>

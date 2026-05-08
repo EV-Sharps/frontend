@@ -392,7 +392,11 @@ function groupByGame() {
 function resolveLink(url) {
 	if (!url) return url;
 	const state = CURR_USER?.metadata?.state || "ny";
-	return state ? url.replaceAll("{state}", state) : url;
+	let link = state ? url.replaceAll("{state}", state) : url;
+	if (link && url.includes("fanduel") && !url.includes(`${state}.sportsbook`)) {
+		link = link.replace("sportsbook", `${state}.sportsbook`);
+	}
+	return link;
 }
 
 const evOddsFormatter = function(cell) {

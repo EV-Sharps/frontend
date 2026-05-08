@@ -1012,6 +1012,14 @@ a.book-betslip-link {
 	color: inherit;
 	cursor: pointer;
 }
+a.book-betslip-card {
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+	color: #6b7280;
+}
+a.book-betslip-card:hover { color: #64b5f6; }
 a.book-betslip-link:hover {
 	background: rgba(100,181,246,0.12);
 	border-radius: 6px;

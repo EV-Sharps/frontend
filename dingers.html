@@ -11,6 +11,7 @@
 	<script src="record-summary.js"></script>
 	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
+	 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="jspdf.umd.min.js"></script>
 	<script src="jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -839,7 +840,7 @@
 		handleSession();
 
 		function buildHRDingersSeasonRecord() {
-			return buildSeasonRecord('hr', typeof RECORD !== 'undefined' ? RECORD : null);
+			return buildSeasonRecord('hr', SEASON_RECORD?.[_summarySport]);
 		}
 
 		const selectId = "#header";
@@ -1081,7 +1082,7 @@
 					return;
 				}
 
-				addRecordSummaryButtons(null, buildHRDingersSeasonRecord);
+				addRecordSummaryButtons(null, buildHRDingersSeasonRecord, { showSportToggle: true });
 
 				setTimeout(function() {
 					if (PRETTY != undefined) {
@@ -1716,6 +1717,7 @@
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
-	<script type="text/javascript" src="record_mlb.js"></script>
+	<script type="text/javascript" src="record.js"></script>
+	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null; RECORD = SEASON_RECORD?.mlb ?? RECORD;</script>
 </body>
 </html>

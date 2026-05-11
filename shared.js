@@ -67,6 +67,7 @@ const PAGE_SECTIONS = [
 			{ label: "3PTM (Free)", value: "threes" },
 			{ label: "PTS/REB/AST", value: "pts" },
 			{ label: "🏀 CBB", value: "ncaab" },
+			{ label: "🏀 WNBA", value: "wnba" },
 		]
 	},
 	{
@@ -963,7 +964,7 @@ const oppFormatter = function(cell, params, rendered) {
 	</span>`;
 	let team = data.oppId || data.opp;
 	let sport = data.sport || SPORT;
-	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba") {
+	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba" || sport == "wnba") {
 		let t = team?.toUpperCase() || "";
 		return `<div class="opp-cell">
 			${ah}

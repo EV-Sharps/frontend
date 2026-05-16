@@ -2170,9 +2170,10 @@ const DEFAULT_FIELDS_ALL = [
 
 const DEFAULT_SHARED = [
 	"ev", "book", "player", "fairVal", "implied", "kelly", "opp",
-	"bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "bookOdds_fl", "bookOdds_re", "logs", "hitRate", "hitRateLYR"
+	"bookOdds_fd", "bookOdds_b365", "bookOdds_dk", "bookOdds_mgm", "bookOdds_cz", "bookOdds_fn", "bookOdds_hr", "bookOdds_br", "bookOdds_kambi", "bookOdds_pn", "bookOdds_circa", "bookOdds_espn", "bookOdds_bv", "bookOdds_bol", "bookOdds_fl", "bookOdds_re", "bookOdds_kal", "bookOdds_nv", "bookOdds_px", "logs", "hitRate", "hitRateLYR"
 ]
 const DEFAULT_FIELDS = {
+	dingers: [...DEFAULT_SHARED],
 	tds: [...DEFAULT_SHARED, "oppRank"],
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
 	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
@@ -2334,7 +2335,9 @@ function openOverlay() {
 	}
 	const metadata = CURR_USER?.metadata || {};
 	if (!metadata[PAGE]) {
-		metadata[PAGE] = DEFAULT_FIELDS[PAGE] || DEFAULT_SHARED;
+		metadata[PAGE] = (typeof TABLE !== 'undefined' && TABLE)
+			? TABLE.getColumns().filter(c => c.isVisible()).map(c => c.getField()).filter(Boolean).map(f => f.replaceAll('.', '_'))
+			: DEFAULT_FIELDS[PAGE] || DEFAULT_SHARED;
 		if (MOBILE) {
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
 			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");

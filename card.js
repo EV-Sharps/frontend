@@ -123,7 +123,7 @@ function dMetricPill(label, value, color) {
 	if (value === undefined || value === null || value === "") return "";
 	const colorStyle = color ? `color:${color};` : "";
 	return `<div class="metric-pill" style="min-width:48px;">
-		<div style="font-weight:700;font-size:0.8rem;${colorStyle}">${value}</div>
+		<div style="font-weight:600;font-size:0.8rem;${colorStyle}">${value}</div>
 		<div style="opacity:0.75;font-size:0.68rem;">${label}</div>
 	</div>`;
 }
@@ -175,16 +175,21 @@ function renderDingersMetrics(r) {
 
 	const pitcherSection = r.pitcher ? `
 		<div style="display:flex;flex-direction:column;gap:4px;">
-			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Pitcher — ${title(r.pitcher)}</div>
+			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Pitcher: ${title(r.pitcher)} (${r.pitcherLR})</div>
 			<div style="display:flex;gap:6px;flex-wrap:wrap;">
 				${dMetricPill("ERA", pd.p_era || "", eraColor(pd.p_era))}
+				${dPctPill("OPS", pd.on_base_plus_slg, pd.on_base_plus_slgPercentile, false)}
+				${dMetricPill("xwOBA", fmtWoba(pd.xwoba), xwobaColorInv(pd.xwoba))}
 				${dMetricPill("HR/PA%", pc.hr_pa !== undefined ? pc.hr_pa : "", getPercentileColor("percs.hr_pa", pc.hr_rate_percentile))}
 				${dMetricPill("HRs", pc.home_run !== undefined ? pc.home_run : "", "")}
 				${dMetricPill("BvP", r.bvp || "", "")}
 				${dPctPill("Fly%", pd.flyballs_percent, pd.flyballs_percentPercentile, false)}
-				${dMetricPill("xwOBA", fmtWoba(pd.xwoba), xwobaColorInv(pd.xwoba))}
+				${dPctPill("Pull%", pd.pull_percent, 100 - pd.pull_percentPercentile, false)}
+				${dPctPill("Avg LA", pd.launch_angle_avg, pd.launch_angle_avgPercentile, false)}
+				${dPctPill("SwSp%", pd.sweet_spot_percent, 100 - pd.sweet_spot_percentPercentile, false)}
 				${dPctPill("EVelo", pd.exit_velocity_avg, pd.exit_velocity_avgPercentile, false)}
-				${dPctPill("BRL%", pd.barrel_batted_rate, pd.barrel_batted_ratePercentile, false)}
+				${dPctPill("HH%", pd.hard_hit_percent, 100 - pd.hard_hit_percentPercentile, false)}
+				${dPctPill("BRL%", pd.barrel_batted_rate, 100 - pd.barrel_batted_ratePercentile, false)}
 			</div>
 		</div>
 	` : "";
@@ -193,11 +198,16 @@ function renderDingersMetrics(r) {
 		<div style="display:flex;flex-direction:column;gap:4px;">
 			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Batter</div>
 			<div style="display:flex;gap:6px;flex-wrap:wrap;">
+				${dPctPill("OPS", sv.on_base_plus_slg, 100 - sv.on_base_plus_slgPercentile, false)}
 				${dMetricPill("HR/PA%", bp.hr_pa !== undefined ? bp.hr_pa : "", getPercentileColor("batter_percs.hr_pa", bp.hr_rate_percentile))}
 				${dMetricPill("HRs", bp.home_run !== undefined ? bp.home_run : "", "")}
 				${dMetricPill("xwOBA", fmtWoba(sv.est_woba), xwobaColor(sv.est_woba))}
+				${dPctPill("Fly%", sv.flyballs_percent, sv.flyballs_percentPercentile, false)}
+				${dPctPill("Pull%", sv.pull_percent, 100 - sv.pull_percentPercentile, false)}
+				${dPctPill("Avg LA", sv.launch_angle_avg, sv.launch_angle_avgPercentile, false)}
 				${dPctPill("SwSp%", sv.sweet_spot_percent, sv.sweet_spot_percentPercentile, false)}
 				${dPctPill("EVelo", sv.exit_velocity_avg, sv.exit_velocity_avgPercentile, false)}
+				${dPctPill("HH%", sv.hard_hit_percent, sv.hard_hit_percentPercentile, false)}
 				${dPctPill("BRL%", sv.barrels_per_bip, sv.barrels_per_bipPercentile, false)}
 			</div>
 		</div>
@@ -246,8 +256,8 @@ function sliceLogs(logs, interval) {
 
 function renderTrends(trends, prop) {
 	const LABELS = {
-		lyr: "'24-25",
-		szn: "'25-26"
+		lyr: "Last Yr",
+		szn: "Year"
 	};
 	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
 	const isHomer = prop === 'hr';
@@ -274,6 +284,32 @@ function renderTrends(trends, prop) {
 		.join("");
 
 	return `<div class="trend-row">${pills}</div>`;
+}
+
+function renderDue(pa) {
+	if (!pa) return "";
+	const { streak, avg, med, sd, z_median } = pa;
+	const items = [
+		{ label: "Streak", value: streak },
+		{ label: "Avg", value: avg?.toFixed(1) },
+		{ label: "Median", value: med },
+		{ label: "SD", value: sd?.toFixed(2) },
+		{ label: "Med Z", value: z_median?.toFixed(2) },
+	];
+	const pills = items.map(({ label, value }) => `
+		<div class="trend-pill">
+			<div class="trend-label">${label}</div>
+			<div class="trend-box">${value ?? "—"}</div>
+		</div>
+	`).join("");
+	return `
+		<div class="expanded-trends" style="min-width:160px;">
+			<div style="display:flex; justify-content:center; align-items:center;">
+				<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Due (in Plate Appearances)</div>
+			</div>
+			<div class="trend-row">${pills}</div>
+		</div>
+	`;
 }
 
 function renderCardPlot(uniqueId, under, logs, handicap, interval) {
@@ -506,7 +542,7 @@ function updateExistingCard(card, rowData) {
 			${teamImg}
 			<div style="font-size: 0.7rem;display:flex;flex-direction:column;text-align:center;">
 				<span class="pos">${rowData.pos || ""}</span>
-				<span class="bats">${avgMin || ""}</span>
+				<span class="bats">${(PAGE === "dingers") ? rowData.bats : avgMin || ""}</span>
 			</div>
 			<span class="player-name">${player}</span>
 		</div>
@@ -559,6 +595,7 @@ function updateExistingCard(card, rowData) {
 	const dvpPill = dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>`: "";
+	const stadiumPill = (PAGE === "dingers") ? `<div class="metric-pill">L:${rowData.stadiumRankLeft} R:${rowData.stadiumRankRight} T:${rowData.stadiumRank}<span style="opacity:0.85; font-weight:500;">Stadium</span></div>` : "";
 	const bppPill = (PAGE === "dingers" && rowData.bpp) ? `<div class="metric-pill" style="color:${getHRFactorColor(parseInt(rowData.bpp))}; font-weight:600; font-size:0.85rem;">
 					${rowData.bpp} <span style="opacity:0.85; font-weight:500;">BPP</span>
 				</div>` : "";
@@ -581,19 +618,21 @@ function updateExistingCard(card, rowData) {
 					${addSuffix(rowData.oppRank)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
 				</div>
 				${dvpPill}
+				${stadiumPill}
 				${bppPill}
 				${weatherPill}
 			</div>
 
 			${PAGE === "dingers" ? renderDingersMetrics(rowData) : ""}
 
-			<div class="expanded-trends-chart" style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
-				<div class="expanded-trends" style="flex:1 1 160px; min-width:160px;">
+			<div class="expanded-trends-chart" style="display:flex; flex-direction:column; gap:10px;">
+				<div class="expanded-trends" style="min-width:160px;">
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
 					${renderTrends(rowData.hitRates || {}, rowData.prop)}
 				</div>
+				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}
 			</div>
 		</div>
 	`;

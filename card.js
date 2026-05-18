@@ -178,8 +178,8 @@ function renderDingersMetrics(r) {
 			<div style="font-size:0.7rem;font-weight:600;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Pitcher: ${title(r.pitcher)} (${r.pitcherLR})</div>
 			<div style="display:flex;gap:6px;flex-wrap:wrap;">
 				${dMetricPill("ERA", pd.p_era || "", eraColor(pd.p_era))}
-				${dPctPill("OPS", pd.on_base_plus_slg, pd.on_base_plus_slgPercentile, false)}
-				${dMetricPill("xwOBA", fmtWoba(pd.xwoba), xwobaColorInv(pd.xwoba))}
+				${dPctPill("OPS", pd.on_base_plus_slg, 100 - pd.on_base_plus_slgPercentile, false)}
+				${dMetricPill("xwOBA", fmtWoba(pd.xwoba), xwobaColor(pd.xwoba))}
 				${dMetricPill("HR/PA%", pc.hr_pa !== undefined ? pc.hr_pa : "", getPercentileColor("percs.hr_pa", pc.hr_rate_percentile))}
 				${dMetricPill("HRs", pc.home_run !== undefined ? pc.home_run : "", "")}
 				${dMetricPill("BvP", r.bvp || "", "")}
@@ -296,12 +296,16 @@ function renderDue(pa) {
 		{ label: "SD", value: sd?.toFixed(2) },
 		{ label: "Med Z", value: z_median?.toFixed(2) },
 	];
-	const pills = items.map(({ label, value }) => `
-		<div class="trend-pill">
-			<div class="trend-label">${label}</div>
-			<div class="trend-box">${value ?? "—"}</div>
-		</div>
-	`).join("");
+	const zColor = z_median != null ? getZColor(z_median) : "";
+	const pills = items.map(({ label, value }) => {
+		const style = (label === "Med Z" && zColor) ? ` style="color:${zColor};font-weight:600;"` : "";
+		return `
+			<div class="trend-pill">
+				<div class="trend-label">${label}</div>
+				<div class="trend-box"${style}>${value ?? "—"}</div>
+			</div>
+		`;
+	}).join("");
 	return `
 		<div class="expanded-trends" style="min-width:160px;">
 			<div style="display:flex; justify-content:center; align-items:center;">

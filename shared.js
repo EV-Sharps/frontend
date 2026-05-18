@@ -702,7 +702,7 @@ const gapFormatter = function(cell) {
 
 function getPercentileColor(field, value) {
 	if (!value) return "";
-	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike", "pull_percent", "blasts_swing", "squared_up_swing", "avg_swing_speed"].includes(field)) {
+	if (["preview", "preview_k"].includes(PAGE) && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "p_swinging_strike", "pull_percent", "blasts_swing", "squared_up_swing", "avg_swing_speed", "on_base_plus_slg"].includes(field)) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
 		value = 100 - value;

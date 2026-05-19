@@ -97,7 +97,7 @@ const PAGE_SECTIONS = [
 	{
 		key: "account", label: "👤",
 		pages: [
-			{ label: "📋 My Bets", value: "tracker" },
+			{ label: "⭐ Watchlist/Bets", value: "tracker" },
 			{ label: "❓ FAQ", value: "faq" },
 			{ label: "👤 Profile", value: "profile" },
 			{ label: "💳 Pricing", value: "pricing" },

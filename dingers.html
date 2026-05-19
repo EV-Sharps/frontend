@@ -850,6 +850,7 @@
 		PAGE = "dingers";
 		let NOCACHE, BPP, KAMBI, NO365, HISTORICAL, NOBR, SIMPLE, PH;
 		parseURLParams();
+
 		SPORT = "mlb";
 
 		handleSession();
@@ -1217,6 +1218,24 @@
 			const order = (savedOrder && savedOrder.length) ? savedOrder : DINGERS_DEFAULT_COL_ORDER;
 			const seen = new Set();
 			const cols = [];
+			if (!MOBILE) {
+				cols.push({
+					title: "",
+					field: "player",
+					width: 30,
+					headerSort: false,
+					formatter: function(cell) {
+						const player = cell.getValue();
+						const starred = isWatchlisted(player) || isTracked(player);
+						const color = _starColor(player);
+						return `<span class="watchlist-star" style="cursor:pointer;font-size:1rem;color:${color};line-height:1;" title="${isTracked(player) ? 'In tracker' : (isWatchlisted(player) ? 'Watchlisted' : 'Add to watchlist')}">${starred ? "★" : "☆"}</span>`;
+					},
+					cellClick: function(e, cell) {
+						e.stopPropagation();
+						toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw());
+					}
+				});
+			}
 			for (const key of order) {
 				if (itemMap[key]) { cols.push(...itemMap[key].cols); seen.add(key); }
 			}
@@ -1339,6 +1358,7 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('.watchlist-star')) return;
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());
 					return;

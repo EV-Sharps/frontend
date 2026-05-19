@@ -226,6 +226,16 @@
 		#right-body.mobile-open #chart .js-plotly-plot,
 		#right-body.mobile-open #chart svg { width: 100% !important; max-width: 100% !important; max-height: none; }
 	}
+	.tracker-section-label {
+		padding: 0.3rem 0.5rem 0.15rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--text-muted, #9ca3af);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		border-top: 1px solid var(--border, #374151);
+		margin-top: 0.3rem;
+	}
 </style>
 <body>
 	<div id="app">
@@ -272,27 +282,17 @@
 		<main>
 			<!-- Player search + customize -->
 			<div id="tracker-search-wrap">
-				<input id="tracker-search" type="text" placeholder="Search to add a player...">
 				<label style="font-size:0.78rem;color:var(--text-muted,#9ca3af);white-space:nowrap;display:flex;align-items:center;gap:0.3rem;">
-					Devig:
-					<select id="tracker-devig-select" style="font-size:0.78rem;padding:2px 4px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:4px;">
-						<option value="">Market</option>
-						<option value="pn">Pinnacle</option>
-						<option value="circa">Circa</option>
-						<option value="fd">FanDuel</option>
-						<option value="dk">DraftKings</option>
-						<option value="b365">Bet365</option>
-						<option value="mgm">MGM</option>
-						<option value="espn">ESPN</option>
-						<option value="cz">Caesars</option>
-						<option value="hr">Hard Rock</option>
-						<option value="nv">NoVig</option>
-						<option value="pn+circa">PN+Circa</option>
-						<option value="pn+fd">PN+FD</option>
+					Method:
+					<select id="tracker-method-select" style="font-size:0.78rem;padding:2px 4px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:4px;">
+						<option value="" selected>Worst-Case</option>
+						<option value="add">Additive</option>
+						<option value="mult">Multiplicative</option>
+						<option value="probit">Probit</option>
 					</select>
 				</label>
 				<button id="tracker-customize-btn" onclick="openCustomize()">⚙️</button>
-				<div id="search-dropdown"></div>
+				<button onclick="clearAllBets()" style="flex-shrink:0;padding:0.35rem 0.65rem;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:6px;color:#ef4444;cursor:pointer;font-size:0.78rem;" title="Clear all bets">Clear All</button>
 			</div>
 
 			<!-- Customize overlay -->
@@ -325,6 +325,23 @@
 				</div>
 			</div>
 
+			<div class="tracker-section-label" style="margin-top:0;border-top:none;">⭐ Watchlist</div>
+			<div id="popular-watchlist-wrap" style="padding:0.3rem 0.5rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-size:0.78rem;min-height:1.6rem;">
+				<span style="color:var(--text-muted,#6b7280);white-space:nowrap;">🔥 Trending:</span>
+				<div id="popular-watchlist-list" style="display:flex;gap:0.3rem;flex-wrap:wrap;"></div>
+			</div>
+			<div id="watchlist-table"></div>
+
+			<div class="tracker-section-label">💰 My Bets</div>
+			<div style="padding:0.3rem 0.5rem;position:relative;">
+				<input id="tracker-search" type="text" placeholder="Search to add a player...">
+				<div id="search-dropdown"></div>
+			</div>
+			<div id="popular-bets-wrap" style="padding:0.3rem 0.5rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-size:0.78rem;min-height:1.6rem;">
+				<span style="color:var(--text-muted,#6b7280);white-space:nowrap;">🔥 Trending:</span>
+				<div id="popular-bets-list" style="display:flex;gap:0.3rem;flex-wrap:wrap;"></div>
+			</div>
+
 			<div id="table-container">
 				<div id="table"></div>
 				<div id="right-body" class="body">
@@ -355,7 +372,7 @@
 			<div class="odds-grid-label">Pick odds from book</div>
 			<div class="odds-grid" id="abt-odds-grid"></div>
 
-			<div class="divider">— or enter manually —</div>
+			<div class="divider">or enter manually</div>
 			<div class="manual-row">
 				<input type="number" id="abt-manual-odds" placeholder="Odds (e.g. +755)">
 				<select id="abt-manual-book">
@@ -400,16 +417,32 @@
 
 		handleSession();
 
+		CURR_USER = { metadata: {
+			watchlist: [{ player: "jazz chisholm", dt: new Date().toISOString().slice(0,10) }],
+			bets: [{ player: "juan soto", odds: -115, book: "fd", dt: new Date().toISOString().slice(0,10) }]
+		}};
+
 		// ── State ────────────────────────────────────────────────────────
 		let ALL_ROWS = [];   // full API dataset
 		let BETS = [
 			
 		];
 		let _addBetRow = null;  // row being added/edited in modal
+			let WATCHLIST_TABLE = null;
 
 		// ── Metadata ─────────────────────────────────────────────────────
 		function loadBetsFromMetadata() {
-			if (CURR_USER?.metadata?.bets?.length) BETS = CURR_USER.metadata.bets;
+			const today = new Date().toISOString().slice(0, 10);
+			const all = CURR_USER?.metadata?.bets || [];
+			BETS = all.filter(b => b.dt === today);
+			if (BETS.length !== all.length) persistBets();
+		}
+
+		function clearAllBets() {
+			if (!confirm("Clear all tracked bets?")) return;
+			BETS = [];
+			persistBets();
+			refreshTable();
 		}
 
 		async function persistBets() {
@@ -451,7 +484,37 @@
 					? raw
 					: Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
 				refreshTable();
+				refreshWatchlist();
 			}).catch(err => console.log(err));
+			fetchPopularBets();
+			fetchPopularWatchlist();
+		}
+
+		async function fetchPopularWatchlist() {
+			const { data, error } = await SB.rpc('popular_watchlist', { lim: 15 });
+			if (error || !data?.length) return;
+			const list = document.getElementById("popular-watchlist-list");
+			if (!list) return;
+			list.innerHTML = data.map(({ player, count }) => {
+				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users watching" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
+			}).join("");
+		}
+
+		async function fetchPopularBets() {
+			const { data, error } = await SB.rpc('popular_bets', { lim: 15 });
+			if (error || !data?.length) return;
+			const list = document.getElementById("popular-bets-list");
+			if (!list) return;
+			list.innerHTML = data.map(({ player, count }) => {
+				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users tracking" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
+			}).join("");
+		}
+
+		function popularBetClick(player) {
+			const row = ALL_ROWS.find(r => (r.player || "").toLowerCase().trim() === player);
+			if (row) openAddBet(row);
 		}
 
 		function refreshTable() {
@@ -530,6 +593,50 @@
 		}
 
 		// ── Table ─────────────────────────────────────────────────────────
+		function _isWatchlisted(player) {
+			const p = (player || "").toLowerCase().trim();
+			return (CURR_USER?.metadata?.watchlist || []).some(w => (w.player ?? w).toLowerCase().trim() === p);
+		}
+
+		async function toggleWatchlistTracker(player) {
+			if (!CURR_USER) return
+			const p = (player || "").toLowerCase().trim();
+			let watchlist = [...(CURR_USER.metadata?.watchlist || [])];
+			const idx = watchlist.findIndex(w => (w.player ?? w).toLowerCase().trim() === p);
+			if (idx >= 0) watchlist.splice(idx, 1);
+			else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
+			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
+
+			if (!CURR_SESSION) {
+				refreshWatchlist();
+				return;
+			}
+
+			await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			refreshWatchlist();
+		}
+
+		function makeStarCol() {
+			return {
+				title: "",
+				field: "player",
+				width: 30,
+				headerSort: false,
+				formatter: function(cell) {
+					const player = cell.getRow().getData().player || "";
+					const on = _isWatchlisted(player);
+					return `<span class="wl-star" style="cursor:pointer;font-size:1rem;color:${on ? '#f59e0b' : '#6b7280'};line-height:1" title="${on ? 'Remove from watchlist' : 'Add to watchlist'}">${on ? '★' : '☆'}</span>`;
+				},
+				cellClick: function(e, cell) {
+					e.stopPropagation();
+					toggleWatchlistTracker(cell.getRow().getData().player).then(() => {
+						if (TABLE) TABLE.redraw(true);
+						if (WATCHLIST_TABLE) WATCHLIST_TABLE.redraw(true);
+					});
+				}
+			};
+		}
+
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
 				placeholder: "Search above to add players to track.",
@@ -562,6 +669,7 @@
 							removeBet();
 						}
 					},
+					makeStarCol(),
 					{
 						title: "My<br>Odds",
 						field: "_betOdds",
@@ -570,7 +678,12 @@
 						formatter: function(cell) {
 							const v = cell.getValue();
 							if (v == null) return "";
-							return `<span style="color:#3b82f6;font-weight:600">${v > 0 ? "+" : ""}${v}</span>`;
+							return `<span style="color:#3b82f6;font-weight:600;cursor:pointer" title="Click to edit odds">${v > 0 ? "+" : ""}${v}</span>`;
+						},
+						cellClick: function(e, cell) {
+							e.stopPropagation();
+							_addBetRow = cell.getRow().getData();
+							openAddBet(_addBetRow);
 						}
 					},
 					{
@@ -581,24 +694,15 @@
 							const v = cell.getValue();
 							if (!v) return "";
 							return `<span style="color:#3b82f6;font-weight:600">${v.toUpperCase()}</span>`;
-						}
-					},
-					{
-						title: "Market<br>EV",
-						field: "_marketEV",
-						width: 70,
-						sorter: function(a, b, aRow, bRow) {
-							const evA = calcEV(getMarketFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
-							const evB = calcEV(getMarketFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
-							return evA - evB;
 						},
-						formatter: function(cell) {
-							const d = cell.getRow().getData();
-							return evCalcFormatter(cell, getMarketFairProb(d), getBestMarketOdds(d));
+						cellClick: function(e, cell) {
+							e.stopPropagation();
+							_addBetRow = cell.getRow().getData();
+							openAddBet(_addBetRow);
 						}
 					},
 					{
-						title: `Circa EV<br><select id="circa-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+						title: `My EV<br><select id="circa-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
 							<option value="market">Market</option>
 							<option value="pn">Pinnacle</option>
 							<option value="fd">FanDuel</option>
@@ -614,13 +718,13 @@
 						field: "_circaEV",
 						width: 90,
 						sorter: function(a, b, aRow, bRow) {
-							const evA = calcEV(getFairProb(aRow.getData()), (aRow.getData().bookOdds || {}).circa) ?? -999;
-							const evB = calcEV(getFairProb(bRow.getData()), (bRow.getData().bookOdds || {}).circa) ?? -999;
+							const evA = calcEV(getFairProb(aRow.getData()), aRow.getData()._betOdds) ?? -999;
+							const evB = calcEV(getFairProb(bRow.getData()), bRow.getData()._betOdds) ?? -999;
 							return evA - evB;
 						},
 						formatter: function(cell) {
 							const d = cell.getRow().getData();
-							return evCalcFormatter(cell, getFairProb(d), (d.bookOdds || {}).circa);
+							return evCalcFormatter(cell, getFairProb(d), d._betOdds);
 						}
 					},
 					{
@@ -678,6 +782,7 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('.wl-star')) return;
 				rowClick(row);
 			});
 
@@ -695,18 +800,155 @@
 				}
 			}, 100);
 
-			// Wire tracker-devig dropdown (Market EV devig)
-			const devigSel = document.getElementById("tracker-devig-select");
-			if (devigSel) {
-				devigSel.value = DEVIG || "";
-				devigSel.addEventListener("change", function() {
-					DEVIG = this.value;
+			// Wire method dropdown
+			const methodSel = document.getElementById("tracker-method-select");
+			if (methodSel) {
+				methodSel.value = METHOD || "";
+				methodSel.addEventListener("change", function() {
+					METHOD = this.value;
 					if (TABLE) TABLE.redraw(true);
 				});
 			}
 		}
 
 		// ── Customize ────────────────────────────────────────────────────
+
+		// ── Watchlist table ──────────────────────────────────────────────
+		function watchlistedRows() {
+			const watchlist = CURR_USER?.metadata?.watchlist || [];
+			return watchlist.map(w => {
+				const p = (w.player ?? w).toLowerCase().trim();
+				const row = ALL_ROWS.find(r => {
+					const rp = (r.player || "").toLowerCase().trim();
+					return rp === p || rp.includes(p) || p.includes(rp);
+				});
+				return row ? { ...row } : { player: w.player ?? w };
+			});
+		}
+
+		function refreshWatchlist() {
+			const rows = watchlistedRows();
+			if (WATCHLIST_TABLE) {
+				WATCHLIST_TABLE.setData(rows);
+			} else {
+				renderWatchlistTable(rows);
+			}
+		}
+
+		function renderWatchlistTable(data) {
+			WATCHLIST_TABLE = new Tabulator("#watchlist-table", {
+				placeholder: "Star players on the dingers page to watch them here.",
+				layout: "fitDataFill",
+				autoResize: true,
+				data: data,
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				columns: [
+					{
+						title: "",
+						width: 30,
+						headerSort: false,
+						frozen: true,
+						formatter: function() {
+							return `<span class="wl-remove" style="color:#ef4444;cursor:pointer;font-size:1rem;line-height:1" title="Remove from watchlist">✕</span>`;
+						},
+						cellClick: function(e, cell) {
+							e.stopPropagation();
+							removeFromWatchlist(cell.getRow().getData().player);
+						}
+					},
+					{
+						title: "+ Bet",
+						width: 55,
+						headerSort: false,
+						formatter: function(cell) {
+							return cell.getRow().getData().bookOdds
+								? `<span style="color:#3b82f6;cursor:pointer;font-size:0.8rem;font-weight:600">+ Bet</span>`
+								: "";
+						},
+						cellClick: function(e, cell) {
+							e.stopPropagation();
+							const d = cell.getRow().getData();
+							if (d.bookOdds) openAddBet(d);
+						}
+					},
+					{
+						title: "Player",
+						field: "player",
+						formatter: playerFormatter,
+						width: MOBILE ? 90 : 140,
+						formatterParams: { sport: "mlb" },
+						hozAlign: "left",
+						frozen: true
+					},
+					{
+						title: "Game",
+						field: "game",
+						width: MOBILE ? 80 : 110,
+						hozAlign: "left",
+						formatter: function(cell) { return cell.getValue() || "—"; }
+					},
+					{
+						title: "Line",
+						field: "handicap",
+						width: 60,
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							if (!d.handicap) return "—";
+							return `${d.under ? "u" : "o"}${cell.getValue()}`;
+						}
+					},
+					{
+						title: "Fair<br>Value",
+						field: "fairVal",
+						width: MOBILE ? 40 : 60,
+						sorter: "number",
+						formatter: plusMinusFormatter
+					},
+					{
+						title: "Best<br>Book",
+						field: "book",
+						width: 75,
+						formatter: bestBookFormatter,
+						formatterParams: { book: BOOK }
+					},
+					{
+						title: "Best<br>EV",
+						width: 70,
+						sorter: function(a, b, aRow, bRow) {
+							const evA = calcEV(getMarketFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
+							const evB = calcEV(getMarketFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
+							return evA - evB;
+						},
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							return evCalcFormatter(cell, getMarketFairProb(d), getBestMarketOdds(d));
+						}
+					}
+				]
+			});
+
+			WATCHLIST_TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('.wl-star') || e.target.closest('.wl-remove')) return;
+				const d = row.getData();
+				if (d.bookOdds) openAddBet(d);
+			});
+		}
+
+		async function removeFromWatchlist(player) {
+			if (!CURR_USER || !CURR_SESSION) return;
+			const p = (player || "").toLowerCase().trim();
+			const watchlist = (CURR_USER.metadata?.watchlist || [])
+				.filter(w => (w.player ?? w).toLowerCase().trim() !== p);
+			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
+			await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			refreshWatchlist();
+		}
+
 		const CUST_STORAGE_KEY = "tracker-columns";
 		// field id → table column field
 		const CUST_COLS = {
@@ -864,15 +1106,16 @@
 		function saveBet() {
 			if (!_addBetRow) return;
 
-			// Determine odds + book from chip or manual
 			const selectedChip = document.getElementById("abt-odds-grid").querySelector(".odds-chip.selected");
+			const manualOdds = document.getElementById("abt-manual-odds").value;
+			const manualBook = document.getElementById("abt-manual-book").value.trim().toLowerCase();
 			let odds, book;
-			if (selectedChip) {
-				odds = Number(selectedChip.dataset.odds);
+			if (manualOdds) {
+				odds = Number(manualOdds);
+				book = manualBook || selectedChip?.dataset.book;
+			} else if (selectedChip) {
+				odds = Number(selectedChip.dataset.odds.split("/")[0]);
 				book = selectedChip.dataset.book;
-			} else {
-				odds = Number(document.getElementById("abt-manual-odds").value);
-				book = document.getElementById("abt-manual-book").value.trim().toLowerCase();
 			}
 			if (!odds || !book) return;
 
@@ -907,6 +1150,11 @@
 			persistBets();
 		}
 
+		// Typing in manual odds deselects chips
+		document.getElementById("abt-manual-odds").addEventListener("input", function() {
+			document.getElementById("abt-odds-grid").querySelectorAll(".odds-chip").forEach(c => c.classList.remove("selected"));
+		});
+
 		// Close backdrop click
 		document.getElementById("add-bet-backdrop").addEventListener("click", function(e) {
 			if (e.target === this) closeAddBet();
@@ -925,24 +1173,7 @@
 		}
 
 		function rowClick(row) {
-			const right = document.querySelector("#right-body");
-			const left  = document.querySelector("#table-container");
-			const table = document.querySelector("#table");
-			const sel   = TABLE.getSelectedRows();
-			TABLE.deselectRow();
-			if (sel.length > 0 && sel[0] == row) {
-				closeRightBody();
-			} else {
-				row.select();
-				if (MOBILE) {
-					table.style.display = "none";
-					right.classList.add("mobile-open");
-				} else {
-					left.style.width = "50%";
-				}
-				right.style.display = "flex";
-				setTimeout(() => plotOddsChart(), 50);
-			}
+			
 		}
 
 		function plotOddsChart() {

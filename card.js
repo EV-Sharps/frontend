@@ -1,4 +1,42 @@
 let ALL_CARD_DATA = [];
+
+// ── Watchlist ────────────────────────────────────────────────────────────────
+function _normPlayer(p) { return (p || "").toLowerCase().trim(); }
+
+function isWatchlisted(player) {
+	const p = _normPlayer(player);
+	return (CURR_USER?.metadata?.watchlist || []).some(w => _normPlayer(w.player ?? w) === p);
+}
+
+function isTracked(player) {
+	const p = _normPlayer(player);
+	return (CURR_USER?.metadata?.bets || []).some(b => {
+		const bp = _normPlayer(b.player);
+		return p.includes(bp) || bp.includes(p);
+	});
+}
+
+function _starColor(player) {
+	if (isWatchlisted(player)) return "#f59e0b";
+	if (isTracked(player)) return "#3b82f6";
+	return "#6b7280";
+}
+
+async function toggleWatchlist(e, player) {
+	e.stopPropagation();
+	if (!CURR_USER || !CURR_SESSION) return;
+	const p = _normPlayer(player);
+	const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
+	const idx = watchlist.findIndex(w => _normPlayer(w.player ?? w) === p);
+	if (idx >= 0) watchlist.splice(idx, 1);
+	else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
+	CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
+	await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+	const star = e.currentTarget;
+	star.textContent = isWatchlisted(player) || isTracked(player) ? "★" : "☆";
+	star.style.color = _starColor(player);
+}
+
 let MASTER_DATA = [];
 let CURRENT_CARD_INDEX = 0;
 const CARDS_PER_LOAD = 20;

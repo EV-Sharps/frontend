@@ -241,7 +241,7 @@
 				groupToggleElement: "header",
 				columns: [
 					{
-						title: "Novig<br>+EV",
+						title: "Circa/NV<br>+EV",
 						field: "ev",
 						width: MOBILE ? 40 : 60,
 						sorter: "number",
@@ -502,7 +502,7 @@
 
 			TABLE.setSort([
 				{column: `game_trends.hard_hit_ct.${window}G`, dir: "desc"},
-				{column: `game_trends.exit_velocity_avg.${window}G`, dir: "desc"},
+				{column: `game_trends.on_base_plus_slg.${window}G`, dir: "desc"},
 			]);
 
 			const rows = TABLE.getData("active");
@@ -511,14 +511,11 @@
 			for (let i = 0; i < rows.length; i++) {
 				const row = rows[i];
 				const prev = rows[i - 1];
-				if (i > 0 && row["game_trends"]["hard_hit_ct"]["3G"] !== prev["game_trends"]["hard_hit_ct"]["3G"]) {
-					currentRank++;
-				}
 
 				if (tweet.length > 10) {
 					continue;
 				}
-				tweet.push(`${title(row.player)} (+${row["game_trends"]["exit_velocity_avg"][`${window}G`]}): +${row.line} ${row.book.toUpperCase()}`);
+				tweet.push(`${title(row.player)} (+${row["game_trends"]["on_base_plus_slg"][`${window}G`]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
 		}

@@ -416,11 +416,13 @@
 		SPORT = "mlb";
 
 		handleSession();
-
-		CURR_USER = { metadata: {
-			watchlist: [{ player: "jazz chisholm", dt: new Date().toISOString().slice(0,10) }],
-			bets: [{ player: "juan soto", odds: -115, book: "fd", dt: new Date().toISOString().slice(0,10) }]
-		}};
+	
+		if (window.location.host.includes("localhost")) {
+			CURR_USER = { metadata: {
+				watchlist: [{ player: "jazz chisholm", dt: new Date().toISOString().slice(0,10) }],
+				bets: [{ player: "juan soto", odds: -115, book: "fd", dt: new Date().toISOString().slice(0,10) }]
+			}};
+		}
 
 		// ── State ────────────────────────────────────────────────────────
 		let ALL_ROWS = [];   // full API dataset

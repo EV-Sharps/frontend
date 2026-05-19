@@ -25,6 +25,7 @@ function _starColor(player) {
 async function toggleWatchlist(e, player) {
 	e.stopPropagation();
 	if (!CURR_USER || !CURR_SESSION) return;
+	const star = e.currentTarget;
 	const p = _normPlayer(player);
 	const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
 	const idx = watchlist.findIndex(w => _normPlayer(w.player ?? w) === p);
@@ -32,9 +33,10 @@ async function toggleWatchlist(e, player) {
 	else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
 	CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
 	await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
-	const star = e.currentTarget;
-	star.textContent = isWatchlisted(player) || isTracked(player) ? "★" : "☆";
-	star.style.color = _starColor(player);
+	if (star) {
+		star.textContent = isWatchlisted(player) || isTracked(player) ? "★" : "☆";
+		star.style.color = _starColor(player);
+	}
 }
 
 let MASTER_DATA = [];

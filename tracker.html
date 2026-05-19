@@ -291,9 +291,9 @@
 						<option value="probit">Probit</option>
 					</select>
 				</label>
-				<button id="tracker-customize-btn" onclick="openCustomize()">⚙️</button>
 				<button onclick="addAllWatchlistToBets()" style="font-size:0.7rem;padding:2px 8px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;color:var(--text-muted,#9ca3af);cursor:pointer;" title="Add all watchlist players to bets using best available odds">Add All to Bets</button>
-				<button onclick="clearAllBets()" style="flex-shrink:0;padding:0.35rem 0.65rem;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:6px;color:#ef4444;cursor:pointer;font-size:0.78rem;" title="Clear all bets">Clear All</button>
+				<button onclick="clearAllBets()" style="flex-shrink:0;padding:0.35rem 0.65rem;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:6px;color:#ef4444;cursor:pointer;font-size:0.78rem;" title="Clear all bets">Clear All Bets</button>
+				<button id="tracker-customize-btn" onclick="openCustomize()">⚙️</button>
 			</div>
 
 			<!-- Customize overlay -->
@@ -593,8 +593,8 @@
 		}
 
 		function refreshCircaEVCol() {
-			if (!TABLE) return;
-			TABLE.redraw(true);
+			if (TABLE) TABLE.redraw(true);
+			if (WATCHLIST_TABLE) WATCHLIST_TABLE.redraw(true);
 		}
 
 		// ── Table ─────────────────────────────────────────────────────────
@@ -800,7 +800,9 @@
 					sel.value = CIRCA_DEVIG;
 					sel.addEventListener("change", function() {
 						CIRCA_DEVIG = this.value;
-						TABLE.redraw(true);
+						refreshCircaEVCol();
+						const wlSel = document.getElementById("wl-devig-select");
+						if (wlSel) wlSel.value = CIRCA_DEVIG;
 					});
 				}
 			}, 100);
@@ -935,25 +937,52 @@
 						formatter: plusMinusFormatter
 					},
 					{
+						title: `My EV<br><select id="wl-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+							<option value="market">Market</option>
+							<option value="pn">Pinnacle</option>
+							<option value="fd">FanDuel</option>
+							<option value="dk">DraftKings</option>
+							<option value="circa" selected>Circa</option>
+							<option value="b365">Bet365</option>
+							<option value="mgm">MGM</option>
+							<option value="espn">ESPN</option>
+							<option value="cz">Caesars</option>
+							<option value="hr">Hard Rock</option>
+							<option value="nv">NoVig</option>
+						</select>`,
+						field: "_wlEV",
+						width: 70,
+						sorter: function(a, b, aRow, bRow) {
+							const evA = calcEV(getFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
+							const evB = calcEV(getFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
+							return evA - evB;
+						},
+						formatter: function(cell) {
+							const d = cell.getRow().getData();
+							return evCalcFormatter(cell, getFairProb(d), getBestMarketOdds(d));
+						}
+					},
+					{
 						title: "Best<br>Book",
 						field: "book",
 						width: 75,
 						formatter: bestBookFormatter,
 						formatterParams: { book: BOOK }
 					},
-					{
-						title: "Best<br>EV",
-						width: 70,
-						sorter: function(a, b, aRow, bRow) {
-							const evA = calcEV(getMarketFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
-							const evB = calcEV(getMarketFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
-							return evA - evB;
-						},
-						formatter: function(cell) {
-							const d = cell.getRow().getData();
-							return evCalcFormatter(cell, getMarketFairProb(d), getBestMarketOdds(d));
-						}
-					}
+					{ title: "Circa", field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "FD",    field: "bookOdds.fd",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "B365",  field: "bookOdds.b365",  width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "DK",    field: "bookOdds.dk",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "MGM",   field: "bookOdds.mgm",   width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "ESPN",  field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "CZ",    field: "bookOdds.cz",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "FN",    field: "bookOdds.fn",    width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "BR",    field: "bookOdds.br",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "HR",    field: "bookOdds.hr",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "PN",    field: "bookOdds.pn",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Kambi", field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "BOL",   field: "bookOdds.bol",   width: 70, sorter: "number", formatter: evOddsFormatter },
+					{ title: "NoVig", field: "bookOdds.nv",    width: 70, sorter: "number", formatter: evOddsFormatter }
 				]
 			});
 
@@ -962,6 +991,19 @@
 				const d = row.getData();
 				if (d.bookOdds) openAddBet(d);
 			});
+			// Wire wl-devig dropdown
+			setTimeout(() => {
+				const wlSel = document.getElementById("wl-devig-select");
+				if (wlSel) {
+					wlSel.value = CIRCA_DEVIG;
+					wlSel.addEventListener("change", function() {
+						CIRCA_DEVIG = this.value;
+						refreshCircaEVCol();
+						const other = document.getElementById("circa-devig-select");
+						if (other) other.value = CIRCA_DEVIG;
+					});
+				}
+			}, 100);
 		}
 
 		async function removeFromWatchlist(player) {
@@ -1001,8 +1043,9 @@
 		function applyColumnPrefs(visible) {
 			Object.entries(CUST_COLS).forEach(([id, field]) => {
 				const col = TABLE?.getColumn(field);
-				if (!col) return;
-				visible.has(id) ? col.show() : col.hide();
+				if (col) visible.has(id) ? col.show() : col.hide();
+				const wcol = WATCHLIST_TABLE?.getColumn(field);
+				if (wcol) visible.has(id) ? wcol.show() : wcol.hide();
 			});
 		}
 

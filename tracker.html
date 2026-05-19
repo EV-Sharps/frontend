@@ -17,6 +17,9 @@
 	#table { width: 100%; }
 	#right-body { justify-content: center; }
 	#chart { max-height: 400px; margin-top: 0.5rem; }
+	main {
+		justify-content: flex-start;
+	}
 
 	/* Search + customize bar */
 	#tracker-search-wrap {
@@ -236,6 +239,40 @@
 		border-top: 1px solid var(--border, #374151);
 		margin-top: 0.3rem;
 	}
+	#mobile-table-toggle { display: none; }
+	@media (max-width: 768px) {
+		#tracker-search-wrap {
+			overflow: auto;
+		}
+		#tracker-search-wrap button {
+			flex: 0 0 auto;
+		}
+		#popular-watchlist-list, #popular-bets-list {
+			overflow:auto;
+			flex-wrap:nowrap !important;
+		}
+
+		#mobile-table-toggle {
+			display: flex;
+			border-bottom: 1px solid var(--border, #374151);
+			margin: 4px 0;
+		}
+		#mobile-table-toggle button {
+			flex: 1;
+			padding: 7px 0;
+			background: transparent;
+			border: none;
+			border-bottom: 2px solid transparent;
+			color: var(--text-muted, #9ca3af);
+			font-size: 0.85rem;
+			cursor: pointer;
+		}
+		#mobile-table-toggle button.active {
+			color: var(--text, #e5e7eb);
+			border-bottom-color: #3b82f6;
+		}
+		#bets-section { display: none; }
+	}
 </style>
 <body>
 	<div id="app">
@@ -326,6 +363,11 @@
 				</div>
 			</div>
 
+			<div id="mobile-table-toggle">
+				<button id="toggle-watchlist" class="active" onclick="showTrackerTab('watchlist')">⭐ Watchlist</button>
+				<button id="toggle-bets" onclick="showTrackerTab('bets')">💰 My Bets</button>
+			</div>
+			<div id="watchlist-section">
 			<div class="tracker-section-label" style="margin-top:0;border-top:none;display:flex;align-items:center;justify-content:space-between;">
 				<span>⭐ Watchlist</span>
 			</div>
@@ -334,7 +376,9 @@
 				<div id="popular-watchlist-list" style="display:flex;gap:0.3rem;flex-wrap:wrap;"></div>
 			</div>
 			<div id="watchlist-table"></div>
+			</div><!-- /watchlist-section -->
 
+			<div id="bets-section">
 			<div class="tracker-section-label">💰 My Bets</div>
 			<div style="padding:0.3rem 0.5rem;position:relative;">
 				<input id="tracker-search" type="text" placeholder="Search to add a player...">
@@ -362,6 +406,7 @@
 					<div id="chart"></div>
 				</div>
 			</div>
+			</div><!-- /bets-section -->
 		</main>
 	</div>
 
@@ -1023,6 +1068,24 @@
 					});
 				}
 			}, 100);
+		}
+
+		function showTrackerTab(tab) {
+			const ws = document.getElementById("watchlist-section");
+			const bs = document.getElementById("bets-section");
+			const tw = document.getElementById("toggle-watchlist");
+			const tb = document.getElementById("toggle-bets");
+			if (tab === "watchlist") {
+				ws.style.display = "block";
+				bs.style.display = "none";
+				tw.classList.add("active");
+				tb.classList.remove("active");
+			} else {
+				ws.style.display = "none";
+				bs.style.display = "block";
+				tw.classList.remove("active");
+				tb.classList.add("active");
+			}
 		}
 
 		async function removeFromWatchlist(player) {

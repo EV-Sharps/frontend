@@ -1232,7 +1232,7 @@
 					},
 					cellClick: function(e, cell) {
 						e.stopPropagation();
-						toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw());
+						toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw(true));
 					}
 				});
 			}

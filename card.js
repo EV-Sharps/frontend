@@ -33,7 +33,7 @@ async function toggleWatchlist(e, player) {
 	else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
 	CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
 	await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
-	if (star) {
+	if (star && star.classList.contains('watchlist-star')) {
 		star.textContent = isWatchlisted(player) || isTracked(player) ? "★" : "☆";
 		star.style.color = _starColor(player);
 	}

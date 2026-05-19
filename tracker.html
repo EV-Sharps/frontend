@@ -325,7 +325,10 @@
 				</div>
 			</div>
 
-			<div class="tracker-section-label" style="margin-top:0;border-top:none;">⭐ Watchlist</div>
+			<div class="tracker-section-label" style="margin-top:0;border-top:none;display:flex;align-items:center;justify-content:space-between;">
+				<span>⭐ Watchlist</span>
+				<button onclick="addAllWatchlistToBets()" style="font-size:0.7rem;padding:2px 8px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;color:var(--text-muted,#9ca3af);cursor:pointer;" title="Add all watchlist players to bets using best available odds">Add All to Bets</button>
+			</div>
 			<div id="popular-watchlist-wrap" style="padding:0.3rem 0.5rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-size:0.78rem;min-height:1.6rem;">
 				<span style="color:var(--text-muted,#6b7280);white-space:nowrap;">🔥 Trending:</span>
 				<div id="popular-watchlist-list" style="display:flex;gap:0.3rem;flex-wrap:wrap;"></div>
@@ -826,6 +829,26 @@
 				});
 				return row ? { ...row } : { player: w.player ?? w };
 			});
+		}
+
+		function addAllWatchlistToBets() {
+			const today = new Date().toISOString().slice(0, 10);
+			const rows = watchlistedRows();
+			let added = 0;
+			for (const row of rows) {
+				if (!row.bookOdds) continue;
+				if (findBet(row)) continue;
+				let bestOdds = null, bestBook = null;
+				ALL_BOOK_KEYS.forEach(k => {
+					const o = row.bookOdds[k];
+					if (o == null) return;
+					if (bestOdds === null || Number(o) > Number(bestOdds)) { bestOdds = Number(o); bestBook = k; }
+				});
+				if (!bestOdds || !bestBook) continue;
+				BETS.push({ dt: today, game: row.game || "", player: row.player || "", odds: bestOdds, book: bestBook });
+				added++;
+			}
+			if (added > 0) { persistBets(); refreshTable(); }
 		}
 
 		function refreshWatchlist() {

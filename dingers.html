@@ -1167,14 +1167,14 @@
 
 		function getDingersColumnItems() {
 			return [
-				{ key: 'ev',              label: 'Expected Value',   cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
+				{ key: 'ev',              label: 'Expected Value',   cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 45 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
 				{ key: 'player',          label: 'Player',           cols: [{ title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 90 : 140, formatterParams:{sport: SPORT}, hozAlign: "left", responsive: 0, frozen: MOBILE ? true : true }] },
 				{ key: 'fairVal',         label: 'Fair Value',       cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: 'implied',         label: 'Implied',          cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
 				{ key: 'kelly',           label: '¼ Kelly',          cols: [{ title: "¼ Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) { if (!cell.getValue()) return ""; return `${cell.getValue().toFixed(2)}u`; }, responsive: 0, visible: MOBILE ? false : true }] },
 				{ key: 'book',            label: 'Best Book',        cols: [{ title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`, field: "book", vertAlign:"bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams:{book:BOOK}, responsive: 0 }] },
 				
-				{ key: 'handicap',        label: 'Line',             cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); let ou = data.under ? "u" : "o"; return `${ou}${cell.getValue()}`; }, headerFilter:"list", headerFilterParams:{valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(headerValue, rowValue) { if (headerValue == "All") { return true; } return rowValue === headerValue; }, width: 60 }] },
+				{ key: 'handicap',        label: 'Line',             cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); let ou = data.under ? "u" : "o"; return `${ou}${cell.getValue()}`; }, headerFilter:"list", headerFilterParams:{valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(headerValue, rowValue) { if (headerValue == "All") { return true; } return rowValue === headerValue; }, width: MOBILE ? 40 : 60 }] },
 				{ key: 'order',           label: 'Bat Order',        cols: [{ title: "Bat<br>Order", field: "order", width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter }] },
 				{ key: 'ph',              label: 'Pinch Hits',       cols: [{ title: "Pinch Hits", field: "ph", visible: PH ? true : false }] },
 				{ key: 'bookOdds_circa',  label: 'Circa',            cols: [{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter}] },
@@ -1218,7 +1218,7 @@
 			const order = (savedOrder && savedOrder.length) ? savedOrder : DINGERS_DEFAULT_COL_ORDER;
 			const seen = new Set();
 			const cols = [];
-			if (!MOBILE) {
+			if (true) {
 				cols.push({
 					title: "",
 					field: "player",

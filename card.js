@@ -468,9 +468,10 @@ function createNewCard(rowData, uniqueId) {
 	card.appendChild(header);
 	
 	header.addEventListener('click', (e) => {
+		if (e.target.closest('.watchlist-star')) return;
 		const collapsedBody = header.querySelector('.card-body-collapsed');
 		if (e.target.closest('.all-books-row')) {
-			//return; 
+			//return;
 		}
 
 		const isVisible = collapsedBody.classList.toggle("visible");
@@ -581,6 +582,10 @@ function updateExistingCard(card, rowData) {
 		}
 		teamImg = gameImg;
 	}
+	const _rp = rowData.player || "";
+	const _starred = isWatchlisted(_rp) || isTracked(_rp);
+	const _starSpan = `<span class="watchlist-star" data-player="${_rp.replace(/"/g, '&quot;')}" onclick="toggleWatchlist(event,this.dataset.player)" style="cursor:pointer;font-size:1.1rem;color:${_starColor(_rp)};line-height:1;padding:2px 4px;" title="${isTracked(_rp) ? 'In tracker' : (isWatchlisted(_rp) ? 'Watchlisted' : 'Add to watchlist')}">${_starred ? "★" : "☆"}</span>`;
+
 	const playerRowContent = `
 		<div class="player-content-stack">
 			${teamImg}
@@ -589,6 +594,7 @@ function updateExistingCard(card, rowData) {
 				<span class="bats">${(PAGE === "dingers") ? rowData.bats : avgMin || ""}</span>
 			</div>
 			<span class="player-name">${player}</span>
+			${_starSpan}
 		</div>
 		<div class="prop-content-stack">
 			<span class="prop-line">${pre}${rowData.handicap}</span>

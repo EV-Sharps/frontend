@@ -422,8 +422,11 @@
 	
 		if (window.location.host.includes("localhost")) {
 			CURR_USER = { metadata: {
-				watchlist: [{ player: "jazz chisholm", dt: new Date().toISOString().slice(0,10) }],
-				bets: [{ player: "juan soto", odds: -115, book: "fd", dt: new Date().toISOString().slice(0,10) }]
+				watchlist: [
+					{ player: "jazz chisholm", dt: new Date().toISOString().slice(0,10) },
+					{ player: "juan soto", dt: new Date().toISOString().slice(0,10) },
+				],
+				bets: [{ player: "juan soto", odds: 355, book: "pn", dt: new Date().toISOString().slice(0,10) }]
 			}};
 		}
 
@@ -959,7 +962,7 @@
 						},
 						formatter: function(cell) {
 							const d = cell.getRow().getData();
-							return evCalcFormatter(cell, getFairProb(d), getBestMarketOdds(d));
+							return evCalcFormatter(cell, getFairProb(d), d.line);
 						}
 					},
 					{

@@ -491,6 +491,17 @@
 			if (BETS.length !== all.length) persistBets();
 		}
 
+		async function loadWatchlistFromMetadata() {
+			if (!CURR_USER?.metadata?.watchlist) return;
+			const today = new Date().toISOString().slice(0, 10);
+			const all = CURR_USER.metadata.watchlist;
+			const fresh = all.filter(w => (w.dt ?? w) === today);
+			if (fresh.length !== all.length) {
+				CURR_USER.metadata = { ...CURR_USER.metadata, watchlist: fresh };
+				if (CURR_SESSION) await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			}
+		}
+
 		function clearAllBets() {
 			if (!confirm("Clear all tracked bets?")) return;
 			BETS = [];
@@ -528,10 +539,11 @@
 		async function fetchTrackerData() {
 			fetch(API_BASE + "/api/tracker", {
 				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
-			}).then(r => r.json()).then(data => {
+			}).then(r => r.json()).then(async data => {
 				RES = data;
 				UPDATED[PAGE] = data.updated || {};
 				loadBetsFromMetadata();
+				await loadWatchlistFromMetadata();
 				const raw = data.data || data;
 				ALL_ROWS = Array.isArray(raw)
 					? raw

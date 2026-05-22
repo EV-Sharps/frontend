@@ -162,6 +162,23 @@
 			return `${ev >= 0 ? "+" : ""}${pct}%`;
 		}
 
+		function _bNorm(p) { return (p || "").toLowerCase().trim(); }
+		function _bIsWatchlisted(player) {
+			const p = _bNorm(player);
+			return (CURR_USER?.metadata?.watchlist || []).some(w => _bNorm(w.player ?? w) === p);
+		}
+		async function _bToggleWatchlist(player) {
+			if (!CURR_USER || !CURR_SESSION) return;
+			const p = _bNorm(player);
+			const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
+			const idx = watchlist.findIndex(w => _bNorm(w.player ?? w) === p);
+			if (idx >= 0) watchlist.splice(idx, 1);
+			else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
+			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
+			await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			if (TABLE) TABLE.redraw(true);
+		}
+
 		const MKT_DEVIG_SELECT = `<select id="mkt-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
 			<option value="">Market</option>
 			<option value="pn">Pinnacle</option>
@@ -318,6 +335,22 @@
 						visible: false
 					},
 					{title: "Game", field: "game", formatter: gameFormatter, formatterParams: { sport: SPORT}, width: 50},
+					{
+						title: "",
+						field: "player",
+						width: 30,
+						headerSort: false,
+						frozen: MOBILE ? true : false,
+						formatter: function(cell) {
+							const player = cell.getValue() || "";
+							const on = _bIsWatchlisted(player);
+							return `<span style="cursor:pointer;font-size:1rem;color:${on ? '#f59e0b' : '#6b7280'};line-height:1" title="${on ? 'Remove from watchlist' : 'Add to watchlist'}">${on ? '★' : '☆'}</span>`;
+						},
+						cellClick: function(e, cell) {
+							e.stopPropagation();
+							_bToggleWatchlist(cell.getValue());
+						}
+					},
 					{
 						title: "Player",
 						field: "player",

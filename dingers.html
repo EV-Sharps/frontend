@@ -1212,111 +1212,46 @@
 			];
 		}
 
-		function buildDingersColumns(savedOrder) {
-			const items = getDingersColumnItems();
-			const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
-			const order = (savedOrder && savedOrder.length) ? savedOrder : DINGERS_DEFAULT_COL_ORDER;
-			const seen = new Set();
-			const cols = [];
-			if (true) {
-				cols.push({
-					title: "",
-					field: "player",
-					width: 30,
-					headerSort: false,
-					formatter: function(cell) {
-						const player = cell.getValue();
-						const starred = isWatchlisted(player) || isTracked(player);
-						const color = _starColor(player);
-						return `<span class="watchlist-star" style="cursor:pointer;font-size:1rem;color:${color};line-height:1;" title="${isTracked(player) ? 'In tracker' : (isWatchlisted(player) ? 'Watchlisted' : 'Add to watchlist')}">${starred ? "★" : "☆"}</span>`;
-					},
-					cellClick: function(e, cell) {
-						e.stopPropagation();
-						toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw(true));
-					}
-				});
-			}
-			for (const key of order) {
-				if (itemMap[key]) { cols.push(...itemMap[key].cols); seen.add(key); }
-			}
-			for (const key of DINGERS_DEFAULT_COL_ORDER) {
-				if (!seen.has(key) && itemMap[key]) cols.push(...itemMap[key].cols);
-			}
-			cols.push(
-				{title: "Game", field: "game", visible: false},
-				{title: "Start", field: "startSortable", visible: false, sorter: "number"},
-				{title: "Start", field: "start", visible: false},
-			);
-			return cols;
+		function _dingersStarCol() {
+			return {
+				title: "", field: "player", width: 30, headerSort: false,
+				formatter: function(cell) {
+					const player = cell.getValue();
+					const starred = isWatchlisted(player) || isTracked(player);
+					const color = _starColor(player);
+					return `<span class="watchlist-star" style="cursor:pointer;font-size:1rem;color:${color};line-height:1;" title="${isTracked(player) ? 'In tracker' : (isWatchlisted(player) ? 'Watchlisted' : 'Add to watchlist')}">${starred ? "★" : "☆"}</span>`;
+				},
+				cellClick: function(e, cell) {
+					e.stopPropagation();
+					toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw(true));
+				}
+			};
 		}
 
-		let _colReorderDragSrc = null;
-
+		function buildDingersColumns(savedOrder) {
+			return buildColumnsFromOrder(
+				savedOrder, DINGERS_DEFAULT_COL_ORDER, getDingersColumnItems(), _dingersStarCol,
+				[
+					{title: "Game", field: "game", visible: false},
+					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
+					{title: "Start", field: "start", visible: false},
+				]
+			);
+		}
 		function openColReorder() {
 			const savedOrder = CURR_USER?.metadata?.['dingers-order'] || DINGERS_DEFAULT_COL_ORDER;
-			const items = getDingersColumnItems();
-			const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
-			const seen = new Set(savedOrder);
-			const displayOrder = [...savedOrder, ...DINGERS_DEFAULT_COL_ORDER.filter(k => !seen.has(k))];
-			const isItemVisible = meta => {
+			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
 				return fields.some(f => TABLE.getColumn(f)?.isVisible());
 			};
-			const list = document.getElementById('col-reorder-list');
-			list.innerHTML = '';
-			displayOrder.forEach(key => {
-				const meta = itemMap[key];
-				if (!meta || !isItemVisible(meta)) return;
-				const item = document.createElement('div');
-				item.dataset.key = key;
-				item.draggable = true;
-				item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;';
-				item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⠿⠿</span><span>${meta.label}</span>`;
-				item.addEventListener('dragstart', e => {
-					_colReorderDragSrc = item;
-					e.dataTransfer.effectAllowed = 'move';
-					setTimeout(() => item.style.opacity = '0.4', 0);
-				});
-				item.addEventListener('dragend', () => {
-					_colReorderDragSrc = null;
-					list.querySelectorAll('[data-key]').forEach(i => { i.style.opacity = '1'; i.style.boxShadow = ''; });
-				});
-				item.addEventListener('dragover', e => {
-					e.preventDefault();
-					e.dataTransfer.dropEffect = 'move';
-					list.querySelectorAll('[data-key]').forEach(i => i.style.boxShadow = '');
-					item.style.boxShadow = '0 -2px 0 #3b82f6';
-				});
-				item.addEventListener('dragleave', () => { item.style.boxShadow = ''; });
-				item.addEventListener('drop', e => {
-					e.preventDefault();
-					if (_colReorderDragSrc && _colReorderDragSrc !== item) {
-						list.insertBefore(_colReorderDragSrc, item);
-					}
-					item.style.boxShadow = '';
-				});
-				list.appendChild(item);
-			});
-			document.getElementById('col-reorder-modal').style.display = 'flex';
+			openColReorderModal(getDingersColumnItems(), DINGERS_DEFAULT_COL_ORDER, savedOrder, isVisible);
 		}
-
-		function closeColReorder() {
-			document.getElementById('col-reorder-modal').style.display = 'none';
-		}
+		function closeColReorder() { closeColReorderModal(); }
 
 		async function saveColReorder() {
-			const list = document.getElementById('col-reorder-list');
-			const newOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
-			if (CURR_USER?.metadata) {
-				CURR_USER.metadata['dingers-order'] = newOrder;
-				await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
-			}
-			TABLE.setColumns(buildDingersColumns(newOrder));
-			showHideUserTable(true);
-			closeColReorder();
+			await saveColReorderModal('dingers-order', buildDingersColumns, () => showHideUserTable(true));
 		}
-
 		let loaded = false;
 		function renderTable(data) {
 			//data = data.filter(r => ["cal raleigh", "kyle schwarber"].includes(r.player));

@@ -716,7 +716,8 @@ const DEFAULT_DEVIGS = [
 	{ name: "FD/DK 50% Equal", value: "fd+dk;1+1", group: "Split Weights" },
 	{ name: "PN/Circa 50% Equal", value: "pn+circa;1+1", group: "Split Weights" },
 	{ name: "ESPN/HR 50% Equal", value: "espn+hr;1+1", group: "Split Weights" },
-	{ name: "CIRC/PN/FD/DK 25% Equal", value: "circa+pn+fd+dk;1+1+1+1", group: "Split Weights" }
+	{ name: "CIRC/PN/FD/DK 25% Equal", value: "circa+pn+fd+dk;1+1+1+1", group: "Split Weights" },
+	{ name: "CIRC/NV/PN 33% Equal", value: "circa+nv+pn;1+1+1", group: "Split Weights" }
 ];
 
 const devigModal = document.getElementById('devig-modal');

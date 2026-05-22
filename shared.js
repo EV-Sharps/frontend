@@ -3649,3 +3649,105 @@ function parseURLParams() {
 	}
 	OU = URLParams.get("ou") || defaultOU();
 }
+// ── Generic column-reorder helpers ───────────────────────────────────────────
+
+let _colReorderDragSrc = null;
+
+/**
+ * Build a Tabulator columns array from a saved order.
+ *
+ * @param {string[]} savedOrder  - persisted key order (may be empty/null)
+ * @param {string[]} defaultOrder - canonical fallback order
+ * @param {Array}    items       - [{key, label, cols}] definitions
+ * @param {Function|null} starColFn  - optional fn() → column def to prepend
+ * @param {Array}    extraCols   - hidden utility columns to append
+ */
+function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null, extraCols = []) {
+	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
+	const order = (savedOrder && savedOrder.length) ? savedOrder : defaultOrder;
+	const seen = new Set();
+	const cols = [];
+	if (starColFn) cols.push(starColFn());
+	for (const key of order) {
+		if (itemMap[key]) { cols.push(...itemMap[key].cols); seen.add(key); }
+	}
+	for (const key of defaultOrder) {
+		if (!seen.has(key) && itemMap[key]) cols.push(...itemMap[key].cols);
+	}
+	cols.push(...extraCols);
+	return cols;
+}
+
+/**
+ * Open the #col-reorder-modal and populate it with draggable items.
+ *
+ * @param {Array}    items          - [{key, label, cols}]
+ * @param {string[]} defaultOrder
+ * @param {string[]} savedOrder
+ * @param {Function} isItemVisible  - (meta) => bool; omit hidden items
+ */
+function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
+	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
+	const seen = new Set(savedOrder);
+	const displayOrder = [...savedOrder, ...defaultOrder.filter(k => !seen.has(k))];
+	const list = document.getElementById('col-reorder-list');
+	list.innerHTML = '';
+	displayOrder.forEach(key => {
+		const meta = itemMap[key];
+		if (!meta) return;
+		if (isItemVisible && !isItemVisible(meta)) return;
+		const item = document.createElement('div');
+		item.dataset.key = key;
+		item.draggable = true;
+		item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;';
+		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⠣⠣</span><span>${meta.label}</span>`;
+		item.addEventListener('dragstart', e => {
+			_colReorderDragSrc = item;
+			e.dataTransfer.effectAllowed = 'move';
+			setTimeout(() => item.style.opacity = '0.4', 0);
+		});
+		item.addEventListener('dragend', () => {
+			_colReorderDragSrc = null;
+			list.querySelectorAll('[data-key]').forEach(i => { i.style.opacity = '1'; i.style.boxShadow = ''; });
+		});
+		item.addEventListener('dragover', e => {
+			e.preventDefault();
+			e.dataTransfer.dropEffect = 'move';
+			list.querySelectorAll('[data-key]').forEach(i => i.style.boxShadow = '');
+			item.style.boxShadow = '0 -2px 0 #3b82f6';
+		});
+		item.addEventListener('dragleave', () => { item.style.boxShadow = ''; });
+		item.addEventListener('drop', e => {
+			e.preventDefault();
+			if (_colReorderDragSrc && _colReorderDragSrc !== item) {
+				list.insertBefore(_colReorderDragSrc, item);
+			}
+			item.style.boxShadow = '';
+		});
+		list.appendChild(item);
+	});
+	document.getElementById('col-reorder-modal').style.display = 'flex';
+}
+
+function closeColReorderModal() {
+	document.getElementById('col-reorder-modal').style.display = 'none';
+}
+
+/**
+ * Read the reorder list, persist to Supabase, apply to TABLE, then close.
+ *
+ * @param {string}   storageKey   - metadata key, e.g. 'dingers-order'
+ * @param {Function} buildColsFn  - (newOrder) => Tabulator columns array
+ * @param {Function} [postSaveFn] - called after TABLE.setColumns()
+ */
+async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
+	const list = document.getElementById('col-reorder-list');
+	const newOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
+	if (CURR_USER?.metadata) {
+		CURR_USER.metadata[storageKey] = newOrder;
+		await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+	}
+	TABLE.setColumns(buildColsFn(newOrder));
+	if (postSaveFn) postSaveFn();
+	closeColReorderModal();
+}

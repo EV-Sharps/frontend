@@ -469,13 +469,15 @@ async function handleSession() {
 			}
 		}, 30 * 1000);
 	} else if (["dingers", "dingers2", "charts"].includes(PAGE)) {
-		if (CURR_USER?.metadata?.watchlist) {
+		if (CURR_USER?.metadata) {
 			const today = new Date().toISOString().slice(0, 10);
-			const all = CURR_USER.metadata.watchlist;
-			const fresh = all.filter(w => (w.dt || w) === today);
-			if (fresh.length !== all.length) {
-				CURR_USER.metadata.watchlist = fresh;
-				if (CURR_SESSION) SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			const allWL = CURR_USER.metadata.watchlist || [];
+			const freshWL = allWL.filter(w => (w.dt || w) === today);
+			const allBets = CURR_USER.metadata.bets || [];
+			const freshBets = allBets.filter(b => b.dt === today);
+			CURR_USER.metadata = { ...CURR_USER.metadata, watchlist: freshWL, bets: freshBets };
+			if ((freshWL.length !== allWL.length || freshBets.length !== allBets.length) && CURR_SESSION) {
+				SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
 			}
 		}
 		initChkddActions();

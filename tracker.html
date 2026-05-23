@@ -556,7 +556,8 @@
 		}
 
 		async function fetchPopularWatchlist() {
-			const { data, error } = await SB.rpc('popular_watchlist', { lim: 15 });
+			const today = new Date().toISOString().slice(0, 10);
+			const { data, error } = await SB.rpc('popular_watchlist', { lim: 15, dt: today });
 			if (error || !data?.length) return;
 			const list = document.getElementById("popular-watchlist-list");
 			if (!list) return;
@@ -567,7 +568,8 @@
 		}
 
 		async function fetchPopularBets() {
-			const { data, error } = await SB.rpc('popular_bets', { lim: 15 });
+			const today = new Date().toISOString().slice(0, 10);
+			const { data, error } = await SB.rpc('popular_bets', { lim: 15, dt: today });
 			if (error || !data?.length) return;
 			const list = document.getElementById("popular-bets-list");
 			if (!list) return;

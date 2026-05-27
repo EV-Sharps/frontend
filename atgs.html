@@ -9,6 +9,7 @@
 	<script type="text/javascript" src="test.js"></script>
 	-->
 
+	<script src="record-summary.js"></script>
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<script type="text/javascript" src="flatpickr.min.js"></script>
@@ -590,6 +591,10 @@
 
 		handleSession();
 
+		function buildATGSSeasonRecord() {
+			return buildSeasonRecord('atgs', SEASON_RECORD);
+		}
+
 		function fetchProps() {
 			fetch(API_BASE+`/api/atgs`, {
 				headers: {
@@ -638,6 +643,8 @@
 					TABLE.redraw(true);
 					return;
 				}
+
+				addRecordSummaryButtons(null, buildATGSSeasonRecord);
 
 				setTimeout(function() {
 					updateHeaders();
@@ -907,5 +914,6 @@
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="record_nhl.js"></script>
+	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null;</script>
 </body>
 </html>

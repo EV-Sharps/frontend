@@ -383,6 +383,8 @@
 					let arr = ["ev", "book", "player", "pitcher", "on_base_plus_slg", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", "homerLogs.pa.sd"];
 					if (!arr.includes(col.getField())) {
 						col.hide();
+					} else {
+						col.show();
 					}
 				});
 			} else {

@@ -535,8 +535,6 @@
 			GAME = `${a} @ ${h}`;
 		}
 
-		handleSession();
-
 		const selectId = "#header";
 		const promoSelect = document.querySelector(selectId+" #promo-select");
 		if (BOOK) {
@@ -1029,5 +1027,6 @@
 			TABLE.redraw(true);
 		});
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

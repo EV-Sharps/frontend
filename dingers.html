@@ -853,8 +853,6 @@
 
 		SPORT = "mlb";
 
-		handleSession();
-
 		function buildHRDingersSeasonRecord() {
 			return buildSeasonRecord('hr', SEASON_RECORD?.[_summarySport]);
 		}
@@ -1636,5 +1634,6 @@
 	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="record.js"></script>
 	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null; RECORD = SEASON_RECORD?.mlb ?? RECORD;</script>
+	<script>handleSession();</script>
 </body>
 </html>

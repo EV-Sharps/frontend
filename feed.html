@@ -400,8 +400,6 @@
 			}
 		}
 
-		handleSession();
-
 		async function fetchFeed(render=false) {
 			let url = "/api/feed";
 			const params = new URLSearchParams();
@@ -688,5 +686,6 @@
 			document.querySelector("#hrtable").style["max-height"] = "";
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

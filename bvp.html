@@ -221,8 +221,6 @@
 			SPORT = "mlb";
 		}
 
-		handleSession();
-
 		document.querySelectorAll("#donate img").forEach(btn => {
 			btn.addEventListener("click", () => {
 				const sport = btn.textContent;
@@ -804,5 +802,6 @@
 			["daily.book", "player", "opp", "bvp", "bvt", "bvs", "percs.home_run", "percs.hr_pa", "homerLogs.pa.streak", "homerLogs.pa.avg", "homerLogs.pa.med", "homerLogs.pa.z_median", "savant.barrels_per_bip", "savant.exit_velocity_avg", "pitcherData.barrel_batted_rate", "pitcherData.exit_velocity_avg", "bvpStats.h", "bvpStats.avg", "bvpStats.slg", "bvpStats.2b", "bvpStats.hr"].forEach(col => TABLE.showColumn(col));
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

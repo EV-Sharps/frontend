@@ -462,8 +462,6 @@
 		PAGE = "tracker";
 		parseURLParams();
 		SPORT = "mlb";
-
-		handleSession();
 	
 		if (window.location.host.includes("localhost")) {
 			CURR_USER = { metadata: {
@@ -1393,5 +1391,6 @@
 			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

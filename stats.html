@@ -228,8 +228,6 @@
 			}
 		}
 
-		handleSession();
-
 		if (LEADERS) {
 			document.querySelector("h1").innerText = "Distance Leaders";
 		}
@@ -1012,5 +1010,6 @@
 			["order", "book", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

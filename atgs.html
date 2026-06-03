@@ -589,8 +589,6 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		function buildATGSSeasonRecord() {
 			return buildSeasonRecord('atgs', SEASON_RECORD);
 		}
@@ -915,5 +913,6 @@
 	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="record_nhl.js"></script>
 	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null;</script>
+	<script>handleSession();</script>
 </body>
 </html>

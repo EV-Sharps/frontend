@@ -497,8 +497,6 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		function fetchProps() {
 			fetch(API_BASE+`/api/baseball_ncaa`, {
 				headers: {
@@ -791,5 +789,6 @@
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
+	<script>handleSession();</script>
 </body>
 </html>

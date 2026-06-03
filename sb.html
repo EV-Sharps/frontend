@@ -321,8 +321,6 @@
 			GAME = `${a} @ ${h}`;
 		}
 
-		handleSession();
-
 		if (MARK != undefined) {
 			document.querySelector("#watermark").style.display = "initial";
 			if (PRETTY != undefined || IMP !== undefined) {
@@ -815,5 +813,6 @@
 			TABLE.redraw(true);
 		});
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

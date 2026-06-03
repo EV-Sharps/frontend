@@ -109,8 +109,6 @@
 		let sport_select = document.querySelector("#sport-select");
 		sport_select.value = SPORT;
 
-		handleSession();
-
 		sport_select.addEventListener("change", (e) => {
 			SPORT = e.target.value;
 			let url = new URL(window.location.href);
@@ -215,5 +213,6 @@
 			});
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

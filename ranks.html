@@ -130,8 +130,6 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		// Build flat game rows from per-pitcher preview data
 		function buildGameRows(data) {
 			const map = {};
@@ -321,5 +319,6 @@ function hrHistFormatter(cell, lField, rField) {
 			});
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

@@ -515,8 +515,6 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		function fetchProps() {
 			fetch(API_BASE+`/api/nfl`, {
 				headers: {
@@ -740,5 +738,6 @@
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
 	<script type="text/javascript" src="record_nfl.js"></script>
+	<script>handleSession();</script>
 </body>
 </html>

@@ -63,31 +63,6 @@ document.addEventListener("change", (e) => {
 	onChkddChange(menu);
 });
 
-function initChkddActions(root = document) {
-	const dd = document.getElementById("prop-dd");
-	const menu = dd.querySelector(".chkdd-menu");
-
-	const game_dd = document.getElementById("game-dd");
-	const game_menu = game_dd.querySelector(".chkdd-menu");
-
-	root.addEventListener('click', (e) => {
-		if (menu.style.display === 'block' && !menu.contains(e.target)) {
-			closeDropdown(dd, menu);
-		}
-		if (game_menu.style.display === "block" && !game_menu.contains(e.target)) {
-			closeDropdown(game_dd, game_menu);
-		}
-	});
-
-	if (PROP) {
-		CHKDD_STATE["prop-options"] = PROP.split(",");
-	}
-
-	if (GAME) {
-		CHKDD_STATE["game-options"] = GAME.split(",");
-	}
-}
-
 function updateGameLabel(props) {
 	const all_props = document.querySelectorAll("#game-options input").length;
 	const btn = document.getElementById("game-dd-button");
@@ -171,38 +146,6 @@ function toggleDropdown(id, event) {
 	menu.style.display = isVisible ? 'none' : 'block';
 
 	isVisible ? closeDropdown(document.getElementById(id), menu) : openDropdown(id, menu);
-}
-
-function renderBookSelect() {
-	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
-	let bookSel = document.getElementById("book-select");
-
-	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi", "pn", "kal", "nv", "px", "poly"];
-
-	if (["dingers", "dingers2", "mlb"].includes(PAGE)) {
-		books.push("hr_oh");
-	} else if (["nba", "threes", "pts"]) {
-		books.push("hr_az");
-	}
-
-	if (PAGE === "main") {
-		books.push("hr_oh");
-		if (!books.includes("hr_az")) books.push("hr_az");
-	}
-
-	bookSel.innerHTML = `
-		<option value="" selected>All</option>
-		${books.map(book => `<option value='${book}'>${book.toUpperCase()}</option>`)};
-	`;
-	bookSel.value = BOOK || "";
-}
-
-function renderFilters() {
-	renderBookSelect();
-	initDevPicker(getTopDevigs(BOOK||"best"));
-	if (typeof loadHeatmapData === "function") {
-		loadHeatmapData();
-	}
 }
 
 function toggleBookOddsColumns() {

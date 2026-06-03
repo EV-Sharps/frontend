@@ -160,8 +160,6 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		handleSession();
-
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
 			if (event.target.value == "g") {
@@ -716,5 +714,6 @@
 			renderTable(RES);
 		}
 	</script>
+	<script>handleSession();</script>
 </body>
 </html>

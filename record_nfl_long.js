@@ -1,2 +1,2 @@
-let RECORD_UPD = "2026-05-30T12:57:07Z";
+let RECORD_UPD = "2026-06-03T15:26:45Z";
 let RECORD = {"probit": {}, "worst": {}}

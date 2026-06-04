@@ -3423,6 +3423,10 @@ function getRowROI(rowData) {
 			if (!bookData) return null;
 
 			let devigData = bookData[DEVIG];
+			if (!devigData && DEVIG && DEVIG.includes('+')) {
+				const reversed = DEVIG.split('+').reverse().join('+');
+				devigData = bookData[reversed];
+			}
 			if (!devigData) return null;
 
 			// Convert columnar format {ev:[...], odds:[...], ...} → [{ev, odds, ...}, ...]

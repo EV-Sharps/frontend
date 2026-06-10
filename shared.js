@@ -86,6 +86,7 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "⚾ NCAA", value: "baseball_ncaa" },
 			{ label: "⚽ Soccer", value: "soccer" },
+			{ label: "🌍 World Cup", value: "cup" },
 			{ label: "🥊 UFC", value: "ufc" },
 			{ label: "🗺️ Heat Map", value: "heatmap" },
 			{ label: "📋 Cheat Sheets", value: "cheat" },

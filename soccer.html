@@ -367,6 +367,7 @@
 
 		parseURLParams();
 		SPORT = "soccer";
+		fetch("logos/cup/teams.json").then(r => r.json()).then(d => CUP_TEAMS = d);
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;

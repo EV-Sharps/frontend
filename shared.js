@@ -10,6 +10,7 @@ let API_BASE = "http://localhost:5001";
 let UPDATED = {};
 let WEIGHTS = {};
 let HEATMAP = {};
+let CUP_TEAMS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
@@ -1459,6 +1460,12 @@ function getTeamImg(sport, team) {
 	if (!team) {
 		return "";
 	}
+	if (SPORT == "soccer") {
+		const code = CUP_TEAMS[team.toLowerCase()];
+		if (code) {
+			return `<img class='team-img' src='logos/cup/${code}.png' alt='${code}' title='${team}' />`;
+		}
+	}
 	return `<img class='team-img' src='logos/${sport.replace("ncaaf", "ncaab").replace("baseball_ncaa", "ncaab")}/${team.replace("-gm2", "")}.png' alt='${team}' title='${team}' />`;
 }
 
@@ -1615,7 +1622,14 @@ const playerFormatter = function(cell, params, rendered) {
 		}
 		let dbl = data.team?.includes("-gm2") ? "<span class='dbl-badge'>2</span>" : "";
 		if (t) {
-			gameContainer = `${dbl}<img class='team-img' src='logos/${s}/${t}.png' alt='${t}' title='${t}' />`;
+			if (SPORT == "soccer") {
+				const code = CUP_TEAMS[t.toLowerCase()];
+				if (code) {
+					gameContainer = `<img class='team-img' src='logos/cup/${code}.png' alt='${code}' title='${t}' />`;
+				}
+			} else {
+				gameContainer = `${dbl}<img class='team-img' src='logos/${s}/${t}.png' alt='${t}' title='${t}' />`;
+			}
 		}
 	} else {
 		gameContainer = getGameImgs(data, params).join("");
@@ -1712,9 +1726,9 @@ const trendFormatter = function(cell, params, rendered) {
 function getGameImgs(data, params) {
 	let away = data.awayTeamId || data.game.split(" @ ")[0];
 	let home = data.homeTeamId || data.game.split(" @ ")[1];
-	if (PAGE == "soccer") {
-		away = data.awayEspn.short;
-		home = data.homeEspn.short;
+	if (SPORT == "soccer") {
+		away = data.awayEspn?.short || data.game.split(" @ ")[0];
+		home = data.homeEspn?.short || data.game.split(" @ ")[1];
 	}
 	if (!data.game) {
 		return "";
@@ -1724,6 +1738,14 @@ function getGameImgs(data, params) {
 	if (SPORT.includes("ncaa")) {
 		awayAlt = title(awayAlt);
 		homeAlt = title(homeAlt);
+	}
+	if (SPORT == "soccer") {
+		const awayCode = CUP_TEAMS[away.toLowerCase()];
+		const homeCode = CUP_TEAMS[home.toLowerCase()];
+		return [
+			`<img class='game-img away' src='logos/cup/${awayCode || away.toLowerCase()}.png' alt='${awayAlt}' title='${awayAlt}' />`,
+			`<img class='game-img home' src='logos/cup/${homeCode || home.toLowerCase()}.png' alt='${homeAlt}' title='${homeAlt}' />`
+		];
 	}
 	let sport = params.sport || data.sport || SPORT;
 	sport = sport.replace("dingers", "mlb").replace("k", "mlb").replace("feed", "mlb").replace("ncaaf", "ncaab").replace("baseball_ncaa", "ncaab").replace("atgs", "nhl");

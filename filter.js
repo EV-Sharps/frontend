@@ -114,6 +114,32 @@ const createGameOption = (val, gameTime, container) => {
 	container.appendChild(label);
 };
 
+const populateGameOptions = (games, times, container) => {
+	let lastDate = null;
+	[...games].sort((a, b) => {
+		const ta = new Date(times?.[a]).getTime();
+		const tb = new Date(times?.[b]).getTime();
+		if (isNaN(ta)) return 1;
+		if (isNaN(tb)) return -1;
+		return ta - tb;
+	}).forEach(p => {
+		const t = times?.[p];
+		if (t) {
+			const dateLabel = new Date(t).toLocaleDateString("en-US", {
+				timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric"
+			});
+			if (dateLabel !== lastDate) {
+				const sep = document.createElement('div');
+				sep.className = 'chkdd-date-sep';
+				sep.textContent = dateLabel;
+				container.appendChild(sep);
+				lastDate = dateLabel;
+			}
+		}
+		createGameOption(p, t, container);
+	});
+};
+
 const createOption = (val, container) => {
 	const label = document.createElement('label');
 	label.setAttribute("onclick", "event.stopPropagation()")

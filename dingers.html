@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -1076,15 +1076,7 @@
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
-				[...data.games].sort((a,b) => {
-					const ta = new Date(RES?.times?.[a]).getTime();
-					const tb = new Date(RES?.times?.[b]).getTime();
-
-					if (isNaN(ta)) return 1;
-					if (isNaN(tb)) return -1;
-
-					return ta - tb;
-				}).forEach(p => createGameOption(p, RES?.times?.[p], gameMenu));
+				populateGameOptions(data.games, RES?.times, gameMenu);
 				restoreChkddState(gameMenu);
 				if (GAME) {
 					updateGameLabel(GAME.split(","));

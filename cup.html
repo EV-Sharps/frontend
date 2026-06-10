@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -375,15 +375,7 @@
 					<button type="button" data-act="none">None</button>
 				</div>
 			`;
-			[...games].sort((a,b) => {
-				const ta = new Date(RES?.times?.[a]).getTime();
-				const tb = new Date(RES?.times?.[b]).getTime();
-
-				if (isNaN(ta)) return 1;
-				if (isNaN(tb)) return -1;
-
-				return ta - tb;
-			}).forEach(p => createGameOption(p, RES?.times?.[p], gameMenu));
+			populateGameOptions(games, RES?.times, gameMenu);
 			restoreChkddState(gameMenu);
 			if (GAME) {
 				updateGameLabel(GAME.split(","));
@@ -596,7 +588,11 @@
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `MB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mb"], short=true)}`, field: "bookOdds.mb",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter}
+					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 				]
 			});
 		}

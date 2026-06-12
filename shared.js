@@ -1631,6 +1631,8 @@ const playerFormatter = function(cell, params, rendered) {
 				gameContainer = `${dbl}<img class='team-img' src='logos/${s}/${t}.png' alt='${t}' title='${t}' />`;
 			}
 		}
+	} else if (PAGE == "cup" && data.prop.includes("spread")) {
+		gameContainer = getTeamImg(SPORT, data.team);
 	} else {
 		gameContainer = getGameImgs(data, params).join("");
 	}

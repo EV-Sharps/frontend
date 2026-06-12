@@ -27,12 +27,7 @@
 </script>
 <style type="text/css">
 	#table {
-		width: auto;
-	}
-	@media (max-width: 1500px) {
-		#table {
-			width: 100%;
-		}
+		width: 100%;
 	}
 </style>
 <body>
@@ -168,6 +163,19 @@
 					  <label><input type="checkbox" value="kambi"> Kambi</label>
 					  <label><input type="checkbox" value="re"> RE</label>
 					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+					  <label><input type="checkbox" value="mb"> Matchbook (MB)</label>
+					  <label><input type="checkbox" value="myb"> MyBookie (MYB)</label>
+					  <label><input type="checkbox" value="bs"> Betsson (BS)</label>
+					  <label><input type="checkbox" value="BW"> BetWay (BW)</label>
+					  <div style="border-top:1px solid #333;margin:4px 0;padding-top:4px;">
+					    <label><input type="checkbox" value="kal"> Kalshi (KAL)</label>
+					    <label><input type="checkbox" value="poly"> Polymarket (POLY)</label>
+					    <label><input type="checkbox" value="px"> ProphetX (PX)</label>
+					    <label><input type="checkbox" value="nv"> NoVig (NV)</label>
+					    <div class="chkdd-actions" style="justify-content:center;">
+					      <button type="button" onclick="togglePredictionMarkets()">Prediction Markets</button>
+					    </div>
+					  </div>
 					  <div class="chkdd-actions">
 						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 						<button type="button" data-act="all">All</button>
@@ -341,6 +349,11 @@
 				</div>
 			</div>
 		</main>
+		<div id="card-modal-overlay">
+			<div id="card-modal-inner">
+				<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
+			</div>
+		</div>
 		<footer class="site-footer">
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with any sports league. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
@@ -469,6 +482,9 @@
 						title: "Game", field: "game",
 						vertAlign:"bottom", hozAlign: "left",
 						responsive: 0,
+						formatter: function(cell) {
+							return cell.getValue().replace(" @ ", " v ");
+						},
 						width: 150
 					},
 					{
@@ -493,6 +509,9 @@
 								return cell.getValue();
 							} else if (prop.includes("btts")) {
 								return ou == "o" ? "Yes" : "No";
+							} else if (prop.includes("spread")) {
+								let prefix = data.prop.includes("_") ? data.prop.split("_")[0] : "";
+								return `${data.handicap > 0 ? `+${data.handicap}` : data.handicap}`;
 							}
 							return `${ou}${cell.getValue()}`;
 						},
@@ -529,18 +548,6 @@
 							}
 							return rowValue === headerValue;
 						}
-					},
-					{
-						title: "Line",
-						field: "handicap",
-						formatter: function(cell) {
-							const data = cell.getRow().getData();
-							const prop = data.prop;
-							let ou = data.under ? "u" : "o";
-							return `${ou}${cell.getValue()}`;
-						},
-						width: 50,
-						visible: false
 					},
 					{
 						title: "Fair<br>Value",
@@ -590,11 +597,32 @@
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `MB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mb"], short=true)}`, field: "bookOdds.mb",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BW<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bw"], short=true)}`, field: "bookOdds.bw",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `BS<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bs"], short=true)}`, field: "bookOdds.bs",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
+					{title: `MyB<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["myb"], short=true)}`, field: "bookOdds.myb",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 				]
+			});
+
+			TABLE.on("rowClick", function(e, row) {
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
+			});
+
+			function closeCardModal() {
+				document.getElementById('card-modal-overlay').classList.remove('open');
+			}
+
+			document.addEventListener('keydown', e => {
+				if (e.key === 'Escape') closeCardModal();
+			});
+			document.getElementById('card-modal-overlay').addEventListener('click', e => {
+				if (e.target === document.getElementById('card-modal-overlay')) closeCardModal();
 			});
 		}
 	</script>

@@ -5,6 +5,7 @@
   "austria": "aut",
   "belgium": "bel",
   "bosnia-herzegovina": "bih",
+  "bosnia & herzegovina": "bih",
   "brazil": "bra",
   "canada": "can",
   "cape verde": "cpv",
@@ -46,6 +47,7 @@
   "tunisia": "tun",
   "turkiye": "tur",
   "united states": "usa",
+  "usa": "usa",
   "uruguay": "uru",
   "uzbekistan": "uzb"
 }

@@ -206,6 +206,7 @@
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
 				</div>
+				<button onclick="downloadCSV()">💾 CSV</button>
 				<div class="select-wrapper" style="display:none">
 					<select id="side-select">
 						<option value="both">vs Both</option>
@@ -820,6 +821,33 @@
 				panelR.classList.toggle('is-hidden', side !== 'r');
 			});
 		})();
+	function downloadCSV() {
+		if (!ALL_DATA?.teams) return;
+		const rows = [];
+		for (const [team, td] of Object.entries(ALL_DATA.teams)) {
+			for (const batter of (td.batters || [])) {
+				for (const side of ['l', 'r']) {
+					const section = batter.pitch?.[side];
+					if (!section) continue;
+					for (const [type, stats] of Object.entries(section)) {
+						const row = { team, player: batter.player, pitch_hand: batter.pitch_hand, side, pitch_type: type };
+						for (const [k, v] of Object.entries(stats)) {
+							if (!k.endsWith('_pct')) row[k] = v;
+						}
+						rows.push(row);
+					}
+				}
+			}
+		}
+		if (!rows.length) return;
+		const headers = Object.keys(rows[0]);
+		const escape = v => (v == null ? '' : String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+		const csv = '﻿' + [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))].join('\n');
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+		a.download = 'pitcher_mix.csv';
+		a.click();
+	}
 	</script>
 	<script>handleSession();</script>
 </body>

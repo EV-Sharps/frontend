@@ -3814,8 +3814,10 @@ function renderBookSelect() {
 
 	if (["dingers", "dingers2", "mlb"].includes(PAGE)) {
 		books.push("hr_oh");
-	} else if (["nba", "threes", "pts"]) {
+	} else if (["nba", "threes", "pts"].includes(PAGE)) {
 		books.push("hr_az");
+	} else if (PAGE == "cup") {
+		books = books.concat(["mb", "bw", "bs", "myb"]);
 	}
 
 	if (PAGE === "main") {

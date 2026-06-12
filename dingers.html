@@ -1590,7 +1590,7 @@
 				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
-			let header = `🎯 Circa/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🎯 Circa/NV/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 

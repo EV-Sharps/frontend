@@ -276,6 +276,7 @@
 					<div class="chkdd-menu" id="game-options">
 						<div class="chkdd-actions">
 							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="today">Today</button>
 							<button type="button" data-act="none">None</button>
 						</div>
 					</div>
@@ -386,6 +387,7 @@
 			gameMenu.innerHTML = `
 				<div class="chkdd-actions">
 					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="today">Today</button>
 					<button type="button" data-act="none">None</button>
 				</div>
 			`;
@@ -461,7 +463,6 @@
 					return value == first[0].game;
 				},
 				columns: [
-					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
 					{
 						title: "Expected<br>Value",
 						field: "ev",
@@ -492,7 +493,7 @@
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
-						width: 140,
+						width: 160,
 						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
 						hozAlign: "left",
 						responsive: 0,

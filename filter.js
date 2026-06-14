@@ -19,11 +19,18 @@ function wireChkddMenu(menu, onChange = onChkddChange) {
 	menu.dataset.wired = "1";
 
 	menu.addEventListener("click", (e) => {
-		const act = e.target?.dataset?.act; // "all" | "none"
+		const act = e.target?.dataset?.act; // "all" | "none" | "today"
 		if (!act) return;
 
-		const state = act === "all";
-		menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = state);
+		if (act === "today") {
+			const today = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York" });
+			menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+				cb.checked = cb.dataset.date === today;
+			});
+		} else {
+			const state = act === "all";
+			menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = state);
+		}
 		onChange(menu);
 	});
 
@@ -110,7 +117,8 @@ const createGameOption = (val, gameTime, container) => {
 		}).split(", ").at(-1);
 		display += ` (${dt})`;
 	}
-	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${display}`;
+	const dateStr = gameTime ? new Date(gameTime).toLocaleDateString("en-US", { timeZone: "America/New_York" }) : "";
+	label.innerHTML = `<input type="checkbox" value="${val}" checked data-date="${dateStr}"> ${display}`;
 	container.appendChild(label);
 };
 

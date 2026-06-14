@@ -1652,10 +1652,19 @@ const playerFormatter = function(cell, params, rendered) {
 	if (["nba", "threes", "atgs", "ncaafprops", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
+	let lineupCircles = "";
+	const LINEUP_PROPS = ["atgs", "sot", "shots", "ast", "score_ast"];
+	if (PAGE == "cup" && LINEUP_PROPS.includes(data.prop) && (data.confirmed != null || data.starting != null)) {
+		const color = data.starting ? "#4ade80" : "#475569";
+		const dot = data.confirmed
+			? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-left:4px;" title="${data.confirmed ? 'Confirmed' : 'Projected'} - ${data.starting ? 'Starting' : 'Not Starting'}"></span>`
+			: `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:transparent;border:2px solid ${color};vertical-align:middle;margin-left:4px;" title="Projected - ${data.starting ? 'Starting' : 'Not Starting'}"></span>`;
+		lineupCircles = dot;
+	}
 	return `
 		<div class="player-cell">
 			<div class='game-container'>${gameContainer}</div>
-			${p} ${prop}
+			${p}${lineupCircles} ${prop}
 			<div class="bats">${bats || ""}</div>
 			<div class="pos">${pos || ""}</div>
 		</div>

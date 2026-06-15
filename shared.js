@@ -1271,6 +1271,13 @@ const bvpFormatter = function(cell) {
 	`;
 }
 
+const hitRateFormatter = function(cell) {
+	const data = cell.getRow().getData();
+	const value = cell.getValue();
+	if (!value?.p) return "";
+	return `${value.p}%`;
+}
+
 const hedgeFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	return `$${data.hedge}`;
@@ -2212,7 +2219,7 @@ const DEFAULT_FIELDS = {
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
 	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
 	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
-	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED, "handicap"],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]
 };

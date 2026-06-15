@@ -264,36 +264,28 @@
 					<div>
 						<h3>Stats</h3>
 						<div>
-							<input id="custom_ppLine" type="checkbox">
-							<label for="custom_ppLine">PP Line</label>
-						</div>
-						<div>
-							<input id="custom_goalie" type="checkbox">
-							<label for="custom_goalie">Goalie</label>
-						</div>
-						<div>
 							<input id="custom_oppRank" type="checkbox">
 							<label for="custom_oppRank">Opp Rank</label>
 						</div>
 						<div>
-							<input id="custom_dvpRank" type="checkbox">
-							<label for="custom_dvpRank">DvP Rank</label>
-						</div>
-						<div>
-							<input id="custom_hitRate" type="checkbox">
-							<label for="custom_hitRate">Hit Rate</label>
-						</div>
-						<div>
-							<input id="custom_hitRateLYR" type="checkbox">
-							<label for="custom_hitRateLYR">Hit Rate LYR</label>
-						</div>
-						<div>
-							<input id="custom_hitRateCareer" type="checkbox">
-							<label for="custom_hitRateCareer">Hit Rate Career</label>
-						</div>
-						<div>
 							<input id="custom_logs" type="checkbox">
 							<label for="custom_logs">Logs</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_szn" type="checkbox">
+							<label for="custom_hitRates_szn">Hit Rate</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_lyr" type="checkbox">
+							<label for="custom_hitRates_lyr">LYR Hit Rate</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_L5" type="checkbox">
+							<label for="custom_hitRates_L5">L5 Hit Rate</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_L10" type="checkbox">
+							<label for="custom_hitRates_L10">L10 Hit Rate</label>
 						</div>
 					</div>
 				</div>
@@ -731,6 +723,7 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
+					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: true}, hozAlign: "left", width: 80},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
@@ -755,6 +748,24 @@
 					{title: "Game", field: "game", visible: false},
 					{title: "Start", field: "startSortable", visible: false, sorter: "number"},
 					{title: "Start", field: "start", visible: false},
+					{
+						title: "Opp<br>Rank",
+						field: "oppRank",
+						formatter: rankingFormatter,
+						width: 50
+					},
+					{
+						title: "Game Logs<br> ➡️ Most Recent",
+						field: "logs",
+						width:160,
+						formatter: chartFormatter,
+						formatterParams:{type:"bar"},
+						responsive: 3
+					},
+					{title: "Season</br>Hit Rate", field: "hitRates.szn",  sorter: "number", formatter: hitRateFormatter, width: 50, responsive: 2},
+					{title: "Last Year</br>Hit Rate", field: "hitRates.lyr",  sorter: "number", formatter: hitRateFormatter, width: 50, responsive: 2},
+					{title: "L5</br>Hit Rate", field: "hitRates.L5",  sorter: "number", formatter: hitRateFormatter, width: 50, responsive: 2},
+					{title: "L10</br>Hit Rate", field: "hitRates.L10",  sorter: "number", formatter: hitRateFormatter, width: 50, responsive: 2},
 				]
 			});
 

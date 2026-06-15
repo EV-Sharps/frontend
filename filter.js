@@ -323,7 +323,7 @@ if (menu) {
 
 document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
 	checkbox.addEventListener("change", () => {
-		const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
+		const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.").replace("hitRates_", "hitRates.");;
 		if (checkbox.checked) {
 			TABLE.getColumn(field)?.show();
 		} else {

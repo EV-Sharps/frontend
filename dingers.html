@@ -955,7 +955,14 @@
 			checkbox.addEventListener("change", () => {
 				const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.");
 				if (checkbox.checked) {
-					TABLE.getColumn(field)?.show();
+					const col = TABLE.getColumn(field);
+					col?.show();
+					if (field.startsWith("bookOdds.")) {
+						const lastVisible = TABLE.getColumns().filter(c =>
+							c.getField()?.startsWith("bookOdds.") && c.isVisible() && c.getField() !== field
+						).at(-1);
+						if (lastVisible) col?.move(lastVisible.getField(), true);
+					}
 				} else {
 					TABLE.getColumn(field)?.hide();
 				}

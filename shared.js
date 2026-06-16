@@ -1660,7 +1660,7 @@ const playerFormatter = function(cell, params, rendered) {
 		pos = data.pos;
 	}
 	let lineupCircles = "";
-	const LINEUP_PROPS = ["atgs", "sot", "shots", "ast", "score_ast"];
+	const LINEUP_PROPS = ["1st_goal", "atgs", "sot", "shots", "ast", "score_ast"];
 	if (PAGE == "cup" && LINEUP_PROPS.includes(data.prop) && (data.confirmed != null || data.starting != null)) {
 		const color = data.starting ? "#4ade80" : "#475569";
 		const dot = data.confirmed

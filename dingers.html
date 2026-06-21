@@ -1601,6 +1601,41 @@
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 
+		function ev() {
+			TABLE.getColumns().map(c => {
+				c.hide()
+			});
+			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa", "bookOdds.nv", "bookOdds.pn",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "stadiumRank"].forEach(c => TABLE.showColumn(c));
+			document.querySelector("#table").style.width = "max-content";
+			TABLE.setSort([
+				{column: "ev", dir: "desc"},
+				{field: "under", type:"=", value: false}
+			]);
+
+			const rows = TABLE.getData("active");
+			const tweet = [];
+
+			let currentRank = 1;
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				const prev = rows[i - 1];
+
+				// If not first, and impliedMut differs from previous, increment rank
+				if (i > 0 && row["ev"] !== prev["ev"]) {
+					currentRank++;
+				}
+
+				if (currentRank > 10) {
+					continue;
+				}
+
+				tweet.push(`${currentRank}. ${title(row.player)}: +${row["ev"]} (+${row["line"]} ${row["book"].toUpperCase()})`);
+			}
+			const today = new Date();
+			let header = `🎯 Circa/NV/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
+			console.log(header+"\n\n"+tweet.join("\n"));
+		}
+
 		function pretty_() {
 			TABLE.getColumns().map(c => {
 				c.hide()

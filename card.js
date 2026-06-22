@@ -541,6 +541,57 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 	return html;
 }
 
+function renderCardRecord(rowData) {
+	try {
+		if (typeof RECORD === 'undefined' || !RECORD || !DEVIG) return '';
+		const method = (typeof METHOD !== 'undefined' && METHOD) || "worst";
+		const book = rowData.book;
+		const prop = rowData.prop;
+		if (!book || !prop) return '';
+		const key = `${prop}-vs-${DEVIG}`;
+		const rec = RECORD[method]?.[book]?.[key];
+		if (!rec) return '';
+
+		const WINDOWS = [
+			{ key: "All", label: "Season" },
+			{ key: "L7", label: "L7" },
+			{ key: "L14", label: "L14" },
+			{ key: "L30", label: "L30" },
+			{ key: "L60", label: "L60" },
+		];
+
+		const pills = WINDOWS.map(({ key: wk, label }) => {
+			const s = rec[wk];
+			if (!s) return '';
+			const w = s.wins ?? 0, l = s.losses ?? 0;
+			if (w + l === 0) return '';
+			const roi = typeof s.roi === 'number' ? s.roi : null;
+			const roiStr = roi !== null ? `${roi > 0 ? '+' : ''}${roi}%` : '';
+			const tone = roi > 0 ? 'good' : roi >= -5 ? 'mid' : 'bad';
+			return `
+				<div class="trend-pill">
+					<div class="trend-label">${label}</div>
+					<div class="trend-box ${tone}">
+						<div class="trend-frac">${w}-${l}</div>
+						<div class="trend-pct">${roiStr}</div>
+					</div>
+				</div>
+			`;
+		}).filter(Boolean).join('');
+
+		if (!pills) return '';
+
+		return `
+			<div class="expanded-trends" style="min-width:160px;">
+				<div style="display:flex; justify-content:center; align-items:center;">
+					<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Record (${book.toUpperCase()} vs ${DEVIG.toUpperCase()})</div>
+				</div>
+				<div class="trend-row">${pills}</div>
+			</div>
+		`;
+	} catch (e) { return ''; }
+}
+
 function updateExistingCard(card, rowData) {
 	const uniqueId = card.dataset.uniqueId;
 	const header = card.querySelector('.card-header');
@@ -682,6 +733,7 @@ function updateExistingCard(card, rowData) {
 					</div>
 					${renderTrends(rowData.hitRates || {}, rowData.prop)}
 				</div>
+				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}
 			</div>
 		</div>

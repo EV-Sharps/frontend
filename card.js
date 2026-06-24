@@ -679,7 +679,7 @@ function updateExistingCard(card, rowData) {
 					<div style="opacity:0.85; font-size:0.72rem;">Implied</div>
 				</div>
 				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : (rowData?.kelly || 0).toFixed(2)+"u"}</div>
+					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : formatKellyValue(rowData.kelly || 0)}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
 				</div>
 			</div>

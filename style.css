@@ -1861,6 +1861,20 @@ h1 {
 	.kelly { display: none; }
 	.kelly-wager { display: initial; }
 }
+.kelly-toggle {
+	display: block;
+	margin: 2px auto 0;
+	padding: 1px 8px;
+	font-size: 10px;
+	font-weight: 700;
+	background: rgba(59,130,246,0.15);
+	border: 1px solid rgba(59,130,246,0.35);
+	color: var(--text-main);
+	border-radius: 4px;
+	cursor: pointer;
+	line-height: 1.4;
+}
+.kelly-toggle:hover { background: rgba(59,130,246,0.3); }
 .field-cell {
 	position: relative;
 }

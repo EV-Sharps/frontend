@@ -243,6 +243,14 @@
 							<span id="state-save-status" style="font-size:0.85rem;color:#4ade80"></span>
 						</div>
 						<p style="font-size:0.78rem;color:#6b7280;margin:0">Used to generate direct betslip links for your state.</p>
+						<div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+							<label for="unit-size-input" style="font-size:0.9rem;">Unit Size</label>
+							<span style="font-size:0.9rem;">$</span>
+							<input id="unit-size-input" type="number" min="1" step="1" value="100" style="width:80px;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);background:#172027;color:var(--text-main);font-size:0.9rem;">
+							<button class="link-btn" onclick="saveUnitSize()" style="margin:0">Save</button>
+							<span id="unit-save-status" style="font-size:0.85rem;color:#4ade80"></span>
+						</div>
+						<p style="font-size:0.78rem;color:#6b7280;margin:0">Your wager per unit for the ¼ Kelly dollar toggle.</p>
 					</div>
 					<!-- Quick Links -->
 					<div class="profile-links">
@@ -276,7 +284,27 @@
 			}
 			const savedState = CURR_USER?.metadata?.state || "";
 			if (savedState) document.querySelector("#state-select").value = savedState;
+			const savedUnit = CURR_USER?.metadata?.unit_size;
+			if (savedUnit) document.querySelector("#unit-size-input").value = savedUnit;
 		});
+
+		async function saveUnitSize() {
+			if (!CURR_USER) return;
+			const val = parseInt(document.querySelector("#unit-size-input").value) || 100;
+			const status = document.querySelector("#unit-save-status");
+			status.textContent = "Saving...";
+			const newData = { ...CURR_USER.metadata, unit_size: val };
+			const { error } = await SB.from('profiles')
+				.update({ metadata: newData })
+				.eq('id', CURR_SESSION.user.id);
+			if (error) {
+				status.textContent = "Error saving";
+			} else {
+				CURR_USER.metadata = newData;
+				status.textContent = "✅ Saved!";
+				setTimeout(() => status.textContent = "", 3000);
+			}
+		}
 
 		const linkBtn = document.getElementById("link-discord-btn");
 		const spinner = linkBtn.querySelector('.spinner');

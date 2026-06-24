@@ -15,6 +15,10 @@ let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
 let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO;
+let KELLY_DOLLARS = false;
+function getUnitSize() {
+	return CURR_USER?.metadata?.unit_size || 100;
+}
 if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
 	HTML = ".html";
 }
@@ -1449,12 +1453,46 @@ const kellyFormatter = function(cell, params, rendered) {
 	}
 	let ev = params.circa ? data["vs-circa_ev"] : data.ev;
 	const kelly = parseFloat(ev) / Math.abs(dec) / 4;
+	if (KELLY_DOLLARS) {
+		return `$${(kelly * getUnitSize()).toFixed(2)}`;
+	}
 	return `
 		<div class='kelly-cell'>
 			<div class='kelly'>${kelly.toFixed(2)}u</div>
-			<div class='kelly-wager'>$${(kelly * 50).toFixed(2)}</div>
+			<div class='kelly-wager'>$${(kelly * getUnitSize()).toFixed(2)}</div>
 		</div>
 	`;
+}
+
+function formatKellyValue(kelly) {
+	if (!kelly) return "";
+	if (KELLY_DOLLARS) return `$${(kelly * getUnitSize()).toFixed(2)}`;
+	return `${kelly.toFixed(2)}u`;
+}
+
+function toggleKellyDollars() {
+	KELLY_DOLLARS = !KELLY_DOLLARS;
+	const btn = document.getElementById('kelly-toggle-btn');
+	if (btn) btn.textContent = KELLY_DOLLARS ? '$' : 'u';
+	if (TABLE) TABLE.redraw(true);
+	if (CURRENT_VIEW === "mobile" && typeof applyFilters === "function") applyFilters();
+}
+
+function initKellyToggle() {
+	const col = TABLE?.getColumn("kelly");
+	if (!col) return;
+	const el = col.getElement();
+	if (!el || el.querySelector('#kelly-toggle-btn')) return;
+	const btn = document.createElement('button');
+	btn.id = 'kelly-toggle-btn';
+	btn.textContent = KELLY_DOLLARS ? '$' : 'u';
+	btn.className = 'kelly-toggle';
+	btn.title = 'Toggle units / dollars';
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		toggleKellyDollars();
+	});
+	el.querySelector('.tabulator-col-content').appendChild(btn);
 }
 
 const teamFormatter = function(cell, params, rendered) {

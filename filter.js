@@ -248,6 +248,7 @@ function updateHeaders() {
 		title.style.height = "48px";
 		title.innerHTML = html;
 	}
+	initKellyToggle();
 }
 
 function updateWeightHeader() {

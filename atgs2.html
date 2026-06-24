@@ -657,7 +657,7 @@
 				{ key: "ppLine",         label: "PP Line",           cols: [{ title: "PP Line", field: "ppLine", width: 50 }] },
 				{ key: "fairVal",        label: "Fair Value",        cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: "implied",        label: "Implied",           cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
-				{ key: "kelly",          label: "Quarter Kelly",     cols: [{ title: "1/4 Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) { if (!cell.getValue()) return ""; return cell.getValue().toFixed(2) + "u"; }, responsive: 0, visible: MOBILE ? false : true }] },
+				{ key: "kelly",          label: "Quarter Kelly",     cols: [{ title: "1/4 Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) { return formatKellyValue(cell.getValue()); }, responsive: 0, visible: MOBILE ? false : true }] },
 				{ key: "opp",            label: "Opponent",          cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
 				{ key: "goalie",         label: "Goalie",            cols: [{ title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 90, hozAlign: "left" }] },
 				{ key: "oppRank",        label: "Opp Rank",          cols: [{ title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50 }] },

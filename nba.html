@@ -686,9 +686,8 @@
 				]},
 				{ key: 'kelly', label: '¼ Kelly', cols: [
 					{title: "¼ Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) {
-						if (!cell.getValue()) { return ""; }
-						return `${cell.getValue().toFixed(2)}u`;
-					}, responsive: 0, visible: MOBILE ? false : true}
+							return formatKellyValue(cell.getValue());
+						}, responsive: 0, visible: MOBILE ? false : true}
 				]},
 				{ key: 'opp', label: 'Opp', cols: [
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80}

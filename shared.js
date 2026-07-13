@@ -72,6 +72,7 @@ const PAGE_SECTIONS = [
 			{ label: "3PTM (Free)", value: "threes" },
 			{ label: "PTS/REB/AST", value: "pts" },
 			{ label: "🏀 CBB", value: "ncaab" },
+			{ label: "🏆 WNBA Main", value: "main?sport=wnba" },
 			{ label: "🏀 WNBA", value: "wnba" },
 		]
 	},

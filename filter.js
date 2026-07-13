@@ -1613,7 +1613,9 @@ function changeFilter(render = true) {
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
-		TABLE.replaceData(filtered);
+		TABLE.replaceData(filtered).then(() => {
+			if (typeof restoreSelectedRow === 'function') restoreSelectedRow();
+		});
 	}
 
 	if (VIG == "0") {

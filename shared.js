@@ -14,7 +14,7 @@ let CUP_TEAMS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO;
+let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO, DERBY;
 let KELLY_DOLLARS = false;
 function getUnitSize() {
 	return CURR_USER?.metadata?.unit_size || 100;
@@ -712,7 +712,7 @@ function getPercentileColor(field, value) {
 		value = 100 - value;
 	} else if (field.includes("pitcherData") && ["barrel_batted_rate", "hard_hit_percent", "sweet_spot_percent", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1))) {
 		value = 100 - value;
-	} else if ((field.includes("savant") || PAGE == "barrels") && (["avg_swing_speed", "blasts_swing", "pull_percent", "squared_up_swing", "meatball_percent", "ba", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1)))) {
+	} else if ((field.includes("savant") || PAGE == "barrels") && (["avg_swing_speed", "blasts_swing", "meatball_percent", "ba", "on_base_percent", "slg_percent", "on_base_plus_slg"].includes(field.split(".").at(-1)))) {
 		value = 100 - value;
 	}
 	// bright green
@@ -2013,6 +2013,16 @@ function movingAverage(arr, windowSize) {
 	});
 }
 
+let FEED_DATA = [];
+let FEED_MODE = "all";
+
+function filterFeedData(data) {
+	if (FEED_MODE === "bb") {
+		return data.filter(row => parseFloat(row.evo || "0") > 0);
+	}
+	return data;
+}
+
 function renderFeed() {
 	const data = TABLE.getSelectedRows()[0].getData();
 	let player = data.player;
@@ -2032,7 +2042,8 @@ function renderFeed() {
 			row["player"] = player;
 			data.push(row);
 		}
-		renderFeedTable(data);
+		FEED_DATA = data;
+		renderFeedTable(filterFeedData(data));
 	});
 }
 
@@ -3725,6 +3736,7 @@ function parseURLParams() {
 	ALL = URLParams.get("all");
 	PLAYERS = URLParams.get("players") || "";
 	HARD_HIT = URLParams.get("HH");
+	DERBY = URLParams.get("derby");
 
 	function defaultOU() {
 		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";

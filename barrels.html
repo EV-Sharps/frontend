@@ -180,7 +180,7 @@
 				}
 			}).then(response => response.json()).then(data => {
 				RES = data;
-				//renderTable(data);
+
 				changeFilter();
 				setTimeout(() => {
 					if (PRETTY != undefined) {
@@ -191,6 +191,9 @@
 					}
 					if (HARD_HIT != undefined) {
 						hardhit()
+					}
+					if (DERBY != undefined) {
+						derby();
 					}
 				}, 100);
 			}).catch(err => console.log(err));
@@ -293,7 +296,6 @@
 						{title: "Rate", field: "hard_hit_percent", width: 55, sorter: "number", formatter: percentileFormatter},
 						{title: "L5 Δ", field: "game_trends.hard_hit_percent.5G", width: 40, sorter: "number", formatter: percentileFormatter, visible: false},
 						//
-						{title: "", field: "game_trends.barrel_ct.3G", visible: false},
 						{title: "", field: "game_trends.hard_hit_ct.5GPercentile", visible: false},
 						{title: "", field: "game_trends.hard_hit_ct.3GPercentile", visible: false},
 					]},
@@ -518,6 +520,32 @@
 				tweet.push(`${title(row.player)} (+${row["game_trends"]["on_base_plus_slg"][`${window}G`]}): +${row.line} ${row.book.toUpperCase()}`);
 			}
 			console.log(tweet.join("\n"));
+		}
+
+		function derby() {
+			TABLE.getColumns().map(col => {
+				let arr = ["player", "barrels_per_bip", "barrel_ct", "hard_hit_ct", "hard_hit_percent", "game_trends.hard_hit_ct.3G", "game_trends.hard_hit_ct.5G", "exit_velocity_avg", "tot100+", "sweet_spot_percent", "flyballs_percent", "pull_percent", "game_trends.barrel_ct.5G", "game_trends.barrel_ct.3G", "squared_up_swing", "launch_angle_avg", "distance_hr_avg", "distance_avg"];
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				} else {
+					col.show()
+				}
+			});
+
+			let players = [
+				"kyle schwarber",
+				"munetaka murakami",
+				"junior caminero",
+				"jordan walker",
+				"jac caglianone",
+				"bryce harper",
+				"ben rice",
+				"willson contreras"
+			];
+
+			TABLE.setFilter([
+				{field:"player", type:"in", value: players},
+			]);
 		}
 
 		function hardhit() {

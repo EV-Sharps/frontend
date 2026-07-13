@@ -828,7 +828,11 @@
 							<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 						</svg>
 					</div>
-						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
+						<button onclick="SELECTED_ROW_KEY = null; TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
+					</div>
+					<div id="feed-toggle" class="batter-ps-toggle" style="display:none;margin-bottom:4px;">
+						<button class="ps-btn is-active" data-mode="all">All</button>
+						<button class="ps-btn" data-mode="bb">Batted Balls</button>
 					</div>
 										<div id="chart"></div>
 					<div id="mix-panel" style="display:none;"></div>
@@ -849,6 +853,7 @@
 	<script type="text/javascript">
 		PAGE = "dingers";
 		let NOCACHE, BPP, KAMBI, NO365, HISTORICAL, NOBR, SIMPLE, PH;
+		let SELECTED_ROW_KEY = null;
 		parseURLParams();
 
 		SPORT = "mlb";
@@ -861,6 +866,7 @@
 
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
+			document.getElementById("feed-toggle").style.display = event.target.value == "feed" ? "flex" : "none";
 			if (event.target.value == "mix") {
 				const d = TABLE.getSelectedData()[0];
 				if (d) fetchAndShowMix(d);
@@ -876,6 +882,14 @@
 					plotHRGap();
 				}
 			}
+		});
+
+		document.getElementById("feed-toggle").addEventListener("click", function(event) {
+			const btn = event.target.closest(".ps-btn");
+			if (!btn) return;
+			FEED_MODE = btn.dataset.mode;
+			this.querySelectorAll(".ps-btn").forEach(b => b.classList.toggle("is-active", b === btn));
+			renderFeedTable(filterFeedData(FEED_DATA));
 		});
 
 		function plotOddsChart() {
@@ -1521,6 +1535,10 @@
 			}, 40);
 		}
 
+		function rowKeyFor(data) {
+			return { player: data.player, game: data.game, prop: data.prop, handicap: data.handicap };
+		}
+
 		function rowClick(row) {
 			const data = row.getData();
 			const right = document.querySelector("#right-body");
@@ -1530,9 +1548,11 @@
 			const sel = TABLE.getSelectedRows();
 			TABLE.deselectRow();
 			if (sel.length > 0 && sel[0] == row) {
+				SELECTED_ROW_KEY = null;
 				closeRightBody();
 			} else {
 				row.select();
+				SELECTED_ROW_KEY = rowKeyFor(data);
 				if (MOBILE) {
 					table.style.display = "none";
 					right.classList.add("mobile-open");
@@ -1545,8 +1565,44 @@
 					fetchAndShowMix(data);
 				} else {
 					document.querySelector("#btwn-select").value = "pa";
+					document.getElementById("feed-toggle").style.display = "none";
 					setTimeout(() => plotHRGap(), 50);
 				}
+			}
+		}
+
+		// Re-select the previously selected player after the table's data is
+		// replaced (e.g. an odds refresh), since Tabulator's replaceData()
+		// swaps in new row objects and drops the old selection.
+		function restoreSelectedRow() {
+			if (!SELECTED_ROW_KEY) return;
+			const rows = TABLE.getRows("active");
+			let match = rows.find(r => {
+				const d = r.getData();
+				return d.player === SELECTED_ROW_KEY.player &&
+					d.game === SELECTED_ROW_KEY.game &&
+					d.prop === SELECTED_ROW_KEY.prop &&
+					d.handicap === SELECTED_ROW_KEY.handicap;
+			});
+			if (!match) {
+				match = rows.find(r => r.getData().player === SELECTED_ROW_KEY.player);
+			}
+			if (!match) {
+				SELECTED_ROW_KEY = null;
+				closeRightBody();
+				return;
+			}
+			match.select();
+			SELECTED_ROW_KEY = rowKeyFor(match.getData());
+			const curSel = document.querySelector("#btwn-select").value;
+			if (curSel === "mix") {
+				fetchAndShowMix(match.getData());
+			} else if (curSel === "feed") {
+				renderFeed();
+			} else if (curSel === "odds") {
+				plotOddsChart();
+			} else {
+				plotHRGap();
 			}
 		}
 

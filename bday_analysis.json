@@ -2,193 +2,193 @@
   "sport": "mlb",
   "summary": {
     "total_players": 195,
-    "total_bday_games": 629,
-    "pct_worse": 59.0,
-    "pct_better": 41.0,
-    "mean_diff": -0.024,
-    "median_diff": -0.1131,
-    "p_value": 0.007344,
+    "total_bday_games": 634,
+    "pct_worse": 58.5,
+    "pct_better": 41.5,
+    "mean_diff": -0.0232,
+    "median_diff": -0.1028,
+    "p_value": 0.010845,
     "significant": true,
-    "reliable_n": 141,
-    "reliable_pct_worse": 58.9,
-    "reliable_pct_better": 41.1,
+    "reliable_n": 142,
+    "reliable_pct_worse": 58.5,
+    "reliable_pct_better": 41.5,
     "metric": "slg"
   },
   "distributions": {
     "diffs": [
-      -0.0602,
+      -0.0593,
       0.1959,
-      0.1699,
-      -0.1536,
-      0.0625,
-      -0.3768,
-      -0.3755,
-      -0.042,
+      0.1709,
+      -0.1578,
+      0.0634,
+      -0.38,
+      -0.3757,
+      -0.0425,
       -0.1192,
-      -0.5048,
-      0.0032,
-      -0.1612,
-      -0.2975,
-      0.9574,
+      -0.5054,
+      0.0035,
+      -0.1588,
+      -0.3014,
+      0.9558,
       -0.3958,
-      -0.3898,
+      -0.3869,
       0.0572,
-      -0.4789,
-      0.0686,
-      -0.3871,
+      -0.4781,
+      0.065,
+      -0.386,
       1.1376,
-      -0.3973,
-      0.1212,
+      -0.3992,
+      0.1222,
       -0.176,
       -0.0799,
-      -0.1959,
+      0.1777,
       -0.2353,
-      -0.1512,
-      0.2314,
+      -0.1513,
+      0.231,
       -0.3191,
-      0.0717,
-      0.1411,
-      0.3072,
+      0.0735,
+      0.142,
+      0.3065,
       -0.203,
-      0.3386,
-      -0.1592,
-      -0.2279,
-      -0.3839,
-      -0.3371,
-      -0.149,
-      -0.1709,
-      -0.1869,
+      0.3331,
+      -0.1663,
+      -0.2291,
+      -0.3843,
+      -0.336,
+      -0.1483,
+      -0.1703,
+      -0.1862,
       -0.0956,
-      -0.1131,
-      -0.2615,
-      0.1274,
-      -0.1598,
+      -0.1162,
+      -0.2626,
+      0.1276,
+      -0.16,
       -0.1489,
-      -0.2546,
-      -0.1325,
-      0.3557,
-      0.1133,
-      0.0723,
-      -0.381,
-      0.1719,
+      -0.254,
+      -0.132,
+      0.3563,
+      0.1143,
+      0.0669,
+      -0.3823,
+      0.1728,
       -0.0734,
-      -0.4358,
-      -0.1721,
-      -0.3612,
-      -0.4095,
-      -0.4166,
-      0.1195,
-      0.3181,
-      1.6122,
-      -0.3865,
-      0.1489,
-      0.5835,
+      -0.4347,
+      -0.1722,
+      -0.3633,
+      -0.4108,
+      -0.4175,
+      0.1201,
+      0.3165,
+      1.6139,
+      -0.3859,
+      0.1492,
+      0.584,
       -0.206,
-      -0.2488,
-      0.3279,
+      -0.2824,
+      0.3281,
       -0.1692,
-      0.0131,
-      -0.1781,
-      -0.0419,
-      -0.5861,
+      0.01,
+      -0.1767,
+      -0.0421,
+      -0.5846,
       -0.3549,
-      0.2926,
-      0.0054,
+      0.2923,
+      0.0019,
       0.0132,
       -0.383,
-      -0.087,
-      -0.2788,
-      -0.2061,
-      0.1309,
-      0.6488,
-      -0.0081,
-      -0.2837,
-      -0.0587,
-      -0.2883,
-      0.3248,
+      -0.0843,
+      -0.2831,
+      -0.2055,
+      0.1296,
+      0.6471,
+      -0.0068,
+      -0.2835,
+      -0.073,
+      -0.2859,
+      0.3264,
       -0.4401,
       -0.3624,
-      -0.4062,
-      -0.1563,
-      -0.188,
+      -0.4065,
+      -0.1624,
+      -0.1885,
       -0.1477,
-      -0.1304,
-      0.3235,
-      -0.3456,
-      -0.3855,
+      -0.13,
+      0.3236,
+      -0.3449,
+      -0.3856,
       -0.0799,
-      0.2126,
-      1.1463,
-      -0.2197,
-      0.2883,
-      0.0539,
-      -0.5343,
-      -0.1351,
+      0.213,
+      1.1473,
+      -0.2186,
+      0.2894,
+      0.0534,
+      -0.5346,
+      -0.1425,
       -0.152,
-      -0.1625,
-      -0.0121,
-      -0.1601,
+      -0.1618,
+      -0.0607,
+      -0.1582,
       0.0403,
       0.2671,
       0.1839,
-      -0.1718,
-      -0.2985,
-      -0.0418,
+      -0.1706,
+      -0.2961,
+      -0.0423,
       0.1203,
       -0.368,
-      0.5543,
-      -0.1786,
-      0.1453,
+      0.5553,
+      -0.1769,
+      0.1454,
       0.3102,
-      0.0848,
-      -0.3303,
-      -0.3716,
-      -0.0454,
+      0.0851,
+      -0.3343,
+      -0.3701,
+      -0.0449,
       0.1709,
-      -0.2494,
-      0.2297,
-      -0.3623,
-      -0.3569,
-      0.6591,
+      -0.2486,
+      0.2298,
+      -0.3608,
+      -0.3636,
+      0.6615,
       0.3208,
-      -0.3379,
-      0.0948,
+      -0.3358,
+      0.0124,
       0.5338,
       -0.2965,
       -0.0025,
-      -0.4529,
-      -0.4033,
-      0.2874,
-      0.1203,
-      0.3751,
-      1.0478,
-      0.2316,
-      0.1717,
+      -0.4535,
+      -0.4023,
+      0.2892,
+      0.1211,
+      0.3757,
+      1.0483,
+      0.2321,
+      0.1799,
       0.3804,
       0.0196,
-      -0.3771,
-      0.1469,
-      0.8935,
+      -0.3791,
+      0.1472,
+      0.8946,
       0.597,
-      -0.3618,
-      0.5755,
+      -0.3623,
+      0.5754,
       -0.2689,
-      -0.1703,
-      0.1766,
+      -0.1712,
+      0.1645,
       0.0102,
-      -0.2334,
-      -0.2287,
-      -0.0726,
+      -0.2333,
+      -0.2327,
+      -0.0729,
       0.0666,
-      -0.4361,
-      -0.2921,
-      0.0366,
-      -0.1575,
+      -0.4359,
+      -0.2871,
+      0.0356,
+      -0.1563,
       -0.1028,
-      -0.1345,
-      -0.1495,
-      0.2565,
-      -0.2633,
+      -0.1337,
+      -0.1507,
+      0.2576,
+      -0.2631,
       0.1891,
       -0.3817,
       0.2526,
@@ -219,22 +219,54 @@
       "bday": "1997-06-27",
       "bday_games": 2,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.586,
+      "non_bday_slg": 0.585,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.263,
-      "diff": -0.586,
-      "worse": true
+      "diff": -0.585,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2019-06-27",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-27",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "junior caminero",
       "bday": "2003-07-05",
       "bday_games": 2,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.534,
+      "non_bday_slg": 0.535,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.266,
-      "diff": -0.534,
-      "worse": true
+      "non_bday_hr_avg": 0.268,
+      "diff": -0.535,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "rafael devers",
@@ -245,18 +277,43 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.206,
       "diff": -0.505,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-10-24",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "brandon lowe",
       "bday": "1994-07-06",
       "bday_games": 2,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.479,
+      "non_bday_slg": 0.478,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.219,
-      "diff": -0.479,
-      "worse": true
+      "non_bday_hr_avg": 0.218,
+      "diff": -0.478,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "george springer",
@@ -265,9 +322,25 @@
       "bday_slg": 0.0,
       "non_bday_slg": 0.453,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.198,
+      "non_bday_hr_avg": 0.199,
       "diff": -0.453,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2016-09-19",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-19",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ramon laureano",
@@ -278,18 +351,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.148,
       "diff": -0.44,
-      "worse": true
-    },
-    {
-      "player": "jarren duran",
-      "bday": "1996-09-05",
-      "bday_games": 1,
-      "bday_slg": 0.0,
-      "non_bday_slg": 0.436,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.107,
-      "diff": -0.436,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-07-15",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "starling marte",
@@ -300,18 +371,70 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.106,
       "diff": -0.436,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2013-10-09",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-10-09",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-10-09",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "jarren duran",
+      "bday": "1996-09-05",
+      "bday_games": 1,
+      "bday_slg": 0.0,
+      "non_bday_slg": 0.435,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.106,
+      "diff": -0.435,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-09-05",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "masataka yoshida",
       "bday": "1993-07-15",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.417,
+      "non_bday_slg": 0.418,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.084,
-      "diff": -0.417,
-      "worse": true
+      "non_bday_hr_avg": 0.083,
+      "diff": -0.418,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-07-15",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "kyle higashioka",
@@ -322,51 +445,131 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.152,
       "diff": -0.413,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-04-20",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ceddanne rafaela",
       "bday": "2000-09-18",
       "bday_games": 3,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.409,
+      "non_bday_slg": 0.411,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.095,
-      "diff": -0.409,
-      "worse": true
+      "non_bday_hr_avg": 0.096,
+      "diff": -0.411,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-09-18",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-18",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-18",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ty france",
       "bday": "1994-07-13",
       "bday_games": 3,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.406,
+      "non_bday_slg": 0.407,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.101,
-      "diff": -0.406,
-      "worse": true
+      "diff": -0.407,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-07-13",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-13",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nathan lukes",
       "bday": "1994-07-12",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.403,
+      "non_bday_slg": 0.402,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.068,
-      "diff": -0.403,
-      "worse": true
+      "non_bday_hr_avg": 0.067,
+      "diff": -0.402,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-07-12",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "juan soto",
       "bday": "1998-10-25",
       "bday_games": 2,
       "bday_slg": 0.143,
-      "non_bday_slg": 0.54,
+      "non_bday_slg": 0.542,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.229,
-      "diff": -0.397,
-      "worse": true
+      "non_bday_hr_avg": 0.232,
+      "diff": -0.399,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2019-10-25",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-10-25",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "harrison bader",
@@ -377,7 +580,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.107,
       "diff": -0.396,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-06-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nolan jones",
@@ -388,7 +600,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.09,
       "diff": -0.396,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-05-07",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "javier sanoja",
@@ -399,51 +620,103 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.043,
       "diff": -0.392,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-09-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "drew gilbert",
       "bday": "2000-09-27",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.39,
+      "non_bday_slg": 0.387,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.076,
-      "diff": -0.39,
-      "worse": true
+      "non_bday_hr_avg": 0.074,
+      "diff": -0.387,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-09-27",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nick gonzales",
       "bday": "1999-05-27",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.387,
+      "non_bday_slg": 0.386,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.055,
-      "diff": -0.387,
-      "worse": true
+      "non_bday_hr_avg": 0.054,
+      "diff": -0.386,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2026-05-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "matt mclain",
       "bday": "1999-08-06",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.387,
+      "non_bday_slg": 0.386,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.117,
-      "diff": -0.387,
-      "worse": true
+      "diff": -0.386,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ezequiel duran",
       "bday": "1999-05-22",
       "bday_games": 2,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.385,
+      "non_bday_slg": 0.386,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.069,
-      "diff": -0.385,
-      "worse": true
+      "non_bday_hr_avg": 0.071,
+      "diff": -0.386,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-05-22",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-22",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "keibert ruiz",
@@ -452,9 +725,18 @@
       "bday_slg": 0.0,
       "non_bday_slg": 0.384,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.094,
+      "non_bday_hr_avg": 0.096,
       "diff": -0.384,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-20",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "zach dezenzo",
@@ -465,7 +747,43 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.06,
       "diff": -0.383,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-05-11",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-11",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "blaze alexander",
+      "bday": "1999-06-11",
+      "bday_games": 1,
+      "bday_slg": 0.0,
+      "non_bday_slg": 0.382,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.068,
+      "diff": -0.382,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-11",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "james mccann",
@@ -476,40 +794,84 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.103,
       "diff": -0.382,
-      "worse": true
-    },
-    {
-      "player": "blaze alexander",
-      "bday": "1999-06-11",
-      "bday_games": 1,
-      "bday_slg": 0.0,
-      "non_bday_slg": 0.381,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.064,
-      "diff": -0.381,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2015-06-13",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-06-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-13",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "austin wells",
       "bday": "1999-07-12",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.377,
+      "non_bday_slg": 0.38,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.131,
-      "diff": -0.377,
-      "worse": true
+      "non_bday_hr_avg": 0.135,
+      "diff": -0.38,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-07-12",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "edouard julien",
       "bday": "1999-04-30",
       "bday_games": 3,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.377,
+      "non_bday_slg": 0.379,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.088,
-      "diff": -0.377,
-      "worse": true
+      "non_bday_hr_avg": 0.089,
+      "diff": -0.379,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-04-30",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-30",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-30",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "anthony volpe",
@@ -518,20 +880,45 @@
       "bday_slg": 0.0,
       "non_bday_slg": 0.376,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.112,
+      "non_bday_hr_avg": 0.111,
       "diff": -0.376,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-28",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "alex call",
       "bday": "1994-09-27",
       "bday_games": 2,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.372,
+      "non_bday_slg": 0.37,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.065,
-      "diff": -0.372,
-      "worse": true
+      "diff": -0.37,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-09-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-27",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "alek thomas",
@@ -542,7 +929,77 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.081,
       "diff": -0.368,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-28",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-28",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "cole young",
+      "bday": "2003-07-29",
+      "bday_games": 1,
+      "bday_slg": 0.0,
+      "non_bday_slg": 0.364,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.089,
+      "diff": -0.364,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-07-29",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "wilyer abreu",
+      "bday": "1999-06-24",
+      "bday_games": 3,
+      "bday_slg": 0.1,
+      "non_bday_slg": 0.463,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.139,
+      "diff": -0.363,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-24",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-24",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-24",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "freddy fermin",
@@ -553,18 +1010,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.07,
       "diff": -0.362,
-      "worse": true
-    },
-    {
-      "player": "dominic canzone",
-      "bday": "1997-08-16",
-      "bday_games": 3,
-      "bday_slg": 0.1,
-      "non_bday_slg": 0.462,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.139,
-      "diff": -0.362,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-16",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jakob marsee",
@@ -573,31 +1028,52 @@
       "bday_slg": 0.0,
       "non_bday_slg": 0.362,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.066,
+      "non_bday_hr_avg": 0.065,
       "diff": -0.362,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2026-06-28",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "wilyer abreu",
-      "bday": "1999-06-24",
+      "player": "dominic canzone",
+      "bday": "1997-08-16",
       "bday_games": 3,
       "bday_slg": 0.1,
       "non_bday_slg": 0.461,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.138,
+      "non_bday_hr_avg": 0.141,
       "diff": -0.361,
-      "worse": true
-    },
-    {
-      "player": "cole young",
-      "bday": "2003-07-29",
-      "bday_games": 1,
-      "bday_slg": 0.0,
-      "non_bday_slg": 0.357,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.08,
-      "diff": -0.357,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-16",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-16",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-16",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "carlos correa",
@@ -608,7 +1084,58 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.16,
       "diff": -0.355,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2015-09-22",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-09-22",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-09-22",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-22",
+          "hit": false,
+          "h": 0,
+          "ab": 6,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-22",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-22",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-22",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "sam haggerty",
@@ -619,7 +1146,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.05,
       "diff": -0.354,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-05-26",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "shohei ohtani",
@@ -630,51 +1166,152 @@
       "bday_hr_avg": 0.143,
       "non_bday_hr_avg": 0.28,
       "diff": -0.351,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2019-07-05",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2021-07-05",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2022-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-05",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "josh smith",
       "bday": "1997-08-07",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.346,
+      "non_bday_slg": 0.345,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.066,
-      "diff": -0.346,
-      "worse": true
-    },
-    {
-      "player": "jacob wilson",
-      "bday": "2002-03-30",
-      "bday_games": 3,
-      "bday_slg": 0.083,
-      "non_bday_slg": 0.421,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.085,
-      "diff": -0.338,
-      "worse": true
+      "diff": -0.345,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-07",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jacob young",
       "bday": "1999-07-27",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.337,
+      "non_bday_slg": 0.336,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.04,
-      "diff": -0.337,
-      "worse": true
+      "non_bday_hr_avg": 0.039,
+      "diff": -0.336,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-27",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "jacob wilson",
+      "bday": "2002-03-30",
+      "bday_games": 3,
+      "bday_slg": 0.083,
+      "non_bday_slg": 0.419,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.084,
+      "diff": -0.336,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-30",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-30",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "alex freeland",
       "bday": "2001-08-24",
       "bday_games": 1,
       "bday_slg": 0.0,
-      "non_bday_slg": 0.33,
+      "non_bday_slg": 0.334,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.054,
-      "diff": -0.33,
-      "worse": true
+      "non_bday_hr_avg": 0.053,
+      "diff": -0.334,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-08-24",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "edgar quero",
@@ -685,7 +1322,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.04,
       "diff": -0.319,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2026-04-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "myles straw",
@@ -696,29 +1349,70 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.017,
       "diff": -0.315,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-10-17",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "heliot ramos",
       "bday": "1999-09-07",
       "bday_games": 2,
       "bday_slg": 0.125,
-      "non_bday_slg": 0.423,
+      "non_bday_slg": 0.426,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.136,
-      "diff": -0.298,
-      "worse": true
+      "non_bday_hr_avg": 0.14,
+      "diff": -0.301,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-07",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-07",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "corbin carroll",
       "bday": "2000-08-21",
       "bday_games": 2,
       "bday_slg": 0.2,
-      "non_bday_slg": 0.498,
+      "non_bday_slg": 0.496,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.167,
-      "diff": -0.298,
-      "worse": true
+      "non_bday_hr_avg": 0.165,
+      "diff": -0.296,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-21",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-21",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "darell hernaiz",
@@ -729,40 +1423,228 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.035,
       "diff": -0.296,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "drake baldwin",
       "bday": "2001-03-28",
       "bday_games": 3,
       "bday_slg": 0.2,
-      "non_bday_slg": 0.492,
+      "non_bday_slg": 0.487,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.198,
-      "diff": -0.292,
-      "worse": true
+      "non_bday_hr_avg": 0.194,
+      "diff": -0.287,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-03-28",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jackson merrill",
       "bday": "2003-04-19",
       "bday_games": 3,
       "bday_slg": 0.167,
-      "non_bday_slg": 0.455,
+      "non_bday_slg": 0.453,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.143,
-      "diff": -0.288,
-      "worse": true
+      "non_bday_hr_avg": 0.141,
+      "diff": -0.286,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-04-19",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-19",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-19",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "xander bogaerts",
       "bday": "1992-10-01",
       "bday_games": 7,
       "bday_slg": 0.158,
-      "non_bday_slg": 0.442,
+      "non_bday_slg": 0.441,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.119,
+      "non_bday_hr_avg": 0.12,
       "diff": -0.284,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2015-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2016-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2021-10-01",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2022-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-10-01",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-10-01",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "colt keith",
+      "bday": "2001-08-14",
+      "bday_games": 2,
+      "bday_slg": 0.111,
+      "non_bday_slg": 0.394,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.086,
+      "diff": -0.283,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-14",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-14",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "nathaniel lowe",
+      "bday": "1995-07-07",
+      "bday_games": 5,
+      "bday_slg": 0.143,
+      "non_bday_slg": 0.425,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.129,
+      "diff": -0.282,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2019-07-07",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-07-07",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-07-07",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-07",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-07",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jorge mateo",
@@ -773,18 +1655,30 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.071,
       "diff": -0.28,
-      "worse": true
-    },
-    {
-      "player": "colt keith",
-      "bday": "2001-08-14",
-      "bday_games": 2,
-      "bday_slg": 0.111,
-      "non_bday_slg": 0.39,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.082,
-      "diff": -0.279,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-06-23",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-23",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-23",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "connor norby",
@@ -795,7 +1689,57 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.106,
       "diff": -0.269,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-08",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "kody clemens",
+      "bday": "1996-05-15",
+      "bday_games": 3,
+      "bday_slg": 0.167,
+      "non_bday_slg": 0.429,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.149,
+      "diff": -0.263,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-15",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-15",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-15",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "kyle farmer",
@@ -806,18 +1750,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.083,
       "diff": -0.263,
-      "worse": true
-    },
-    {
-      "player": "kody clemens",
-      "bday": "1996-05-15",
-      "bday_games": 3,
-      "bday_slg": 0.167,
-      "non_bday_slg": 0.428,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.15,
-      "diff": -0.261,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-08-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "dylan moore",
@@ -828,7 +1777,30 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.103,
       "diff": -0.256,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2020-08-02",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-02",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-02",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "victor caratini",
@@ -838,30 +1810,107 @@
       "non_bday_slg": 0.372,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.086,
-      "diff": -0.255,
-      "worse": true
-    },
-    {
-      "player": "nathaniel lowe",
-      "bday": "1995-07-07",
-      "bday_games": 4,
-      "bday_slg": 0.176,
-      "non_bday_slg": 0.425,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.129,
-      "diff": -0.249,
-      "worse": true
+      "diff": -0.254,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2017-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2018-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-17",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-17",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "josh naylor",
       "bday": "1997-06-22",
       "bday_games": 6,
       "bday_slg": 0.19,
-      "non_bday_slg": 0.44,
+      "non_bday_slg": 0.439,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.136,
       "diff": -0.249,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2019-06-22",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-22",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-06-22",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-22",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-22",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-22",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "zack short",
@@ -872,51 +1921,173 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.0,
       "diff": -0.235,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2026-05-29",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "bobby witt",
       "bday": "2000-06-14",
       "bday_games": 5,
       "bday_slg": 0.263,
-      "non_bday_slg": 0.497,
+      "non_bday_slg": 0.496,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.159,
       "diff": -0.233,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-06-14",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-14",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-14",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-14",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-14",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "lane thomas",
       "bday": "1995-08-23",
       "bday_games": 3,
       "bday_slg": 0.182,
-      "non_bday_slg": 0.411,
+      "non_bday_slg": 0.415,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.126,
-      "diff": -0.229,
-      "worse": true
+      "non_bday_hr_avg": 0.128,
+      "diff": -0.233,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-08-23",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-23",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-23",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "luis garcia",
       "bday": "2000-05-16",
       "bday_games": 3,
       "bday_slg": 0.2,
-      "non_bday_slg": 0.428,
+      "non_bday_slg": 0.429,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.111,
-      "diff": -0.228,
-      "worse": true
+      "non_bday_hr_avg": 0.112,
+      "diff": -0.229,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-16",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-16",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-16",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "alec bohm",
       "bday": "1996-08-03",
       "bday_games": 4,
       "bday_slg": 0.188,
-      "non_bday_slg": 0.407,
+      "non_bday_slg": 0.406,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.098,
-      "diff": -0.22,
-      "worse": true
+      "non_bday_hr_avg": 0.097,
+      "diff": -0.219,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-08-03",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-08-03",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-03",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "will benson",
@@ -927,7 +2098,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.102,
       "diff": -0.206,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-06-16",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-16",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "riley greene",
@@ -936,9 +2123,25 @@
       "bday_slg": 0.25,
       "non_bday_slg": 0.456,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.149,
+      "non_bday_hr_avg": 0.148,
       "diff": -0.206,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-09-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-28",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "blake perkins",
@@ -949,62 +2152,138 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.051,
       "diff": -0.203,
-      "worse": true
-    },
-    {
-      "player": "jared young",
-      "bday": "1995-07-09",
-      "bday_games": 1,
-      "bday_slg": 0.25,
-      "non_bday_slg": 0.446,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.148,
-      "diff": -0.196,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "brandon nimmo",
       "bday": "1993-03-27",
       "bday_games": 1,
       "bday_slg": 0.25,
-      "non_bday_slg": 0.438,
+      "non_bday_slg": 0.439,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.128,
-      "diff": -0.188,
-      "worse": true
+      "diff": -0.189,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-03-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nico hoerner",
       "bday": "1997-05-13",
       "bday_games": 3,
       "bday_slg": 0.2,
-      "non_bday_slg": 0.387,
+      "non_bday_slg": 0.386,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.055,
-      "diff": -0.187,
-      "worse": true
-    },
-    {
-      "player": "mookie betts",
-      "bday": "1992-10-07",
-      "bday_games": 3,
-      "bday_slg": 0.3,
-      "non_bday_slg": 0.479,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.148,
-      "diff": -0.179,
-      "worse": true
+      "diff": -0.186,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-05-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-13",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "oswald peraza",
       "bday": "2000-06-15",
       "bday_games": 2,
       "bday_slg": 0.167,
-      "non_bday_slg": 0.345,
+      "non_bday_slg": 0.343,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.079,
-      "diff": -0.178,
-      "worse": true
+      "non_bday_hr_avg": 0.078,
+      "diff": -0.177,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-06-15",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-15",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "mookie betts",
+      "bday": "1992-10-07",
+      "bday_games": 3,
+      "bday_slg": 0.3,
+      "non_bday_slg": 0.477,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.147,
+      "diff": -0.177,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2016-10-07",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2020-10-07",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-10-07",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "luis robert",
@@ -1015,7 +2294,30 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.174,
       "diff": -0.176,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2020-08-03",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-03",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "willson contreras",
@@ -1026,40 +2328,174 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.168,
       "diff": -0.172,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2017-05-13",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2018-05-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-05-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-05-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-13",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "lars nootbaar",
       "bday": "1997-09-08",
       "bday_games": 4,
       "bday_slg": 0.231,
-      "non_bday_slg": 0.403,
+      "non_bday_slg": 0.401,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.108,
-      "diff": -0.172,
-      "worse": true
-    },
-    {
-      "player": "ian happ",
-      "bday": "1994-08-12",
-      "bday_games": 6,
-      "bday_slg": 0.278,
-      "non_bday_slg": 0.449,
-      "bday_hr_avg": 0.167,
-      "non_bday_hr_avg": 0.162,
+      "non_bday_hr_avg": 0.107,
       "diff": -0.171,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-09-08",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-08",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "xavier edwards",
       "bday": "1999-08-09",
       "bday_games": 3,
       "bday_slg": 0.231,
-      "non_bday_slg": 0.401,
+      "non_bday_slg": 0.402,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.032,
+      "non_bday_hr_avg": 0.031,
+      "diff": -0.171,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-09",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-09",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-09",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "ian happ",
+      "bday": "1994-08-12",
+      "bday_games": 6,
+      "bday_slg": 0.278,
+      "non_bday_slg": 0.448,
+      "bday_hr_avg": 0.167,
+      "non_bday_hr_avg": 0.161,
       "diff": -0.17,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2017-08-12",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2020-08-12",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-08-12",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-12",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-12",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 1
+        },
+        {
+          "dt": "2025-08-12",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "yoan moncada",
@@ -1070,7 +2506,91 @@
       "bday_hr_avg": 0.2,
       "non_bday_hr_avg": 0.125,
       "diff": -0.169,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-05-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-05-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-05-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-05-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
+    },
+    {
+      "player": "james wood",
+      "bday": "2002-09-17",
+      "bday_games": 2,
+      "bday_slg": 0.333,
+      "non_bday_slg": 0.5,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.213,
+      "diff": -0.166,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-17",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "luis campusano",
+      "bday": "1998-09-29",
+      "bday_games": 1,
+      "bday_slg": 0.25,
+      "non_bday_slg": 0.412,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.111,
+      "diff": -0.162,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-09-29",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "cedric mullins",
@@ -1081,84 +2601,200 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.131,
       "diff": -0.162,
-      "worse": true
-    },
-    {
-      "player": "jung hoo lee",
-      "bday": "1998-08-20",
-      "bday_games": 1,
-      "bday_slg": 0.25,
-      "non_bday_slg": 0.411,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.056,
-      "diff": -0.161,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-10-01",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-10-01",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ryan jeffers",
       "bday": "1997-06-03",
       "bday_games": 4,
       "bday_slg": 0.267,
-      "non_bday_slg": 0.426,
+      "non_bday_slg": 0.427,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.142,
       "diff": -0.16,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-06-03",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-06-03",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-03",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-03",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "ivan herrera",
-      "bday": "2000-06-01",
-      "bday_games": 3,
-      "bday_slg": 0.273,
-      "non_bday_slg": 0.433,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.124,
-      "diff": -0.16,
-      "worse": true
-    },
-    {
-      "player": "james wood",
-      "bday": "2002-09-17",
-      "bday_games": 2,
-      "bday_slg": 0.333,
-      "non_bday_slg": 0.493,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.207,
-      "diff": -0.159,
-      "worse": true
-    },
-    {
-      "player": "austin riley",
-      "bday": "1997-04-02",
-      "bday_games": 5,
-      "bday_slg": 0.316,
-      "non_bday_slg": 0.473,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.193,
-      "diff": -0.158,
-      "worse": true
-    },
-    {
-      "player": "luis campusano",
-      "bday": "1998-09-29",
+      "player": "jung hoo lee",
+      "bday": "1998-08-20",
       "bday_games": 1,
       "bday_slg": 0.25,
-      "non_bday_slg": 0.406,
+      "non_bday_slg": 0.409,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.108,
-      "diff": -0.156,
-      "worse": true
+      "non_bday_hr_avg": 0.055,
+      "diff": -0.159,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-08-20",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jose caballero",
       "bday": "1996-08-30",
       "bday_games": 1,
       "bday_slg": 0.2,
-      "non_bday_slg": 0.354,
+      "non_bday_slg": 0.358,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.065,
-      "diff": -0.154,
-      "worse": true
+      "non_bday_hr_avg": 0.069,
+      "diff": -0.158,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-30",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "ivan herrera",
+      "bday": "2000-06-01",
+      "bday_games": 3,
+      "bday_slg": 0.273,
+      "non_bday_slg": 0.431,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.125,
+      "diff": -0.158,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-01",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-01",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-01",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "austin riley",
+      "bday": "1997-04-02",
+      "bday_games": 5,
+      "bday_slg": 0.316,
+      "non_bday_slg": 0.472,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.192,
+      "diff": -0.156,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-02",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-02",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-02",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-02",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-02",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jake fraley",
@@ -1169,7 +2805,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.102,
       "diff": -0.152,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-25",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-05-25",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "chase meidroth",
@@ -1178,20 +2830,59 @@
       "bday_slg": 0.2,
       "non_bday_slg": 0.351,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.058,
+      "non_bday_hr_avg": 0.057,
       "diff": -0.151,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2025-07-23",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "alex bregman",
-      "bday": "1994-03-30",
-      "bday_games": 7,
-      "bday_slg": 0.321,
-      "non_bday_slg": 0.47,
-      "bday_hr_avg": 0.143,
-      "non_bday_hr_avg": 0.166,
-      "diff": -0.149,
-      "worse": true
+      "player": "mike yastrzemski",
+      "bday": "1990-08-23",
+      "bday_games": 4,
+      "bday_slg": 0.286,
+      "non_bday_slg": 0.436,
+      "bday_hr_avg": 0.25,
+      "non_bday_hr_avg": 0.138,
+      "diff": -0.151,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2020-08-23",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2022-08-23",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-23",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-23",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "josh bell",
@@ -1202,18 +2893,127 @@
       "bday_hr_avg": 0.125,
       "non_bday_hr_avg": 0.151,
       "diff": -0.149,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-08-14",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2019-08-14",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-08-14",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-08-14",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-08-14",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-14",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2024-08-14",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-14",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "mike yastrzemski",
-      "bday": "1990-08-23",
-      "bday_games": 4,
-      "bday_slg": 0.286,
-      "non_bday_slg": 0.435,
-      "bday_hr_avg": 0.25,
-      "non_bday_hr_avg": 0.137,
-      "diff": -0.149,
-      "worse": true
+      "player": "alex bregman",
+      "bday": "1994-03-30",
+      "bday_games": 7,
+      "bday_slg": 0.321,
+      "non_bday_slg": 0.47,
+      "bday_hr_avg": 0.143,
+      "non_bday_hr_avg": 0.165,
+      "diff": -0.148,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-03-30",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2019-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2023-03-30",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "corey seager",
@@ -1224,29 +3024,119 @@
       "bday_hr_avg": 0.25,
       "non_bday_hr_avg": 0.199,
       "diff": -0.148,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2016-04-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2017-04-27",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2018-04-27",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2019-04-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-04-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2026-04-27",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "richie palacios",
       "bday": "1997-05-16",
       "bday_games": 2,
       "bday_slg": 0.222,
-      "non_bday_slg": 0.357,
+      "non_bday_slg": 0.365,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.057,
-      "diff": -0.135,
-      "worse": true
+      "non_bday_hr_avg": 0.06,
+      "diff": -0.143,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-05-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-16",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "mauricio dubon",
       "bday": "1994-07-19",
       "bday_games": 2,
       "bday_slg": 0.25,
-      "non_bday_slg": 0.385,
+      "non_bday_slg": 0.384,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.07,
-      "diff": -0.135,
-      "worse": true
+      "non_bday_hr_avg": 0.069,
+      "diff": -0.134,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-07-19",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-19",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "james outman",
@@ -1255,20 +3145,66 @@
       "bday_slg": 0.25,
       "non_bday_slg": 0.382,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.135,
+      "non_bday_hr_avg": 0.133,
       "diff": -0.132,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-14",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-05-14",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-14",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jake burger",
       "bday": "1996-04-10",
       "bday_games": 3,
       "bday_slg": 0.333,
-      "non_bday_slg": 0.464,
+      "non_bday_slg": 0.463,
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.194,
       "diff": -0.13,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-04-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2026-04-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "matt chapman",
@@ -1279,18 +3215,92 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.169,
       "diff": -0.119,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-04-28",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2019-04-28",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-04-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-04-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-28",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "seiya suzuki",
       "bday": "1994-08-18",
       "bday_games": 3,
       "bday_slg": 0.364,
-      "non_bday_slg": 0.477,
+      "non_bday_slg": 0.48,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.172,
-      "diff": -0.113,
-      "worse": true
+      "non_bday_hr_avg": 0.174,
+      "diff": -0.116,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-18",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-18",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "eli white",
@@ -1301,7 +3311,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.087,
       "diff": -0.103,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-06-26",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-26",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "scott kingery",
@@ -1312,18 +3338,64 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.093,
       "diff": -0.096,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2018-04-29",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-29",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "kerry carpenter",
       "bday": "1997-09-02",
       "bday_games": 4,
       "bday_slg": 0.417,
-      "non_bday_slg": 0.504,
+      "non_bday_slg": 0.501,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.197,
-      "diff": -0.087,
-      "worse": true
+      "non_bday_hr_avg": 0.196,
+      "diff": -0.084,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-09-02",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-02",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-02",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-02",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "marcus semien",
@@ -1334,7 +3406,79 @@
       "bday_hr_avg": 0.1,
       "non_bday_hr_avg": 0.152,
       "diff": -0.08,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2013-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2014-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2015-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-09-17",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2017-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-17",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "danny jansen",
@@ -1345,7 +3489,44 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.151,
       "diff": -0.08,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2019-04-15",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-15",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-04-15",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-15",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-15",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "weston wilson",
@@ -1356,7 +3537,113 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.089,
       "diff": -0.073,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-11",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-11",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "manny machado",
+      "bday": "1992-07-06",
+      "bday_games": 11,
+      "bday_slg": 0.408,
+      "non_bday_slg": 0.481,
+      "bday_hr_avg": 0.091,
+      "non_bday_hr_avg": 0.196,
+      "diff": -0.073,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2013-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2014-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 6,
+          "hr": 0
+        },
+        {
+          "dt": "2015-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2016-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 6,
+          "hr": 0
+        },
+        {
+          "dt": "2017-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2018-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-07-06",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "salvador perez",
@@ -1367,29 +3654,217 @@
       "bday_hr_avg": 0.1,
       "non_bday_hr_avg": 0.175,
       "diff": -0.073,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2013-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2014-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2015-05-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2017-05-10",
+          "hit": true,
+          "h": 2,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2018-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2022-05-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-05-10",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-05-10",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "taylor walls",
+      "bday": "1996-07-10",
+      "bday_games": 5,
+      "bday_slg": 0.235,
+      "non_bday_slg": 0.296,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.043,
+      "diff": -0.061,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-07-10",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2022-07-10",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-10",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-10",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "paul goldschmidt",
       "bday": "1987-09-10",
       "bday_games": 11,
       "bday_slg": 0.444,
-      "non_bday_slg": 0.505,
+      "non_bday_slg": 0.504,
       "bday_hr_avg": 0.182,
       "non_bday_hr_avg": 0.183,
-      "diff": -0.06,
-      "worse": true
-    },
-    {
-      "player": "manny machado",
-      "bday": "1992-07-06",
-      "bday_games": 10,
-      "bday_slg": 0.422,
-      "non_bday_slg": 0.481,
-      "bday_hr_avg": 0.1,
-      "non_bday_hr_avg": 0.195,
       "diff": -0.059,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2011-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2013-09-10",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2016-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2017-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2018-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2019-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 1
+        },
+        {
+          "dt": "2020-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-10",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "carson kelly",
@@ -1400,18 +3875,50 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.113,
       "diff": -0.052,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-14",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "steven kwan",
       "bday": "1997-09-05",
       "bday_games": 3,
       "bday_slg": 0.333,
-      "non_bday_slg": 0.379,
+      "non_bday_slg": 0.378,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.055,
       "diff": -0.045,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-09-05",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-05",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-05",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "luis arraez",
@@ -1422,7 +3929,37 @@
       "bday_hr_avg": 0.25,
       "non_bday_hr_avg": 0.041,
       "diff": -0.042,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2022-04-09",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2023-04-09",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-09",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-09",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jose altuve",
@@ -1431,42 +3968,191 @@
       "bday_slg": 0.424,
       "non_bday_slg": 0.466,
       "bday_hr_avg": 0.111,
-      "non_bday_hr_avg": 0.135,
+      "non_bday_hr_avg": 0.136,
       "diff": -0.042,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2012-05-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2014-05-06",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2015-05-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2016-05-06",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2018-05-06",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-05-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-05-06",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2022-05-06",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nolan arenado",
       "bday": "1991-04-16",
       "bday_games": 9,
       "bday_slg": 0.459,
-      "non_bday_slg": 0.501,
+      "non_bday_slg": 0.502,
       "bday_hr_avg": 0.111,
       "non_bday_hr_avg": 0.194,
       "diff": -0.042,
-      "worse": true
-    },
-    {
-      "player": "taylor walls",
-      "bday": "1996-07-10",
-      "bday_games": 4,
-      "bday_slg": 0.286,
-      "non_bday_slg": 0.298,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.043,
-      "diff": -0.012,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2014-04-16",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-04-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2017-04-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-04-16",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2021-04-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2022-04-16",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-04-16",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "matt vierling",
       "bday": "1996-09-16",
       "bday_games": 4,
       "bday_slg": 0.375,
-      "non_bday_slg": 0.383,
+      "non_bday_slg": 0.382,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.077,
-      "diff": -0.008,
-      "worse": true
+      "non_bday_hr_avg": 0.076,
+      "diff": -0.007,
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-09-16",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-16",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-16",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jonah heim",
@@ -1477,73 +4163,246 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.115,
       "diff": -0.002,
-      "worse": true
+      "worse": true,
+      "bday_game_log": [
+        {
+          "dt": "2021-06-27",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2022-06-27",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-27",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-27",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "preston tucker",
-      "bday": "1990-07-06",
+      "player": "shun yamaguchi",
+      "bday": "1987-07-11",
       "bday_games": 0,
       "bday_slg": 0,
       "non_bday_slg": 0,
       "bday_hr_avg": 0,
       "non_bday_hr_avg": 0,
       "diff": 0,
-      "worse": false
+      "worse": false,
+      "bday_game_log": []
     },
     {
-      "player": "nick goody",
-      "bday": "1991-07-06",
+      "player": "johnny barbato",
+      "bday": "1992-07-11",
       "bday_games": 0,
       "bday_slg": 0,
       "non_bday_slg": 0,
       "bday_hr_avg": 0,
       "non_bday_hr_avg": 0,
       "diff": 0,
-      "worse": false
+      "worse": false,
+      "bday_game_log": []
     },
     {
-      "player": "jonathan hernandez",
-      "bday": "1996-07-06",
+      "player": "jon duplantier",
+      "bday": "1994-07-11",
       "bday_games": 0,
       "bday_slg": 0,
       "non_bday_slg": 0,
       "bday_hr_avg": 0,
       "non_bday_hr_avg": 0,
       "diff": 0,
-      "worse": false
+      "worse": false,
+      "bday_game_log": []
     },
     {
-      "player": "keider montero",
-      "bday": "2000-07-06",
+      "player": "daniel johnson",
+      "bday": "1995-07-11",
       "bday_games": 0,
       "bday_slg": 0,
       "non_bday_slg": 0,
       "bday_hr_avg": 0,
       "non_bday_hr_avg": 0,
       "diff": 0,
-      "worse": false
+      "worse": false,
+      "bday_game_log": []
     },
     {
-      "player": "willy adames",
-      "bday": "1995-09-02",
-      "bday_games": 7,
-      "bday_slg": 0.44,
-      "non_bday_slg": 0.437,
-      "bday_hr_avg": 0.143,
-      "non_bday_hr_avg": 0.17,
-      "diff": 0.003,
-      "worse": false
+      "player": "justin steele",
+      "bday": "1995-07-11",
+      "bday_games": 0,
+      "bday_slg": 0,
+      "non_bday_slg": 0,
+      "bday_hr_avg": 0,
+      "non_bday_hr_avg": 0,
+      "diff": 0,
+      "worse": false,
+      "bday_game_log": []
+    },
+    {
+      "player": "samad taylor",
+      "bday": "1998-07-11",
+      "bday_games": 0,
+      "bday_slg": 0,
+      "non_bday_slg": 0,
+      "bday_hr_avg": 0,
+      "non_bday_hr_avg": 0,
+      "diff": 0,
+      "worse": false,
+      "bday_game_log": []
     },
     {
       "player": "yainer diaz",
       "bday": "1998-09-21",
       "bday_games": 2,
       "bday_slg": 0.444,
-      "non_bday_slg": 0.439,
+      "non_bday_slg": 0.443,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.139,
-      "diff": 0.005,
-      "worse": false
+      "non_bday_hr_avg": 0.142,
+      "diff": 0.002,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-21",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-21",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "willy adames",
+      "bday": "1995-09-02",
+      "bday_games": 7,
+      "bday_slg": 0.44,
+      "non_bday_slg": 0.436,
+      "bday_hr_avg": 0.143,
+      "non_bday_hr_avg": 0.17,
+      "diff": 0.004,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-09-02",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-09-02",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-09-02",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-02",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-02",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-02",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-02",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
+    },
+    {
+      "player": "jo adell",
+      "bday": "1999-04-08",
+      "bday_games": 4,
+      "bday_slg": 0.429,
+      "non_bday_slg": 0.419,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.161,
+      "diff": 0.01,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-08",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-08",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "christopher morel",
@@ -1554,18 +4413,64 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.154,
       "diff": 0.01,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-06-24",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-24",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-24",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
-      "player": "jo adell",
-      "bday": "1999-04-08",
-      "bday_games": 4,
-      "bday_slg": 0.429,
-      "non_bday_slg": 0.415,
+      "player": "lawrence butler",
+      "bday": "2000-07-10",
+      "bday_games": 3,
+      "bday_slg": 0.417,
+      "non_bday_slg": 0.404,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.159,
-      "diff": 0.013,
-      "worse": false
+      "non_bday_hr_avg": 0.132,
+      "diff": 0.012,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-10",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-10",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "christian vazquez",
@@ -1576,7 +4481,51 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.076,
       "diff": 0.013,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2014-08-21",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2017-08-21",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-08-21",
+          "hit": true,
+          "h": 2,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2020-08-21",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-08-21",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-21",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "korey lee",
@@ -1587,7 +4536,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.085,
       "diff": 0.013,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-07-25",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-25",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "brenton doyle",
@@ -1598,18 +4563,85 @@
       "bday_hr_avg": 0.25,
       "non_bday_hr_avg": 0.106,
       "diff": 0.02,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-14",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2024-05-14",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-14",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-14",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "matt olson",
       "bday": "1994-03-29",
       "bday_games": 5,
       "bday_slg": 0.545,
-      "non_bday_slg": 0.509,
+      "non_bday_slg": 0.51,
       "bday_hr_avg": 0.2,
-      "non_bday_hr_avg": 0.237,
-      "diff": 0.037,
-      "worse": false
+      "non_bday_hr_avg": 0.239,
+      "diff": 0.036,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-03-29",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2024-03-29",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-03-29",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-29",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-29",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "nolan gorman",
@@ -1620,18 +4652,64 @@
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.166,
       "diff": 0.04,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-05-10",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 1
+        },
+        {
+          "dt": "2025-05-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-10",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "yandy diaz",
       "bday": "1991-08-08",
       "bday_games": 3,
       "bday_slg": 0.5,
-      "non_bday_slg": 0.446,
+      "non_bday_slg": 0.447,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.116,
-      "diff": 0.054,
-      "worse": false
+      "diff": 0.053,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2020-08-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-08",
+          "hit": true,
+          "h": 4,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "oneil cruz",
@@ -1642,18 +4720,160 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.177,
       "diff": 0.057,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-10-04",
+          "hit": true,
+          "h": 3,
+          "ab": 6,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "randal grichuk",
       "bday": "1991-08-13",
       "bday_games": 10,
       "bday_slg": 0.528,
-      "non_bday_slg": 0.465,
+      "non_bday_slg": 0.464,
       "bday_hr_avg": 0.2,
       "non_bday_hr_avg": 0.162,
-      "diff": 0.062,
-      "worse": false
+      "diff": 0.063,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2015-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2017-08-13",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2018-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-08-13",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2021-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-13",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-13",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "ryan ohearn",
+      "bday": "1993-07-26",
+      "bday_games": 3,
+      "bday_slg": 0.5,
+      "non_bday_slg": 0.435,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.126,
+      "diff": 0.065,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-07-26",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-26",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-26",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "tyler oneill",
+      "bday": "1995-06-22",
+      "bday_games": 2,
+      "bday_slg": 0.5,
+      "non_bday_slg": 0.433,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.171,
+      "diff": 0.067,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-22",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-22",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "vinnie pasquantino",
@@ -1664,40 +4884,36 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.152,
       "diff": 0.067,
-      "worse": false
-    },
-    {
-      "player": "ryan ohearn",
-      "bday": "1993-07-26",
-      "bday_games": 3,
-      "bday_slg": 0.5,
-      "non_bday_slg": 0.431,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.123,
-      "diff": 0.069,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-10-10",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "andrew vaughn",
       "bday": "1998-04-03",
       "bday_games": 1,
       "bday_slg": 0.5,
-      "non_bday_slg": 0.428,
+      "non_bday_slg": 0.427,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.125,
-      "diff": 0.072,
-      "worse": false
-    },
-    {
-      "player": "tyler oneill",
-      "bday": "1995-06-22",
-      "bday_games": 2,
-      "bday_slg": 0.5,
-      "non_bday_slg": 0.428,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.166,
-      "diff": 0.072,
-      "worse": false
+      "non_bday_hr_avg": 0.124,
+      "diff": 0.073,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-03",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "max muncy",
@@ -1706,31 +4922,87 @@
       "bday_slg": 0.56,
       "non_bday_slg": 0.475,
       "bday_hr_avg": 0.333,
-      "non_bday_hr_avg": 0.215,
+      "non_bday_hr_avg": 0.214,
       "diff": 0.085,
-      "worse": false
-    },
-    {
-      "player": "lawrence butler",
-      "bday": "2000-07-10",
-      "bday_games": 2,
-      "bday_slg": 0.5,
-      "non_bday_slg": 0.405,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.133,
-      "diff": 0.095,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-08-25",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2019-08-25",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2020-08-25",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2021-08-25",
+          "hit": false,
+          "h": 0,
+          "ab": 7,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-25",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-25",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "gunnar henderson",
       "bday": "2001-06-29",
       "bday_games": 3,
       "bday_slg": 0.583,
-      "non_bday_slg": 0.47,
+      "non_bday_slg": 0.469,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.179,
-      "diff": 0.113,
-      "worse": false
+      "non_bday_hr_avg": 0.178,
+      "diff": 0.114,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-29",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-29",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-29",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jake rogers",
@@ -1741,7 +5013,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.134,
       "diff": 0.119,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-18",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "connor wong",
@@ -1752,7 +5040,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.066,
       "diff": 0.12,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-19",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-05-19",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "carlos santana",
@@ -1763,51 +5067,201 @@
       "bday_hr_avg": 0.375,
       "non_bday_hr_avg": 0.147,
       "diff": 0.12,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2011-04-08",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2012-04-08",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 2
+        },
+        {
+          "dt": "2014-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2015-04-08",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2018-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-08",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-08",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "andres gimenez",
       "bday": "1998-09-04",
       "bday_games": 5,
       "bday_slg": 0.5,
-      "non_bday_slg": 0.38,
+      "non_bday_slg": 0.379,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.087,
-      "diff": 0.12,
-      "worse": false
+      "non_bday_hr_avg": 0.086,
+      "diff": 0.121,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2020-09-04",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-04",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-04",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-04",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-09-04",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jorge polanco",
       "bday": "1993-07-05",
       "bday_games": 3,
       "bday_slg": 0.545,
-      "non_bday_slg": 0.424,
+      "non_bday_slg": 0.423,
       "bday_hr_avg": 0.333,
-      "non_bday_hr_avg": 0.143,
-      "diff": 0.121,
-      "worse": false
+      "non_bday_hr_avg": 0.142,
+      "diff": 0.122,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-07-05",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2021-07-05",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2022-07-05",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "luke keaschall",
       "bday": "2002-08-15",
       "bday_games": 1,
       "bday_slg": 0.5,
-      "non_bday_slg": 0.373,
+      "non_bday_slg": 0.372,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.058,
-      "diff": 0.127,
-      "worse": false
+      "non_bday_hr_avg": 0.056,
+      "diff": 0.128,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2025-08-15",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "spencer torkelson",
       "bday": "1999-08-26",
       "bday_games": 3,
       "bday_slg": 0.538,
-      "non_bday_slg": 0.408,
+      "non_bday_slg": 0.409,
       "bday_hr_avg": 0.333,
-      "non_bday_hr_avg": 0.148,
-      "diff": 0.131,
-      "worse": false
+      "non_bday_hr_avg": 0.15,
+      "diff": 0.13,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-26",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-26",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2025-08-26",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "akil baddoo",
@@ -1818,18 +5272,64 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.088,
       "diff": 0.132,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-08-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-16",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "sal frelick",
       "bday": "2000-04-19",
       "bday_games": 4,
       "bday_slg": 0.5,
-      "non_bday_slg": 0.359,
+      "non_bday_slg": 0.358,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.049,
-      "diff": 0.141,
-      "worse": false
+      "non_bday_hr_avg": 0.048,
+      "diff": 0.142,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-04-19",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-19",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-19",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-19",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "freddie freeman",
@@ -1840,7 +5340,114 @@
       "bday_hr_avg": 0.267,
       "non_bday_hr_avg": 0.169,
       "diff": 0.145,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2010-09-12",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2011-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2012-09-12",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2013-09-12",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2014-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2015-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-09-12",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2017-09-12",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2018-09-12",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-09-12",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2022-09-12",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-12",
+          "hit": true,
+          "h": 4,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2025-09-12",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "tyler freeman",
@@ -1849,9 +5456,39 @@
       "bday_slg": 0.5,
       "non_bday_slg": 0.353,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.045,
+      "non_bday_hr_avg": 0.044,
       "diff": 0.147,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-21",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-05-21",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-05-21",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-21",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "luis torrens",
@@ -1862,7 +5499,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.069,
       "diff": 0.148,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-05-02",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-05-02",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "eugenio suarez",
@@ -1871,20 +5524,128 @@
       "bday_slg": 0.607,
       "non_bday_slg": 0.458,
       "bday_hr_avg": 0.375,
-      "non_bday_hr_avg": 0.196,
+      "non_bday_hr_avg": 0.197,
       "diff": 0.149,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2014-07-18",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2015-07-18",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-07-18",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2017-07-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2019-07-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2021-07-18",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-07-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2025-07-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "leo jimenez",
+      "bday": "2001-05-17",
+      "bday_games": 1,
+      "bday_slg": 0.5,
+      "non_bday_slg": 0.335,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.064,
+      "diff": 0.165,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2026-05-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "cody bellinger",
       "bday": "1995-07-13",
       "bday_games": 4,
       "bday_slg": 0.643,
-      "non_bday_slg": 0.473,
+      "non_bday_slg": 0.472,
       "bday_hr_avg": 0.25,
-      "non_bday_hr_avg": 0.187,
-      "diff": 0.17,
-      "worse": false
+      "non_bday_hr_avg": 0.186,
+      "diff": 0.171,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-07-13",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2019-07-13",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2022-07-13",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-13",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jose ramirez",
@@ -1895,40 +5656,160 @@
       "bday_hr_avg": 0.4,
       "non_bday_hr_avg": 0.175,
       "diff": 0.171,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2014-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2015-09-17",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2016-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2020-09-17",
+          "hit": true,
+          "h": 4,
+          "ab": 5,
+          "hr": 2
+        },
+        {
+          "dt": "2021-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2022-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2024-09-17",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-09-17",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "leody taveras",
       "bday": "1998-09-08",
       "bday_games": 3,
       "bday_slg": 0.538,
-      "non_bday_slg": 0.367,
+      "non_bday_slg": 0.366,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.076,
-      "diff": 0.172,
-      "worse": false
+      "non_bday_hr_avg": 0.075,
+      "diff": 0.173,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2020-09-08",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2021-09-08",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-09-08",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "jared young",
+      "bday": "1995-07-09",
+      "bday_games": 2,
+      "bday_slg": 0.625,
+      "non_bday_slg": 0.447,
+      "bday_hr_avg": 0.0,
+      "non_bday_hr_avg": 0.141,
+      "diff": 0.178,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-07-09",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-07-09",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "tj rumfield",
       "bday": "2000-05-17",
       "bday_games": 1,
       "bday_slg": 0.667,
-      "non_bday_slg": 0.495,
+      "non_bday_slg": 0.487,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.144,
-      "diff": 0.172,
-      "worse": false
-    },
-    {
-      "player": "leo jimenez",
-      "bday": "2001-05-17",
-      "bday_games": 1,
-      "bday_slg": 0.5,
-      "non_bday_slg": 0.323,
-      "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.056,
-      "diff": 0.177,
-      "worse": false
+      "non_bday_hr_avg": 0.138,
+      "diff": 0.18,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2026-05-17",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "thomas saggese",
@@ -1939,7 +5820,23 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.03,
       "diff": 0.184,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2026-04-10",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-10",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "anthony rendon",
@@ -1950,7 +5847,37 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.106,
       "diff": 0.184,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2015-06-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2018-06-06",
+          "hit": true,
+          "h": 4,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-06",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-06",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "sean murphy",
@@ -1961,7 +5888,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.144,
       "diff": 0.189,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-10-04",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "aaron judge",
@@ -1972,18 +5908,127 @@
       "bday_hr_avg": 0.429,
       "non_bday_hr_avg": 0.318,
       "diff": 0.196,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2017-04-26",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2018-04-26",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2021-04-26",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2022-04-26",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2023-04-26",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-26",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-26",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "trea turner",
       "bday": "1993-06-30",
       "bday_games": 8,
       "bday_slg": 0.676,
-      "non_bday_slg": 0.464,
+      "non_bday_slg": 0.463,
       "bday_hr_avg": 0.25,
       "non_bday_hr_avg": 0.142,
       "diff": 0.213,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-06-30",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2019-06-30",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-30",
+          "hit": true,
+          "h": 4,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2022-06-30",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-30",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-30",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-06-30",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "luke raley",
@@ -1992,9 +6037,18 @@
       "bday_slg": 0.667,
       "non_bday_slg": 0.437,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.145,
+      "non_bday_hr_avg": 0.144,
       "diff": 0.23,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-19",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "andrew benintendi",
@@ -2005,7 +6059,72 @@
       "bday_hr_avg": 0.111,
       "non_bday_hr_avg": 0.105,
       "diff": 0.231,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2017-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2018-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-07-06",
+          "hit": true,
+          "h": 4,
+          "ab": 6,
+          "hr": 0
+        },
+        {
+          "dt": "2021-07-06",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2022-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-06",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2025-07-06",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ezequiel tovar",
@@ -2014,9 +6133,32 @@
       "bday_slg": 0.643,
       "non_bday_slg": 0.411,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.114,
+      "non_bday_hr_avg": 0.115,
       "diff": 0.232,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-08-01",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-08-01",
+          "hit": false,
+          "h": 0,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-08-01",
+          "hit": true,
+          "h": 4,
+          "ab": 6,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ildemaro vargas",
@@ -2027,18 +6169,71 @@
       "bday_hr_avg": 0.5,
       "non_bday_hr_avg": 0.055,
       "diff": 0.253,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2019-07-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2023-07-16",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "dominic smith",
       "bday": "1995-06-15",
       "bday_games": 5,
       "bday_slg": 0.667,
-      "non_bday_slg": 0.41,
+      "non_bday_slg": 0.409,
       "bday_hr_avg": 0.2,
-      "non_bday_hr_avg": 0.099,
-      "diff": 0.256,
-      "worse": false
+      "non_bday_hr_avg": 0.098,
+      "diff": 0.258,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2018-06-15",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2019-06-15",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2021-06-15",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-06-15",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2025-06-15",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ramon urias",
@@ -2049,29 +6244,98 @@
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.096,
       "diff": 0.267,
-      "worse": false
-    },
-    {
-      "player": "daulton varsho",
-      "bday": "1996-07-02",
-      "bday_games": 4,
-      "bday_slg": 0.714,
-      "non_bday_slg": 0.427,
-      "bday_hr_avg": 0.25,
-      "non_bday_hr_avg": 0.153,
-      "diff": 0.287,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-06-03",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-06-03",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 1
+        },
+        {
+          "dt": "2025-06-03",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "bryson stott",
       "bday": "1997-10-06",
       "bday_games": 2,
       "bday_slg": 0.667,
-      "non_bday_slg": 0.378,
+      "non_bday_slg": 0.377,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.081,
-      "diff": 0.288,
-      "worse": false
+      "non_bday_hr_avg": 0.08,
+      "diff": 0.289,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-10-06",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-10-06",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
+    },
+    {
+      "player": "daulton varsho",
+      "bday": "1996-07-02",
+      "bday_games": 4,
+      "bday_slg": 0.714,
+      "non_bday_slg": 0.425,
+      "bday_hr_avg": 0.25,
+      "non_bday_hr_avg": 0.152,
+      "diff": 0.289,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-07-02",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2022-07-02",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 1
+        },
+        {
+          "dt": "2023-07-02",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-02",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "austin hedges",
@@ -2082,29 +6346,112 @@
       "bday_hr_avg": 0.2,
       "non_bday_hr_avg": 0.092,
       "diff": 0.291,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2017-08-18",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2018-08-18",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2019-08-18",
+          "hit": true,
+          "h": 4,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2020-08-18",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2021-08-18",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "christian walker",
       "bday": "1991-03-28",
       "bday_games": 5,
       "bday_slg": 0.75,
-      "non_bday_slg": 0.457,
+      "non_bday_slg": 0.458,
       "bday_hr_avg": 0.2,
       "non_bday_hr_avg": 0.18,
-      "diff": 0.293,
-      "worse": false
+      "diff": 0.292,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2019-03-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2024-03-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-03-28",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "garrett mitchell",
       "bday": "1998-09-04",
       "bday_games": 1,
       "bday_slg": 0.75,
-      "non_bday_slg": 0.443,
+      "non_bday_slg": 0.444,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.102,
-      "diff": 0.307,
-      "worse": false
+      "non_bday_hr_avg": 0.1,
+      "diff": 0.306,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-04",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "will smith",
@@ -2115,18 +6462,64 @@
       "bday_hr_avg": 0.5,
       "non_bday_hr_avg": 0.169,
       "diff": 0.31,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-03-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2025-03-28",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2026-03-28",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "andruw monasterio",
       "bday": "1997-05-30",
       "bday_games": 2,
       "bday_slg": 0.667,
-      "non_bday_slg": 0.349,
+      "non_bday_slg": 0.35,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.045,
-      "diff": 0.318,
-      "worse": false
+      "non_bday_hr_avg": 0.048,
+      "diff": 0.316,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-30",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-30",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "connor joe",
@@ -2137,7 +6530,30 @@
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.074,
       "diff": 0.321,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-08-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2022-08-16",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-08-16",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "joc pederson",
@@ -2146,20 +6562,129 @@
       "bday_slg": 0.781,
       "non_bday_slg": 0.458,
       "bday_hr_avg": 0.333,
-      "non_bday_hr_avg": 0.163,
+      "non_bday_hr_avg": 0.164,
       "diff": 0.324,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2015-04-21",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2016-04-21",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 0
+        },
+        {
+          "dt": "2017-04-21",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2018-04-21",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2019-04-21",
+          "hit": true,
+          "h": 4,
+          "ab": 5,
+          "hr": 2
+        },
+        {
+          "dt": "2022-04-21",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-21",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-21",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-21",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "gavin sheets",
       "bday": "1996-04-23",
       "bday_games": 6,
       "bday_slg": 0.733,
-      "non_bday_slg": 0.409,
+      "non_bday_slg": 0.407,
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.119,
-      "diff": 0.325,
-      "worse": false
+      "diff": 0.326,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-04-23",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-04-23",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-23",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2025-04-23",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-23",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 1
+        },
+        {
+          "dt": "2026-04-23",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "mike trout",
@@ -2170,18 +6695,78 @@
       "bday_hr_avg": 0.714,
       "non_bday_hr_avg": 0.245,
       "diff": 0.328,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2012-08-07",
+          "hit": true,
+          "h": 1,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2013-08-07",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2014-08-07",
+          "hit": false,
+          "h": 0,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2015-08-07",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2016-08-07",
+          "hit": false,
+          "h": 0,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2017-08-07",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2020-08-07",
+          "hit": true,
+          "h": 2,
+          "ab": 5,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "joey ortiz",
       "bday": "1998-07-14",
       "bday_games": 1,
       "bday_slg": 0.667,
-      "non_bday_slg": 0.328,
+      "non_bday_slg": 0.334,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.052,
-      "diff": 0.339,
-      "worse": false
+      "non_bday_hr_avg": 0.054,
+      "diff": 0.333,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-07-14",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "royce lewis",
@@ -2190,20 +6775,52 @@
       "bday_slg": 0.8,
       "non_bday_slg": 0.444,
       "bday_hr_avg": 0.5,
-      "non_bday_hr_avg": 0.178,
+      "non_bday_hr_avg": 0.179,
       "diff": 0.356,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-06-05",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2025-06-05",
+          "hit": false,
+          "h": 0,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jake mccarthy",
       "bday": "1997-07-30",
       "bday_games": 2,
       "bday_slg": 0.778,
-      "non_bday_slg": 0.403,
+      "non_bday_slg": 0.402,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.069,
-      "diff": 0.375,
-      "worse": false
+      "diff": 0.376,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-07-30",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2024-07-30",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jordan beck",
@@ -2214,7 +6831,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.086,
       "diff": 0.38,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2025-04-19",
+          "hit": true,
+          "h": 1,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jake meyers",
@@ -2225,7 +6851,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.065,
       "diff": 0.428,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2025-06-18",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "jeff mcneil",
@@ -2236,18 +6871,71 @@
       "bday_hr_avg": 0.333,
       "non_bday_hr_avg": 0.081,
       "diff": 0.534,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-04-08",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2022-04-08",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2023-04-08",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2024-04-08",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-08",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        },
+        {
+          "dt": "2026-04-08",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "lourdes gurriel",
       "bday": "1993-10-19",
       "bday_games": 1,
       "bday_slg": 1.0,
-      "non_bday_slg": 0.446,
+      "non_bday_slg": 0.445,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.144,
-      "diff": 0.554,
-      "worse": false
+      "non_bday_hr_avg": 0.143,
+      "diff": 0.555,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-10-19",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "otto lopez",
@@ -2256,20 +6944,38 @@
       "bday_slg": 1.0,
       "non_bday_slg": 0.425,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.089,
+      "non_bday_hr_avg": 0.088,
       "diff": 0.575,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2022-10-01",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "tyler stephenson",
       "bday": "1996-08-16",
       "bday_games": 1,
       "bday_slg": 1.0,
-      "non_bday_slg": 0.417,
+      "non_bday_slg": 0.416,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.114,
-      "diff": 0.583,
-      "worse": false
+      "non_bday_hr_avg": 0.113,
+      "diff": 0.584,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-16",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "agustin ramirez",
@@ -2280,29 +6986,63 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.132,
       "diff": 0.597,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2025-09-10",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "zach mckinstry",
       "bday": "1995-04-29",
       "bday_games": 2,
       "bday_slg": 1.0,
-      "non_bday_slg": 0.351,
+      "non_bday_slg": 0.353,
       "bday_hr_avg": 0.0,
-      "non_bday_hr_avg": 0.077,
-      "diff": 0.649,
-      "worse": false
+      "non_bday_hr_avg": 0.079,
+      "diff": 0.647,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-04-29",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        },
+        {
+          "dt": "2023-04-29",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "victor robles",
       "bday": "1997-05-19",
       "bday_games": 1,
       "bday_slg": 1.0,
-      "non_bday_slg": 0.341,
+      "non_bday_slg": 0.338,
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.042,
-      "diff": 0.659,
-      "worse": false
+      "diff": 0.662,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-05-19",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "brett wisely",
@@ -2313,7 +7053,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.048,
       "diff": 0.686,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-08",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "ben rortvedt",
@@ -2324,7 +7073,16 @@
       "bday_hr_avg": 0.0,
       "non_bday_hr_avg": 0.049,
       "diff": 0.711,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-09-25",
+          "hit": true,
+          "h": 1,
+          "ab": 1,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "tyler austin",
@@ -2335,40 +7093,111 @@
       "bday_hr_avg": 0.5,
       "non_bday_hr_avg": 0.166,
       "diff": 0.805,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2016-09-06",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 1
+        },
+        {
+          "dt": "2019-09-06",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "mickey moniak",
       "bday": "1998-05-13",
       "bday_games": 3,
       "bday_slg": 1.364,
-      "non_bday_slg": 0.47,
+      "non_bday_slg": 0.469,
       "bday_hr_avg": 0.667,
-      "non_bday_hr_avg": 0.167,
-      "diff": 0.894,
-      "worse": false
+      "non_bday_hr_avg": 0.166,
+      "diff": 0.895,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-13",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 1
+        },
+        {
+          "dt": "2025-05-13",
+          "hit": false,
+          "h": 0,
+          "ab": 2,
+          "hr": 0
+        },
+        {
+          "dt": "2026-05-13",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "patrick bailey",
       "bday": "1999-05-29",
       "bday_games": 2,
       "bday_slg": 1.286,
-      "non_bday_slg": 0.328,
+      "non_bday_slg": 0.33,
       "bday_hr_avg": 0.5,
-      "non_bday_hr_avg": 0.057,
-      "diff": 0.957,
-      "worse": false
+      "non_bday_hr_avg": 0.06,
+      "diff": 0.956,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-05-29",
+          "hit": true,
+          "h": 3,
+          "ab": 5,
+          "hr": 1
+        },
+        {
+          "dt": "2026-05-29",
+          "hit": true,
+          "h": 1,
+          "ab": 2,
+          "hr": 0
+        }
+      ]
     },
     {
       "player": "willi castro",
       "bday": "1997-04-24",
       "bday_games": 2,
       "bday_slg": 1.429,
-      "non_bday_slg": 0.381,
+      "non_bday_slg": 0.38,
       "bday_hr_avg": 1.0,
       "non_bday_hr_avg": 0.079,
       "diff": 1.048,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2021-04-24",
+          "hit": true,
+          "h": 1,
+          "ab": 3,
+          "hr": 1
+        },
+        {
+          "dt": "2024-04-24",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "konnor griffin",
@@ -2379,29 +7208,56 @@
       "bday_hr_avg": 1.0,
       "non_bday_hr_avg": 0.053,
       "diff": 1.138,
-      "worse": false
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2026-04-24",
+          "hit": true,
+          "h": 3,
+          "ab": 4,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "bryce harper",
       "bday": "1992-10-16",
       "bday_games": 1,
       "bday_slg": 1.667,
-      "non_bday_slg": 0.52,
+      "non_bday_slg": 0.519,
       "bday_hr_avg": 1.0,
-      "non_bday_hr_avg": 0.207,
-      "diff": 1.146,
-      "worse": false
+      "non_bday_hr_avg": 0.206,
+      "diff": 1.147,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2023-10-16",
+          "hit": true,
+          "h": 2,
+          "ab": 3,
+          "hr": 1
+        }
+      ]
     },
     {
       "player": "tj friedl",
       "bday": "1995-08-14",
       "bday_games": 1,
       "bday_slg": 2.0,
-      "non_bday_slg": 0.388,
+      "non_bday_slg": 0.386,
       "bday_hr_avg": 2.0,
-      "non_bday_hr_avg": 0.104,
-      "diff": 1.612,
-      "worse": false
+      "non_bday_hr_avg": 0.103,
+      "diff": 1.614,
+      "worse": false,
+      "bday_game_log": [
+        {
+          "dt": "2024-08-14",
+          "hit": true,
+          "h": 2,
+          "ab": 4,
+          "hr": 2
+        }
+      ]
     }
   ]
 }

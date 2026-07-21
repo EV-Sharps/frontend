@@ -1001,6 +1001,14 @@ const oppFormatter = function(cell, params, rendered) {
 	`;
 }
 
+const feedPitcherFormatter = function(cell, params, rendered) {
+	const data = cell.getRow().getData();
+	return `<div class="opp-cell">
+			${title(cell.getValue()?.split(" ").at(-1))}
+		<span class="bats">${data.p_throws || ""}</span>
+		</div>`;
+}
+
 const pitcherFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	if (!data.game) {
@@ -2016,17 +2024,110 @@ function movingAverage(arr, windowSize) {
 
 let FEED_DATA = [];
 let FEED_MODE = "all";
+let FEED_HAND = "both";
+let FEED_ARSENAL_FILTER = new Set();
 
 function filterFeedData(data) {
+	let out = data;
 	if (FEED_MODE === "bb") {
-		return data.filter(row => parseFloat(row.evo || "0") > 0);
+		out = out.filter(row => parseFloat(row.evo || "0") > 0);
 	}
-	return data;
+	if (FEED_ARSENAL_FILTER.size > 0) {
+		out = out.filter(row => FEED_ARSENAL_FILTER.has(row.pitch_type));
+	}
+	return out;
+}
+
+function getFeedArsenal(pitcher) {
+	const arsenal = RES?.arsenal?.[pitcher]?.arsenal?.[FEED_HAND] || [];
+	return [...arsenal].sort((a, b) => b.pct - a.pct);
+}
+
+// "any" = no filter, full feed including pitches outside the arsenal.
+// "all" = filter to any pitch in the pitcher's arsenal.
+// "top3" = filter to just the pitcher's 3 most-used pitches.
+function feedArsenalPreset(arsenal) {
+	if (FEED_ARSENAL_FILTER.size === 0) return "any";
+	const setEquals = types => types.length === FEED_ARSENAL_FILTER.size && types.every(t => FEED_ARSENAL_FILTER.has(t));
+	if (setEquals(arsenal.map(p => p.pitch_type))) return "all";
+	if (setEquals(arsenal.slice(0, 3).map(p => p.pitch_type))) return "top3";
+	return "custom";
+}
+
+function renderFeedArsenal(pitcher) {
+	const el = document.getElementById("feed-arsenal");
+	if (!el) return;
+	if (!pitcher || !RES?.arsenal?.[pitcher]) {
+		el.innerHTML = "";
+		return;
+	}
+	const arsenal = getFeedArsenal(pitcher);
+	const preset = feedArsenalPreset(arsenal);
+	const handBtn = (hand, label) => `<button class="ps-btn hand-btn${FEED_HAND === hand ? " is-active" : ""}" data-hand="${hand}">${label}</button>`;
+	const presetBtn = (p, label, tooltip) => `<button class="ps-btn preset-btn${preset === p ? " is-active" : ""}" data-preset="${p}" title="${tooltip}">${label}</button>`;
+	el.innerHTML = `
+		<div class="feed-arsenal-row">
+			<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">${title(pitcher)} Top Pitches</div>
+			<div class="batter-ps-toggle">
+				${handBtn("both", "All")}
+				${handBtn("vs_lhb", "LHB")}
+				${handBtn("vs_rhb", "RHB")}
+			</div>
+		</div>
+		<div class="feed-arsenal-row">
+			<div style="font-size:10px;color:#6b7280;">click a pitch to filter the feed</div>
+			<div class="batter-ps-toggle">
+				${presetBtn("any", "Any", "Show every at-bat, including pitches outside this pitcher's arsenal")}
+				${presetBtn("all", "All", "Only at-bats on a pitch in this pitcher's arsenal")}
+				${presetBtn("top3", "Top 3", "Only at-bats on this pitcher's 3 most-used pitches")}
+			</div>
+		</div>
+		<div class="feed-arsenal-chips">
+			${arsenal.length ? arsenal.map(p => `<button class="ps-btn arsenal-chip${FEED_ARSENAL_FILTER.has(p.pitch_type) ? " is-active" : ""}" data-pitch="${p.pitch_type}">${pitchMap[p.pitch_type] || p.pitch_type} <span style="opacity:.65;">${p.pct.toFixed(1)}%</span></button>`).join("") : `<span style="font-size:11px;color:#6b7280;">No arsenal data.</span>`}
+		</div>
+	`;
+}
+
+function feedSetHand(hand) {
+	FEED_HAND = hand;
+	FEED_ARSENAL_FILTER = new Set();
+	const data = TABLE.getSelectedRows()[0]?.getData();
+	if (data) renderFeedArsenal(data.pitcher);
+	renderFeedTable(filterFeedData(FEED_DATA));
+}
+
+function feedSetArsenalPreset(preset) {
+	const data = TABLE.getSelectedRows()[0]?.getData();
+	if (!data) return;
+	const arsenal = getFeedArsenal(data.pitcher);
+	if (preset === "any") {
+		FEED_ARSENAL_FILTER = new Set();
+	} else if (preset === "all") {
+		FEED_ARSENAL_FILTER = new Set(arsenal.map(p => p.pitch_type));
+	} else if (preset === "top3") {
+		FEED_ARSENAL_FILTER = new Set(arsenal.slice(0, 3).map(p => p.pitch_type));
+	}
+	renderFeedArsenal(data.pitcher);
+	renderFeedTable(filterFeedData(FEED_DATA));
+}
+
+function feedToggleArsenalPitch(pitchType) {
+	if (FEED_ARSENAL_FILTER.has(pitchType)) {
+		FEED_ARSENAL_FILTER.delete(pitchType);
+	} else {
+		FEED_ARSENAL_FILTER.add(pitchType);
+	}
+	const data = TABLE.getSelectedRows()[0]?.getData();
+	if (data) renderFeedArsenal(data.pitcher);
+	renderFeedTable(filterFeedData(FEED_DATA));
 }
 
 function renderFeed() {
 	const data = TABLE.getSelectedRows()[0].getData();
 	let player = data.player;
+	FEED_HAND = data.bats === "L" ? "vs_lhb" : data.bats === "R" ? "vs_rhb" : "both";
+	FEED_ARSENAL_FILTER = new Set();
+	renderFeedArsenal(data.pitcher);
 	fetch(API_BASE+`/api/feed?team=${data.team}`, {
 		headers: {
 			Authorization: `Bearer ${ACCESS_TOKEN}`
@@ -2068,6 +2169,7 @@ function renderFeedTable(data) {
 		groupToggleElement: "header",
 		columns: [
 			{title: "", field: "dt", formatter: dtFormatter, formatterParams: {noYear: true}, hozAlign: "center"},
+			{title: "Pitcher", field: "pitcher", headerFilter: "input", formatter: feedPitcherFormatter},
 			{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
 				headerFilterParams:{
 					values:["All", ...results]
@@ -2079,6 +2181,7 @@ function renderFeedTable(data) {
 					return rowValue === headerValue;
 				}
 			},
+			{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch_type", hozAlign: "center",width: 40},
 			{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
 			{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
 			{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},

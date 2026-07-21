@@ -58,7 +58,18 @@
 		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
 	}
 	.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
-	
+	.feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+	.feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+	@media (max-width: 600px) {
+		.feed-arsenal-chips {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 4px;
+		}
+		.feed-arsenal-chips .ps-btn { flex: 0 0 auto; white-space: nowrap; }
+	}
+
 	#table {
 		width: 100%;
 	}
@@ -834,6 +845,7 @@
 						<button class="ps-btn is-active" data-mode="all">All</button>
 						<button class="ps-btn" data-mode="bb">Batted Balls</button>
 					</div>
+					<div id="feed-arsenal" style="display:none;margin-bottom:6px;"></div>
 										<div id="chart"></div>
 					<div id="mix-panel" style="display:none;"></div>
 				</div>
@@ -867,6 +879,7 @@
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
 			document.getElementById("feed-toggle").style.display = event.target.value == "feed" ? "flex" : "none";
+			document.getElementById("feed-arsenal").style.display = event.target.value == "feed" ? "" : "none";
 			if (event.target.value == "mix") {
 				const d = TABLE.getSelectedData()[0];
 				if (d) fetchAndShowMix(d);
@@ -890,6 +903,15 @@
 			FEED_MODE = btn.dataset.mode;
 			this.querySelectorAll(".ps-btn").forEach(b => b.classList.toggle("is-active", b === btn));
 			renderFeedTable(filterFeedData(FEED_DATA));
+		});
+
+		document.getElementById("feed-arsenal").addEventListener("click", function(event) {
+			const handBtn = event.target.closest(".hand-btn");
+			if (handBtn) { feedSetHand(handBtn.dataset.hand); return; }
+			const presetBtn = event.target.closest(".preset-btn");
+			if (presetBtn) { feedSetArsenalPreset(presetBtn.dataset.preset); return; }
+			const chip = event.target.closest(".arsenal-chip");
+			if (chip) { feedToggleArsenalPitch(chip.dataset.pitch); return; }
 		});
 
 		function plotOddsChart() {
@@ -1566,6 +1588,7 @@
 				} else {
 					document.querySelector("#btwn-select").value = "pa";
 					document.getElementById("feed-toggle").style.display = "none";
+					document.getElementById("feed-arsenal").style.display = "none";
 					setTimeout(() => plotHRGap(), 50);
 				}
 			}

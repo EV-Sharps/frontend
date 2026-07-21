@@ -696,7 +696,7 @@ function updateExistingCard(card, rowData) {
 	const dvpPill = dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>`: "";
-	const stadiumPill = (PAGE === "dingers") ? `<div class="metric-pill">L:${rowData.stadiumRankLeft} R:${rowData.stadiumRankRight} T:${rowData.stadiumRank}<span style="opacity:0.85; font-weight:500;">Stadium</span></div>` : "";
+	const stadiumPill = (PAGE === "dingers") ? `<div class="metric-pill">L:${rowData.stadiumRankLeft} R:${rowData.stadiumRankRight} B:${rowData.stadiumRank}<span style="opacity:0.85; font-weight:500;">Stadium</span></div>` : "";
 	const bppPill = (PAGE === "dingers" && rowData.bpp) ? `<div class="metric-pill" style="color:${getHRFactorColor(parseInt(rowData.bpp))}; font-weight:600; font-size:0.85rem;">
 					${rowData.bpp} <span style="opacity:0.85; font-weight:500;">BPP</span>
 				</div>` : "";

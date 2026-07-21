@@ -21,6 +21,7 @@ function initRecordSummary() {
 						<button data-method="probit" onclick="_summaryMethod='probit';_renderSummaryTable()" style="${btnStyle}">Probit</button>
 						<button data-method="worst" onclick="_summaryMethod='worst';_renderSummaryTable()" style="${btnStyle}">Worst</button>
 					</span>
+					<button id="record-summary-export-btn" onclick="exportSummaryImage()" style="${btnStyle}">Copy Image</button>
 					<button onclick="document.getElementById('record-summary-modal').classList.remove('open')" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
 				</span>
 			</h3>
@@ -75,15 +76,6 @@ function _renderSummaryTable() {
 	if (sportToggle) sportToggle.querySelectorAll('button').forEach(b => {
 		b.style.opacity = b.dataset.sport === _summarySport ? '1' : '0.4';
 	});
-	const bookSet = new Set();
-	const devigSet = new Set();
-	const methodBooks = record[m] || {};
-	Object.keys(methodBooks).forEach(b => {
-		if (b !== 'best') bookSet.add(b);
-		Object.keys(methodBooks[b] || {}).forEach(d => devigSet.add(d));
-	});
-	const books = ['best', ...bookSet];
-	const devigs = [...devigSet].sort();
 	const displayToggle = document.getElementById('record-display-toggle');
 	if (displayToggle) displayToggle.querySelectorAll('button').forEach(b => {
 		b.style.opacity = b.dataset.display === _summaryDisplay ? '1' : '0.4';
@@ -92,39 +84,227 @@ function _renderSummaryTable() {
 	if (bettingToggle) bettingToggle.querySelectorAll('button').forEach(b => {
 		b.style.opacity = b.dataset.betting === _summaryBetting ? '1' : '0.4';
 	});
-	const roiCell = (book, devig) => {
-		const stats = record[m]?.[book]?.[devig];
-		const s = stats ? (stats[win] ?? null) : null;
-		if (!s) return `<td>—</td>`;
-		const w = s.wins ?? 0, l = s.losses ?? 0;
-		if (w+l == 0) return `<td>—</td>`;
-		let val, suffix, isRoi;
-		if (_summaryDisplay === 'roi') {
-			val = _summaryBetting === 'kelly' ? (s.kelly_roi ?? null) : (s.roi ?? null);
-			suffix = '%';
-			isRoi = true;
-		} else {
-			val = _summaryBetting === 'kelly' ? (s.kelly ?? null) : (s.profit ?? null);
-			suffix = 'u';
-			isRoi = false;
-		}
-		if (val === null || val === undefined) return `<td>—</td>`;
-		const cls = val > 0 ? 'roi-pos' : val < 0 ? 'roi-neg' : '';
-		const sign = val > 0 ? '+' : '';
-		const disp = isRoi ? `${sign}${val}${suffix}` : `${sign}${val.toFixed(2)}${suffix}`;
-		return `<td class="${cls}"><div>${disp}</div><div style="font-size:9px;opacity:0.6;">${w}W-${l}L</div></td>`;
-	};
+	const grid = _summaryComputeGrid();
+	const { books, devigs } = grid;
 	const fmtDevig = d => d.replace(/^[^-]+-vs-/, '');
 	let html = '<thead><tr><th class="devig-name">Book ↓ &nbsp; Devig →</th>';
 	devigs.forEach(d => { html += `<th>${fmtDevig(d)}</th>`; });
 	html += '</tr></thead><tbody>';
 	books.forEach(b => {
 		html += `<tr><td class="devig-name">${b.toUpperCase()}</td>`;
-		devigs.forEach(d => { html += roiCell(b, d); });
+		devigs.forEach(d => {
+			const c = _summaryCell(grid, b, d);
+			if (!c) { html += '<td>—</td>'; return; }
+			const cls = c.pos ? 'roi-pos' : c.neg ? 'roi-neg' : '';
+			html += `<td class="${cls}"><div>${c.disp}</div><div style="font-size:9px;opacity:0.6;">${c.w}W-${c.l}L</div></td>`;
+		});
 		html += '</tr>';
 	});
 	html += '</tbody>';
 	table.innerHTML = html;
+}
+
+// Books/devigs present for the current record + method, and a cell-value lookup.
+function _summaryComputeGrid() {
+	const record = _summaryRecord;
+	const win = _summaryWindow || 'All';
+	const m = _summaryMethod;
+	const bookSet = new Set();
+	const devigSet = new Set();
+	const methodBooks = record[m] || {};
+	Object.keys(methodBooks).forEach(b => {
+		if (b !== 'best') bookSet.add(b);
+		Object.keys(methodBooks[b] || {}).forEach(d => devigSet.add(d));
+	});
+	return { record, win, m, books: ['best', ...bookSet], devigs: [...devigSet].sort() };
+}
+
+// Resolved display value (ROI/units, flat/kelly) + W-L for one book/devig cell, or null if no data.
+function _summaryCell(grid, book, devig) {
+	const stats = grid.record[grid.m]?.[book]?.[devig];
+	const s = stats ? (stats[grid.win] ?? null) : null;
+	if (!s) return null;
+	const w = s.wins ?? 0, l = s.losses ?? 0;
+	if (w + l === 0) return null;
+	let val, suffix, isRoi;
+	if (_summaryDisplay === 'roi') {
+		val = _summaryBetting === 'kelly' ? (s.kelly_roi ?? null) : (s.roi ?? null);
+		suffix = '%';
+		isRoi = true;
+	} else {
+		val = _summaryBetting === 'kelly' ? (s.kelly ?? null) : (s.profit ?? null);
+		suffix = 'u';
+		isRoi = false;
+	}
+	if (val === null || val === undefined) return null;
+	const sign = val > 0 ? '+' : '';
+	const disp = isRoi ? `${sign}${val}${suffix}` : `${sign}${val.toFixed(2)}${suffix}`;
+	return { val, disp, w, l, pos: val > 0, neg: val < 0 };
+}
+
+function _summaryFilterLabel() {
+	const sportLabel = _summarySport === 'mlb_open' ? 'MLB Open' : 'MLB';
+	const methodLabel = _summaryMethod === 'worst' ? 'Worst' : 'Probit';
+	const displayLabel = _summaryDisplay === 'units' ? 'Units' : 'ROI';
+	const bettingLabel = _summaryBetting === 'kelly' ? 'Kelly' : 'Flat';
+	const winLabel = _summaryWindow || 'All';
+	const sportToggle = document.getElementById('record-sport-toggle');
+	const showSport = sportToggle && sportToggle.style.display !== 'none';
+	return `${showSport ? sportLabel + ' · ' : ''}${winLabel} · ${displayLabel} (${bettingLabel}) · ${methodLabel}`;
+}
+
+function _flashExportStatus(msg) {
+	const btn = document.getElementById('record-summary-export-btn');
+	if (!btn) return;
+	if (btn.dataset.resetTimer) clearTimeout(+btn.dataset.resetTimer);
+	const original = 'Copy Image';
+	btn.textContent = msg;
+	const timer = setTimeout(() => { btn.textContent = original; }, 1500);
+	btn.dataset.resetTimer = timer;
+}
+
+// Draws the current filtered record-summary grid to a canvas (dropping rows/cols with
+// no data for this filter) and copies it to the clipboard as a PNG for pasting into Discord.
+async function exportSummaryImage() {
+	if (!_summaryRecord) return;
+	const grid = _summaryComputeGrid();
+	const { books, devigs } = grid;
+	const fmtDevig = d => d.replace(/^[^-]+-vs-/, '');
+
+	const cellMap = new Map();
+	books.forEach(b => devigs.forEach(d => cellMap.set(`${b}|${d}`, _summaryCell(grid, b, d))));
+
+	const usedBooks = books.filter(b => devigs.some(d => cellMap.get(`${b}|${d}`)));
+	const usedDevigs = devigs.filter(d => usedBooks.some(b => cellMap.get(`${b}|${d}`)));
+
+	if (!usedBooks.length || !usedDevigs.length) {
+		_flashExportStatus('No data');
+		return;
+	}
+
+	const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+	const font = `12px ${fontFamily}`;
+	const boldFont = `600 12px ${fontFamily}`;
+	const mctx = document.createElement('canvas').getContext('2d');
+
+	const pad = 12;
+	const rowLabelPad = 14;
+	const cellPadX = 10;
+
+	mctx.font = boldFont;
+	let rowLabelW = mctx.measureText('BEST').width;
+	usedBooks.forEach(b => { rowLabelW = Math.max(rowLabelW, mctx.measureText(b.toUpperCase()).width); });
+	rowLabelW += rowLabelPad * 2;
+
+	const colW = {};
+	usedDevigs.forEach(d => {
+		mctx.font = boldFont;
+		let w = mctx.measureText(fmtDevig(d)).width;
+		usedBooks.forEach(b => {
+			const c = cellMap.get(`${b}|${d}`);
+			mctx.font = boldFont;
+			if (c) w = Math.max(w, mctx.measureText(c.disp).width);
+			mctx.font = font;
+			w = Math.max(w, mctx.measureText(c ? `${c.w}W-${c.l}L` : '—').width);
+		});
+		colW[d] = Math.max(w + cellPadX * 2, 56);
+	});
+
+	const rowH = 34, headerH = 26, titleH = 46, footerH = 22;
+	const tableW = rowLabelW + usedDevigs.reduce((s, d) => s + colW[d], 0);
+	const cssW = pad * 2 + tableW;
+	const cssH = titleH + headerH + usedBooks.length * rowH + footerH + pad;
+
+	const dpr = window.devicePixelRatio || 1;
+	const canvas = document.createElement('canvas');
+	canvas.width = Math.round(cssW * dpr);
+	canvas.height = Math.round(cssH * dpr);
+	const ctx = canvas.getContext('2d');
+	ctx.scale(dpr, dpr);
+
+	const bg = '#0f1923', border = '#1c2b38', dim = '#8899a6', main = '#e6edf3', pos = '#4ade80', neg = '#f87171';
+
+	ctx.fillStyle = bg;
+	ctx.fillRect(0, 0, cssW, cssH);
+	ctx.textBaseline = 'top';
+
+	let y = pad;
+	ctx.fillStyle = main;
+	ctx.font = `600 15px ${fontFamily}`;
+	ctx.fillText('Record Summary', pad, y);
+	ctx.fillStyle = dim;
+	ctx.font = `11px ${fontFamily}`;
+	ctx.fillText(_summaryFilterLabel(), pad, y + 20);
+	y += titleH;
+
+	ctx.fillStyle = '#131f2a';
+	ctx.fillRect(pad, y, tableW, headerH);
+	ctx.strokeStyle = border;
+	ctx.strokeRect(pad, y, tableW, headerH);
+	ctx.fillStyle = dim;
+	ctx.font = boldFont;
+	let x = pad + rowLabelW;
+	usedDevigs.forEach(d => {
+		ctx.fillText(fmtDevig(d), x + cellPadX, y + 7);
+		x += colW[d];
+	});
+	y += headerH;
+
+	usedBooks.forEach((b, i) => {
+		if (i % 2 === 1) {
+			ctx.fillStyle = 'rgba(255,255,255,0.02)';
+			ctx.fillRect(pad, y, tableW, rowH);
+		}
+		ctx.strokeStyle = border;
+		ctx.strokeRect(pad, y, tableW, rowH);
+
+		ctx.fillStyle = main;
+		ctx.font = boldFont;
+		ctx.fillText(b.toUpperCase(), pad + rowLabelPad, y + 11);
+
+		let cx = pad + rowLabelW;
+		usedDevigs.forEach(d => {
+			const c = cellMap.get(`${b}|${d}`);
+			if (c) {
+				ctx.fillStyle = c.pos ? pos : c.neg ? neg : main;
+				ctx.font = boldFont;
+				ctx.fillText(c.disp, cx + cellPadX, y + 5);
+				ctx.fillStyle = dim;
+				ctx.font = font;
+				ctx.fillText(`${c.w}W-${c.l}L`, cx + cellPadX, y + 19);
+			} else {
+				ctx.fillStyle = dim;
+				ctx.font = font;
+				ctx.fillText('—', cx + cellPadX, y + 11);
+			}
+			cx += colW[d];
+		});
+		y += rowH;
+	});
+
+	ctx.fillStyle = dim;
+	ctx.font = `10px ${fontFamily}`;
+	ctx.textAlign = 'right';
+	ctx.fillText('+EV Sharps', pad + tableW, y + 6);
+	ctx.textAlign = 'left';
+
+	canvas.toBlob(async (blob) => {
+		if (!blob) return;
+		try {
+			await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+			_flashExportStatus('Copied!');
+		} catch (err) {
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'record-summary.png';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
+			_flashExportStatus('Downloaded');
+		}
+	}, 'image/png');
 }
 
 // Filter sourceRecord to only keys starting with propPrefix+'-'

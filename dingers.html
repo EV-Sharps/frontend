@@ -841,9 +841,13 @@
 					</div>
 						<button onclick="SELECTED_ROW_KEY = null; TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
-					<div id="feed-toggle" class="batter-ps-toggle" style="display:none;margin-bottom:4px;">
-						<button class="ps-btn is-active" data-mode="all">All</button>
-						<button class="ps-btn" data-mode="bb">Batted Balls</button>
+					<div id="feed-toggle" style="display:none;margin-bottom:4px;align-items:center;gap:8px;flex-wrap:wrap;">
+						<div class="batter-ps-toggle">
+							<button class="ps-btn is-active" data-pthrows="all">All</button>
+							<button class="ps-btn" data-pthrows="L">vs LHP</button>
+							<button class="ps-btn" data-pthrows="R">vs RHP</button>
+						</div>
+						<button class="ps-btn" data-bb="1">Batted Balls</button>
 					</div>
 					<div id="feed-arsenal" style="display:none;margin-bottom:6px;"></div>
 										<div id="chart"></div>
@@ -898,11 +902,19 @@
 		});
 
 		document.getElementById("feed-toggle").addEventListener("click", function(event) {
-			const btn = event.target.closest(".ps-btn");
-			if (!btn) return;
-			FEED_MODE = btn.dataset.mode;
-			this.querySelectorAll(".ps-btn").forEach(b => b.classList.toggle("is-active", b === btn));
-			renderFeedTable(filterFeedData(FEED_DATA));
+			const pthrowsBtn = event.target.closest("[data-pthrows]");
+			if (pthrowsBtn) {
+				FEED_PTHROWS = pthrowsBtn.dataset.pthrows;
+				pthrowsBtn.parentElement.querySelectorAll(".ps-btn").forEach(b => b.classList.toggle("is-active", b === pthrowsBtn));
+				renderFeedTable(filterFeedData(FEED_DATA));
+				return;
+			}
+			const bbBtn = event.target.closest("[data-bb]");
+			if (bbBtn) {
+				FEED_BB = !FEED_BB;
+				bbBtn.classList.toggle("is-active", FEED_BB);
+				renderFeedTable(filterFeedData(FEED_DATA));
+			}
 		});
 
 		document.getElementById("feed-arsenal").addEventListener("click", function(event) {
@@ -1621,7 +1633,7 @@
 			if (curSel === "mix") {
 				fetchAndShowMix(match.getData());
 			} else if (curSel === "feed") {
-				renderFeed();
+				renderFeed(false);
 			} else if (curSel === "odds") {
 				plotOddsChart();
 			} else {

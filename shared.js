@@ -2023,14 +2023,18 @@ function movingAverage(arr, windowSize) {
 }
 
 let FEED_DATA = [];
-let FEED_MODE = "all";
+let FEED_PTHROWS = "all";
+let FEED_BB = false;
 let FEED_HAND = "both";
 let FEED_ARSENAL_FILTER = new Set();
 
 function filterFeedData(data) {
 	let out = data;
-	if (FEED_MODE === "bb") {
+	if (FEED_BB) {
 		out = out.filter(row => parseFloat(row.evo || "0") > 0);
+	}
+	if (FEED_PTHROWS !== "all") {
+		out = out.filter(row => (row.p_throws || "").toUpperCase() === FEED_PTHROWS);
 	}
 	if (FEED_ARSENAL_FILTER.size > 0) {
 		out = out.filter(row => FEED_ARSENAL_FILTER.has(row.pitch_type));
@@ -2054,7 +2058,7 @@ function feedArsenalPreset(arsenal) {
 	return "custom";
 }
 
-function renderFeedArsenal(pitcher) {
+function renderFeedArsenal(pitcher, throws) {
 	const el = document.getElementById("feed-arsenal");
 	if (!el) return;
 	if (!pitcher || !RES?.arsenal?.[pitcher]) {
@@ -2067,7 +2071,7 @@ function renderFeedArsenal(pitcher) {
 	const presetBtn = (p, label, tooltip) => `<button class="ps-btn preset-btn${preset === p ? " is-active" : ""}" data-preset="${p}" title="${tooltip}">${label}</button>`;
 	el.innerHTML = `
 		<div class="feed-arsenal-row">
-			<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">${title(pitcher)} Top Pitches</div>
+			<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">${title(pitcher)} (${throws}) Top Pitches</div>
 			<div class="batter-ps-toggle">
 				${handBtn("both", "All")}
 				${handBtn("vs_lhb", "LHB")}
@@ -2092,7 +2096,7 @@ function feedSetHand(hand) {
 	FEED_HAND = hand;
 	FEED_ARSENAL_FILTER = new Set();
 	const data = TABLE.getSelectedRows()[0]?.getData();
-	if (data) renderFeedArsenal(data.pitcher);
+	if (data) renderFeedArsenal(data.pitcher, data.pitcherLR);
 	renderFeedTable(filterFeedData(FEED_DATA));
 }
 
@@ -2107,7 +2111,7 @@ function feedSetArsenalPreset(preset) {
 	} else if (preset === "top3") {
 		FEED_ARSENAL_FILTER = new Set(arsenal.slice(0, 3).map(p => p.pitch_type));
 	}
-	renderFeedArsenal(data.pitcher);
+	renderFeedArsenal(data.pitcher, data.pitcherLR);
 	renderFeedTable(filterFeedData(FEED_DATA));
 }
 
@@ -2118,16 +2122,22 @@ function feedToggleArsenalPitch(pitchType) {
 		FEED_ARSENAL_FILTER.add(pitchType);
 	}
 	const data = TABLE.getSelectedRows()[0]?.getData();
-	if (data) renderFeedArsenal(data.pitcher);
+	if (data) renderFeedArsenal(data.pitcher, data.pitcherLR);
 	renderFeedTable(filterFeedData(FEED_DATA));
 }
 
-function renderFeed() {
+function renderFeed(resetFilters = true) {
 	const data = TABLE.getSelectedRows()[0].getData();
 	let player = data.player;
-	FEED_HAND = data.bats === "L" ? "vs_lhb" : data.bats === "R" ? "vs_rhb" : "both";
-	FEED_ARSENAL_FILTER = new Set();
-	renderFeedArsenal(data.pitcher);
+	if (resetFilters) {
+		FEED_HAND = data.bats === "L" ? "vs_lhb" : data.bats === "R" ? "vs_rhb" : "both";
+		FEED_ARSENAL_FILTER = new Set();
+		FEED_PTHROWS = "all";
+		FEED_BB = false;
+		document.querySelectorAll("#feed-toggle [data-pthrows]").forEach(b => b.classList.toggle("is-active", b.dataset.pthrows === "all"));
+		document.querySelectorAll("#feed-toggle [data-bb]").forEach(b => b.classList.remove("is-active"));
+	}
+	renderFeedArsenal(data.pitcher, data.pitcherLR);
 	fetch(API_BASE+`/api/feed?team=${data.team}`, {
 		headers: {
 			Authorization: `Bearer ${ACCESS_TOKEN}`

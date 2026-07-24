@@ -195,6 +195,7 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							let trend = "";
+							let color = "";
 							if (data.from) {
 								if (parseInt(data.from.split("/")[0]) > parseInt(data.ou.split("/")[0])) {
 									trend = "📉";

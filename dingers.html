@@ -841,13 +841,16 @@
 					</div>
 						<button onclick="SELECTED_ROW_KEY = null; TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
-					<div id="feed-toggle" style="display:none;margin-bottom:4px;align-items:center;gap:8px;flex-wrap:wrap;">
-						<div class="batter-ps-toggle">
-							<button class="ps-btn is-active" data-pthrows="all">All</button>
-							<button class="ps-btn" data-pthrows="L">vs LHP</button>
-							<button class="ps-btn" data-pthrows="R">vs RHP</button>
+					<div id="feed-toggle" class="feed-arsenal-row" style="display:none;">
+						<div id="feed-batter-name" style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;"></div>
+						<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+							<div class="batter-ps-toggle">
+								<button class="ps-btn is-active" data-pthrows="all">All</button>
+								<button class="ps-btn" data-pthrows="L">vs LHP</button>
+								<button class="ps-btn" data-pthrows="R">vs RHP</button>
+							</div>
+							<button class="ps-btn" data-bb="1">Batted Balls</button>
 						</div>
-						<button class="ps-btn" data-bb="1">Batted Balls</button>
 					</div>
 					<div id="feed-arsenal" style="display:none;margin-bottom:6px;"></div>
 										<div id="chart"></div>

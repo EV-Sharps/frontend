@@ -2129,6 +2129,8 @@ function feedToggleArsenalPitch(pitchType) {
 function renderFeed(resetFilters = true) {
 	const data = TABLE.getSelectedRows()[0].getData();
 	let player = data.player;
+	const nameEl = document.getElementById("feed-batter-name");
+	if (nameEl) nameEl.textContent = title(player);
 	if (resetFilters) {
 		FEED_HAND = data.bats === "L" ? "vs_lhb" : data.bats === "R" ? "vs_rhb" : "both";
 		FEED_ARSENAL_FILTER = new Set();

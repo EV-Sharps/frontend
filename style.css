@@ -1770,6 +1770,12 @@ h1 {
 #player-ev, #player-weather, #player-pitcher {
 	padding-left: 5px;
 }
+#col-reorder-list {
+	display:flex;
+	flex-direction:column;
+	gap:4px;
+	overflow:auto;
+}
 .preload-row {
 	display: flex;
 	align-items: center;

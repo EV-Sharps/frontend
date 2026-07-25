@@ -3910,8 +3910,8 @@ function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
 		const item = document.createElement('div');
 		item.dataset.key = key;
 		item.draggable = true;
-		item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;';
-		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⠣⠣</span><span>${meta.label}</span>`;
+		item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;touch-action:none;';
+		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⋮⋮</span><span>${meta.label}</span>`;
 		item.addEventListener('dragstart', e => {
 			_colReorderDragSrc = item;
 			e.dataTransfer.effectAllowed = 'move';
@@ -3935,6 +3935,30 @@ function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
 			}
 			item.style.boxShadow = '';
 		});
+		// Native HTML5 drag-and-drop (dragstart/dragover/drop) doesn't fire on touch
+		// devices, so mobile needs its own pointer-based reorder using touch events.
+		item.addEventListener('touchstart', () => {
+			_colReorderDragSrc = item;
+			item.style.opacity = '0.4';
+		}, { passive: true });
+		item.addEventListener('touchmove', e => {
+			if (_colReorderDragSrc !== item) return;
+			e.preventDefault();
+			const touch = e.touches[0];
+			const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('[data-key]');
+			if (target && target !== item && target.parentElement === list) {
+				const rect = target.getBoundingClientRect();
+				const before = touch.clientY < rect.top + rect.height / 2;
+				list.insertBefore(item, before ? target : target.nextSibling);
+			}
+		}, { passive: false });
+		const endTouchReorder = () => {
+			if (_colReorderDragSrc !== item) return;
+			_colReorderDragSrc = null;
+			item.style.opacity = '1';
+		};
+		item.addEventListener('touchend', endTouchReorder);
+		item.addEventListener('touchcancel', endTouchReorder);
 		list.appendChild(item);
 	});
 	document.getElementById('col-reorder-modal').style.display = 'flex';

@@ -13,8 +13,24 @@ try {
 
 }
 
+// Seed CURR_USER synchronously from the last successful profile fetch so page-init
+// code that reads CURR_USER.metadata (saved column order, excluded books, devig/sort
+// prefs) has something correct to use on first paint, instead of waiting on a live
+// `profiles` round-trip that can be slow. upsertProfile() refreshes this in the background.
+try {
+	const cachedProfile = localStorage.getItem('cached_profile');
+	if (cachedProfile) CURR_USER = JSON.parse(cachedProfile);
+} catch (e) {}
+
+function cacheProfile(data) {
+	try {
+		if (data) localStorage.setItem('cached_profile', JSON.stringify(data));
+	} catch (e) {}
+}
+
 async function logout() {
 	await SB.auth.signOut();
+	try { localStorage.removeItem('cached_profile'); } catch (e) {}
 	location.reload();
 }
 
@@ -26,6 +42,7 @@ async function upsertProfile(session) {
 
 	CURR_SESSION = session;
 	CURR_USER = data;
+	cacheProfile(data);
 	// Sync page favorites from Supabase into localStorage
 	if (data?.metadata?.page_favorites?.length) {
 		localStorage.setItem("page_favorites", JSON.stringify(data.metadata.page_favorites));
@@ -57,6 +74,7 @@ async function upsertProfile(session) {
 			.select()
 			.single();
 			CURR_USER = d;
+			cacheProfile(d);
 		if (insertError) {
 			console.error("Insert profile error: ", insertError);
 		}
@@ -142,7 +160,10 @@ async function savePageFavorites(favs) {
 		.update({ metadata })
 		.eq('id', CURR_SESSION.user.id);
 	if (error) console.error('savePageFavorites error:', error);
-	else CURR_USER.metadata = metadata;
+	else {
+		CURR_USER.metadata = metadata;
+		cacheProfile(CURR_USER);
+	}
 }
 
 async function saveCustomDevigs() {
@@ -201,6 +222,7 @@ async function saveTableSettings() {
 	}
 
 	CURR_USER.metadata = newData;
+	cacheProfile(CURR_USER);
 
   setTimeout(() => {
     saveStatus.textContent = '';
@@ -253,12 +275,13 @@ async function saveExcludeHelper(key) {
 	}
 
 	CURR_USER.metadata = newData;
+	cacheProfile(CURR_USER);
 
   setTimeout(() => {
     saveStatus.textContent = '';
     saveBtn.disabled = false;
   }, 3000);
-} 
+}
 
 async function saveState() {
 	if (!CURR_USER) return;
@@ -273,6 +296,7 @@ async function saveState() {
 		status.textContent = "Error saving";
 	} else {
 		CURR_USER.metadata = newData;
+		cacheProfile(CURR_USER);
 		status.textContent = "✅ Saved!";
 		setTimeout(() => status.textContent = "", 3000);
 	}
@@ -381,19 +405,34 @@ async function upgrade(tier) {
 	}
 }
 
+// Auth + the page's own data fetch used to run strictly sequentially: getSession()
+// then await upsertProfile() (a `profiles` SELECT/INSERT round-trip that can be slow
+// under Supabase load) and only then would the page's actual content start loading.
+// Now the content fetch (initPageData) starts as soon as we have ACCESS_TOKEN, in
+// parallel with the profile fetch. CURR_USER is pre-seeded from a localStorage cache
+// (see top of file) so init code that reads CURR_USER.metadata still has last-known
+// values on first paint; hydrateAfterProfileLoad() reconciles once the live profile
+// fetch actually resolves.
 async function handleSession() {
+	let session = null;
 	if (ENABLE_AUTH) {
 		document.querySelector("#auth-buttons").style.display = "flex";
-		const { data: { session }, error } = await SB.auth.getSession();
+		const res = await SB.auth.getSession();
+		session = res.data?.session;
 		if (session) {
 			if (session.access_token) {
 				ACCESS_TOKEN = session.access_token;
 			}
+			// Discard a cached profile that belongs to a different account (e.g. a
+			// shared browser, or switching accounts) so we never render someone
+			// else's saved settings/tier while the real profile fetch is in flight.
+			if (CURR_USER && CURR_USER.id !== session.user.id) {
+				CURR_USER = null;
+			}
 			Array.from(document.querySelectorAll(".loggedOut")).map(x => x.style.display = "none");
-			// make sure row exists in profile
-			await upsertProfile(session);
 		} else {
 			// No Session
+			CURR_USER = null;
 			Array.from(document.querySelectorAll(".loggedIn")).map(x => x.style.display = "none");
 		}
 	}	else {
@@ -405,6 +444,35 @@ async function handleSession() {
 		}
 	}
 
+	initPageData();
+
+	if (ENABLE_AUTH && session) {
+		// make sure row exists in profile; runs in the background, doesn't block content above
+		await upsertProfile(session);
+		hydrateAfterProfileLoad();
+	}
+}
+
+// Re-applies anything that depends on a live (not cached) CURR_USER, once upsertProfile()
+// resolves. Safe/idempotent to call again after initPageData() already rendered defaults.
+function hydrateAfterProfileLoad() {
+	if (["dingers", "dingers2", "charts"].includes(PAGE) && CURR_USER?.metadata) {
+		const today = new Date().toISOString().slice(0, 10);
+		const allWL = CURR_USER.metadata.watchlist || [];
+		const freshWL = allWL.filter(w => (w.dt || w) === today);
+		const allBets = CURR_USER.metadata.bets || [];
+		const freshBets = allBets.filter(b => b.dt === today);
+		CURR_USER.metadata = { ...CURR_USER.metadata, watchlist: freshWL, bets: freshBets };
+		if ((freshWL.length !== allWL.length || freshBets.length !== allBets.length) && CURR_SESSION) {
+			SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+			cacheProfile(CURR_USER);
+		}
+	}
+	if (typeof initExcluded === "function") initExcluded();
+	if (typeof changeFilter === "function") changeFilter();
+}
+
+function initPageData() {
 	if (PAGE === "barrels") {
 		fetchBarrelsData();
 	} else if (PAGE == "bvp") {
@@ -469,17 +537,6 @@ async function handleSession() {
 			}
 		}, 30 * 1000);
 	} else if (["dingers", "dingers2", "charts"].includes(PAGE)) {
-		if (CURR_USER?.metadata) {
-			const today = new Date().toISOString().slice(0, 10);
-			const allWL = CURR_USER.metadata.watchlist || [];
-			const freshWL = allWL.filter(w => (w.dt || w) === today);
-			const allBets = CURR_USER.metadata.bets || [];
-			const freshBets = allBets.filter(b => b.dt === today);
-			CURR_USER.metadata = { ...CURR_USER.metadata, watchlist: freshWL, bets: freshBets };
-			if ((freshWL.length !== allWL.length || freshBets.length !== allBets.length) && CURR_SESSION) {
-				SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
-			}
-		}
 		initChkddActions();
 		fetchDingersData();
 		//countdown();

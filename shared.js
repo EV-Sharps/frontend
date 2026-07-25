@@ -3957,6 +3957,7 @@ async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	if (CURR_USER?.metadata) {
 		CURR_USER.metadata[storageKey] = newOrder;
 		await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
 	}
 	TABLE.setColumns(buildColsFn(newOrder));
 	if (postSaveFn) postSaveFn();

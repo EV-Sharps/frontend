@@ -429,16 +429,29 @@ if (devigSel) {
 
 if (document.getElementById("required-dd")) {
 	updateRequiredDropdown();
-	
+
 	// Close required-dd when clicking elsewhere
 	document.addEventListener('click', (e) => {
 		const requiredDD = document.getElementById("required-dd");
 		const requiredBtn = document.getElementById("required-button");
 		const requiredMenu = document.getElementById("required-options");
-		
-		if (requiredMenu && requiredMenu.style.display === 'block' && 
+
+		if (requiredMenu && requiredMenu.style.display === 'block' &&
 		    !requiredMenu.contains(e.target) && !requiredBtn.contains(e.target)) {
 			requiredMenu.style.display = "none";
+		}
+	});
+}
+
+if (document.getElementById("filterbuilder-dd")) {
+	// Close the custom filter dropdown when clicking elsewhere
+	document.addEventListener('click', (e) => {
+		const filterBtn = document.getElementById("filterbuilder-dd-button");
+		const filterMenu = document.getElementById("filterbuilder-options");
+
+		if (filterMenu && filterMenu.style.display === 'block' &&
+		    !filterMenu.contains(e.target) && !filterBtn.contains(e.target)) {
+			filterMenu.style.display = "none";
 		}
 	});
 }
@@ -1595,6 +1608,7 @@ function changeFilter(render = true) {
 		if (maxOdds && !(r.line < parseInt(maxOdds, 10))) return false;
 		if (props.length && !props.includes(r.prop)) return false;
 		if (games.length && !games.includes(r.game)) return false;
+		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r)) return false;
 		return true;
 	});
 

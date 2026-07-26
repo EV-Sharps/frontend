@@ -469,6 +469,7 @@ function hydrateAfterProfileLoad() {
 		}
 	}
 	if (typeof initExcluded === "function") initExcluded();
+	if (typeof restoreFilterBuilder === "function") restoreFilterBuilder();
 	if (typeof changeFilter === "function") changeFilter();
 }
 

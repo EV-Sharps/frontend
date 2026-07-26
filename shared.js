@@ -4201,10 +4201,393 @@ async function initDevPicker(data){
 	}
 }
 
+// ── Custom filter builder (Custom Filter dropdown) ──────────────────────────
+// Every criterion is available at once, each independently enabled via its own
+// checkbox. FB_CONFIG only updates (and the table only re-filters) when the user
+// clicks Apply. Named combinations can be saved/recalled via Supabase profile
+// metadata, and the last-applied config auto-persists so it survives a reload.
+
+let FB_CONFIG = {};
+
+const PITCHER_STAT_FIELDS = [
+	"barrel_batted_rate", "barrel_batted_ratePercentile", "exit_velocity_avg", "exit_velocity_avgPercentile",
+	"flyballs_percent", "flyballs_percentPercentile", "hard_hit_percent", "hard_hit_percentPercentile",
+	"launch_angle_avg", "on_base_percent", "on_base_percentPercentile", "on_base_plus_slg", "on_base_plus_slgPercentile",
+	"p_era", "pull_percent", "pull_percentPercentile", "slg_percent", "slg_percentPercentile",
+	"sweet_spot_percent", "sweet_spot_percentPercentile", "woba", "wobacon", "xba", "xwoba"
+];
+
+const BATTER_STAT_FIELDS = [
+	"avg_swing_speed", "avg_swing_speedPercentile", "ba", "barrel_ct", "barrels_per_bip", "barrels_per_bipPercentile",
+	"barrels_per_pa", "bip", "blasts_swing", "blasts_swingPercentile", "distance_avg", "distance_hr_avg", "distance_max",
+	"est_ba", "est_slg", "est_woba", "est_wobaPercentile", "est_wobacon", "exit_velocity_avg", "exit_velocity_avgPercentile",
+	"exit_velocity_max", "flyballs_percent", "flyballs_percentPercentile", "hard_hit_ct", "hard_hit_percent",
+	"hard_hit_percentPercentile", "launch_angle_avg", "launch_angle_avgPercentile", "meatball_percent", "meatball_percentPercentile",
+	"on_base_percent", "on_base_percentPercentile", "on_base_plus_slg", "on_base_plus_slgPercentile", "pa", "pull_percent",
+	"pull_percentPercentile", "slg", "slg_percent", "slg_percentPercentile", "squared_up_swing", "squared_up_swingPercentile",
+	"sweet_spot_percent", "woba", "wobacon"
+];
+
+function statLabel(key) {
+	return key.replace(/Percentile$/, " Percentile").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Coerces numbers stored as strings (".291", "89.3", "+10%") to a float, or null if unusable.
+function numFrom(v) {
+	if (v === null || v === undefined || v === "") return null;
+	const n = parseFloat(v);
+	return isNaN(n) ? null : n;
+}
+
+// DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
+const FB_FIELDS = {
+	liquidity:   { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
+	homerRate:   { enabled: "fb-homerrate-enabled", window: "fb-homerrate-window", min: "fb-homerrate-min" },
+	bpp:         { enabled: "fb-bpp-enabled", min: "fb-bpp-min" },
+	due:         { enabled: "fb-due-enabled" },
+	line:        { enabled: "fb-line-enabled", min: "fb-line-min", max: "fb-line-max" },
+	hrVsPitcher: { enabled: "fb-hrvspitcher-enabled" },
+};
+
+// pitcherStat/batterStat are multi-row (add as many field/cmp/value constraints as you want,
+// each with an X to remove it), so they're handled separately from the flat FB_FIELDS types.
+const FB_STAT_TYPES = {
+	pitcherStat: { enabledId: "fb-pitcherstat-enabled", rowsId: "fb-pitcherstat-rows", fields: () => PITCHER_STAT_FIELDS },
+	batterStat:  { enabledId: "fb-batterstat-enabled", rowsId: "fb-batterstat-rows", fields: () => BATTER_STAT_FIELDS },
+};
+
+// 25th/50th/75th percentile values for a raw stat field, e.g. RES.thresholds.batters.ba.
+// Percentile-suffixed fields (already expressed as a percentile) have no entry.
+function getStatThresholds(type, field) {
+	if (!field || field.endsWith("Percentile")) return null;
+	const bucket = type === "pitcherStat" ? "pitchers" : "batters";
+	return RES?.thresholds?.[bucket]?.[field] || null;
+}
+
+function createStatFilterRow(type, initial = {}) {
+	const def = FB_STAT_TYPES[type];
+	const wrapper = document.createElement("div");
+	wrapper.className = "fb-stat-row-wrap";
+	wrapper.addEventListener("click", e => e.stopPropagation());
+
+	const row = document.createElement("div");
+	row.className = "fb-subrow fb-stat-row";
+
+	const fieldSel = document.createElement("select");
+	fieldSel.className = "fb-stat-field";
+	def.fields().forEach(f => {
+		const opt = document.createElement("option");
+		opt.value = f;
+		opt.textContent = statLabel(f);
+		fieldSel.appendChild(opt);
+	});
+	if (initial.field) fieldSel.value = initial.field;
+
+	const cmpSel = document.createElement("select");
+	cmpSel.className = "fb-stat-cmp";
+	cmpSel.innerHTML = `<option value="gte">Above</option><option value="lte">Below</option>`;
+	if (initial.cmp) cmpSel.value = initial.cmp;
+
+	const valInput = document.createElement("input");
+	valInput.type = "number";
+	valInput.step = "0.1";
+	valInput.className = "fb-stat-value";
+	if (initial.value != null) valInput.value = initial.value;
+
+	const removeBtn = document.createElement("button");
+	removeBtn.type = "button";
+	removeBtn.className = "fb-row-remove";
+	removeBtn.title = "Remove this filter";
+	removeBtn.textContent = "✕";
+	removeBtn.addEventListener("click", e => { e.stopPropagation(); wrapper.remove(); });
+
+	row.append(fieldSel, cmpSel, valInput, removeBtn);
+
+	const hint = document.createElement("div");
+	hint.className = "fb-stat-hint";
+	const updateHint = () => {
+		const t = getStatThresholds(type, fieldSel.value);
+		if (!t) {
+			hint.style.display = "none";
+			hint.textContent = "";
+			return;
+		}
+		hint.style.display = "";
+		hint.textContent = `${t[25]} (25th) · ${t[50]} (50th) · ${t[75]} (75th)`;
+	};
+	fieldSel.addEventListener("change", updateHint);
+	updateHint();
+
+	wrapper.append(row, hint);
+	return wrapper;
+}
+
+function addStatFilterRow(type, initial) {
+	const def = FB_STAT_TYPES[type];
+	const container = document.getElementById(def?.rowsId);
+	if (!container) return;
+	container.appendChild(createStatFilterRow(type, initial));
+}
+
+function readStatFilterRows(type) {
+	const def = FB_STAT_TYPES[type];
+	const container = document.getElementById(def?.rowsId);
+	if (!container) return [];
+	return [...container.querySelectorAll(".fb-stat-row")].map(row => ({
+		field: row.querySelector(".fb-stat-field")?.value,
+		cmp: row.querySelector(".fb-stat-cmp")?.value,
+		value: row.querySelector(".fb-stat-value")?.value,
+	}));
+}
+
+function applyStatFilterRows(type, rows) {
+	const def = FB_STAT_TYPES[type];
+	const container = document.getElementById(def?.rowsId);
+	if (!container) return;
+	container.innerHTML = "";
+	(rows || []).forEach(r => container.appendChild(createStatFilterRow(type, r)));
+}
+
+function readFilterBuilderFromDOM() {
+	const config = {};
+	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
+		const entry = {};
+		Object.entries(ids).forEach(([key, id]) => {
+			const el = document.getElementById(id);
+			if (!el) return;
+			entry[key] = key === "enabled" ? el.checked : el.value;
+		});
+		config[type] = entry;
+	});
+	Object.entries(FB_STAT_TYPES).forEach(([type, def]) => {
+		config[type] = {
+			enabled: document.getElementById(def.enabledId)?.checked || false,
+			rows: readStatFilterRows(type),
+		};
+	});
+	return config;
+}
+
+function applyFilterBuilderToDOM(config) {
+	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
+		const entry = config?.[type] || {};
+		Object.entries(ids).forEach(([key, id]) => {
+			const el = document.getElementById(id);
+			if (!el) return;
+			if (key === "enabled") el.checked = !!entry.enabled;
+			else if (entry[key] != null) el.value = entry[key];
+		});
+	});
+	Object.entries(FB_STAT_TYPES).forEach(([type, def]) => {
+		const entry = config?.[type] || {};
+		const enabledEl = document.getElementById(def.enabledId);
+		if (enabledEl) enabledEl.checked = !!entry.enabled;
+		applyStatFilterRows(type, entry.rows);
+	});
+}
+
+function passesFilterBuilder(row) {
+	const c = FB_CONFIG;
+
+	if (c.liquidity?.enabled) {
+		const liq = row.liquidity?.[c.liquidity.book || "nv"];
+		const min = numFrom(c.liquidity.amount) ?? 200;
+		if (!(Array.isArray(liq) && numFrom(liq[1]) > min)) return false;
+	}
+
+	if (c.homerRate?.enabled) {
+		const hr = row.hitRates?.[c.homerRate.window || "L5"];
+		const min = numFrom(c.homerRate.min) ?? 1;
+		if (!(hr && numFrom(hr.w) >= min)) return false;
+	}
+
+	if (c.bpp?.enabled) {
+		const min = numFrom(c.bpp.min) ?? 0;
+		const bpp = numFrom(row.bpp);
+		if (!(bpp !== null && bpp >= min)) return false;
+	}
+
+	if (c.due?.enabled) {
+		const z = numFrom(row.homerLogs?.pa?.z);
+		if (!(z !== null && z > 0)) return false;
+	}
+
+	if (c.line?.enabled) {
+		const min = numFrom(c.line.min);
+		const max = numFrom(c.line.max);
+		const line = numFrom(row.line);
+		if (line === null) return false;
+		if (min !== null && line < min) return false;
+		if (max !== null && line > max) return false;
+	}
+
+	if (c.hrVsPitcher?.enabled) {
+		const m = String(row.bvp || "").match(/(\d+)\s*HR/i);
+		if (!(m && parseInt(m[1], 10) > 0)) return false;
+	}
+
+	if (c.pitcherStat?.enabled) {
+		for (const r of (c.pitcherStat.rows || [])) {
+			const val = numFrom(r.value);
+			if (!r.field || val === null) continue;
+			const stat = numFrom(row.pitcherData?.[r.field]);
+			if (stat === null) return false;
+			if (!(r.cmp === "lte" ? stat <= val : stat >= val)) return false;
+		}
+	}
+
+	if (c.batterStat?.enabled) {
+		for (const r of (c.batterStat.rows || [])) {
+			const val = numFrom(r.value);
+			if (!r.field || val === null) continue;
+			const stat = numFrom(row.savant?.[r.field]);
+			if (stat === null) return false;
+			if (!(r.cmp === "lte" ? stat <= val : stat >= val)) return false;
+		}
+	}
+
+	return true;
+}
+
+function updateFilterBuilderButtonLabel() {
+	const btn = document.getElementById("filterbuilder-dd-button");
+	if (!btn) return;
+	const c = FB_CONFIG;
+	let n = Object.keys(FB_FIELDS).filter(type => c[type]?.enabled).length;
+	if (c.pitcherStat?.enabled) n += Math.max(1, (c.pitcherStat.rows || []).length);
+	if (c.batterStat?.enabled) n += Math.max(1, (c.batterStat.rows || []).length);
+	btn.textContent = n === 0 ? "None" : `${n} Filter${n === 1 ? "" : "s"}`;
+}
+
+function getSavedFilterBuilders() {
+	return CURR_USER?.metadata?.[`${PAGE}-savedFilters`] || [];
+}
+
+function populateSavedFilterBuilderSelect() {
+	const sel = document.getElementById("fb-saved-select");
+	if (!sel) return;
+	sel.innerHTML = '<option value="">Load saved filter...</option>';
+	getSavedFilterBuilders().forEach((f, i) => {
+		const opt = document.createElement("option");
+		opt.value = String(i);
+		opt.textContent = f.name;
+		sel.appendChild(opt);
+	});
+}
+
+function loadSavedFilterBuilder(idx) {
+	const entry = getSavedFilterBuilders()[idx];
+	if (!entry) return;
+	applyFilterBuilderToDOM(entry.config);
+	const nameInput = document.getElementById("fb-name-input");
+	if (nameInput) nameInput.value = entry.name;
+}
+
+async function saveFilterBuilder() {
+	const status = document.getElementById("fb-save-status");
+	const name = document.getElementById("fb-name-input")?.value?.trim();
+	if (!name) {
+		if (status) status.textContent = "Enter a name first";
+		return;
+	}
+	if (!CURR_USER || !CURR_SESSION) {
+		if (status) status.textContent = "Log in to save filters";
+		return;
+	}
+	const config = readFilterBuilderFromDOM();
+	const saved = [...getSavedFilterBuilders()];
+	const idx = saved.findIndex(f => f.name === name);
+	if (idx >= 0) saved[idx] = { name, config }; else saved.push({ name, config });
+
+	const metadata = { ...CURR_USER.metadata, [`${PAGE}-savedFilters`]: saved };
+	if (status) status.textContent = "Saving...";
+	const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
+	if (error) {
+		if (status) status.textContent = "Error saving";
+		return;
+	}
+	CURR_USER.metadata = metadata;
+	if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
+	populateSavedFilterBuilderSelect();
+	if (status) { status.textContent = "✅ Saved!"; setTimeout(() => status.textContent = "", 2000); }
+}
+
+async function deleteSavedFilterBuilder() {
+	const sel = document.getElementById("fb-saved-select");
+	const status = document.getElementById("fb-save-status");
+	if (!sel || sel.value === "") return;
+	if (!CURR_USER || !CURR_SESSION) return;
+	const saved = [...getSavedFilterBuilders()];
+	saved.splice(Number(sel.value), 1);
+	const metadata = { ...CURR_USER.metadata, [`${PAGE}-savedFilters`]: saved };
+	const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
+	if (!error) {
+		CURR_USER.metadata = metadata;
+		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
+		populateSavedFilterBuilderSelect();
+		if (status) { status.textContent = "Deleted"; setTimeout(() => status.textContent = "", 2000); }
+	}
+}
+
+function clearFilterBuilder() {
+	document.querySelectorAll('#filterbuilder-options input[id$="-enabled"]').forEach(cb => cb.checked = false);
+	Object.keys(FB_STAT_TYPES).forEach(type => applyStatFilterRows(type, []));
+	const nameInput = document.getElementById("fb-name-input");
+	if (nameInput) nameInput.value = "";
+}
+
+// Reads the current DOM state as the active filter, applies it to the table, and
+// auto-persists it (separately from named saved presets) so it survives a reload.
+async function applyFilterBuilder() {
+	FB_CONFIG = readFilterBuilderFromDOM();
+	updateFilterBuilderButtonLabel();
+	if (typeof changeFilter === "function") changeFilter();
+	if (!CURR_USER || !CURR_SESSION) return;
+	const metadata = { ...CURR_USER.metadata, [`${PAGE}-activeFilter`]: FB_CONFIG };
+	const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
+	if (!error) {
+		CURR_USER.metadata = metadata;
+		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
+	}
+}
+
+// Restores the last-applied config (not just named presets) once CURR_USER is available.
+// Called on init (using whatever's cached) and again from hydrateAfterProfileLoad() once
+// the live profile resolves.
+function restoreFilterBuilder() {
+	if (!document.getElementById("filterbuilder-dd")) return;
+	const active = CURR_USER?.metadata?.[`${PAGE}-activeFilter`];
+	if (active) {
+		applyFilterBuilderToDOM(active);
+		FB_CONFIG = active;
+		updateFilterBuilderButtonLabel();
+	}
+	populateSavedFilterBuilderSelect();
+}
+
+function initFilterBuilderUI() {
+	const dd = document.getElementById("filterbuilder-dd");
+	if (!dd || dd.dataset.filterBuilderInit) return;
+	dd.dataset.filterBuilderInit = "1";
+
+	// filter.js has a document-level "change" listener that treats any checkbox inside any
+	// .chkdd-menu as a Prop/Game filter checkbox (onChkddChange). This panel reuses .chkdd-menu
+	// purely for shared dropdown styling/positioning, so stop change events from bubbling past
+	// it to avoid corrupting the Prop label / devig picker with this panel's checkbox states.
+	document.getElementById("filterbuilder-options")?.addEventListener("change", e => e.stopPropagation());
+
+	document.getElementById("fb-saved-select")?.addEventListener("change", e => {
+		if (e.target.value !== "") loadSavedFilterBuilder(Number(e.target.value));
+	});
+
+	restoreFilterBuilder();
+}
+
 function renderFilters() {
 	renderBookSelect();
 	initDevPicker(getTopDevigs(BOOK||"best"));
 	if (typeof loadHeatmapData === "function") {
 		loadHeatmapData();
 	}
+	initFilterBuilderUI();
 }

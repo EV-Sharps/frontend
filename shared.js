@@ -4390,9 +4390,13 @@ function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
 
 	if (c.liquidity?.enabled) {
-		const liq = row.liquidity?.[c.liquidity.book || "nv"];
 		const min = numFrom(c.liquidity.amount) ?? 200;
-		if (!(Array.isArray(liq) && numFrom(liq[1]) > min)) return false;
+		const books = c.liquidity.book === "both" ? ["nv", "px"] : [c.liquidity.book || "nv"];
+		const clears = books.some(b => {
+			const liq = row.liquidity?.[b];
+			return Array.isArray(liq) && numFrom(liq[1]) > min;
+		});
+		if (!clears) return false;
 	}
 
 	if (c.homerRate?.enabled) {

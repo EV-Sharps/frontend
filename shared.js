@@ -49,6 +49,7 @@ const PAGE_SECTIONS = [
 			{ label: "💣💣 2+ HR", value: "dingers2" },
 			{ label: "🔮 Futures", value: "futures" },
 			{ label: "🆚 BvP", value: "bvp" },
+			{ label: "🆚 Matchups", value: "matchups" },
 			{ label: "📊 Stats", value: "stats" },
 			{ label: "🏏 Barrels", value: "barrels" },
 			{ label: "🔍 Pitcher Preview", value: "preview" },
@@ -4391,11 +4392,14 @@ function passesFilterBuilder(row) {
 
 	if (c.liquidity?.enabled) {
 		const min = numFrom(c.liquidity.amount) ?? 200;
-		const books = c.liquidity.book === "both" ? ["nv", "px"] : [c.liquidity.book || "nv"];
-		const clears = books.some(b => {
+		const bookSel = c.liquidity.book || "nv";
+		const clearsBook = b => {
 			const liq = row.liquidity?.[b];
 			return Array.isArray(liq) && numFrom(liq[1]) > min;
-		});
+		};
+		const clears = bookSel === "both" ? ["nv", "px"].every(clearsBook)
+			: bookSel === "either" ? ["nv", "px"].some(clearsBook)
+			: clearsBook(bookSel);
 		if (!clears) return false;
 	}
 
@@ -4485,6 +4489,7 @@ function loadSavedFilterBuilder(idx) {
 	applyFilterBuilderToDOM(entry.config);
 	const nameInput = document.getElementById("fb-name-input");
 	if (nameInput) nameInput.value = entry.name;
+	applyFilterBuilder();
 }
 
 async function saveFilterBuilder() {
@@ -4538,6 +4543,7 @@ function clearFilterBuilder() {
 	Object.keys(FB_STAT_TYPES).forEach(type => applyStatFilterRows(type, []));
 	const nameInput = document.getElementById("fb-name-input");
 	if (nameInput) nameInput.value = "";
+	applyFilterBuilder();
 }
 
 // Reads the current DOM state as the active filter, applies it to the table, and

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>⚾ Hitter Matchups</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style type="text/css">
+		.tabulator-cell { height: 24px; }
+		#table { width: auto; height: 80%; }
+		#updated-label { color: #6b7280; font-size: 11px; margin-left: 10px; white-space: nowrap; }
+		.hand-tag {
+			display: inline-block; margin-left: 5px; padding: 0 4px; border-radius: 3px;
+			font-size: 10px; font-weight: 700; color: #93c5fd; background: rgba(59,130,246,0.15);
+		}
+		.ops-badge { font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+		.pa-cell { font-weight: 600; }
+		.pa-cell.low-pa { color: #f59e0b; }
+		.mix-cell {
+			text-align: left; font-size: 11px; color: #9ca3af; cursor: pointer;
+			white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+		}
+		#breakdown-modal .modal-content { max-width: 480px; }
+		.breakdown-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+		.breakdown-table th, .breakdown-table td { padding: 4px 6px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); }
+		.breakdown-table th { color: #9ca3af; font-weight: 600; text-transform: uppercase; font-size: 10px; }
+		.breakdown-table td:first-child, .breakdown-table th:first-child { text-align: left; }
+	</style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<body>
+<div id="app">
+	<header id="header">
+		<div id="title">
+			<h1>Hitter Matchups</h1>
+			<span id="updated-label"></span>
+		</div>
+		<div id="center-dropdown">
+			<div id="page-select-wrapper" class="select-wrapper">
+				<select id="page-select"></select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+			<div class="select-wrapper">
+				<label for="min-pa" class="select-label">Min PA</label>
+				<input id="min-pa" type="number" value="0" min="0" style="width:60px;" oninput="applyFilters()">
+			</div>
+			<div class="select-wrapper">
+				<label for="game-select" class="select-label">Game</label>
+				<select id="game-select" onchange="applyFilters()">
+					<option value="">All</option>
+				</select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+		</div>
+		<div id="auth-buttons">
+			<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+				<img src="/logos/discord.png" alt="Discord logo">
+				<span class="btn-text">Sign in with Discord</span>
+			</button>
+			<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				<div class="gsi-material-button-state"></div>
+				<div class="gsi-material-button-content-wrapper">
+					<div class="gsi-material-button-icon">
+						<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display:block;">
+							<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+							<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+							<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+							<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+						</svg>
+					</div>
+					<span style="display:none;">Sign in with Google</span>
+				</div>
+			</button>
+			<span id="username" class="username loggedIn"></span>
+			<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+			<button id="hide-username" onclick="hideUsername()">Hide</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</header>
+	<main>
+		<div id="table-container">
+			<div id="table"></div>
+			<div class="filter-wrapper">
+				<input type="text" id="player-search" placeholder="Search batter or pitcher..." autocomplete="off">
+			</div>
+		</div>
+	</main>
+</div>
+
+<div class="modal" id="breakdown-modal" onclick="if(event.target===this) closeBreakdownModal()">
+	<div class="modal-content devig-panel">
+		<div class="modal-header">
+			<h3 id="breakdown-modal-title">Pitch Breakdown</h3>
+			<button onclick="closeBreakdownModal()">&times;</button>
+		</div>
+		<div id="breakdown-modal-body"></div>
+	</div>
+</div>
+
+<script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="auth.js"></script>
+<script type="text/javascript">
+	PAGE = "matchups";
+	SPORT = "mlb";
+	parseURLParams();
+
+	let _allRows = [];
+
+	// Nulls (no matching data) always sort to the bottom, regardless of sort direction.
+	function nullsLastNumberSorter(a, b, aRow, bRow, column, dir) {
+		const av = (a === null || a === undefined || a === "" || isNaN(a)) ? null : +a;
+		const bv = (b === null || b === undefined || b === "" || isNaN(b)) ? null : +b;
+		if (av === null && bv === null) return 0;
+		if (av === null) return dir === "asc" ? 1 : -1;
+		if (bv === null) return dir === "asc" ? -1 : 1;
+		return av - bv;
+	}
+
+	function opsColor(v) {
+		if (v === null || v === undefined) return null;
+		if (v >= 0.900) return { bg: 'rgba(5,46,22,0.45)', fg: '#86efac' };
+		if (v < 0.600) return { bg: 'rgba(127,29,29,0.55)', fg: '#fca5a5' };
+		return { bg: '', fg: '#e2e8f0' };
+	}
+
+	function opsFormatter(cell) {
+		const v = cell.getValue();
+		if (v === null || v === undefined) return '<span style="color:#334155">—</span>';
+		const c = opsColor(v);
+		return `<span class="ops-badge" style="background:${c.bg || 'transparent'};color:${c.fg};">${v.toFixed(3)}</span>`;
+	}
+
+	function paFormatter(cell) {
+		const v = cell.getValue();
+		const low = v != null && v < 5;
+		return `<span class="pa-cell${low ? ' low-pa' : ''}" title="${low ? 'Small sample — treat as noisy' : ''}">${v ?? '—'}</span>`;
+	}
+
+	function renderTable(rows) {
+		TABLE = new Tabulator('#table', {
+			data: rows,
+			layout: 'fitDataFill',
+			placeholder: 'No matchup data.',
+			initialSort: [{ column: 'matchup_ops', dir: 'desc' }],
+			columnDefaults: {
+				vertAlign: 'middle',
+				hozAlign: 'center',
+				resizable: false,
+				headerSortStartingDir: 'desc'
+			},
+			rowFormatter(row) {
+				const data = row.getData();
+				const c = opsColor(data.matchup_ops);
+				if (c && c.bg) row.getElement().style.background = c.bg;
+			},
+			columns: [
+				{
+					title: 'Game', field: 'game', hozAlign: 'left', width: 100,
+					formatter: cell => cell.getValue().toUpperCase()
+				},
+				{
+					title: 'Batter', field: 'batter', hozAlign: 'left', widthGrow: 2, minWidth: 140,
+					formatter(cell) {
+						const d = cell.getRow().getData();
+						return `${title(d.batter)}<span class="hand-tag">${d.bats}</span>`;
+					}
+				},
+				{
+					title: 'Opp SP', field: 'pitcher', hozAlign: 'left', widthGrow: 2, minWidth: 140,
+					formatter(cell) {
+						const d = cell.getRow().getData();
+						return `${title(d.pitcher)}<span class="hand-tag">${d.throws}</span>`;
+					}
+				},
+				{ title: 'Matchup OPS', field: 'matchup_ops', width: 100, sorter: nullsLastNumberSorter, formatter: opsFormatter },
+				{ title: 'PA', field: 'matchup_pa', width: 55, sorter: 'number', formatter: paFormatter },
+				{ title: 'BIP', field: 'matchup_bip', width: 55, sorter: 'number' },
+				{ title: 'H', field: 'matchup_h', width: 45, sorter: 'number' },
+				{ title: '2B', field: 'matchup_2b', width: 45, sorter: 'number' },
+				{ title: '3B', field: 'matchup_3b', width: 45, sorter: 'number' },
+				{ title: 'HR', field: 'matchup_hr', width: 45, sorter: 'number' },
+				{ title: 'BRL', field: 'matchup_brl', width: 50, sorter: 'number' },
+				{ title: 'HH', field: 'matchup_hh', width: 50, sorter: 'number' },
+				{ title: 'FB', field: 'matchup_fb', width: 45, sorter: 'number' }
+			]
+		});
+
+		TABLE.on('rowClick', (e, row) => openBreakdownModal(row.getData()));
+	}
+
+	function applyRowFilters(r) {
+		const minPa = parseInt(document.getElementById('min-pa').value, 10) || 0;
+		const game = document.getElementById('game-select').value;
+		return (r.matchup_pa ?? 0) >= minPa && (!game || r.game === game);
+	}
+
+	function applyFilters() {
+		const q = document.getElementById('player-search').value.toLowerCase();
+		TABLE.setData(_allRows.filter(r =>
+			applyRowFilters(r) &&
+			(!q || r.batter.toLowerCase().includes(q) || r.pitcher.toLowerCase().includes(q))
+		));
+	}
+
+	function buildGameFilter(rows) {
+		const sel = document.getElementById('game-select');
+		[...new Set(rows.map(r => r.game))].sort().forEach(g => {
+			const opt = document.createElement('option');
+			opt.value = g;
+			opt.textContent = g.toUpperCase();
+			sel.appendChild(opt);
+		});
+	}
+
+	function openBreakdownModal(row) {
+		document.getElementById('breakdown-modal-title').textContent = `${title(row.batter)} vs ${title(row.pitcher)}`;
+		const body = document.getElementById('breakdown-modal-body');
+		const pieces = (row.breakdown || []).map(b => `
+			<tr>
+				<td>${b.pitch_type}</td>
+				<td>${b.usage_pct != null ? b.usage_pct.toFixed(1) + '%' : '—'}</td>
+				<td>${b.pa ?? 0}</td>
+				<td>${b.ops != null ? b.ops.toFixed(3) : '—'}</td>
+				<td>${b.h ?? 0}</td>
+				<td>${b.hr ?? 0}</td>
+				<td>${b.brl ?? 0}</td>
+			</tr>`).join('');
+		body.innerHTML = `
+			<table class="breakdown-table">
+				<thead><tr><th>Pitch</th><th>Usage%</th><th>PA</th><th>OPS</th><th>H</th><th>HR</th><th>BRL</th></tr></thead>
+				<tbody>${pieces || '<tr><td colspan="7">No breakdown data.</td></tr>'}</tbody>
+			</table>`;
+		document.getElementById('breakdown-modal').style.display = 'flex';
+	}
+
+	function closeBreakdownModal() {
+		document.getElementById('breakdown-modal').style.display = 'none';
+	}
+
+	function fetchMatchupsData() {
+		fetch('/matchups.json')
+			.then(r => r.json())
+			.then(data => {
+				_allRows = data.rows || [];
+				renderTable(_allRows);
+				buildGameFilter(_allRows);
+				document.getElementById('player-search').addEventListener('input', applyFilters);
+				if (data.generated_at) {
+					document.getElementById('updated-label').textContent = `Updated ${timeAgo(data.generated_at, true)}`;
+				}
+			})
+			.catch(err => console.error('matchups fetch failed', err));
+	}
+
+	fetchMatchupsData();
+</script>
+<script>handleSession();</script>
+</body>
+</html>

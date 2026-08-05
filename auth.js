@@ -302,6 +302,31 @@ async function saveState() {
 	}
 }
 
+async function saveOddsFormat() {
+	const odds_format = document.querySelector("#odds-format-select").value;
+	const status = document.querySelector("#odds-format-save-status");
+	if (!CURR_USER) {
+		// Not signed in — for local testing only, since there's no profile row to persist to.
+		try { localStorage.setItem("odds_format", odds_format); } catch (e) {}
+		status.textContent = "✅ Saved locally (not signed in)";
+		setTimeout(() => status.textContent = "", 3000);
+		return;
+	}
+	status.textContent = "Saving...";
+	const newData = { ...CURR_USER.metadata, odds_format };
+	const { error } = await SB.from('profiles')
+		.update({ metadata: newData })
+		.eq('id', CURR_SESSION.user.id);
+	if (error) {
+		status.textContent = "Error saving";
+	} else {
+		CURR_USER.metadata = newData;
+		cacheProfile(CURR_USER);
+		status.textContent = "✅ Saved!";
+		setTimeout(() => status.textContent = "", 3000);
+	}
+}
+
 async function saveAllExcludeBooks() {
 	saveExcludeHelper("all");
 }

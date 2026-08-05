@@ -251,6 +251,21 @@
 							<span id="unit-save-status" style="font-size:0.85rem;color:#4ade80"></span>
 						</div>
 						<p style="font-size:0.78rem;color:#6b7280;margin:0">Your wager per unit for the ¼ Kelly dollar toggle.</p>
+						<div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+							<label for="odds-format-select" style="font-size:0.9rem;">Odds Format</label>
+							<div class="select-wrapper" style="width:120px">
+								<select id="odds-format-select">
+									<option value="american">American</option>
+									<option value="decimal">Decimal</option>
+								</select>
+								<svg class="select-arrow" viewBox="0 0 20 20">
+									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+								</svg>
+							</div>
+							<button class="link-btn" onclick="saveOddsFormat()" style="margin:0">Save</button>
+							<span id="odds-format-save-status" style="font-size:0.85rem;color:#4ade80"></span>
+						</div>
+						<p style="font-size:0.78rem;color:#6b7280;margin:0">How odds are displayed across the site, e.g. -110 vs 1.91.</p>
 					</div>
 					<!-- Quick Links -->
 					<div class="profile-links">
@@ -286,6 +301,11 @@
 			if (savedState) document.querySelector("#state-select").value = savedState;
 			const savedUnit = CURR_USER?.metadata?.unit_size;
 			if (savedUnit) document.querySelector("#unit-size-input").value = savedUnit;
+			let savedOddsFormat = CURR_USER?.metadata?.odds_format;
+			if (!savedOddsFormat && !CURR_USER) {
+				try { savedOddsFormat = localStorage.getItem("odds_format"); } catch (e) {}
+			}
+			document.querySelector("#odds-format-select").value = savedOddsFormat || "american";
 		});
 
 		async function saveUnitSize() {

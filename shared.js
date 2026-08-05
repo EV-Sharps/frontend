@@ -408,6 +408,28 @@ function resolveLink(url) {
 	return link;
 }
 
+// Display-only conversion — EV/fairVal comparisons everywhere else stay in American odds.
+// Named distinctly from the existing americanToDecimal() (used for probability/EV math
+// further down this file) since duplicate `function` declarations in the same scope
+// silently overwrite each other — that collision was why toFixed(2) wasn't taking effect.
+function oddsAmericanToDecimal(american) {
+	const n = parseInt(american, 10);
+	if (isNaN(n)) return american;
+	const dec = n > 0 ? (n / 100) + 1 : (100 / Math.abs(n)) + 1;
+	return dec.toFixed(2);
+}
+
+function oddsDisplay(val) {
+	// Signed-in users read from their profile; logged-out falls back to the local-only
+	// preference saveOddsFormat() writes when there's no CURR_USER to persist to.
+	let format = CURR_USER?.metadata?.odds_format;
+	if (!format && !CURR_USER) {
+		try { format = localStorage.getItem("odds_format"); } catch (e) {}
+	}
+	if ((format || "american") !== "decimal") return val;
+	return oddsAmericanToDecimal(val);
+}
+
 const evOddsFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	const odds = cell.getValue();
@@ -422,18 +444,20 @@ const evOddsFormatter = function(cell) {
 		link = resolveLink(data.links[book]) || null;
 	}
 
-	// Build odds display (highlight +EV side)
-	let res = odds;
+	// Build odds display (highlight +EV side). Highlighting compares raw American values;
+	// only the rendered text is converted to decimal when the user has that preference set.
+	const isPair = odds.includes("/");
+	const [oRaw, uRaw] = isPair ? odds.split("/") : [odds, null];
+	let res = isPair ? `${oddsDisplay(oRaw)}/${oddsDisplay(uRaw)}` : oddsDisplay(odds);
 	const idx = data.under ? 1 : 0;
 	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0)) {
 		const cls = "#00ff66";
-		if (odds.includes("/")) {
-			let [o,u] = odds.split("/");
+		if (isPair) {
 			res = data.under
-				? `<span>${o}</span>/<span style='color:${cls}'>${u}</span>`
-				: `<span style='color:${cls}'>${o}</span>/<span>${u}</span>`;
+				? `<span>${oddsDisplay(oRaw)}</span>/<span style='color:${cls}'>${oddsDisplay(uRaw)}</span>`
+				: `<span style='color:${cls}'>${oddsDisplay(oRaw)}</span>/<span>${oddsDisplay(uRaw)}</span>`;
 		} else {
-			res = `<span style='color:${cls}'>${odds}</span>`;
+			res = `<span style='color:${cls}'>${oddsDisplay(odds)}</span>`;
 		}
 	}
 
@@ -1316,6 +1340,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
+	line = oddsDisplay(line);
 	const img = book ? `<img class='book-img' src='logos/${book.replace('kambi', 'parx').replace("hr_az", "hr").replace("hr_oh", "hr")}.png' alt='${book}' title='${book}' />` : "";
 	
 	// Get ROI color for vertical slice and W-L record

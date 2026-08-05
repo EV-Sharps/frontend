@@ -1245,7 +1245,7 @@ const plusMinusFormatter = function(cell) {
 	if (parseFloat(ev) > 0) {
 		ev = "+"+ev;
 	}
-	return ev;
+	return oddsDisplay(ev);
 }
 
 const inningFormatter = function(cell) {

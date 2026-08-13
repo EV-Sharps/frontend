@@ -78,6 +78,13 @@ const PAGE_SECTIONS = [
 		]
 	},
 	{
+		key: "nfl", label: "🏈 NFL",
+		pages: [
+			{ label: "🏈 Props", value: "nfl", sharp: true },
+			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true }
+		]
+	},
+	{
 		key: "nhl", label: "🏒 NHL",
 		pages: [
 			{ label: "🏒 Goals", value: "atgs" },

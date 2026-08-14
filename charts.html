@@ -48,9 +48,63 @@
 		justify-content: center;
 	}
 	#chart {
-		max-height: 400px;
+		max-height: 500px;
 		margin-top: 0.5rem;
 	}
+	#odds-row {
+		display: flex;
+		gap: 10px;
+		width: 100%;
+		flex-wrap: wrap;
+		align-items: flex-start;
+	}
+	#odds-row #chart {
+		flex: 1 1 340px;
+		min-width: 0;
+	}
+	#closing-odds-panel {
+		flex: 1 1 270px;
+		min-width: 270px;
+		max-width: 320px;
+		background: #0b1220;
+		border: 1px solid #1e293b;
+		border-radius: 6px;
+		margin-top: 0.5rem;
+		overflow: hidden;
+	}
+	.co-header {
+		font-size: 11px;
+		font-weight: 600;
+		color: #e5e7eb;
+		padding: 6px 8px;
+		border-bottom: 1px solid #1e293b;
+	}
+	.co-cols, .co-row {
+		display: grid;
+		grid-template-columns: minmax(40px, 1fr) 82px 52px 46px;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px;
+		font-size: 11px;
+	}
+	.co-price { white-space: nowrap; }
+	.co-cols {
+		padding-top: 6px;
+		padding-bottom: 4px;
+		font-size: 9px;
+		font-weight: 600;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: .03em;
+	}
+	.co-cols span:not(:first-child), .co-row span:not(.co-book) { text-align: right; }
+	.co-row { border-top: 1px solid #1e293b; }
+	.co-row.is-best { background: #111827; }
+	.co-book { color: #e5e7eb; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.co-book.is-best { color: #fbbf24; font-weight: 700; }
+	.co-price { color: #d1d5db; }
+	.co-fair { color: #9ca3af; }
+	.co-ev { font-weight: 600; }
 	#mix-panel {
 		overflow-y: auto;
 		padding: 4px 0;
@@ -102,6 +156,10 @@
 			width: 100% !important;
 			max-width: 100% !important;
 			max-height: none;
+		}
+		#right-body.mobile-open #closing-odds-panel {
+			flex: 1 1 100%;
+			max-width: 100%;
 		}
 	}
 	#tweet-bar {
@@ -824,7 +882,10 @@
 						</a>
 						<span id="homer-pitch" class="homer-pitch-badge"></span>
 					</div>
-					<div id="chart"></div>
+					<div id="odds-row">
+						<div id="chart"></div>
+						<div id="closing-odds-panel"></div>
+					</div>
 					<div id="mix-panel" style="display:none;"></div>
 					<div id="auto-mix-panel"></div>
 				</div>
@@ -874,6 +935,8 @@
 			const chart = data.oddsChart;
 			const el = document.getElementById('chart');
 
+			renderClosingOddsPanel(data);
+
 			if (!chart || chart.length === 0) {
 				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
 				return;
@@ -888,19 +951,22 @@
 			});
 
 			const now = new Date();
+			// Odds stop mattering once the game starts — don't let the line run past it.
+			const gameTime = RES.times?.[data.game] ? new Date(RES.times[data.game]) : null;
+			const cutoff = gameTime && gameTime < now ? gameTime : now;
 			const BOOK_COLORS = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
 			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
 			const books = [...bookSet];
 			const tooMany = books.length > BOOK_COLORS.length;
 
 			const traces = books.map((book, i) => {
-				// gather points where this book has data
+				// gather points where this book has data, up to the game start
 				const pts = chart
-					.filter(e => e[book] != null)
+					.filter(e => e[book] != null && new Date(e.ts) <= cutoff)
 					.map(e => ({ x: new Date(e.ts), y: e[book] }));
 				if (pts.length === 0) return null;
-				// extend to now with last known value
-				const xs = [...pts.map(p => p.x), now];
+				// extend to cutoff (now, or game start if it's already begun) with last known value
+				const xs = [...pts.map(p => p.x), cutoff];
 				const ys = [...pts.map(p => p.y), pts.at(-1).y];
 				const color = BOOK_COLORS[i % BOOK_COLORS.length];
 				const dash = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
@@ -919,12 +985,14 @@
 				};
 			}).filter(Boolean);
 
+			const allX = traces.flatMap(t => t.x);
 			const layout = {
 				title: { text: `${title(data.player)}: HR Over Odds`, font: { size: 13 } },
 				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
 				font: { color: '#e8e6e3' },
 				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
-				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
+				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false,
+					range: allX.length ? [new Date(Math.min(...allX)), cutoff] : undefined },
 				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
 				margin: { l: 45, r: 10, t: 50, b: 40 },
 				hovermode: 'x unified'
@@ -932,6 +1000,74 @@
 
 			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
 			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+		}
+
+		// Ranks each book's closing line by EV of betting the single best over price
+		// available against that book's own devigged fair number (using shared devig()).
+		function renderClosingOddsPanel(rowData) {
+			const panel = document.getElementById('closing-odds-panel');
+			if (!panel) return;
+
+			const bookOdds = rowData.bookOdds;
+			if (!bookOdds || Object.keys(bookOdds).length === 0) {
+				panel.innerHTML = '';
+				return;
+			}
+
+			const legIndex = rowData.under ? 1 : 0;
+
+			// Best (highest-paying / lowest implied probability) over price across all books
+			let best = null;
+			Object.entries(bookOdds).forEach(([book, val]) => {
+				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
+				const price = parseInt(token, 10);
+				if (!Number.isFinite(price)) return;
+				const implied = americanToImplied(price);
+				if (implied == null) return;
+				if (!best || implied < best.implied) best = { book, price, implied };
+			});
+
+			if (!best) {
+				panel.innerHTML = '';
+				return;
+			}
+
+			const fmtLeg = n => oddsDisplay(n > 0 ? `+${n}` : `${n}`);
+
+			const rows = Object.entries(bookOdds).map(([book, val]) => {
+				const d = devig(val, best.price, "", rowData.under);
+				if (!d || d.ev == null || isNaN(d.ev)) return null;
+				const isPair = String(val).includes('/');
+				const token = isPair ? String(val).split('/')[legIndex] : String(val);
+				const price = parseInt(token, 10);
+				if (!Number.isFinite(price)) return null;
+				const priceDisplay = isPair
+					? String(val).split('/').map(p => fmtLeg(parseInt(p, 10))).join('/')
+					: fmtLeg(price);
+				return { book, price, priceDisplay, ...d };
+			}).filter(Boolean).sort((a, b) => b.ev - a.ev);
+
+			if (rows.length === 0) {
+				panel.innerHTML = '';
+				return;
+			}
+
+			const rowsHtml = rows.map(r => {
+				const isBest = r.book === best.book;
+				const evColor = r.ev >= 0 ? '#4ade80' : '#f87171';
+				return `
+					<div class="co-row ${isBest ? 'is-best' : ''}">
+						<span class="co-book ${isBest ? 'is-best' : ''}" title="${r.book.toUpperCase()}">${r.book.toUpperCase()}${isBest ? ' ★' : ''}</span>
+						<span class="co-price">${r.priceDisplay}</span>
+						<span class="co-fair">${r.fairVal > 0 ? '+' : ''}${r.fairVal}</span>
+						<span class="co-ev" style="color:${evColor}">${r.ev > 0 ? '+' : ''}${r.ev}%</span>
+					</div>`;
+			}).join('');
+
+			panel.innerHTML = `
+				<div class="co-header">Best Over: <span style="color:#fbbf24">${best.book.toUpperCase()} ${best.price > 0 ? '+' : ''}${best.price}</span></div>
+				<div class="co-cols"><span>Book</span><span>Price</span><span>FV</span><span>EV</span></div>
+				${rowsHtml}`;
 		}
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
@@ -959,10 +1095,12 @@
 		function parseData(data) {
 			UPDATED[PAGE] = data["updated"];
 			const games = data["games"];
+			const times = data["times"];
 			data = data["data"];
 
 			let OLD = RES;
 			RES = data;
+			RES.times = times;
 		}
 
 		function getNextOpeningDay() {
@@ -1548,7 +1686,7 @@
 		}
 
 		function fetchAndShowMix(rowData) {
-			document.getElementById('chart').style.display = 'none';
+			document.getElementById('odds-row').style.display = 'none';
 			document.getElementById('mix-panel').style.display = '';
 			if (PITCHER_MIX_CACHE) {
 				showMixPanel(rowData);
@@ -1568,7 +1706,7 @@
 			const pitcherLR = rowData.pitcherLR?.toLowerCase() || pitcher?.pitch_hand?.toLowerCase() || "r";
 			MIX_SELECTED_PS = pitcherLR;
 			const panel = document.getElementById('mix-panel');
-			document.getElementById('chart').style.display = 'none';
+			document.getElementById('odds-row').style.display = 'none';
 
 			if (!batter) {
 				panel.innerHTML = `<div style="color:#9ca3af;padding:8px;font-size:12px;">No mix data for ${rowData.player}.</div>`;
@@ -1645,7 +1783,7 @@
 		}
 
 		function _mixShowChart() {
-			document.getElementById('chart').style.display = '';
+			document.getElementById('odds-row').style.display = '';
 			document.getElementById('mix-panel').style.display = 'none';
 		}
 		// ── End Pitcher Mix ──────────────────────────────────────────────────
@@ -1678,8 +1816,9 @@
 				closeRightBody();
 			} else {
 				row.select();
+				table.style.display = "none";
 				if (MOBILE) {
-					table.style.display = "none";
+					
 					right.classList.add("mobile-open");
 				} else {
 					//left.style.width = "50%";

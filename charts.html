@@ -1002,8 +1002,58 @@
 			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
 		}
 
+		// Same shape/inputs as the shared devig(), but devigs via the probit method
+		// (getProbit) instead of the power/mult/add blend devig() uses.
+		function devigProbit(ou, finalOdds, isUnder = false, manualVig = "") {
+			const parts = String(ou).split("/");
+			if (!parts[0]) return;
+
+			let over = parseInt(parts[0], 10);
+			if (!Number.isFinite(over)) return;
+
+			let impliedOver = americanToImplied(over);
+			const bet = 100;
+			const profit = (finalOdds >= 0)
+				? (finalOdds * bet / 100)
+				: (100 * bet) / Math.abs(finalOdds);
+
+			let under;
+			if (String(ou).indexOf("/") === -1 || parts.length < 2 || parts[1] === "") {
+				let vig = 0.07;
+				if (manualVig != "") vig = parseInt(manualVig);
+				if (vig >= impliedOver) vig = Math.max(impliedOver - 0.01, 0);
+				const u = 1 + vig - impliedOver;
+				if (u >= 1) return;
+				if (over > 0) under = Math.trunc((100 * u) / (-1 + u));
+				else under = Math.trunc((100 - 100 * u) / u);
+				if (isUnder) {
+					const tmpUnder = under;
+					under = over;
+					over = tmpUnder;
+					impliedOver = americanToImplied(over);
+				}
+			} else {
+				under = parseInt(parts[1], 10);
+			}
+
+			if (!Number.isFinite(under)) return;
+			const impliedUnder = americanToImplied(under);
+
+			const prob = getProbit(impliedOver, impliedUnder);
+			if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return;
+
+			const fairVal = impliedToAmerican(prob);
+			if (fairVal == null) return;
+
+			const implied = round2(prob * 100);
+			const ev = round1(prob * profit + (1 - prob) * (-1 * bet));
+			const kelly = getKelly(finalOdds, ev);
+
+			return { ev, fairVal, implied, kelly };
+		}
+
 		// Ranks each book's closing line by EV of betting the single best over price
-		// available against that book's own devigged fair number (using shared devig()).
+		// available against that book's own devigged fair number, using the probit method.
 		function renderClosingOddsPanel(rowData) {
 			const panel = document.getElementById('closing-odds-panel');
 			if (!panel) return;
@@ -1035,7 +1085,7 @@
 			const fmtLeg = n => oddsDisplay(n > 0 ? `+${n}` : `${n}`);
 
 			const rows = Object.entries(bookOdds).map(([book, val]) => {
-				const d = devig(val, best.price, "", rowData.under);
+				const d = devigProbit(val, best.price, rowData.under);
 				if (!d || d.ev == null || isNaN(d.ev)) return null;
 				const isPair = String(val).includes('/');
 				const token = isPair ? String(val).split('/')[legIndex] : String(val);
@@ -1066,7 +1116,7 @@
 
 			panel.innerHTML = `
 				<div class="co-header">Best Over: <span style="color:#fbbf24">${best.book.toUpperCase()} ${best.price > 0 ? '+' : ''}${best.price}</span></div>
-				<div class="co-cols"><span>Book</span><span>Price</span><span>FV</span><span>EV</span></div>
+				<div class="co-cols"><span>Devig</span><span>Price</span><span>FV</span><span>EV</span></div>
 				${rowsHtml}`;
 		}
 

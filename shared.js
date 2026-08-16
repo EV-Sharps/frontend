@@ -314,10 +314,17 @@ function parseBook(book) {
 		FD: "Fanduel",
 		FN: "Fanatics",
 		HR: "Hardrock",
+		HR_OH: "Hardrock (OH)",
 		MGM: "BetMGM",
 		BR: "BetRivers",
 		FL: "Fliff",
-		RE: "ReBet"
+		RE: "ReBet",
+		KAL: "Kalshi",
+		NV: "NoVig",
+		PX: "ProphetX",
+		POLY: "Polymarket",
+		KAMBI: "Kambi",
+		ESPN: "ESPN"
 	}
 	return conv[book.toUpperCase()] || title(book);
 }
@@ -4274,7 +4281,8 @@ function numFrom(v) {
 
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
-	liquidity:   { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
+	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
+	liquidityOver: { enabled: "fb-liquidity-over-enabled", book: "fb-liquidity-over-book", amount: "fb-liquidity-over-amount" },
 	homerRate:   { enabled: "fb-homerrate-enabled", window: "fb-homerrate-window", min: "fb-homerrate-min" },
 	bpp:         { enabled: "fb-bpp-enabled", min: "fb-bpp-min" },
 	due:         { enabled: "fb-due-enabled" },
@@ -4428,6 +4436,19 @@ function passesFilterBuilder(row) {
 		const clearsBook = b => {
 			const liq = row.liquidity?.[b];
 			return Array.isArray(liq) && numFrom(liq[1]) > min;
+		};
+		const clears = bookSel === "both" ? ["nv", "px"].every(clearsBook)
+			: bookSel === "either" ? ["nv", "px"].some(clearsBook)
+			: clearsBook(bookSel);
+		if (!clears) return false;
+	}
+
+	if (c.liquidityOver?.enabled) {
+		const min = numFrom(c.liquidityOver.amount) ?? 200;
+		const bookSel = c.liquidityOver.book || "nv";
+		const clearsBook = b => {
+			const liq = row.liquidity?.[b];
+			return Array.isArray(liq) && numFrom(liq[0]) > min;
 		};
 		const clears = bookSel === "both" ? ["nv", "px"].every(clearsBook)
 			: bookSel === "either" ? ["nv", "px"].some(clearsBook)

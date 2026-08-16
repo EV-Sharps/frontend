@@ -116,6 +116,7 @@
 		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
 	}
 	.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+	.mix-row-hit { box-shadow: inset 0 0 0 2px #fbbf24; }
 	
 	#table {
 		width: 100%;
@@ -185,6 +186,8 @@
 		white-space: nowrap;
 	}
 	.tweet-btn:hover { background: #222; }
+	.copy-btn { background: #1e293b; border: 1px solid #334155; }
+	.copy-btn:hover { background: #253449; }
 	.homer-pitch-badge { font-size: 12px; color: #94a3b8; }
 	.homer-pitch-badge strong { color: #fbbf24; }
 	#auto-mix-panel { width: 100%; overflow-y: auto; padding: 4px 0; }
@@ -880,6 +883,10 @@
 							<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.635L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 							Tweet
 						</a>
+						<button id="copy-devig-btn" class="tweet-btn copy-btn" type="button" onclick="copyDevigText()" title="Copy best book / EV devigs / pitch as text">
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+							Copy
+						</button>
 						<span id="homer-pitch" class="homer-pitch-badge"></span>
 					</div>
 					<div id="odds-row">
@@ -1052,21 +1059,15 @@
 			return { ev, fairVal, implied, kelly };
 		}
 
-		// Ranks each book's closing line by EV of betting the single best over price
-		// available against that book's own devigged fair number, using the probit method.
-		function renderClosingOddsPanel(rowData) {
-			const panel = document.getElementById('closing-odds-panel');
-			if (!panel) return;
-
+		// Best (highest-paying / lowest implied probability) over price across all books,
+		// plus every book's own line ranked by EV (probit) of betting that best price.
+		// Shared by the closing-odds panel and the tweet-text builder so both agree.
+		function computeClosingOdds(rowData) {
 			const bookOdds = rowData.bookOdds;
-			if (!bookOdds || Object.keys(bookOdds).length === 0) {
-				panel.innerHTML = '';
-				return;
-			}
+			if (!bookOdds || Object.keys(bookOdds).length === 0) return null;
 
 			const legIndex = rowData.under ? 1 : 0;
 
-			// Best (highest-paying / lowest implied probability) over price across all books
 			let best = null;
 			Object.entries(bookOdds).forEach(([book, val]) => {
 				const token = String(val).includes('/') ? String(val).split('/')[legIndex] : String(val);
@@ -1076,11 +1077,7 @@
 				if (implied == null) return;
 				if (!best || implied < best.implied) best = { book, price, implied };
 			});
-
-			if (!best) {
-				panel.innerHTML = '';
-				return;
-			}
+			if (!best) return null;
 
 			const fmtLeg = n => oddsDisplay(n > 0 ? `+${n}` : `${n}`);
 
@@ -1097,10 +1094,20 @@
 				return { book, price, priceDisplay, ...d };
 			}).filter(Boolean).sort((a, b) => b.ev - a.ev);
 
-			if (rows.length === 0) {
+			if (rows.length === 0) return null;
+			return { best, rows };
+		}
+
+		function renderClosingOddsPanel(rowData) {
+			const panel = document.getElementById('closing-odds-panel');
+			if (!panel) return;
+
+			const co = computeClosingOdds(rowData);
+			if (!co) {
 				panel.innerHTML = '';
 				return;
 			}
+			const { best, rows } = co;
 
 			const rowsHtml = rows.map(r => {
 				const isBest = r.book === best.book;
@@ -1578,6 +1585,34 @@
 			}
 		}
 
+		// "Best Book: Kalshi +624 / EV Devigs: MGM, BOL, Pinnacle... / Pitch: Cutter"
+		function buildDevigTweetText(rowData) {
+			const lines = [];
+			const co = computeClosingOdds(rowData);
+			if (co) {
+				const { best, rows } = co;
+				lines.push(`Best Book: ${parseBook(best.book)} ${best.price > 0 ? '+' : ''}${best.price}`);
+				const devigList = rows.filter(r => r.book !== best.book && r.ev > 0).map(r => parseBook(r.book));
+				if (devigList.length) lines.push(`EV Devigs: ${devigList.join(', ')}`);
+			}
+			const hr = getLastHomerFromFeed(rowData);
+			if (hr) lines.push(`Pitch: ${pitchMap[hr.pitch] || hr.pitch || '?'}`);
+			return lines.join('\n');
+		}
+
+		function copyDevigText() {
+			if (!_autoMixRow) return;
+			const text = buildDevigTweetText(_autoMixRow);
+			if (!text) return;
+			navigator.clipboard.writeText(text).then(() => {
+				const btn = document.getElementById('copy-devig-btn');
+				if (!btn) return;
+				const original = btn.innerHTML;
+				btn.innerHTML = 'Copied!';
+				setTimeout(() => { btn.innerHTML = original; }, 1200);
+			});
+		}
+
 		function renderAutoMixPanel(rowData) {
 			const panel = document.getElementById('auto-mix-panel');
 			panel.innerHTML = '';
@@ -1634,17 +1669,12 @@
 			let side;
 			if (batter.pitch_hand === 'B') side = pitcherSide === 'r' ? 'l' : 'r';
 			else side = batter.pitch_hand?.toLowerCase() || 'r';
-			let pitcherTableData = pitcher[`pitch_table_${side}`] || [];
-			let batterTableData = (batter[`pitch_table_${pitcherSide}`] || []).map(r => ({
+			const pitcherTableData = pitcher[`pitch_table_${side}`] || [];
+			const batterTableData = (batter[`pitch_table_${pitcherSide}`] || []).map(r => ({
 				...r, pitch_num: r[`pitch_num_${side}`] ?? ''
 			}));
-			if (filterPitch) {
-				const fp = filterPitch.toUpperCase();
-				pitcherTableData = pitcherTableData.filter(r => r.type?.toUpperCase() === fp);
-				batterTableData = batterTableData.filter(r => r.type?.toUpperCase() === fp);
-			}
-			_mixBuild('#auto-mix-pitcher-table', pitcherTableData, 'n');
-			_mixBuild('#auto-mix-batter-table', batterTableData, 'n');
+			_mixBuild('#auto-mix-pitcher-table', pitcherTableData, 'n', filterPitch);
+			_mixBuild('#auto-mix-batter-table', batterTableData, 'n', filterPitch);
 		}
 
 		const bgPitchFormatter = function(cell) {
@@ -1660,7 +1690,9 @@
 			} else {
 				display = val ? val.toFixed(1) : "0";
 			}
-			const pct = cell.getRow().getData()[field + "_pct"];
+			let pct = cell.getRow().getData()[field + "_pct"];
+			// Ground-ball rate is bad for power: low GB% should read green, high GB% red.
+			if (field === "gb_rate" && pct != null) pct = 100 - pct;
 			let bg = "";
 			if (pct != null) {
 				if (pct >= 80) bg = "rgba(46,160,67,0.85)";
@@ -1798,7 +1830,7 @@
 			if (batter) _renderMixTables(batter, teamData?.pitcher, ps);
 		}
 
-		function _mixBuild(el, data, sortCol) {
+		function _mixBuild(el, data, sortCol, highlightType) {
 			try { Tabulator.findTable(el)?.[0]?.destroy(); } catch(e) {}
 			document.querySelector(el).innerHTML = '';
 			if (!data?.length) {
@@ -1811,6 +1843,11 @@
 				initialSort: [{ column: sortCol || "n", dir: "desc" }],
 				columnDefaults: { vertAlign:"middle", hozAlign:"center", resizable:false, headerSortStartingDir:"desc" },
 				columns: MIX_COLS,
+				rowFormatter: highlightType ? function(row) {
+					if (row.getData().type?.toUpperCase() === highlightType.toUpperCase()) {
+						row.getElement().classList.add("mix-row-hit");
+					}
+				} : undefined,
 			});
 		}
 

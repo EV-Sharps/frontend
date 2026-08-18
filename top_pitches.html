@@ -12,6 +12,9 @@
 	<style type="text/css">
 		#table { width: auto; height: 90%; }
 		.tabulator-cell { height: 24px; }
+		/* style.css hides the sort arrow site-wide (!important); #table's ID
+		   specificity beats that global class selector so it wins here. */
+		#table .tabulator-col .tabulator-arrow { display: inline-block !important; }
 		#updated-label { color: #6b7280; font-size: 11px; margin-left: 10px; white-space: nowrap; }
 		.n-cell { font-weight: 600; }
 		.n-cell.low-n { color: #f59e0b; }
@@ -158,6 +161,11 @@
 					<button class="ps-btn is-active" data-mode="stats">Stats</button>
 					<button class="ps-btn" data-mode="bbe">BBE</button>
 				</div>
+				<div class="batter-ps-toggle" id="hand-mode-toggle">
+					<button class="ps-btn is-active" data-mode="pitcher" title="Real matchup: batter's actual side vs today's SP's actual hand">Pitcher Hand</button>
+					<button class="ps-btn" data-mode="opposite" title="Flips both: batter vs the other pitcher hand, SP vs the other batter hand">Opposite Hand</button>
+					<button class="ps-btn" data-mode="all" title="Combined, ignoring handedness entirely">All</button>
+				</div>
 			</div>
 			<div id="pitch-legend" class="pitch-legend"></div>
 			<div id="table"></div>
@@ -206,12 +214,13 @@
 	let PITCH_MODE = "top3"; // "top3" | "all"
 	let STAT_MODE = "stats"; // "stats" | "bbe"
 	let WINDOW_MODE = "season"; // "season" | "L10" | "L20"
+	let HAND_MODE = "pitcher"; // "pitcher" | "opposite" | "all"
 	let SELECTED_ROW_KEY = null;
 
 	// ── Data shaping (mirrors pitcher_mix.html's formatMix/getTopPitches) ──────
 
 	function transformPitcher(pitcher) {
-		for (const side of ["l", "r"]) {
+		for (const side of ["l", "r", "both"]) {
 			const section = pitcher?.pitch?.[side];
 			if (!section) continue;
 			pitcher[`pitch_table_${side}`] = Object.entries(section).map(([type, stats]) => ({
@@ -222,12 +231,38 @@
 
 	function getTopPitches(pitcher) {
 		const map = {};
-		for (const side of ["l", "r"]) {
+		for (const side of ["l", "r", "both"]) {
 			const t = pitcher[`pitch_table_${side}`];
 			if (!t) continue;
 			map[side] = [...t].sort((a, b) => b.n - a.n).map(r => r.type);
 		}
 		return map;
+	}
+
+	// Which side of the batter's data, and which side of the SP's arsenal, to
+	// read — depends on the hand-mode toggle, not just the real matchup:
+	//   pitcher:  the real matchup (default) — batter's actual side vs today's
+	//             SP's actual throwing hand.
+	//   opposite: flips both — batter's real split vs the OTHER pitcher hand,
+	//             and the SP's real split vs the OTHER batter hand. A "what if"
+	//             comparison, not what's actually happening today.
+	//   all:      ignore handedness entirely — both sides' combined ("both") data.
+	function resolveHandSides(pitcherHand, batterHandRaw, handMode) {
+		if (handMode === "all") return { pSide: "both", bSide: "both" };
+		// Switch hitters bat opposite the pitcher's throwing hand; everyone
+		// else bats their own hand.
+		let pSide = pitcherHand;
+		let bSide = batterHandRaw === "B" ? (pSide === "l" ? "r" : "l") : (batterHandRaw === "L" ? "l" : "r");
+		if (handMode === "opposite") {
+			pSide = pSide === "l" ? "r" : "l";
+			bSide = bSide === "l" ? "r" : "l";
+		}
+		return { pSide, bSide };
+	}
+
+	function getBbeEvents(bw, pSide) {
+		if (pSide === "both") return [...(bw.bbe_l || []), ...(bw.bbe_r || [])];
+		return bw[`bbe_${pSide}`] || [];
 	}
 
 	// Weighted (by pitch count) blend of a batter's stat lines across the SP's
@@ -330,22 +365,18 @@
 			(teamData.batters || []).forEach(batter => {
 				const bw = batter.windows?.[window];
 				if (!bw) return;
-				// Switch hitters bat opposite the pitcher's throwing hand; everyone
-				// else bats their own hand. That's the side the SP's top-3 should
-				// reflect (his mix vs THIS batter's handedness, not his own).
 				const batterHandRaw = (batter.pitch_hand || "").toUpperCase();
-				const batterSide = batterHandRaw === "B" ? (pitcherHand === "l" ? "r" : "l")
-					: batterHandRaw === "L" ? "l" : "r";
-				const top3 = (topPitches[batterSide] || []).slice(0, 3);
+				const { pSide, bSide } = resolveHandSides(pitcherHand, batterHandRaw, HAND_MODE);
+				const top3 = (topPitches[bSide] || []).slice(0, 3);
 				if (!top3.length) return;
 
-				const section = bw.pitch?.[pitcherHand];
+				const section = bw.pitch?.[pSide];
 				if (!section) return;
 				const pitchRows = Object.entries(section).map(([type, stats]) => ({ type, ...stats, n: stats["#"] || 0 }));
 				const includedRows = top3Only ? pitchRows.filter(r => top3.includes(r.type)) : pitchRows;
 				const agg = weightedAggregate(includedRows);
 				if (!agg) return;
-				const bbeEvents = (bw[`bbe_${pitcherHand}`] || []).filter(e => !top3Only || top3.includes(e.pitch_type));
+				const bbeEvents = getBbeEvents(bw, pSide).filter(e => !top3Only || top3.includes(e.pitch_type));
 				rows.push({
 					player: batter.player,
 					team: code,
@@ -507,11 +538,11 @@
 			},
 			columns: [
 				{
-					title: 'Batter', field: 'player', hozAlign: 'left', widthGrow: 2, minWidth: 125, frozen: true,
+					title: 'Batter', field: 'player', headerFilter: "input", hozAlign: 'left', widthGrow: 2, minWidth: 125, frozen: true,
 					formatter: playerFormatter, formatterParams: { sport: 'mlb' }
 				},
 				{
-					title: 'Opp SP', field: 'pitcher', hozAlign: 'left', widthGrow: 2, minWidth: 100,
+					title: 'Opp SP', field: 'pitcher', headerFilter: "input", hozAlign: 'left', widthGrow: 2, minWidth: 100,
 					formatter: pitcherFormatter
 				},
 				{
@@ -631,6 +662,7 @@
 		}
 	});
 	wireModeToggle('window-mode-toggle', mode => { WINDOW_MODE = mode; rebuildFromRaw(); });
+	wireModeToggle('hand-mode-toggle', mode => { HAND_MODE = mode; rebuildFromRaw(); });
 
 	// ── Row click → reuse the shared feed panel (same as dingers.html) ─────────
 

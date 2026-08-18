@@ -55,6 +55,7 @@ const PAGE_SECTIONS = [
 			{ label: "🔍 Pitcher Preview", value: "preview" },
 			{ label: "💨 Pitcher Ks Preview", value: "preview_k" },
 			{ label: "📰 Pitcher Mix", value: "pitcher_mix" },
+			{ label: "🔥 Top 3 Pitches", value: "top_pitches" },
 			{ label: "📡 Feed", value: "feed" },
 			{ label: "📊 Trends", value: "trends" },
 			{ label: "📉 Movement", value: "movement?sport=mlb", sharp: true },
@@ -1702,12 +1703,12 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers", "dingers2", "recap", "strikeouts", "backfields", "tracker"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "dingers2", "recap", "strikeouts", "backfields", "tracker", "top_pitches"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
-	if (isPlayerProp || ["feed", "dingers", "dingers2", "barrels"].includes(PAGE)) {
-		let s = ["feed", "dingers", "dingers2", "barrels"].includes(PAGE) ? "mlb" : sport;
+	if (isPlayerProp || ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE)) {
+		let s = ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";
 		let t = sport.includes("ncaa") ? data.teamId : data.team?.replace("-gm2", "");
@@ -2249,10 +2250,10 @@ function renderFeedTable(data) {
 	});
 }
 
-function plotHRGap(showGames = false) {
+function plotHRGap(showGames = false, mode = "pa") {
 	const data = TABLE.getSelectedData()[0];
-	let dueData = PAGE == "atgs" ? data.due.g : data.homerLogs.pa;
-	const abBtwn = PAGE == "atgs" ? data.due.g.btwn : data.homerLogs.pa.btwn;
+	let dueData = PAGE == "atgs" ? data.due.g : data.homerLogs[mode];
+	const abBtwn = PAGE == "atgs" ? data.due.g.btwn : data.homerLogs[mode].btwn;
 	const maxAB = Math.max(...abBtwn);
 	const counts = {};
 	abBtwn.forEach(ab => {
@@ -2278,8 +2279,9 @@ function plotHRGap(showGames = false) {
 		type: "bar",
 		//orientation: "h"
 	};
-	let t = `${title(data.player)} Career PA Btwn HR`;
-	let xAxisTitle = "PA btwn HR";
+	const modeLabel = mode === "bbe" ? "BBE" : "PA";
+	let t = `${title(data.player)} Career ${modeLabel} Btwn HR`;
+	let xAxisTitle = `${modeLabel} btwn HR`;
 	if (PAGE == "atgs") {
 		t = `${title(data.player)} Career Gm Btwn Goals`;
 		xAxisTitle = "Gm btwn Goals"
@@ -2354,7 +2356,7 @@ function plotHRGap(showGames = false) {
 			{
 				x: dueData.streak,
 				y: Math.max(...arr),
-				text: `${dueData.streak} ${PAGE == "atgs" ? "GM" : "PA"}`,
+				text: `${dueData.streak} ${PAGE == "atgs" ? "GM" : modeLabel}`,
 				showarrow: false,
 				xanchor: "left"
 			},

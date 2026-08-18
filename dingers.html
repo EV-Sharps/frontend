@@ -931,6 +931,7 @@
 						<div class="select-wrapper">
 						<select id="btwn-select">
 							<option value="pa">PA Btwn</option>
+							<option value="bbe">BBE Btwn</option>
 							<option value="odds">Odds</option>
 							<option value="feed">Feed</option>
 							<option value="mix">Mix</option>
@@ -994,6 +995,8 @@
 				_mixShowChart();
 				if (event.target.value == "g") {
 					plotHRGap(showGames=true);
+				} else if (event.target.value == "bbe") {
+					plotHRGap(false, "bbe");
 				} else if (event.target.value == "feed") {
 					renderFeed();
 				} else if (event.target.value == "odds") {

@@ -119,6 +119,7 @@
 				<div class="dropdown">
 					<select id="btwn-select">
 						<option value="pa">PA Btwn</option>
+						<option value="bbe">BBE Btwn</option>
 						<option value="feed">Feed</option>
 					</select>
 					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
@@ -166,6 +167,8 @@
 				plotHRGap(showGames=true);
 			} else if (event.target.value == "feed") {
 				renderFeed();
+			} else if (event.target.value == "bbe") {
+				plotHRGap(false, "bbe");
 			} else {
 				plotHRGap();
 			}
@@ -274,12 +277,18 @@
 						//{title: "Med", field: "homerLogs.gamesBtwnMed", width: 40},
 						//{title: "Z", field: "homerLogs.z", width: 40, formatter: lastDiffFormatter, sorter: "number"},
 
+						{title: "BBE", field: "homerLogs.bbe.streak", width: 40, formatter: blurFormatter},
+						{title: "Med", field: "homerLogs.bbe.med", width: 40, formatter: blurFormatter},
+						{title: "Z<br>BBE", field: "homerLogs.bbe.z", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Z<br>Med BBE", field: "homerLogs.bbe.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+
 						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: blurFormatter},
 						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Z<br>Avg", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number"},
+
 						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: blurFormatter},
 						{title: "SD", field: "homerLogs.pa.sd", width: 40, formatter: blurFormatter},
-						{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Z<br>Med", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
 					]},
 					{title: "Barrels", columns: [
 						//{title: "Test", field: "brlCntTest", width: 45, sorter: "number"},
@@ -366,9 +375,11 @@
 		}
 
 		function filterDue() {
+			let key = "pa";
+			key = "bbe";
 			if (TABLE.getFilters().length == 0) {
 				TABLE.setFilter([
-					{field:"homerLogs.pa.z_median", type:">=", value: -0.1},
+					{field:`homerLogs.${key}.z_median`, type:">=", value: -0.1},
 					{field:"game", type:"!=", value: ""},
 					{field:"book", type:"!=", value: ""},
 					//{field:"game_trends.hard_hit_ct.5GPercentile", type:">=", value: 75},
@@ -376,11 +387,11 @@
 					{field:"game_trends.barrel_ct.3G", type:">", value: 0},
 				]);
 				TABLE.setSort([
-					{column: "homerLogs.pa.z_median", dir: "desc"},
+					{column: `homerLogs.${key}.z_median`, dir: "desc"},
 					//{column: "game_trends.barrel_ct.3G", dir: "desc"},
 				]);
 				TABLE.getColumns().map(col => {
-					let arr = ["ev", "book", "player", "pitcher", "on_base_plus_slg", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", "homerLogs.pa.sd"];
+					let arr = ["ev", "book", "player", "pitcher", "on_base_plus_slg", `homerLogs.${key}.streak`, `homerLogs.${key}.med`, `homerLogs.${key}.z_median`, "barrel_ct", "game_trends.barrel_ct.3G", "hard_hit_ct", "game_trends.hard_hit_ct.3G", "exit_velocity_avg", "game_trends.exit_velo_100.3G", `homerLogs.${key}.sd`];
 					if (!arr.includes(col.getField())) {
 						col.hide();
 					} else {

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>🔥 Top 3 Pitches</title>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<link href="tabulator.min.css" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style type="text/css">
+		#table { width: auto; height: 90%; }
+		.tabulator-cell { height: 24px; }
+		#updated-label { color: #6b7280; font-size: 11px; margin-left: 10px; white-space: nowrap; }
+		.n-cell { font-weight: 600; }
+		.n-cell.low-n { color: #f59e0b; }
+		.top3-cell { display: flex; gap: 3px; justify-content: center; }
+		.pitch-chip {
+			display: inline-flex; align-items: center; justify-content: center;
+			min-width: 17px; padding: 0 3px; border-radius: 3px;
+			background: rgba(255,255,255,0.03); font-size: 9px; font-weight: 600;
+			cursor: default; opacity: 0.8; letter-spacing: 0.01em;
+		}
+		.pitch-legend {
+			display: flex; flex-wrap: wrap; gap: 5px 14px; justify-content: center;
+			font-size: 11px; color: #9ca3af; padding: 4px 4px 10px;
+		}
+		.mode-toggles {
+			display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
+			padding: 2px 4px 8px;
+		}
+		.pitch-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+		.pitch-legend-item strong { color: #e5e7eb; }
+		.pitch-swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+		#right-body { justify-content: center; }
+		#chart { max-height: 460px; margin-top: 0.5rem; }
+		.batter-ps-toggle { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+		.ps-btn {
+			padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+			background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+		}
+		.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+		.feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+		.feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+		@media (max-width: 600px) {
+			.feed-arsenal-chips {
+				flex-wrap: nowrap;
+				overflow-x: auto;
+				-webkit-overflow-scrolling: touch;
+				padding-bottom: 4px;
+			}
+			.feed-arsenal-chips .ps-btn { flex: 0 0 auto; white-space: nowrap; }
+		}
+
+		@media (max-width: 1350px) {
+			#table-container { justify-content: normal; }
+			#table-container, #table { width: 100%; }
+		}
+		@media (max-width: 600px) {
+			#right-body.mobile-open {
+				width: 100vw !important;
+				max-width: 100vw !important;
+				flex: 1 1 auto;
+			}
+			#right-body.mobile-open #chart,
+			#right-body.mobile-open #chart .js-plotly-plot,
+			#right-body.mobile-open #chart svg {
+				width: 100% !important;
+				max-width: 100% !important;
+				max-height: none;
+			}
+		}
+	</style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FX06BZ5MRL');
+</script>
+<body>
+<div id="app">
+	<header id="header">
+		<div id="title">
+			<h1>Top 3 Pitches</h1>
+			<span id="updated-label"></span>
+		</div>
+		<div id="center-dropdown">
+			<div id="page-select-wrapper" class="select-wrapper">
+				<select id="page-select"></select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+			<div class="select-wrapper">
+				<label for="min-n" class="select-label">Min Pitches</label>
+				<input id="min-n" type="number" value="0" min="0" style="width:60px;" oninput="applyFilters()">
+			</div>
+			<div class="select-wrapper">
+				<label for="game-select" class="select-label">Game</label>
+				<select id="game-select" onchange="applyFilters()">
+					<option value="">All</option>
+				</select>
+				<svg class="select-arrow" viewBox="0 0 20 20">
+					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+				</svg>
+			</div>
+		</div>
+		<div id="auth-buttons">
+			<button class="discord-login loggedOut" onclick="loginWithDiscord()">
+				<img src="/logos/discord.png" alt="Discord logo">
+				<span class="btn-text">Sign in with Discord</span>
+			</button>
+			<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				<div class="gsi-material-button-state"></div>
+				<div class="gsi-material-button-content-wrapper">
+					<div class="gsi-material-button-icon">
+						<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display:block;">
+							<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+							<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+							<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+							<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+						</svg>
+					</div>
+					<span style="display:none;">Sign in with Google</span>
+				</div>
+			</button>
+			<span id="username" class="username loggedIn"></span>
+			<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
+			<button id="hide-username" onclick="hideUsername()">Hide</button>
+			<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+			<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
+			<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
+		</div>
+	</header>
+	<main>
+		<div id="table-container">
+			<div class="mode-toggles">
+				<div class="batter-ps-toggle" id="window-mode-toggle">
+					<button class="ps-btn is-active" data-mode="season">2026 Season</button>
+					<button class="ps-btn" data-mode="L3">L3</button>
+					<button class="ps-btn" data-mode="L5">L5</button>
+					<button class="ps-btn" data-mode="L10">L10</button>
+					<button class="ps-btn" data-mode="L20">L20</button>
+					<button class="ps-btn bbe-window" data-mode="BBE5" style="display:none;">BBE5</button>
+					<button class="ps-btn bbe-window" data-mode="BBE10" style="display:none;">BBE10</button>
+					<button class="ps-btn bbe-window" data-mode="BBE20" style="display:none;">BBE20</button>
+				</div>
+				<div class="batter-ps-toggle" id="pitch-mode-toggle">
+					<button class="ps-btn is-active" data-mode="top3">Top 3</button>
+					<button class="ps-btn" data-mode="all">All Pitches</button>
+				</div>
+				<div class="batter-ps-toggle" id="stat-mode-toggle">
+					<button class="ps-btn is-active" data-mode="stats">Stats</button>
+					<button class="ps-btn" data-mode="bbe">BBE</button>
+				</div>
+			</div>
+			<div id="pitch-legend" class="pitch-legend"></div>
+			<div id="table"></div>
+			<div class="filter-wrapper">
+				<input type="text" id="player-search" placeholder="Search batter or pitcher..." autocomplete="off">
+			</div>
+			<div id="watermark">
+				<img src="logos/logo.png">
+			</div>
+			<div id="right-body" class="body">
+				<div style="display:flex;align-items:center;gap:6px;">
+					<div id="feed-title" style="font-size:13px;font-weight:600;color:#e5e7eb;"></div>
+					<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;margin-left:auto;" title="Close">&times;</button>
+				</div>
+				<div id="feed-toggle" class="feed-arsenal-row" style="display:none;">
+					<div id="feed-batter-name" style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;"></div>
+					<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+						<div class="batter-ps-toggle">
+							<button class="ps-btn is-active" data-pthrows="all">All</button>
+							<button class="ps-btn" data-pthrows="L">vs LHP</button>
+							<button class="ps-btn" data-pthrows="R">vs RHP</button>
+						</div>
+						<button class="ps-btn" data-bb="1">Batted Balls</button>
+					</div>
+				</div>
+				<div id="feed-arsenal" style="display:none;margin-bottom:6px;"></div>
+				<div id="chart"></div>
+			</div>
+		</div>
+	</main>
+	<footer class="site-footer">
+		<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
+	</footer>
+</div>
+
+<script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="auth.js"></script>
+<script type="text/javascript">
+	PAGE = "top_pitches";
+	SPORT = "mlb";
+	parseURLParams();
+
+	let _allRows = [];
+	let _baseRows = [];
+	let RAW_DATA = null;
+	let PITCH_MODE = "top3"; // "top3" | "all"
+	let STAT_MODE = "stats"; // "stats" | "bbe"
+	let WINDOW_MODE = "season"; // "season" | "L10" | "L20"
+	let SELECTED_ROW_KEY = null;
+
+	// ── Data shaping (mirrors pitcher_mix.html's formatMix/getTopPitches) ──────
+
+	function transformPitcher(pitcher) {
+		for (const side of ["l", "r"]) {
+			const section = pitcher?.pitch?.[side];
+			if (!section) continue;
+			pitcher[`pitch_table_${side}`] = Object.entries(section).map(([type, stats]) => ({
+				type, ...stats, n: stats["#"] || 0, percent: stats["%"] || 0
+			}));
+		}
+	}
+
+	function getTopPitches(pitcher) {
+		const map = {};
+		for (const side of ["l", "r"]) {
+			const t = pitcher[`pitch_table_${side}`];
+			if (!t) continue;
+			map[side] = [...t].sort((a, b) => b.n - a.n).map(r => r.type);
+		}
+		return map;
+	}
+
+	// Weighted (by pitch count) blend of a batter's stat lines across the SP's
+	// top-3 pitches into a single summary row. Counts (n, home_run) sum; rates
+	// (and their _pct companions, for heatmap coloring) are n-weighted averages.
+	// Matches what the backend's _compute_pitch_stats() actually sends now —
+	// woba/k_rate/whiff_rate/avg_la/gb_rate were dropped there since this page
+	// doesn't display them; keep these two lists in sync.
+	const RATE_FIELDS = ["ba", "slg", "iso", "hr_rate", "avg_ev", "brl_rate", "hh_rate", "fb_rate"];
+
+	function weightedAggregate(rows) {
+		const totalN = rows.reduce((s, r) => s + (r.n || 0), 0);
+		if (totalN === 0) return null;
+		const out = { n: totalN, home_run: rows.reduce((s, r) => s + (r.home_run || 0), 0) };
+		RATE_FIELDS.forEach(field => {
+			let wsum = 0, wtot = 0;
+			rows.forEach(r => {
+				if (r[field] != null && Number.isFinite(r.n)) { wsum += r[field] * r.n; wtot += r.n; }
+			});
+			out[field] = wtot > 0 ? wsum / wtot : null;
+		});
+		// No OBP in the per-pitch-type data (walks aren't attributable to a single
+		// pitch), so OPS here is the common BA+SLG approximation, not the real thing.
+		out.ops = (out.ba != null && out.slg != null) ? out.ba + out.slg : null;
+		return out;
+	}
+
+	// Heatmap coloring used to come from server-computed percentiles, but those
+	// were ~1M _pct keys (~20MB) for a leaderboard that's arguably more useful
+	// ranked against today's slate anyway. Computed here instead, against
+	// whatever's currently in _allRows — same pct_rank_mid rank method the
+	// backend used (bisect-based: less + half of ties, over n).
+	const PCT_FIELDS = [...RATE_FIELDS, "ops"];
+
+	function pctRankMid(sortedVals, x) {
+		const n = sortedVals.length;
+		if (n === 1) return 50;
+		let lo = 0, hi = n;
+		while (lo < hi) { const mid = (lo + hi) >> 1; if (sortedVals[mid] < x) lo = mid + 1; else hi = mid; }
+		const a = lo;
+		lo = 0; hi = n;
+		while (lo < hi) { const mid = (lo + hi) >> 1; if (sortedVals[mid] <= x) lo = mid + 1; else hi = mid; }
+		const b = lo;
+		return ((a + 0.5 * (b - a)) / n) * 100;
+	}
+
+	function computeClientPercentiles(rows) {
+		const pools = {};
+		PCT_FIELDS.forEach(field => {
+			pools[field] = rows.map(r => r[field]).filter(v => v != null).sort((a, b) => a - b);
+		});
+		rows.forEach(r => {
+			PCT_FIELDS.forEach(field => {
+				const val = r[field];
+				const pool = pools[field];
+				r[field + "_pct"] = (val != null && pool.length) ? pctRankMid(pool, val) : null;
+			});
+		});
+	}
+
+	function gameForTeam(games, code) {
+		const g = (games || []).find(g => g.toLowerCase().split(" @ ").map(s => s.trim()).includes(code));
+		return g || "";
+	}
+
+	// Builds one flat leaderboard row per batter-vs-SP, plus a RES.arsenal-shaped
+	// map so the shared feed's arsenal chips (incl. the "Top 3" preset) work.
+	// top3Only controls which of the SP's pitches feed the aggregate: just his
+	// top 3 (by usage), or everything he throws. window picks which trailing
+	// window to read off each player's "windows" bundle (season/L10/L20) —
+	// each window has the same {pitch, bbe_l, bbe_r} shape season always did.
+	function buildRows(allData, top3Only, window) {
+		const rows = [];
+		const arsenalMap = {};
+		const games = allData.games || [];
+
+		Object.entries(allData.teams || {}).forEach(([code, teamData]) => {
+			const pitcher = teamData.pitcher;
+			if (!pitcher || !pitcher.player) return;
+			const pw = pitcher.windows?.[window];
+			if (!pw) return;
+			transformPitcher(pw);
+			// topPitches[side] = pitcher's pitches ranked by usage AGAINST that
+			// batter-handedness (pitch_table_l = vs LHB, pitch_table_r = vs RHB) —
+			// this is a platoon split, not indexed by the pitcher's own hand.
+			const topPitches = getTopPitches(pw);
+			const pitcherHand = (pitcher.pitch_hand || "r").toLowerCase() === "l" ? "l" : "r";
+
+			if (!arsenalMap[pitcher.player]) {
+				const toArsenal = side => (pw[`pitch_table_${side}`] || []).map(p => ({ pitch_type: p.type, pct: p.percent }));
+				const counts = {};
+				["l", "r"].forEach(side => (pw[`pitch_table_${side}`] || []).forEach(p => {
+					counts[p.type] = (counts[p.type] || 0) + (p.n || 0);
+				}));
+				const totalN = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+				const bothArs = Object.entries(counts).map(([type, n]) => ({ pitch_type: type, pct: n / totalN * 100 }));
+				arsenalMap[pitcher.player] = { arsenal: { vs_lhb: toArsenal("l"), vs_rhb: toArsenal("r"), both: bothArs } };
+			}
+
+			(teamData.batters || []).forEach(batter => {
+				const bw = batter.windows?.[window];
+				if (!bw) return;
+				// Switch hitters bat opposite the pitcher's throwing hand; everyone
+				// else bats their own hand. That's the side the SP's top-3 should
+				// reflect (his mix vs THIS batter's handedness, not his own).
+				const batterHandRaw = (batter.pitch_hand || "").toUpperCase();
+				const batterSide = batterHandRaw === "B" ? (pitcherHand === "l" ? "r" : "l")
+					: batterHandRaw === "L" ? "l" : "r";
+				const top3 = (topPitches[batterSide] || []).slice(0, 3);
+				if (!top3.length) return;
+
+				const section = bw.pitch?.[pitcherHand];
+				if (!section) return;
+				const pitchRows = Object.entries(section).map(([type, stats]) => ({ type, ...stats, n: stats["#"] || 0 }));
+				const includedRows = top3Only ? pitchRows.filter(r => top3.includes(r.type)) : pitchRows;
+				const agg = weightedAggregate(includedRows);
+				if (!agg) return;
+				const bbeEvents = (bw[`bbe_${pitcherHand}`] || []).filter(e => !top3Only || top3.includes(e.pitch_type));
+				rows.push({
+					player: batter.player,
+					team: code,
+					bats: batterHandRaw.replace("B", "S"),
+					pitcher: pitcher.player,
+					pitcherLR: (pitcher.pitch_hand || "r").toUpperCase(),
+					game: gameForTeam(games, code),
+					top3,
+					pitchesUsed: [...new Set(includedRows.map(r => r.type))],
+					_bbeEvents: bbeEvents,
+					...agg
+				});
+			});
+		});
+
+		return { rows, arsenalMap };
+	}
+
+	// Real BA/SLG/OBP/OPS/HR from actual PA outcomes in the raw batted-ball-event
+	// log (walks/HBP/sac flies are real events here, unlike the per-pitch-type
+	// aggregate). EV is a simple mean. Brl%/HH%/FB% are intentionally NOT derived
+	// here — those need exact Statcast EV/LA thresholds this data doesn't carry.
+	const HIT_TOTAL_BASES = { single: 1, double: 2, triple: 3, home_run: 4 };
+
+	function aggregateBBE(events) {
+		if (!events || !events.length) return null;
+		let ab = 0, h = 0, tb = 0, bb = 0, hbp = 0, sf = 0, hr = 0, evSum = 0, evN = 0;
+		events.forEach(e => {
+			const outcome = e.events;
+			if (outcome === "walk") bb++;
+			else if (outcome === "hit_by_pitch") hbp++;
+			else if (outcome === "sac_fly") sf++;
+			else {
+				ab++;
+				const bases = HIT_TOTAL_BASES[outcome];
+				if (bases) { h++; tb += bases; if (outcome === "home_run") hr++; }
+			}
+			if (e.ev != null) { evSum += e.ev; evN++; }
+		});
+		const obpDenom = ab + bb + hbp + sf;
+		const obp = obpDenom > 0 ? (h + bb + hbp) / obpDenom : null;
+		const slg = ab > 0 ? tb / ab : null;
+		const ba = ab > 0 ? h / ab : null;
+		return {
+			n: events.length,
+			ba,
+			slg,
+			ops: (obp != null && slg != null) ? obp + slg : null,
+			iso: (slg != null && ba != null) ? slg - ba : null,
+			home_run: hr,
+			hr_rate: events.length > 0 ? (hr / events.length) * 100 : null,
+			avg_ev: evN > 0 ? evSum / evN : null
+		};
+	}
+
+	// Stats mode uses the server's pre-aggregated per-pitch-type rates as-is;
+	// BBE mode re-derives BA/SLG/OPS/HR/EV from the raw event log on those same
+	// base rows (built once per pitch-mode toggle, reused across stat-mode toggles).
+	function applyStatMode(baseRows, statMode) {
+		if (statMode !== "bbe") return baseRows;
+		return baseRows.map(r => {
+			const agg = aggregateBBE(r._bbeEvents);
+			if (!agg) return null;
+			return { ...r, ...agg };
+		}).filter(Boolean);
+	}
+
+	// ── Table ────────────────────────────────────────────────────────────────
+
+	// Continuous rather than bucketed: alpha ramps smoothly with distance from
+	// the 50th percentile, so e.g. a 60th and 95th percentile HR rate read as
+	// visibly different shades instead of both just being "the green bucket."
+	function getPitchBgColor(pct) {
+		if (pct == null) return null;
+		const centered = pct - 50; // -50..+50
+		if (Math.abs(centered) < 3) return null; // near-median: leave uncolored
+		const t = Math.min(Math.abs(centered) / 50, 1); // 0..1 intensity
+		const alpha = 0.12 + t * 0.78; // ~0.12 (barely off-median) to ~0.90 (extreme)
+		const rgb = centered > 0 ? "46,160,67" : "200,56,46";
+		return { bg: `rgba(${rgb},${alpha.toFixed(2)})`, dark: alpha >= 0.45 };
+	}
+
+	// Fixed, non-cycled color per pitch code so the same pitch always reads the
+	// same color everywhere on the page (chips + legend).
+	const PITCH_COLORS = {
+		FF: '#ef4444', SI: '#f97316', FC: '#b45309', SL: '#eab308', ST: '#f472b6',
+		SV: '#c084fc', CU: '#3b82f6', KC: '#60a5fa', CH: '#22c55e', CS: '#4ade80',
+		FS: '#a855f7', FO: '#7c3aed', SC: '#14b8a6', KN: '#94a3b8', EP: '#64748b'
+	};
+	function pitchColor(code) { return PITCH_COLORS[code] || '#9ca3af'; }
+
+	function pitchChip(code) {
+		return `<span class="pitch-chip" style="color:${pitchColor(code)}" title="${pitchMap[code] || code}">${code}</span>`;
+	}
+
+	// One legend row for every pitch code actually feeding the current rows
+	// (top-3 only, or every pitch, depending on the toggle), so the table
+	// itself can stay abbreviated.
+	function renderPitchLegend(rows) {
+		const el = document.getElementById('pitch-legend');
+		if (!el) return;
+		// Only meaningful for the Top 3 chips (which are hidden in All Pitches mode).
+		if (PITCH_MODE !== 'top3') {
+			el.style.display = 'none';
+			el.innerHTML = '';
+			return;
+		}
+		el.style.display = '';
+		const codes = [...new Set(rows.flatMap(r => r.pitchesUsed || r.top3 || []))].sort();
+		el.innerHTML = codes.map(code => `
+			<span class="pitch-legend-item">
+				<span class="pitch-swatch" style="background:${pitchColor(code)}"></span>
+				<strong>${code}</strong> ${pitchMap[code] || code}
+			</span>`).join('');
+	}
+
+	const bgStatFormatter = function(cell, params) {
+		const data = cell.getRow().getData();
+		const field = cell.getField();
+		const val = cell.getValue();
+		let display;
+		if (["ba", "woba", "slg", "iso", "ops"].includes(field)) {
+			display = val != null ? avgFormatter(cell) : "";
+		} else if (["avg_ev", "avg_la"].includes(field)) {
+			display = val != null ? val.toFixed(1) : "";
+		} else if (field === "home_run") {
+			display = String(val ?? 0);
+		} else {
+			display = val != null ? val.toFixed(1) + "%" : "";
+		}
+		let pct = data[field + "_pct"];
+		if (params?.invert && pct != null) pct = 100 - pct;
+		const c = getPitchBgColor(pct);
+		if (c) {
+			const textColor = c.dark ? "#0f0f0f" : "#e5e7eb";
+			return `<span style="display:block;margin:-1px -3px;padding:1px 3px;background:${c.bg};color:${textColor};font-weight:600;width:100%">${display}</span>`;
+		}
+		return display;
+	};
+
+	function nFormatter(cell) {
+		const v = cell.getValue();
+		const threshold = STAT_MODE === 'bbe' ? 5 : 15;
+		const low = v != null && v < threshold;
+		return `<span class="n-cell${low ? ' low-n' : ''}" title="${low ? 'Small sample — treat as noisy' : ''}">${v ?? '—'}</span>`;
+	}
+
+	function renderTable(rows) {
+		TABLE = new Tabulator('#table', {
+			data: rows,
+			layout: 'fitDataFill',
+			placeholder: 'No matchup data.',
+			initialSort: [{ column: 'hr_rate', dir: 'desc' }],
+			columnDefaults: {
+				vertAlign: 'middle',
+				hozAlign: 'center',
+				resizable: false,
+				headerSortStartingDir: 'desc'
+			},
+			columns: [
+				{
+					title: 'Batter', field: 'player', hozAlign: 'left', widthGrow: 2, minWidth: 125, frozen: true,
+					formatter: playerFormatter, formatterParams: { sport: 'mlb' }
+				},
+				{
+					title: 'Opp SP', field: 'pitcher', hozAlign: 'left', widthGrow: 2, minWidth: 100,
+					formatter: pitcherFormatter
+				},
+				{
+					title: 'Top 3', field: 'top3', width: 100, headerSort: false,
+					formatter: cell => `<div class="top3-cell">${(cell.getValue() || []).map(pitchChip).join('')}</div>`
+				},
+				{ title: 'N', field: 'n', width: 50, sorter: 'number', formatter: nFormatter },
+				{ title: 'HR', field: 'home_run', width: 45, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'HR%', field: 'hr_rate', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'BA', field: 'ba', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'SLG', field: 'slg', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				{
+					title: 'OPS', field: 'ops', width: 55, sorter: 'number', formatter: bgStatFormatter,
+					headerTooltip: () => STAT_MODE === 'bbe'
+						? 'True OPS (OBP + SLG), computed from real PA outcomes in the BBE log'
+						: 'BA + SLG — no OBP available per pitch type, so this is an approximation, not true OPS'
+				},
+				{ title: 'ISO', field: 'iso', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				
+				{ title: 'EV', field: 'avg_ev', width: 50, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'Brl%', field: 'brl_rate', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'HH%', field: 'hh_rate', width: 55, sorter: 'number', formatter: bgStatFormatter },
+				{ title: 'FB%', field: 'fb_rate', width: 55, sorter: 'number', formatter: bgStatFormatter }
+			]
+		});
+
+		TABLE.on('rowClick', (e, row) => rowClick(row));
+	}
+
+	function applyRowFilters(r) {
+		const minN = parseInt(document.getElementById('min-n').value, 10) || 0;
+		const game = document.getElementById('game-select').value;
+		return (r.n ?? 0) >= minN && (!game || r.game === game);
+	}
+
+	function applyFilters() {
+		if (!TABLE) return;
+		const q = document.getElementById('player-search').value.toLowerCase();
+		TABLE.setData(_allRows.filter(r =>
+			applyRowFilters(r) &&
+			(!q || r.player.toLowerCase().includes(q) || r.pitcher.toLowerCase().includes(q))
+		));
+	}
+
+	function buildGameFilter(rows) {
+		const sel = document.getElementById('game-select');
+		[...new Set(rows.map(r => r.game).filter(Boolean))].sort().forEach(g => {
+			const opt = document.createElement('option');
+			opt.value = g;
+			opt.textContent = g.toUpperCase();
+			sel.appendChild(opt);
+		});
+	}
+
+	// ── Mode toggles ─────────────────────────────────────────────────────────
+
+	function updateColumnVisibility() {
+		if (!TABLE) return;
+		const top3Col = TABLE.getColumn('top3');
+		if (top3Col) top3Col[PITCH_MODE === 'top3' ? 'show' : 'hide']();
+		['brl_rate', 'hh_rate', 'fb_rate'].forEach(field => {
+			const col = TABLE.getColumn(field);
+			if (col) col[STAT_MODE === 'stats' ? 'show' : 'hide']();
+		});
+		const nCol = TABLE.getColumn('n');
+		if (nCol) nCol.updateDefinition({ title: STAT_MODE === 'bbe' ? 'PA' : 'N' });
+		const minNLabel = document.querySelector('label[for="min-n"]');
+		if (minNLabel) minNLabel.textContent = STAT_MODE === 'bbe' ? 'Min PA' : 'Min Pitches';
+
+		// BBE-count windows (BBE5/10/20) only mean anything in BBE stat-mode —
+		// in Stats mode they're identical to Season, so hide them there.
+		document.querySelectorAll('#window-mode-toggle .bbe-window').forEach(btn => {
+			btn.style.display = STAT_MODE === 'bbe' ? '' : 'none';
+		});
+	}
+
+	// Stat-mode toggle only needs to re-derive stats off the already-built base
+	// rows. Pitch-mode toggle changes which raw pitches/events feed those base
+	// rows in the first place, so it rebuilds them from the cached API payload.
+	function applyStatModeAndRender() {
+		_allRows = applyStatMode(_baseRows, STAT_MODE);
+		computeClientPercentiles(_allRows);
+		renderPitchLegend(_allRows);
+		updateColumnVisibility();
+		applyFilters();
+	}
+
+	function rebuildFromRaw() {
+		if (!RAW_DATA) return;
+		const built = buildRows(RAW_DATA, PITCH_MODE === 'top3', WINDOW_MODE);
+		_baseRows = built.rows;
+		RES = { arsenal: built.arsenalMap };
+		applyStatModeAndRender();
+	}
+
+	function wireModeToggle(id, onChange) {
+		document.getElementById(id).addEventListener('click', e => {
+			const btn = e.target.closest('.ps-btn');
+			if (!btn) return;
+			document.querySelectorAll(`#${id} .ps-btn`).forEach(b => b.classList.toggle('is-active', b === btn));
+			onChange(btn.dataset.mode);
+		});
+	}
+
+	wireModeToggle('pitch-mode-toggle', mode => { PITCH_MODE = mode; rebuildFromRaw(); });
+	wireModeToggle('stat-mode-toggle', mode => {
+		STAT_MODE = mode;
+		// A BBE-count window only exists as a toggle option in BBE mode — if one
+		// was active and we're leaving BBE mode, fall back to Season instead of
+		// leaving WINDOW_MODE pointed at a now-hidden button.
+		if (STAT_MODE !== 'bbe' && WINDOW_MODE.startsWith('BBE')) {
+			WINDOW_MODE = 'season';
+			document.querySelectorAll('#window-mode-toggle .ps-btn').forEach(b => b.classList.toggle('is-active', b.dataset.mode === 'season'));
+			rebuildFromRaw();
+		} else {
+			applyStatModeAndRender();
+		}
+	});
+	wireModeToggle('window-mode-toggle', mode => { WINDOW_MODE = mode; rebuildFromRaw(); });
+
+	// ── Row click → reuse the shared feed panel (same as dingers.html) ─────────
+
+	function rowKeyFor(data) {
+		return `${data.player}|${data.pitcher}`;
+	}
+
+	function rowClick(row) {
+		const data = row.getData();
+		const right = document.querySelector("#right-body");
+		const table = document.querySelector("#table");
+		const sel = TABLE.getSelectedRows();
+		TABLE.deselectRow();
+		if (sel.length > 0 && sel[0] == row) {
+			SELECTED_ROW_KEY = null;
+			closeRightBody();
+		} else {
+			row.select();
+			SELECTED_ROW_KEY = rowKeyFor(data);
+			if (MOBILE) {
+				table.style.display = "none";
+				right.classList.add("mobile-open");
+			}
+			right.style.display = "flex";
+			document.getElementById("feed-title").textContent = `${title(data.player)} vs ${title(data.pitcher)}`;
+			document.getElementById("feed-toggle").style.display = "flex";
+			document.getElementById("feed-arsenal").style.display = "";
+			renderFeed();
+		}
+	}
+
+	function closeRightBody() {
+		const right = document.querySelector("#right-body");
+		const left = document.querySelector("#table-container");
+		const table = document.querySelector("#table");
+		right.style.display = "none";
+		right.classList.remove("mobile-open");
+		table.style.display = "";
+		SELECTED_ROW_KEY = null;
+		setTimeout(() => { left.style.width = "100%"; }, 40);
+	}
+
+	document.getElementById("feed-toggle").addEventListener("click", function(event) {
+		const pthrowsBtn = event.target.closest("[data-pthrows]");
+		if (pthrowsBtn) {
+			FEED_PTHROWS = pthrowsBtn.dataset.pthrows;
+			pthrowsBtn.parentElement.querySelectorAll(".ps-btn").forEach(b => b.classList.toggle("is-active", b === pthrowsBtn));
+			renderFeedTable(filterFeedData(FEED_DATA));
+			return;
+		}
+		const bbBtn = event.target.closest("[data-bb]");
+		if (bbBtn) {
+			FEED_BB = !FEED_BB;
+			bbBtn.classList.toggle("is-active", FEED_BB);
+			renderFeedTable(filterFeedData(FEED_DATA));
+		}
+	});
+
+	document.getElementById("feed-arsenal").addEventListener("click", function(event) {
+		const handBtn = event.target.closest(".hand-btn");
+		if (handBtn) { feedSetHand(handBtn.dataset.hand); return; }
+		const presetBtn = event.target.closest(".preset-btn");
+		if (presetBtn) { feedSetArsenalPreset(presetBtn.dataset.preset); return; }
+		const chip = event.target.closest(".arsenal-chip");
+		if (chip) { feedToggleArsenalPitch(chip.dataset.pitch); }
+	});
+
+	// ── Init ─────────────────────────────────────────────────────────────────
+
+	function fetchTopPitchesData() {
+		fetch(API_BASE + `/api/top_pitches`, {
+			headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+		}).then(r => r.json()).then(data => {
+			RAW_DATA = data;
+			const built = buildRows(RAW_DATA, PITCH_MODE === 'top3', WINDOW_MODE);
+			_baseRows = built.rows;
+			_allRows = applyStatMode(_baseRows, STAT_MODE);
+			computeClientPercentiles(_allRows);
+			RES = { arsenal: built.arsenalMap };
+			renderTable(_allRows);
+			renderPitchLegend(_allRows);
+			buildGameFilter(_allRows);
+			document.getElementById('player-search').addEventListener('input', applyFilters);
+			if (data.updated) {
+				document.getElementById('updated-label').textContent = `Updated ${timeAgo(data.updated, true)}`;
+			}
+		}).catch(err => console.error('top_pitches fetch failed', err));
+	}
+
+	window.addEventListener("resize", () => { MOBILE = window.innerWidth <= 600; });
+
+	fetchTopPitchesData();
+</script>
+<script>handleSession();</script>
+</body>
+</html>

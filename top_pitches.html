@@ -614,12 +614,34 @@
 		));
 	}
 
+	// Same sort-by-start-time + "(h:mm AM/PM)" suffix as filter.js's
+	// populateGameOptions()/createGameOption() (dingers.html's game dropdown),
+	// adapted to this page's plain <select> instead of the checkbox menu.
 	function buildGameFilter(rows) {
 		const sel = document.getElementById('game-select');
-		[...new Set(rows.map(r => r.game).filter(Boolean))].sort().forEach(g => {
+		const times = RAW_DATA?.times || {};
+		const games = [...new Set(rows.map(r => r.game).filter(Boolean))].sort((a, b) => {
+			const ta = new Date(times[a]).getTime();
+			const tb = new Date(times[b]).getTime();
+			if (isNaN(ta)) return 1;
+			if (isNaN(tb)) return -1;
+			return ta - tb;
+		});
+		games.forEach(g => {
 			const opt = document.createElement('option');
 			opt.value = g;
-			opt.textContent = g.toUpperCase();
+			let display = g.toUpperCase();
+			const t = times[g];
+			if (t) {
+				const dt = new Date(t).toLocaleString("en-US", {
+					timeZone: "America/New_York",
+					hour: "numeric",
+					minute: "numeric",
+					hour12: true
+				}).split(", ").at(-1);
+				display += ` (${dt})`;
+			}
+			opt.textContent = display;
 			sel.appendChild(opt);
 		});
 	}
@@ -775,6 +797,11 @@
 			document.getElementById('player-search').addEventListener('input', applyFilters);
 			if (data.updated) {
 				document.getElementById('updated-label').textContent = `Updated ${timeAgo(data.updated, true)}`;
+			}
+
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
 			}
 		}).catch(err => console.error('top_pitches fetch failed', err));
 	}

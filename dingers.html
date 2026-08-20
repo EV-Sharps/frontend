@@ -1357,7 +1357,15 @@
 				{ key: 'pitcher_data_grp',label: 'Pitcher Metrics',  cols: [{title: "Pitcher Metrics", columns: [{title: "ERA", field: "pitcherData.p_era", width: 45, formatter: eraFormatter, visible: false},{title: "OBP", field: "pitcherData.on_base_percent", width: 45, formatter: percentileFormatter},{title: "SLG", field: "pitcherData.slg_percent", width: 45, formatter: percentileFormatter},{title: "OPS", field: "pitcherData.on_base_plus_slg", width: 45, formatter: percentileFormatter},{title: "xBA", field: "pitcherData.xba", width: 45, formatter: percentileFormatter, visible: false},{title: "xwOBA", field: "pitcherData.xwoba", width: 45, formatter: xwobaFormatter, visible: false},{title: "Fly%", field: "pitcherData.flyballs_percent", width: 45, formatter: percentileFormatter},{title: "SwSp%", field: "pitcherData.sweet_spot_percent", width: 45, formatter: percentileFormatter},{title: "EVelo", field: "pitcherData.exit_velocity_avg", width: 45, formatter: percentileFormatter},{title: "HH%", field: "pitcherData.hard_hit_percent", width: 45, formatter: percentileFormatter},{title: "BRL%", field: "pitcherData.barrel_batted_rate", width: 45, formatter: percentileFormatter}]}] },
 				{ key: 'oppRank',         label: 'Opp Rank',         cols: [{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50, visible: HISTORICAL ? false : true}] },
 				{ key: 'stadiumRank',     label: 'Stadium Rank',     cols: [{title: "Stadium<br>Rank", field: "stadiumRank", formatter: stadiumRankFormatter, width: 60, visible: HISTORICAL ? false : true}] },
-				{ key: 'homer_due_grp',   label: 'Last Homer (Due)', cols: [{title: "Last Homer (Due)", columns: [{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: homerLogFormatter},{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: homerLogFormatter},{title: "Z", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: homerLogFormatter, visible: false},{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false}]}] },
+				{ key: 'homer_due_grp',   label: 'Last Homer (Due)', cols: [
+					{title: "Last Homer (Due)", columns: [
+						{title: "PA", field: "homerLogs.pa.streak", width: 40, formatter: homerLogFormatter},
+						{title: "Med", field: "homerLogs.pa.med", width: 40, formatter: homerLogFormatter},
+						{title: "Z-Med", field: "homerLogs.pa.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"},
+						{title: "Avg", field: "homerLogs.pa.avg", width: 40, formatter: homerLogFormatter, visible: false},
+						{title: "Z", field: "homerLogs.pa.z", width: 40, formatter: homerLogFormatter, sorter: "number", visible: false},
+					]}
+				] },
 				{ key: 'weather',         label: 'Weather',          cols: [{title: "Weather", field: "weather", formatter: windFormatter, hozAlign: "left"}] },
 				{ key: 'logs',            label: 'Game Logs',        cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] }
 			];

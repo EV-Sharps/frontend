@@ -228,6 +228,16 @@
 				</div>
 			</div>
 		</div>
+		<div id="hr-today-modal" class="modal" onclick="if(event.target===this) closeHRTodayModal()">
+			<div class="modal-content devig-panel" style="max-width:720px;">
+				<div class="modal-header">
+					<h3>Home Runs Today</h3>
+					<button onclick="closeHRTodayModal()">&times;</button>
+				</div>
+				<div id="hr-today-pitch-legend" class="pitch-legend"></div>
+				<div id="hr-today-table"></div>
+			</div>
+		</div>
 		<div id="preloads-modal" class="modal" style="display:none;">
             <div class="modal-content devig-panel">
                 <div class="modal-header">
@@ -897,6 +907,7 @@
 						</div>
 					</div>
 				</div>
+				<button id="hr-today-btn" onclick="openHRTodayModal()">💣 HRs Today</button>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
 			<div id="auth-buttons">
@@ -1137,6 +1148,34 @@
 			const kelly = getKelly(finalOdds, ev);
 
 			return { ev, fairVal, implied, kelly };
+		}
+
+		// EV (probit) of betting the row's best price (data.book/data.line) using a
+		// specific book's own line as the fair devig. null if that book has no line.
+		function bookDevigEV(rowData, bookKey) {
+			const val = rowData.bookOdds?.[bookKey];
+			const bestPrice = parseInt(rowData.line, 10);
+			if (val == null || !Number.isFinite(bestPrice)) return null;
+			const d = devigProbit(val, bestPrice, rowData.under);
+			return (d && Number.isFinite(d.ev)) ? d.ev : null;
+		}
+
+		function bookEVFormatter(cell, params) {
+			const ev = bookDevigEV(cell.getRow().getData(), params.book);
+			if (ev == null) return "";
+			const cls = ev > 0 ? "positive" : "";
+			return `<span class="${cls}">${ev > 0 ? "+" : ""}${ev}%</span>`;
+		}
+
+		function bookEVSorter(bookKey) {
+			return (a, b, aRow, bRow) => {
+				const av = bookDevigEV(aRow.getData(), bookKey);
+				const bv = bookDevigEV(bRow.getData(), bookKey);
+				if (av == null && bv == null) return 0;
+				if (av == null) return -1;
+				if (bv == null) return 1;
+				return av - bv;
+			};
 		}
 
 		// Best (highest-paying / lowest implied probability) over price across all books,
@@ -2076,6 +2115,88 @@
 		document.getElementById('card-modal-overlay').addEventListener('click', e => {
 			if (e.target === document.getElementById('card-modal-overlay')) closeCardModal();
 		});
+
+		// ── HRs Today modal ─────────────────────────────────────────────────────
+		// Like feed.html's hrtable, but cross-referenced against this page's own
+		// prop rows (RES) to pull in each homer's best book/line, since
+		// /api/feed only carries the at-bat details (pitch, EV, LA, dist), not odds.
+
+		function openHRTodayModal() {
+			document.getElementById('hr-today-modal').style.display = 'flex';
+			fetchHRToday();
+		}
+
+		function closeHRTodayModal() {
+			document.getElementById('hr-today-modal').style.display = 'none';
+		}
+
+		document.addEventListener('keydown', e => {
+			if (e.key === 'Escape') closeHRTodayModal();
+		});
+
+		function fetchHRToday() {
+			fetch(API_BASE + '/api/feed', {
+				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+			}).then(r => r.json()).then(res => {
+				renderHRTodayTable(buildHRTodayRows(res));
+			}).catch(err => console.error('hr today fetch failed', err));
+		}
+
+		function buildHRTodayRows(feedRes) {
+			const propByPlayer = {};
+			(RES.data || []).forEach(r => { if (r && r.player) propByPlayer[r.player] = r; });
+
+			const rows = [];
+			Object.entries(feedRes || {}).forEach(([game, gameRows]) => {
+				if (game === 'all' || !Array.isArray(gameRows)) return;
+				gameRows.forEach(row => {
+					if (row.result !== 'Home Run') return;
+					const prop = propByPlayer[row.player];
+					rows.push({
+						...row,
+						book: prop?.book || '',
+						line: prop?.line ?? null,
+						team: prop?.team || '',
+						game: prop?.game || game,
+						bookOdds: prop?.bookOdds || null,
+						under: prop?.under || false
+					});
+				});
+			});
+			return rows;
+		}
+
+		function hrTodayPlayerFormatter(cell) {
+			const d = cell.getRow().getData();
+			const img = d.team ? `<img class="team-img" src="logos/mlb/${d.team}.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:4px;">` : '';
+			return `${img}${title(d.player)}`;
+		}
+
+		function renderHRTodayTable(rows) {
+			renderPitchLegend('hr-today-pitch-legend', rows.map(r => r.pitch));
+			try { Tabulator.findTable('#hr-today-table')?.[0]?.destroy(); } catch (e) {}
+			new Tabulator('#hr-today-table', {
+				data: rows,
+				layout: 'fitDataFill',
+				placeholder: 'No home runs yet today.',
+				initialSort: [{ column: 'created_at', dir: 'desc' }],
+				columnDefaults: { vertAlign: 'middle', hozAlign: 'center', resizable: false, headerSortStartingDir: 'desc' },
+				columns: [
+					{field: "created_at", visible: false},
+					{ title: 'Best Book', field: 'book', width: 80, formatter: bestBookFormatter },
+					{ title: "Circa EV", field: "circaEV", width: 70, sorter: bookEVSorter('circa'), formatter: bookEVFormatter, formatterParams: {book: 'circa'} },
+					{ title: "Pinnacle EV", field: "pnEV", width: 80, sorter: bookEVSorter('pn'), formatter: bookEVFormatter, formatterParams: {book: 'pn'} },
+					{ title: "FD EV", field: "fdEV", width: 70, sorter: bookEVSorter('fd'), formatter: bookEVFormatter, formatterParams: {book: 'fd'} },
+					{ title: 'Player', field: 'player', hozAlign: 'left', widthGrow: 2, minWidth: 140, formatter: hrTodayPlayerFormatter },
+					{title: "Pitcher", field: "pitcher", formatter: pitcherFormatter},
+					{ title: 'Pitch', field: 'pitch', width: 55, formatter: cell => pitchChip(cell.getValue()) },
+					{ title: 'EV', field: 'evo', width: 55, sorter: 'number' },
+					{ title: 'LA', field: 'la', width: 55, sorter: 'number', formatter: laFormatter },
+					{ title: 'Dist', field: 'dist', width: 60, sorter: 'number', formatter: ftFormatter },
+					{ title: 'HR/Park', field: 'hr/park', width: 65 }
+				]
+			});
+		}
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>

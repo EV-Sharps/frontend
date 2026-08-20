@@ -82,6 +82,7 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 Props", value: "nfl", sharp: true },
+			{ label: "🔮 Futures", value: "nfl_futures" },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true }
 		]
 	},
@@ -576,6 +577,36 @@ const pitchMap = {
 	ST: "Sweeper",
 	CS: "Circle Change"
 };
+
+// Fixed, non-cycled color per pitch code so the same pitch reads the same
+// color everywhere on the site (top_pitches.html's chips/legend, the HRs
+// Today table on charts.html, etc.) — not just within one page.
+const PITCH_COLORS = {
+	FF: '#ef4444', SI: '#f97316', FC: '#b45309', SL: '#eab308', ST: '#f472b6',
+	SV: '#c084fc', CU: '#3b82f6', KC: '#60a5fa', CH: '#22c55e', CS: '#4ade80',
+	FS: '#a855f7', FO: '#7c3aed', SC: '#14b8a6', KN: '#94a3b8', EP: '#64748b'
+};
+function pitchColor(code) { return PITCH_COLORS[(code || '').toUpperCase()] || '#9ca3af'; }
+
+function pitchChip(code) {
+	if (!code) return '';
+	code = code.toUpperCase();
+	return `<span class="pitch-chip" style="color:${pitchColor(code)}" title="${pitchMap[code] || code}">${code}</span>`;
+}
+
+// Renders a legend (swatch + code + full name) into `el` (an element or id)
+// for every code in `codes`, deduped and sorted. Pass just the codes that are
+// actually present in whatever's currently shown, not the full pitchMap.
+function renderPitchLegend(el, codes) {
+	if (typeof el === 'string') el = document.getElementById(el);
+	if (!el) return;
+	const unique = [...new Set(codes.map(c => (c || '').toUpperCase()))].filter(Boolean).sort();
+	el.innerHTML = unique.map(code => `
+		<span class="pitch-legend-item">
+			<span class="pitch-swatch" style="background:${pitchColor(code)}"></span>
+			<strong>${code}</strong> ${pitchMap[code] || code}
+		</span>`).join('');
+}
 
 const pitchFormatter = function(cell) {
 	const data = cell.getRow().getData();

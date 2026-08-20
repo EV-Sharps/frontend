@@ -33,6 +33,13 @@
 				width: 100%;
 			}
 		}
+	#filterbuilder-options { padding: 8px; }
+	#filterbuilder-options label { margin-bottom: 2px; }
+	#filterbuilder-options .fb-subrow { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 20px; }
+	#filterbuilder-options .fb-subrow select, #filterbuilder-options .fb-subrow input { flex: 1; min-width: 0; }
+	#filterbuilder-options .fb-toprow { display: flex; gap: 6px; margin-bottom: 6px; }
+	#filterbuilder-options .fb-toprow select, #filterbuilder-options .fb-toprow input { flex: 1; min-width: 0; }
+	#filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
 </style>
 <body>
 	<div id="app">
@@ -306,6 +313,60 @@
 				<div class="select-wrapper">
 					<label for="max-odds" class="select-label">Max</label>
 					<input id="max-odds" type="number" placeholder="" style="width:70px;">
+				</div>
+				<div class="chkdd" id="filterbuilder-dd">
+					<label for="filterbuilder-dd-button" class="select-label">Filter</label>
+					<button id="filterbuilder-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('filterbuilder-dd', event)">None</button>
+					<div class="chkdd-menu" id="filterbuilder-options" style="max-height:70vh;overflow-y:auto;width:320px;">
+						<div class="fb-toprow" onclick="event.stopPropagation()">
+							<select id="fb-saved-select">
+								<option value="">Load saved filter...</option>
+							</select>
+							<button type="button" onclick="deleteSavedFilterBuilder()">Delete</button>
+						</div>
+						<div class="fb-toprow" onclick="event.stopPropagation()">
+							<input id="fb-name-input" type="text" placeholder="Filter name">
+							<button type="button" onclick="saveFilterBuilder()">Save As</button>
+						</div>
+						<hr>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (NV/PX over $)</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-liquidity-over-amount" type="number" value="200" step="50">
+							<select id="fb-liquidity-over-book">
+								<option value="nv">NoVig</option>
+								<option value="px">ProphetX</option>
+								<option value="either">Either (NV or PX)</option>
+								<option value="both">Both (NV and PX)</option>
+							</select>
+						</div>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (NV/PX under $)</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-liquidity-amount" type="number" value="200" step="50">
+							<select id="fb-liquidity-book">
+								<option value="nv">NoVig</option>
+								<option value="px">ProphetX</option>
+								<option value="either">Either (NV or PX)</option>
+								<option value="both">Both (NV and PX)</option>
+							</select>
+						</div>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-line-enabled"> Line Range</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-line-min" type="number" placeholder="Min">
+							<input id="fb-line-max" type="number" placeholder="Max">
+						</div>
+
+						<hr>
+						<div class="chkdd-actions" style="flex-direction:column;gap:6px;align-items:stretch;" onclick="event.stopPropagation()">
+							<div style="display:flex;gap:6px;justify-content:center;">
+								<button type="button" onclick="clearFilterBuilder()">Clear</button>
+								<button type="button" onclick="applyFilterBuilder()">Apply</button>
+							</div>
+							<div style="text-align:center;"><span id="fb-save-status"></span></div>
+						</div>
+					</div>
 				</div>
 				<button onclick="downloadCSV()">💾 CSV</button>
 			</div>

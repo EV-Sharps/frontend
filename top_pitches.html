@@ -19,23 +19,12 @@
 		.n-cell { font-weight: 600; }
 		.n-cell.low-n { color: #f59e0b; }
 		.top3-cell { display: flex; gap: 3px; justify-content: center; }
-		.pitch-chip {
-			display: inline-flex; align-items: center; justify-content: center;
-			min-width: 17px; padding: 0 3px; border-radius: 3px;
-			background: rgba(255,255,255,0.03); font-size: 9px; font-weight: 600;
-			cursor: default; opacity: 0.8; letter-spacing: 0.01em;
-		}
-		.pitch-legend {
-			display: flex; flex-wrap: wrap; gap: 5px 14px; justify-content: center;
-			font-size: 11px; color: #9ca3af; padding: 4px 4px 10px;
-		}
+		/* .pitch-chip / .pitch-legend* / .pitch-swatch now live in style.css,
+		   shared with charts.html's HRs Today table. */
 		.mode-toggles {
 			display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
 			padding: 2px 4px 8px;
 		}
-		.pitch-legend-item { display: inline-flex; align-items: center; gap: 5px; }
-		.pitch-legend-item strong { color: #e5e7eb; }
-		.pitch-swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 
 		#right-body { justify-content: center; }
 		#chart { max-height: 460px; margin-top: 0.5rem; }
@@ -459,38 +448,21 @@
 		return { bg: `rgba(${rgb},${alpha.toFixed(2)})`, dark: alpha >= 0.45 };
 	}
 
-	// Fixed, non-cycled color per pitch code so the same pitch always reads the
-	// same color everywhere on the page (chips + legend).
-	const PITCH_COLORS = {
-		FF: '#ef4444', SI: '#f97316', FC: '#b45309', SL: '#eab308', ST: '#f472b6',
-		SV: '#c084fc', CU: '#3b82f6', KC: '#60a5fa', CH: '#22c55e', CS: '#4ade80',
-		FS: '#a855f7', FO: '#7c3aed', SC: '#14b8a6', KN: '#94a3b8', EP: '#64748b'
-	};
-	function pitchColor(code) { return PITCH_COLORS[code] || '#9ca3af'; }
-
-	function pitchChip(code) {
-		return `<span class="pitch-chip" style="color:${pitchColor(code)}" title="${pitchMap[code] || code}">${code}</span>`;
-	}
-
-	// One legend row for every pitch code actually feeding the current rows
-	// (top-3 only, or every pitch, depending on the toggle), so the table
-	// itself can stay abbreviated.
-	function renderPitchLegend(rows) {
+	// PITCH_COLORS/pitchColor/pitchChip/renderPitchLegend now live in shared.js
+	// (same colors/legend markup as charts.html's HRs Today table). This wraps
+	// the shared renderPitchLegend with this page's own logic: only meaningful
+	// for the Top 3 chips (hidden in All Pitches mode), and derives which
+	// codes to show from whatever's actually feeding the current rows.
+	function updatePitchLegend(rows) {
 		const el = document.getElementById('pitch-legend');
 		if (!el) return;
-		// Only meaningful for the Top 3 chips (which are hidden in All Pitches mode).
 		if (PITCH_MODE !== 'top3') {
 			el.style.display = 'none';
 			el.innerHTML = '';
 			return;
 		}
 		el.style.display = '';
-		const codes = [...new Set(rows.flatMap(r => r.pitchesUsed || r.top3 || []))].sort();
-		el.innerHTML = codes.map(code => `
-			<span class="pitch-legend-item">
-				<span class="pitch-swatch" style="background:${pitchColor(code)}"></span>
-				<strong>${code}</strong> ${pitchMap[code] || code}
-			</span>`).join('');
+		renderPitchLegend(el, rows.flatMap(r => r.pitchesUsed || r.top3 || []));
 	}
 
 	const bgStatFormatter = function(cell, params) {
@@ -625,7 +597,7 @@
 	function applyStatModeAndRender() {
 		_allRows = applyStatMode(_baseRows, STAT_MODE);
 		computeClientPercentiles(_allRows);
-		renderPitchLegend(_allRows);
+		updatePitchLegend(_allRows);
 		updateColumnVisibility();
 		applyFilters();
 	}
@@ -743,7 +715,7 @@
 			computeClientPercentiles(_allRows);
 			RES = { arsenal: built.arsenalMap };
 			renderTable(_allRows);
-			renderPitchLegend(_allRows);
+			updatePitchLegend(_allRows);
 			buildGameFilter(_allRows);
 			document.getElementById('player-search').addEventListener('input', applyFilters);
 			if (data.updated) {

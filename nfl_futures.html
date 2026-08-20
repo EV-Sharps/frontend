@@ -1,41 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏀 (W) Props</title>
-
-	<!--
-	<script type="text/javascript" src="test.js"></script>
-	-->
+	<title>🏈 Futures</title>
 
 	<script type="text/javascript" src="tabulator.min.js"></script>
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<script type="text/javascript" src="flatpickr.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
-	<link href="flatpickr.min.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link href="style.css" rel="stylesheet">
-	<style>
-		#table {
-			width: auto;
-		}
-		@media (max-width: 2150px) {
-			#table {
-				width: 100%;
-			}
-		}
-		#filterbuilder-options { padding: 8px; }
-		#filterbuilder-options label { margin-bottom: 2px; }
-		#filterbuilder-options .fb-subrow { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 20px; }
-		#filterbuilder-options .fb-subrow select, #filterbuilder-options .fb-subrow input { flex: 1; min-width: 0; }
-		#filterbuilder-options .fb-inline-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
-		#filterbuilder-options .fb-toprow { display: flex; gap: 6px; margin-bottom: 6px; }
-		#filterbuilder-options .fb-toprow select, #filterbuilder-options .fb-toprow input { flex: 1; min-width: 0; }
-		#filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
-	</style>
+	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -47,6 +23,11 @@
 
 	gtag('config', 'G-FX06BZ5MRL');
 </script>
+<style>
+	#table {
+		width: 100%;
+	}
+</style>
 <body>
 	<div id="app">
 		<div id="devig-modal" class="modal">
@@ -132,13 +113,6 @@
 		<header id="header">
 			<div id="title">
 				<h1>+EV Sharps</h1>
-				<button id="help-tour-btn" class="help-btn" aria-label="Open help" onclick="startHelpTour()">
-				  <!-- Icon -->
-				  <svg class="help-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-					<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 14.75a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0-10c2.21 0 4 1.61 4 3.6 0 1.33-.72 2.37-2.08 3.03-.93.45-1.17.77-1.17 1.37v.25a.75.75 0 0 1-1.5 0v-.25c0-1.35.67-2.12 1.92-2.72.92-.45 1.33-1 1.33-1.68 0-1.12-.99-2.1-2.5-2.1s-2.5.98-2.5 2.1a.75.75 0 0 1-1.5 0C8.5 8.36 10.29 6.75 12 6.75Z"/>
-				  </svg>
-				  <span class="help-label">Help</span>
-				</button>
 			</div>
 			<div id="view-toggle-container">
 				<div class="select-wrapper">
@@ -168,46 +142,36 @@
 					</svg>
 				</div>
 				<div class="chkdd" id="exclude-dd">
-					<button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
-					  Exclude</span>
-					</button>
-					<div class="chkdd-menu" role="menu" aria-label="Exclude books">
-					  <label><input type="checkbox" value="fd"> FD</label>
-					  <label><input type="checkbox" value="dk"> DK</label>
-					  <label><input type="checkbox" value="b365"> B365</label>
-					  <label><input type="checkbox" value="mgm"> MGM</label>
-					  <label><input type="checkbox" value="espn"> ESPN</label>
-					  <label><input type="checkbox" value="cz"> CZ</label>
-					  <label><input type="checkbox" value="fn"> FN</label>
-					  <label><input type="checkbox" value="br"> BR</label>
-					  <label><input type="checkbox" value="bv"> BV</label>
-					  <label><input type="checkbox" value="hr"> HR</label>
-					  <label><input type="checkbox" value="hr_az"> HR AZ</label>
-					  <label><input type="checkbox" value="fl"> FL</label>
+				    <button class="chkdd-btn" type="button" aria-haspopup="true" aria-expanded="false">
+				      Exclude</span>
+				    </button>
+				    <div class="chkdd-menu" role="menu" aria-label="Exclude books">
+				      <label><input type="checkbox" value="fd"> FD</label>
+				      <label><input type="checkbox" value="dk"> DK</label>
+				      <label><input type="checkbox" value="b365"> B365</label>
+				      <label><input type="checkbox" value="mgm"> MGM</label>
+				      <label><input type="checkbox" value="espn"> ESPN</label>
+				      <label><input type="checkbox" value="cz"> CZ</label>
+				      <label><input type="checkbox" value="fn"> FN</label>
+				      <label><input type="checkbox" value="br"> BR</label>
+				      <label><input type="checkbox" value="bv"> BV</label>
+				      <label><input type="checkbox" value="hr"> HR</label>
+				      <label><input type="checkbox" value="fl"> FL</label>
 					  <label><input type="checkbox" value="re"> RE</label>
-					  <label><input type="checkbox" value="kambi"> Kambi</label>
-					  <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-					  <div style="border-top:1px solid #333;margin:4px 0;padding-top:4px;">
-					    <label><input type="checkbox" value="kal"> Kalshi (KAL)</label>
-					    <label><input type="checkbox" value="poly"> Polymarket (POLY)</label>
-					    <label><input type="checkbox" value="px"> ProphetX (PX)</label>
-					    <label><input type="checkbox" value="nv"> NoVig (NV)</label>
-					    <div class="chkdd-actions" style="justify-content:center;">
-					      <button type="button" onclick="togglePredictionMarkets()">Prediction Markets</button>
-					    </div>
-					  </div>
-					  <div class="chkdd-actions">
-						<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-					  </div>
-					  <div class="chkdd-actions" style="display: flex; justify-content: center;">
-						<button onclick="saveAllExcludeBooks()">Save for all tables</button>
-					  </div>
-					  <div>
-						<span id="exclude-status"></span>
-					  </div>
-					</div>
+				      <label><input type="checkbox" value="kambi"> Kambi</label>
+				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+				      <div class="chkdd-actions">
+				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
+				        <button type="button" data-act="all">All</button>
+				        <button type="button" data-act="none">None</button>
+				      </div>
+				      <div class="chkdd-actions" style="display: flex; justify-content: center;">
+				      	<button onclick="saveAllExcludeBooks()">Save for all tables</button>
+				      </div>
+				      <div>
+				      	<span id="exclude-status"></span>
+				      </div>
+				    </div>
 				  </div>
 				<div class="select-wrapper">
 					<label for="devig-button" class="select-label">Devig</label>
@@ -252,6 +216,7 @@
 					<select id="boost-select">
 						<option value="0" selected>None</option>
 						<option value="10">10%</option>
+						<option value="20">20%</option>
 						<option value="25">25%</option>
 						<option value="30">30%</option>
 						<option value="50">50%</option>
@@ -263,9 +228,10 @@
 					</svg>
 				</div>
 				<input id="boost-custom"
-					   type="number" min="0" step="5"
-					   placeholder="Custom %"
-					   style="display:none; width:7ch; margin-left:.5rem;" />
+				       type="number" min="0" step="5"
+				       placeholder="Custom %"
+				       style="display:none; width:7ch; margin-left:.5rem;" />
+
 				<div class="chkdd" id="prop-dd">
 					<label for="prop-dd-button" class="select-label">Prop</label>
 					<button id="prop-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('prop-dd', event)">All Props</button>
@@ -311,70 +277,6 @@
 				<div id="max-odds-wrapper" class="select-wrapper">
 				  <label for="max-odds" class="select-label">Max</label>
 				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
-				</div>
-				<div class="chkdd" id="filterbuilder-dd">
-					<label for="filterbuilder-dd-button" class="select-label">Filter</label>
-					<button id="filterbuilder-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('filterbuilder-dd', event)">None</button>
-					<div class="chkdd-menu" id="filterbuilder-options" style="max-height:70vh;overflow-y:auto;width:320px;">
-						<div class="fb-toprow" onclick="event.stopPropagation()">
-							<select id="fb-saved-select">
-								<option value="">Load saved filter...</option>
-							</select>
-							<button type="button" onclick="deleteSavedFilterBuilder()">Delete</button>
-						</div>
-						<div class="fb-toprow" onclick="event.stopPropagation()">
-							<input id="fb-name-input" type="text" placeholder="Filter name">
-							<button type="button" onclick="saveFilterBuilder()">Save As</button>
-						</div>
-						<hr>
-
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (NV/PX over $)</label>
-						<div class="fb-subrow" onclick="event.stopPropagation()">
-							<input id="fb-liquidity-over-amount" type="number" value="200" step="50">
-							<select id="fb-liquidity-over-book">
-								<option value="nv">NoVig</option>
-								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
-
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (NV/PX under $)</label>
-						<div class="fb-subrow" onclick="event.stopPropagation()">
-							<input id="fb-liquidity-amount" type="number" value="200" step="50">
-							<select id="fb-liquidity-book">
-								<option value="nv">NoVig</option>
-								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
-
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-homerrate-enabled"> Hit Rate in last X</label>
-						<div class="fb-subrow" onclick="event.stopPropagation()">
-							<input id="fb-homerrate-min" type="number" value="1" min="0" step="1">
-							<select id="fb-homerrate-window">
-								<option value="L5">Last 5</option>
-								<option value="L10">Last 10</option>
-								<option value="L20">Last 20</option>
-							</select>
-						</div>
-
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-line-enabled"> Line Range</label>
-						<div class="fb-subrow" onclick="event.stopPropagation()">
-							<input id="fb-line-min" type="number" placeholder="Min">
-							<input id="fb-line-max" type="number" placeholder="Max">
-						</div>
-
-						<hr>
-						<div class="chkdd-actions" style="flex-direction:column;gap:6px;align-items:stretch;" onclick="event.stopPropagation()">
-							<div style="display:flex;gap:6px;justify-content:center;">
-								<button type="button" onclick="clearFilterBuilder()">Clear</button>
-								<button type="button" onclick="applyFilterBuilder()">Apply</button>
-							</div>
-							<div style="text-align:center;"><span id="fb-save-status"></span></div>
-						</div>
-					</div>
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
@@ -422,21 +324,6 @@
 				<div id="watermark">
 					<img src="logos/logo.png">
 				</div>
-				<div id="right-body" class="body">
-				</div>
-			</div>
-			<div id="delete-custom-devig-overlay" style="display: none;
-				 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-				 background-color: rgba(0, 0, 0, 0.7); z-index: 1001;
-				 justify-content: center; align-items: center;">
-				<div class="overlay-content" style="max-width: 400px; padding: 20px; border-radius: 8px;">
-					<h2>Delete Custom Devigs</h2>
-					<div id="custom-devig-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
-						</div>
-					<div style="display: flex; justify-content: center;">
-						<button onclick="closeDeleteCustomDevigOverlay()">Close</button>
-					</div>
-				</div>
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
@@ -451,9 +338,6 @@
 								</svg>
 							</div>
 						</div>
-					</div>
-					<div style="text-align: center;">
-						Show/Hide columns for this page
 					</div>
 					<div id="items" style="display: flex;">
 						<div>
@@ -491,10 +375,6 @@
 								<label for="custom_bookOdds_fd">Fanduel</label>
 							</div>
 							<div>
-								<input id="custom_bookOdds_b365" type="checkbox" checked>
-								<label for="custom_bookOdds_b365">B365</label>
-							</div>
-							<div>
 								<input id="custom_bookOdds_dk" type="checkbox">
 								<label for="custom_bookOdds_dk">Draftkings</label>
 							</div>
@@ -518,16 +398,9 @@
 								<input id="custom_bookOdds_br" type="checkbox">
 								<label for="custom_bookOdds_br">BetRivers</label>
 							</div>
-							<div style="border:1px solid #444;border-radius:4px;padding:4px 6px;display:flex;flex-direction:column;gap:2px;">
-								<span style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Hard Rock</span>
-								<div>
-									<input id="custom_bookOdds_hr" type="checkbox">
-									<label for="custom_bookOdds_hr">National</label>
-								</div>
-								<div>
-									<input id="custom_bookOdds_hr_az" type="checkbox">
-									<label for="custom_bookOdds_hr_az">Arizona</label>
-								</div>
+							<div>
+								<input id="custom_bookOdds_hr" type="checkbox">
+								<label for="custom_bookOdds_hr">Hard Rock</label>
 							</div>
 							<div>
 								<input id="custom_bookOdds_kambi" type="checkbox">
@@ -548,22 +421,6 @@
 							<div>
 								<input id="custom_bookOdds_bol" type="checkbox">
 								<label for="custom_bookOdds_bol">Betonline</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_kal" type="checkbox">
-								<label for="custom_bookOdds_kal">Kalshi (KAL)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_poly" type="checkbox">
-								<label for="custom_bookOdds_poly">Polymarket (POLY)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_nv" type="checkbox">
-								<label for="custom_bookOdds_nv">NoVig (NV)</label>
-							</div>
-							<div>
-								<input id="custom_bookOdds_px" type="checkbox">
-								<label for="custom_bookOdds_px">ProphetX (PX)</label>
 							</div>
 							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
@@ -614,53 +471,28 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NBA. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
-	</main>
-	<div id="card-modal-overlay">
-		<div id="card-modal-inner">
-			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
-		</div>
 	</div>
-
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "wnba";
+		PAGE = "futures";
 		
 		parseURLParams();
-		SPORT = "wnba";
+		SPORT = "nfl";
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
 		});
 
 		function fetchProps() {
-			//fetch(`nba.json`, {
-			fetch(API_BASE+`/api/wnba`, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
+			let s = SPORT;
+			fetch(API_BASE+"/api/nfl_futures", {
+				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
 			}).then(response => response.json()).then(data => {
 				RES = data;
 				UPDATED[PAGE] = data["updated"];
-
-				if (TEAMS) {
-					RES.data = RES.data.filter(r => TEAMS.split(",").includes(r.team));
-				}
-
-				const gameMenu = document.getElementById("game-options");
-				gameMenu.innerHTML = `
-					<div class="chkdd-actions">
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-					</div>
-				`;
-				populateGameOptions(data.games, RES?.times, gameMenu);
-				restoreChkddState(gameMenu);
-				if (GAME) {
-					updateGameLabel(GAME.split(","));
-				}
 
 				const propMenu = document.getElementById("prop-options");
 				propMenu.innerHTML = `
@@ -705,10 +537,11 @@
 				tooltipsHeader: true,
 				placeholder:"Data Loading...",
 				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
+				responsiveLayout: MOBILE ? "" : "hide",
 				autoResize: true,
 				data: data,
 				initialSort: [
+					//{column: "barrel_ct", dir: "desc"},
 					{column: "ev", dir: "desc"},
 				],
 				columnDefaults: {
@@ -717,7 +550,6 @@
 					resizable: false,
 					headerSortStartingDir: "desc"
 				},
-				//groupBy: "game",
 				groupHeader: function(value, count, data, group){
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
@@ -740,7 +572,7 @@
 						responsive: 0
 					},
 					{
-						title: "Player (L5 min/g)",
+						title: "Player",
 						field: "player",
 						headerFilter: "input",
 						formatter: playerFormatter,
@@ -757,11 +589,16 @@
 							const data = cell.getRow().getData();
 							const prop = data.prop;
 							let ou = data.under ? "u" : "o";
-							let tank = "";
-							if (false && ["wsh", "ind", "mem", "utah"].includes(data.team)) {
-								tank = "<div class='tanking'>🏳️</div>";
+
+							if (prop.includes("ml")) {
+								return "";
 							}
-							return `<div style='position: relative;width:100%;height:100%;'>${ou}${cell.getValue()}${tank}</div>`;
+							if (prop.includes("spread")) {
+								let line = parseFloat(cell.getValue());
+								let pre = line > 0 ? "+" : "";
+								return `${pre}${line}`;
+							}
+							return `${ou}${cell.getValue()}`;
 						},
 						headerFilter:"list",
 						headerFilterParams:{
@@ -826,51 +663,13 @@
 						responsive: 0,
 						visible: MOBILE ? false : true
 					},
-					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
-					//{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `Betrivers<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 70, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `HR AZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr_az"], short=true)}`, field: "bookOdds.hr_az",  width: 70, sorter: "number", visible: false, formatter: evOddsFormatter},
-					{title: `Bovada<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter, visible: false},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{
-						title: "Game Logs<br> ➡️ Most Recent",
-						field: "logs",
-						width: 160,
-						formatter: chartFormatter,
-						formatterParams:{type:"bar"},
-						responsive: 3,
-						visible: MOBILE ? false : true
-					},
-					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					//{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "game", visible: false}
+					//{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 80, sorter: "number", formatter: evOddsFormatter},
+					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 80, sorter: "number", formatter: evOddsFormatter},
+					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 80, sorter: "number", formatter: evOddsFormatter},
+					{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 80, sorter: "number", formatter: evOddsFormatter},
+					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 80, sorter: "number", formatter: evOddsFormatter}
 				]
-			});
-
-			TABLE.on("rowClick", function(e, row) {
-				if (e.shiftKey || e.ctrlKey) {
-					showCardModal(row.getData());
-					return;
-				}
-				rowClick(row);
 			});
 
 			TABLE.on("dataLoaded", function(data) {
@@ -882,75 +681,71 @@
 			});
 		}
 
-		function groupByGame() {
-			if (!TABLE.options.groupBy) {
-				TABLE.setGroupBy("game");
+		function rowClick(row) {
+			const data = row.getData();
+			const right = document.querySelector("#right-body");
+			const left = document.querySelector("#left-body");
+			const table = document.querySelector("#table");
+			const tableContainer = document.querySelector("#table-container");
+			const sel = TABLE.getSelectedRows();
+			TABLE.deselectRow();
+			if (sel.length > 0 && sel[0] == row) {
+				right.style.display = "none";
+				left.style.width = "100%";
+				table.style.width = "100%";
+				setTimeout(() => {
+					table.style.width = "max-content";
+					tableContainer.style.width = "max-content";
+				}, 40);
 			} else {
-				TABLE.setGroupBy();
+				row.select();
+				left.style.width = MOBILE ? "100%" : "50%";
+				right.style.display = "flex";
+				table.style.width = "100%";
+				tableContainer.style.width = "100%";
+				document.querySelector("#btwn-select").value = "pa";
+				plotHRGap();
 			}
 		}
 
-		function implied() {
-			TABLE.getColumns().map(c => {
-				c.hide()
-			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.fd", "bookOdds.dk", "bookOdds.pn", "logs", "hitRate", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
-			document.querySelector("#table").style.width = "max-content";
-			TABLE.setSort([
-				{column: "implied", dir: "desc"}
-			]);
-			TABLE.setFilter([
-				{field: "prop", type: "=", value: "dd"},
-				{field: "under", type:"=", value: false}
-			]);
+		function filterToday() {
+			TABLE.setFilter([{field:"game", type:"!=", value: ""}]);
+		}
 
-			const rows = TABLE.getData("active");
-			const tweet = [];
-
-			let currentRank = 1;
-			for (let i = 0; i < rows.length; i++) {
-				const row = rows[i];
-				const prev = rows[i - 1];
-
-				// If not first, and impliedMut differs from previous, increment rank
-				if (i > 0 && row["implied"] !== prev["implied"]) {
-					currentRank++;
-				}
-
-				if (currentRank > 10) {
-					continue;
-				}
-
-				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
+		function filterToday2() {
+			let url = new URL(window.location.href);
+			if (TODAY) {
+				url.searchParams.delete("today");
+			} else {
+				url.searchParams.set("today", "");
 			}
-			const today = new Date();
-			let header = `🏀 Anytime Double-Double Odds: FD/DK/PN's top 10 Implied (${today.getMonth()+1}/${today.getDate()})`; 
-			console.log(header+"\n\n"+tweet.join("\n"));
+			window.location.href = `./barrels${HTML}${url.search}`;
 		}
 
-		function closeCardModal() {
-			document.getElementById('card-modal-overlay').classList.remove('open');
+		function viewPercentiles() {
+			if (TOGGLE_PERCENTILE) {
+				window.location.href = `./barrels${HTML}`;
+			} else {
+				window.location.href = `./barrels${HTML}?percentiles=`;
+			}
 		}
-
-		document.addEventListener('keydown', e => {
-			if (e.key === 'Escape') closeCardModal();
-		});
-		document.getElementById('card-modal-overlay').addEventListener('click', e => {
-			if (e.target === document.getElementById('card-modal-overlay')) closeCardModal();
-		});
 
 		function pretty_() {
-			TABLE.getColumns().map(c => {
-				c.hide()
+			TABLE.getColumns().map(col => {
+				let arr = ["book", "player", "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "barrel_ct", "game_trends.barrel_ct.5G", "hard_hit_ct", "game_trends.hard_hit_ct.5G"];
+				if (L3 != undefined) {
+					arr.push("game_trends.barrel_ct.3G");
+					arr.push("game_trends.hard_hit_ct.3G");
+				}
+				if (!arr.includes(col.getField())) {
+					col.hide();
+				}
 			});
-			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR"].forEach(c => TABLE.showColumn(c));
-			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
-	<script type="text/javascript" src="record_wnba.js"></script>
 	<script>handleSession();</script>
 </body>
 </html>

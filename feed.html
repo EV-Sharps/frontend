@@ -176,6 +176,7 @@
 						</div>
 					</div>
 					<div id="yby"></div>
+					<div id="feed-pitch-legend" class="pitch-legend"></div>
 					<div id="hrtable"></div>
 					<div id="scatter"></div>
 				</div>
@@ -372,6 +373,7 @@
 					TABLE.updateOrAddData(data);
 					if (HRROWS.length != oldHR.length) {
 						HRTABLE.replaceData(HRROWS);
+						renderPitchLegend('feed-pitch-legend', HRROWS.map(r => r.pitch));
 					}
 					//TABLE.redraw();
 					//HRTABLE.redraw();
@@ -625,7 +627,7 @@
 							return rowValue === headerValue;
 						}
 					},
-					{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch", hozAlign: "center",width: 40},
+					{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch", hozAlign: "center",width: 40, formatter: cell => pitchChip(cell.getValue())},
 					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? true : true, formatter: summaryFormatter},
 					{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},
@@ -640,6 +642,7 @@
 		}
 
 		function renderHRTable(data) {
+			renderPitchLegend('feed-pitch-legend', data.map(r => r.pitch));
 			HRTABLE = new Tabulator("#hrtable", {
 				tooltipsHeader: true,
 				data: data,
@@ -663,7 +666,7 @@
 						width: 130
 					},
 					{title: "Result", field: "result", width: MOBILE ? 50 : 60, visible: false},
-					{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch", hozAlign: "center",width: 40},
+					{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch", hozAlign: "center",width: 40, formatter: cell => pitchChip(cell.getValue())},
 					{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: ftFormatter},
 					{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: MOBILE ? 60 : 60},
 					{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 55, visible: MOBILE ? true : true},

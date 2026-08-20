@@ -66,6 +66,14 @@
 	.player-cell .team-img {
 		margin-top: -2px;
 	}
+	#year-highlight {
+		display: flex; gap: 6px; align-items: center; margin-left: 10px;
+	}
+	.yr-btn {
+		padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+	}
+	.yr-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
 	@media (max-width: 600px) {
 		h1 {
 			display: none;
@@ -129,6 +137,11 @@
 					</select>
 					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
 				</div>
+				<div id="year-highlight">
+					<button type="button" class="yr-btn is-active" data-mode="all" onclick="setYearHighlight('all')">All Years</button>
+					<button type="button" class="yr-btn" data-mode="l5" onclick="setYearHighlight('l5')">Last 5</button>
+					<button type="button" class="yr-btn" data-mode="l10" onclick="setYearHighlight('l10')">Last 10</button>
+				</div>
 			</div>
 		</header>
 		<main>
@@ -161,13 +174,56 @@
 		let YBY = {};
 		let currentYear = new Date().getFullYear();
 
+		// Per-year highlight control ('all' | 'l5' | 'l10') — only meaningful for the
+		// plotGraph() charts, which draw one trace per year; hidden for weather/monthly.
+		let YEAR_HIGHLIGHT = 'all';
+		let LAST_PLOT_YEARS = [];
+		const PER_YEAR_GRAPHS = new Set(["3d", "5d", "reg", "1d", "1d-hr", "brl-1d", "brl-3d"]);
+
+		function setYearHighlight(mode) {
+			YEAR_HIGHLIGHT = mode;
+			document.querySelectorAll('#year-highlight .yr-btn').forEach(b => b.classList.toggle('is-active', b.dataset.mode === mode));
+			applyYearHighlight();
+		}
+
+		function updateYearHighlightVisibility(g) {
+			const el = document.getElementById('year-highlight');
+			if (el) el.style.display = PER_YEAR_GRAPHS.has(g) ? 'flex' : 'none';
+		}
+
+		// Re-applies the current highlight selection to whatever's on the chart now.
+		// Relies on Plotly trace order matching LAST_PLOT_YEARS (one trace per year,
+		// pushed in that order by plotGraph()).
+		function applyYearHighlight() {
+			const gd = document.getElementById('table');
+			if (!gd || !gd.data || !gd.data.length || gd.data.length !== LAST_PLOT_YEARS.length) return;
+
+			const currYear = currentYear.toString();
+			let highlightSet = null;
+			if (YEAR_HIGHLIGHT === 'l5') highlightSet = new Set(LAST_PLOT_YEARS.slice(-5));
+			else if (YEAR_HIGHLIGHT === 'l10') highlightSet = new Set(LAST_PLOT_YEARS.slice(-10));
+
+			const visible = [], opacity = [], width = [];
+			LAST_PLOT_YEARS.forEach(year => {
+				const isCurrent = year === currYear;
+				// Same dimming as "All Years" for whatever's visible — highlight mode only
+				// changes which years are hidden, not how the current year stands out.
+				visible.push(highlightSet && !highlightSet.has(year) ? 'legendonly' : true);
+				opacity.push(isCurrent ? 1 : 0.35);
+				width.push(isCurrent ? 3 : 1);
+			});
+			Plotly.restyle('table', { visible, opacity, 'line.width': width });
+		}
+
 		if (PLAYER) {
 			document.querySelector("#table").style["max-width"] = "520px";
 		}
 
 		document.querySelector("#graph-select").value = GRAPH;
+		updateYearHighlightVisibility(GRAPH);
 		document.querySelector("#graph-select").addEventListener("change", (event) => {
 			const g = event.target.value;
+			updateYearHighlightVisibility(g);
 			if (g == "5d") {
 				plotGraph(RES, 5);
 			} else if (g == "3d") {
@@ -230,6 +286,7 @@
 		function plotGraph(res, movingAvg=3, graph="hr/g", regression=false) {
 			const traces = [];
 			const years = Object.keys(res).filter(y => !SKIP_YEARS.includes(y) && parseInt(y) >= MIN_YEAR).sort();
+			LAST_PLOT_YEARS = years;
 			const currYear = currentYear.toString();
 
 			years.forEach((year, idx) => {
@@ -280,6 +337,7 @@
 
 			Plotly.newPlot('table', traces, layout, { displayModeBar: false });
 			setTimeout(() => Plotly.Plots.resize('table'), 100);
+			applyYearHighlight();
 		}
 
 		function plotWeatherGraph(res) {
@@ -469,6 +527,7 @@
 			})
 			.then(response => response.json())
 			.then(res => {
+				updateYearHighlightVisibility(GRAPH);
 				if (GRAPH == "weather") { plotWeatherGraph(res); } else if (GRAPH == "1d") {
 					plotGraph(res, 1);
 				} else if (GRAPH == "5d") {

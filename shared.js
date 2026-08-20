@@ -1380,6 +1380,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	const book = ["outliers", "atgs2"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";
 	let line = data.line;
+	if (line == null) return "";
 	if (["outliers", "atgs2"].includes(PAGE)) {
 		line = data.outlierLine;
 	}
@@ -1861,6 +1862,9 @@ const trendFormatter = function(cell, params, rendered) {
 }
 
 function getGameImgs(data, params) {
+	if (!data.game && !data.awayTeamId) {
+		return "";
+	}
 	let away = data.awayTeamId || data.game.split(" @ ")[0];
 	let home = data.homeTeamId || data.game.split(" @ ")[1];
 	if (SPORT == "soccer") {

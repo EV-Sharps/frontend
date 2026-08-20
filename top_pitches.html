@@ -34,6 +34,12 @@
 			background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
 		}
 		.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+		#starters-toggle-btn {
+			padding: 2px 4px; border-radius: 4px; border: 1px solid #243449;
+			background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 9px;
+			white-space: normal; line-height: 1.2; margin-top: 2px;
+		}
+		#starters-toggle-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
 		.feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 		.feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 		@media (max-width: 600px) {
@@ -144,6 +150,7 @@
 				</div>
 				<div class="batter-ps-toggle" id="pitch-mode-toggle">
 					<button class="ps-btn is-active" data-mode="top3">Top 3</button>
+					<button class="ps-btn" data-mode="arsenal">Arsenal</button>
 					<button class="ps-btn" data-mode="all">All Pitches</button>
 				</div>
 				<div class="batter-ps-toggle" id="stat-mode-toggle">
@@ -200,7 +207,11 @@
 	let _allRows = [];
 	let _baseRows = [];
 	let RAW_DATA = null;
-	let PITCH_MODE = "top3"; // "top3" | "all"
+	let PITCH_MODE = "top3"; // "top3" | "arsenal" | "all"
+	// "top3": SP's 3 most-used pitches (vs this batter's side) only.
+	// "arsenal": every pitch type the SP actually throws (vs this batter's side).
+	// "all": unrestricted — every pitch type this batter has ever faced from
+	//   same-handed pitchers, including ones today's SP doesn't even throw.
 	let STAT_MODE = "stats"; // "stats" | "bbe"
 	let WINDOW_MODE = "season"; // "season" | "L10" | "L20"
 	let HAND_MODE = "pitcher"; // "pitcher" | "opposite" | "all"
@@ -317,13 +328,32 @@
 		return g || "";
 	}
 
+	// Best (highest-paying / lowest implied probability) HR-yes price across
+	// every book in a batter's bookOdds. HR props are single-sided (no
+	// over/under pair), so unlike charts.html's computeClosingOdds there's no
+	// "under" leg to pick between.
+	function computeBestBook(bookOdds) {
+		if (!bookOdds) return null;
+		let best = null;
+		Object.entries(bookOdds).forEach(([book, val]) => {
+			const price = parseInt(val, 10);
+			if (!Number.isFinite(price)) return;
+			const implied = americanToImplied(price);
+			if (implied == null) return;
+			if (!best || implied < best.implied) best = { book, price, implied };
+		});
+		return best;
+	}
+
 	// Builds one flat leaderboard row per batter-vs-SP, plus a RES.arsenal-shaped
 	// map so the shared feed's arsenal chips (incl. the "Top 3" preset) work.
-	// top3Only controls which of the SP's pitches feed the aggregate: just his
-	// top 3 (by usage), or everything he throws. window picks which trailing
-	// window to read off each player's "windows" bundle (season/L10/L20) —
-	// each window has the same {pitch, bbe_l, bbe_r} shape season always did.
-	function buildRows(allData, top3Only, window) {
+	// pitchMode controls which pitches feed the aggregate: just the SP's top 3
+	// (by usage), his full actual arsenal, or every pitch type the batter has
+	// ever faced from same-handed pitchers regardless of what the SP throws.
+	// window picks which trailing window to read off each player's "windows"
+	// bundle (season/L10/L20) — each window has the same {pitch, bbe_l, bbe_r}
+	// shape season always did.
+	function buildRows(allData, pitchMode, window) {
 		const rows = [];
 		const arsenalMap = {};
 		const games = allData.games || [];
@@ -356,16 +386,19 @@
 				if (!bw) return;
 				const batterHandRaw = (batter.pitch_hand || "").toUpperCase();
 				const { pSide, bSide } = resolveHandSides(pitcherHand, batterHandRaw, HAND_MODE);
-				const top3 = (topPitches[bSide] || []).slice(0, 3);
+				const fullArsenal = topPitches[bSide] || [];
+				const top3 = fullArsenal.slice(0, 3);
 				if (!top3.length) return;
 
 				const section = bw.pitch?.[pSide];
 				if (!section) return;
 				const pitchRows = Object.entries(section).map(([type, stats]) => ({ type, ...stats, n: stats["#"] || 0 }));
-				const includedRows = top3Only ? pitchRows.filter(r => top3.includes(r.type)) : pitchRows;
+				const includedTypes = pitchMode === 'top3' ? top3 : pitchMode === 'arsenal' ? fullArsenal : null;
+				const includedRows = includedTypes ? pitchRows.filter(r => includedTypes.includes(r.type)) : pitchRows;
 				const agg = weightedAggregate(includedRows);
 				if (!agg) return;
-				const bbeEvents = getBbeEvents(bw, pSide).filter(e => !top3Only || top3.includes(e.pitch_type));
+				const bbeEvents = getBbeEvents(bw, pSide).filter(e => !includedTypes || includedTypes.includes(e.pitch_type));
+				const best = computeBestBook(batter.bookOdds);
 				rows.push({
 					player: batter.player,
 					team: code,
@@ -376,6 +409,10 @@
 					top3,
 					pitchesUsed: [...new Set(includedRows.map(r => r.type))],
 					_bbeEvents: bbeEvents,
+					book: best?.book || '',
+					line: best?.price ?? null,
+					bookOdds: batter.bookOdds || {},
+					starting: !!batter.starting,
 					...agg
 				});
 			});
@@ -450,13 +487,13 @@
 
 	// PITCH_COLORS/pitchColor/pitchChip/renderPitchLegend now live in shared.js
 	// (same colors/legend markup as charts.html's HRs Today table). This wraps
-	// the shared renderPitchLegend with this page's own logic: only meaningful
-	// for the Top 3 chips (hidden in All Pitches mode), and derives which
-	// codes to show from whatever's actually feeding the current rows.
+	// the shared renderPitchLegend with this page's own logic: meaningful in
+	// Top 3/Arsenal modes (a bounded, known set of chips), hidden in All
+	// Pitches mode where the set is unbounded/not tied to a specific pitcher.
 	function updatePitchLegend(rows) {
 		const el = document.getElementById('pitch-legend');
 		if (!el) return;
-		if (PITCH_MODE !== 'top3') {
+		if (PITCH_MODE === 'all') {
 			el.style.display = 'none';
 			el.innerHTML = '';
 			return;
@@ -514,6 +551,10 @@
 					formatter: playerFormatter, formatterParams: { sport: 'mlb' }
 				},
 				{
+					title: `Best Book<br><button id="starters-toggle-btn" type="button" onclick="event.preventDefault(); event.stopPropagation(); toggleStartersOnly();">Today: <span id="starters-toggle-state">Off</span></button>`,
+					field: 'book', width: 80, formatter: bestBookFormatter
+				},
+				{
 					title: 'Opp SP', field: 'pitcher', headerFilter: "input", hozAlign: 'left', widthGrow: 2, minWidth: 100,
 					formatter: pitcherFormatter
 				},
@@ -544,10 +585,21 @@
 		TABLE.on('rowClick', (e, row) => rowClick(row));
 	}
 
+	let STARTERS_ONLY = false;
+
+	function toggleStartersOnly() {
+		STARTERS_ONLY = !STARTERS_ONLY;
+		const state = document.getElementById('starters-toggle-state');
+		if (state) state.textContent = STARTERS_ONLY ? 'On' : 'Off';
+		const btn = document.getElementById('starters-toggle-btn');
+		if (btn) btn.classList.toggle('is-active', STARTERS_ONLY);
+		applyFilters();
+	}
+
 	function applyRowFilters(r) {
 		const minN = parseInt(document.getElementById('min-n').value, 10) || 0;
 		const game = document.getElementById('game-select').value;
-		return (r.n ?? 0) >= minN && (!game || r.game === game);
+		return (r.n ?? 0) >= minN && (!game || r.game === game) && (!STARTERS_ONLY || r.starting);
 	}
 
 	function applyFilters() {
@@ -574,7 +626,7 @@
 	function updateColumnVisibility() {
 		if (!TABLE) return;
 		const top3Col = TABLE.getColumn('top3');
-		if (top3Col) top3Col[PITCH_MODE === 'top3' ? 'show' : 'hide']();
+		if (top3Col) top3Col[PITCH_MODE !== 'all' ? 'show' : 'hide']();
 		['brl_rate', 'hh_rate', 'fb_rate'].forEach(field => {
 			const col = TABLE.getColumn(field);
 			if (col) col[STAT_MODE === 'stats' ? 'show' : 'hide']();
@@ -604,7 +656,7 @@
 
 	function rebuildFromRaw() {
 		if (!RAW_DATA) return;
-		const built = buildRows(RAW_DATA, PITCH_MODE === 'top3', WINDOW_MODE);
+		const built = buildRows(RAW_DATA, PITCH_MODE, WINDOW_MODE);
 		_baseRows = built.rows;
 		RES = { arsenal: built.arsenalMap };
 		applyStatModeAndRender();
@@ -709,7 +761,7 @@
 			headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
 		}).then(r => r.json()).then(data => {
 			RAW_DATA = data;
-			const built = buildRows(RAW_DATA, PITCH_MODE === 'top3', WINDOW_MODE);
+			const built = buildRows(RAW_DATA, PITCH_MODE, WINDOW_MODE);
 			_baseRows = built.rows;
 			_allRows = applyStatMode(_baseRows, STAT_MODE);
 			computeClientPercentiles(_allRows);

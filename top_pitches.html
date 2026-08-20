@@ -412,7 +412,6 @@
 					book: best?.book || '',
 					line: best?.price ?? null,
 					bookOdds: batter.bookOdds || {},
-					starting: !!batter.starting,
 					...agg
 				});
 			});
@@ -599,7 +598,11 @@
 	function applyRowFilters(r) {
 		const minN = parseInt(document.getElementById('min-n').value, 10) || 0;
 		const game = document.getElementById('game-select').value;
-		return (r.n ?? 0) >= minN && (!game || r.game === game) && (!STARTERS_ONLY || r.starting);
+		// "Today's Starters" = has an active HR prop (bookOdds) — a far more
+		// reliable signal than lineup-name matching, which missed real starters
+		// due to name-format mismatches between the lineup scrape and Savant IDs.
+		const hasBookOdds = Object.keys(r.bookOdds || {}).length > 0;
+		return (r.n ?? 0) >= minN && (!game || r.game === game) && (!STARTERS_ONLY || hasBookOdds);
 	}
 
 	function applyFilters() {

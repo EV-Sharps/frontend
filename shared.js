@@ -2274,8 +2274,8 @@ function renderFeedTable(data) {
 				}
 			},
 			{title: "Pitch<br><a target='new' href='https://www.mlb.com/glossary/pitch-types' onclick='event.stopPropagation()'>Types</a>", field: "pitch_type", hozAlign: "center",width: 40},
-			{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
-			{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, visible: MOBILE ? false : true, formatter: summaryFormatter},
+			{title: "Exit<br>Velocity", field: "evo", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, formatter: summaryFormatter},
+			{title: "Launch<br>Angle", field: "la", hozAlign: "center", sorter: "number", width: MOBILE ? 45 : 60, formatter: summaryFormatter},
 			{title: "Dist", field: "dist", hozAlign: "center", sorter: "number", formatter: summaryFormatter},
 			{title: "HR/Park", field: "hr/park", hozAlign: "center", sorter: "number", width: 65},
 			{title: "BRL", field: "brl", hozAlign: "center", width: 30, formatter: brlFormatter},

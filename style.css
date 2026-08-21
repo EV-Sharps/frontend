@@ -2739,6 +2739,9 @@ button#logout:hover {
 	.tabulator .tabulator-cell:nth-child(1) {
 		width: 40px;
 	}
+	#feed-arsenal {
+		width: 100%
+	}
 }
 
 @media (max-width: 768px) {

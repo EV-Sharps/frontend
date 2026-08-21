@@ -2260,7 +2260,7 @@ function renderFeedTable(data) {
 		},
 		groupToggleElement: "header",
 		columns: [
-			{title: "", field: "dt", formatter: dtFormatter, formatterParams: {noYear: true}, hozAlign: "center"},
+			{title: "", field: "dt", formatter: dtFormatter, formatterParams: {noYear: true}, hozAlign: "center", width: 50},
 			{title: "Pitcher", field: "pitcher", headerFilter: "input", formatter: feedPitcherFormatter},
 			{title: "Result", field: "result", width: MOBILE ? 70 : 85, editor:"input", headerFilter:"list",
 				headerFilterParams:{

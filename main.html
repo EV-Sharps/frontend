@@ -33,13 +33,6 @@
 				width: 100%;
 			}
 		}
-	#filterbuilder-options { padding: 8px; }
-	#filterbuilder-options label { margin-bottom: 2px; }
-	#filterbuilder-options .fb-subrow { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 20px; }
-	#filterbuilder-options .fb-subrow select, #filterbuilder-options .fb-subrow input { flex: 1; min-width: 0; }
-	#filterbuilder-options .fb-toprow { display: flex; gap: 6px; margin-bottom: 6px; }
-	#filterbuilder-options .fb-toprow select, #filterbuilder-options .fb-toprow input { flex: 1; min-width: 0; }
-	#filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
 </style>
 <body>
 	<div id="app">
@@ -156,20 +149,7 @@
 				</div>
 				<div class="select-wrapper">
 					<label for="book-select" class="select-label">Book</label>
-					<select id="book-select">
-						<option value="" selected>All</option>
-						<option value="fd">FD</option>
-						<option value="dk">DK</option>
-						<option value="b365">B365</option>
-						<option value="espn">ESPN</option>
-						<option value="mgm">MGM</option>
-						<option value="cz">CZ</option>
-						<option value="fn">FN</option>
-						<option value="br">BR</option>
-						<option value="hr">HR</option>
-						<option value="bv">BV</option>
-						<option value="kambi">Kambi</option>
-					</select>
+					<select id="book-select"></select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>

@@ -13,9 +13,7 @@
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
 <style type="text/css">
-	.game-img { height: 18px; width: 18px; }
 	#table { width: 100%; }
-	#right-body { justify-content: center; }
 	#chart { max-height: 400px; margin-top: 0.5rem; }
 	main {
 		justify-content: flex-start;
@@ -222,12 +220,6 @@
 	@media (max-width: 1350px) {
 		#table-container { justify-content: normal; }
 		#table-container, #table { width: 100%; }
-	}
-	@media (max-width: 600px) {
-		#right-body.mobile-open { width: 100vw !important; max-width: 100vw !important; flex: 1 1 auto; }
-		#right-body.mobile-open #chart,
-		#right-body.mobile-open #chart .js-plotly-plot,
-		#right-body.mobile-open #chart svg { width: 100% !important; max-width: 100% !important; max-height: none; }
 	}
 	.tracker-section-label {
 		padding: 0.3rem 0.5rem 0.15rem;

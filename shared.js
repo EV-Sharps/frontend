@@ -2135,7 +2135,11 @@ function feedArsenalPreset(arsenal) {
 }
 
 function renderFeedArsenal(pitcher, throws) {
-	const el = document.getElementById("feed-arsenal");
+	// Renders into #feed-arsenal-content, a dedicated child of #feed-arsenal —
+	// #feed-arsenal itself also holds #feed-toggle as a sibling (kept there so
+	// it shares #feed-arsenal's width), which an innerHTML overwrite directly
+	// on #feed-arsenal would wipe out on every re-render.
+	const el = document.getElementById("feed-arsenal-content");
 	if (!el) return;
 	if (!pitcher || !RES?.arsenal?.[pitcher]) {
 		el.innerHTML = "";
@@ -2147,7 +2151,7 @@ function renderFeedArsenal(pitcher, throws) {
 	const presetBtn = (p, label, tooltip) => `<button class="ps-btn preset-btn${preset === p ? " is-active" : ""}" data-preset="${p}" title="${tooltip}">${label}</button>`;
 	el.innerHTML = `
 		<div class="feed-arsenal-row">
-			<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">${title(pitcher)} (${throws}) Top Pitches</div>
+			<div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">${title(pitcher)} (${throws}) Top Pitches</div>
 			<div class="batter-ps-toggle">
 				${handBtn("both", "All")}
 				${handBtn("vs_lhb", "LHB")}

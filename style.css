@@ -1458,6 +1458,13 @@ input, textarea, select {
 .opp-cell:hover {
 
 }
+#feed-watermark {
+	font-size: 16px;
+	font-weight: 600;
+	color: #4b5563;
+	letter-spacing: .03em;
+	white-space: nowrap;
+}
 #watermark {
 	display: none;
 	position: absolute;
@@ -2811,3 +2818,63 @@ button#logout:hover {
 		background-color: #34393b !important;
 	}
 }
+/* ===== Deduplicated shared page CSS (moved out of individual HTML files) ===== */
+.game-img {
+	height: 18px; width: 18px;
+}
+.tabulator-cell {
+	height: 24px;
+}
+.player-cell .team-img {
+	margin-top: -2px;
+}
+#right-body { justify-content: center; }
+.batter-ps-toggle { display: flex; gap: 4px; }
+.ps-btn {
+	padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
+	background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
+}
+.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+.feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+@media (max-width: 600px) {
+	.feed-arsenal-chips {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
+	}
+	.feed-arsenal-chips .ps-btn { flex: 0 0 auto; white-space: nowrap; }
+}
+@media (max-width: 600px) {
+	#right-body.mobile-open {
+		width: 100vw !important;
+		max-width: 100vw !important;
+		flex: 1 1 auto;
+	}
+	#right-body.mobile-open #chart,
+	#right-body.mobile-open #chart .js-plotly-plot,
+	#right-body.mobile-open #chart svg {
+		width: 100% !important;
+		max-width: 100% !important;
+		max-height: none;
+	}
+}
+#filterbuilder-options { padding: 8px; }
+#filterbuilder-options label { margin-bottom: 2px; }
+#filterbuilder-options .fb-subrow { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 20px; }
+#filterbuilder-options .fb-subrow select, #filterbuilder-options .fb-subrow input { flex: 1; min-width: 0; }
+#filterbuilder-options .fb-inline-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+#filterbuilder-options .fb-toprow { display: flex; gap: 6px; margin-bottom: 6px; }
+#filterbuilder-options .fb-toprow select, #filterbuilder-options .fb-toprow input { flex: 1; min-width: 0; }
+#filterbuilder-options .fb-stat-row-wrap { margin: 0 0 8px 20px; }
+#filterbuilder-options .fb-stat-row-wrap .fb-subrow { margin: 0 0 2px 0; }
+#filterbuilder-options .fb-stat-hint { font-size: 12px; color: #9ca3af; }
+#filterbuilder-options .fb-add-btn {
+	margin: 0 0 10px 20px; background: #1b1f26; color: #cfd6e4; border: 1px solid #2f3642;
+	border-radius: .35rem; padding: .2rem .5rem; cursor: pointer; font-size: 11px;
+}
+#filterbuilder-options .fb-row-remove {
+	background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px;
+}
+#filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }

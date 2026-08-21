@@ -27,21 +27,9 @@
   gtag('config', 'G-FX06BZ5MRL');
 </script>
 <style type="text/css">
-	.game-img {
-		height: 18px; width: 18px;
-	}
-	.tabulator-cell {
-		height: 24px;
-	}
-	.player-cell .team-img {
-		margin-top: -2px;
-	}
 	#refresh-select {
 		padding: 0 0.5rem;
 		height: 24px;
-	}
-	#right-body {
-		justify-content: center;
 	}
 	#chart {
 		max-height: 400px;
@@ -51,41 +39,6 @@
 		overflow-y: auto;
 		padding: 4px 0;
 		width: 100%;
-	}
-	.batter-ps-toggle { display: flex; gap: 4px; }
-	#filterbuilder-options { padding: 8px; }
-	#filterbuilder-options label { margin-bottom: 2px; }
-	#filterbuilder-options .fb-subrow { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 20px; }
-	#filterbuilder-options .fb-subrow select, #filterbuilder-options .fb-subrow input { flex: 1; min-width: 0; }
-	#filterbuilder-options .fb-inline-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
-	#filterbuilder-options .fb-toprow { display: flex; gap: 6px; margin-bottom: 6px; }
-	#filterbuilder-options .fb-toprow select, #filterbuilder-options .fb-toprow input { flex: 1; min-width: 0; }
-	#filterbuilder-options .fb-stat-row-wrap { margin: 0 0 8px 20px; }
-	#filterbuilder-options .fb-stat-row-wrap .fb-subrow { margin: 0 0 2px 0; }
-	#filterbuilder-options .fb-stat-hint { font-size: 12px; color: #9ca3af; }
-	#filterbuilder-options .fb-add-btn {
-		margin: 0 0 10px 20px; background: #1b1f26; color: #cfd6e4; border: 1px solid #2f3642;
-		border-radius: .35rem; padding: .2rem .5rem; cursor: pointer; font-size: 11px;
-	}
-	#filterbuilder-options .fb-row-remove {
-		background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px;
-	}
-	#filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
-	.ps-btn {
-		padding: 3px 8px; border-radius: 6px; border: 1px solid #243449;
-		background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
-	}
-	.ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
-	.feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-	.feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-	@media (max-width: 600px) {
-		.feed-arsenal-chips {
-			flex-wrap: nowrap;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-			padding-bottom: 4px;
-		}
-		.feed-arsenal-chips .ps-btn { flex: 0 0 auto; white-space: nowrap; }
 	}
 
 	#table {
@@ -113,20 +66,6 @@
 		}
 		.game-container {
 			min-width: auto;
-		}
-	}
-	@media (max-width: 600px) {
-		#right-body.mobile-open {
-			width: 100vw !important;
-			max-width: 100vw !important;
-			flex: 1 1 auto;
-		}
-		#right-body.mobile-open #chart,
-		#right-body.mobile-open #chart .js-plotly-plot,
-		#right-body.mobile-open #chart svg {
-			width: 100% !important;
-			max-width: 100% !important;
-			max-height: none;
 		}
 	}
 </style>
@@ -942,9 +881,14 @@
 					</div>
 						<button onclick="SELECTED_ROW_KEY = null; TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
-					<div id="feed-toggle" class="feed-arsenal-row" style="display:none;">
-						<div id="feed-batter-name" style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;"></div>
-						<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+					
+					<div id="feed-arsenal" style="display:none;margin-bottom:6px;">
+						<div id="feed-toggle" class="feed-arsenal-row" style="display:none;">
+						<div style="display:flex;align-items:center;gap:8px;">
+							<div id="feed-watermark">+EV Sharps</div>
+						</div>
+						<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto;">
+							<div id="feed-batter-name" style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;"></div>
 							<div class="batter-ps-toggle">
 								<button class="ps-btn is-active" data-pthrows="all">All</button>
 								<button class="ps-btn" data-pthrows="L">vs LHP</button>
@@ -953,8 +897,9 @@
 							<button class="ps-btn" data-bb="1">Batted Balls</button>
 						</div>
 					</div>
-					<div id="feed-arsenal" style="display:none;margin-bottom:6px;"></div>
-										<div id="chart"></div>
+					<div id="feed-arsenal-content"></div>
+					</div>
+					<div id="chart"></div>
 					<div id="mix-panel" style="display:none;"></div>
 				</div>
 			</div>

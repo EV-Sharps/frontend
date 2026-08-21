@@ -1465,6 +1465,12 @@ input, textarea, select {
 	letter-spacing: .03em;
 	white-space: nowrap;
 }
+/* ?stream=1 in the URL: hide the username in the header so it's not visible
+   while screen recording. !important since auth.js sets #username's display
+   via JS itself once the session resolves, which would undo a plain style. */
+body.stream-mode #username {
+	display: none !important;
+}
 #watermark {
 	display: none;
 	position: absolute;

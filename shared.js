@@ -14,7 +14,7 @@ let CUP_TEAMS = {};
 let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
-let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO, DERBY;
+let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO, DERBY, STREAM;
 let KELLY_DOLLARS = false;
 function getUnitSize() {
 	return CURR_USER?.metadata?.unit_size || 100;
@@ -3934,6 +3934,12 @@ function parseURLParams() {
 	PLAYERS = URLParams.get("players") || "";
 	HARD_HIT = URLParams.get("HH");
 	DERBY = URLParams.get("derby");
+	STREAM = URLParams.get("stream");
+	// Hides #username via a CSS !important rule (see style.css) rather than
+	// setting style.display here directly — auth.js sets .loggedIn/.loggedOut
+	// elements' display via JS itself once the session resolves, which would
+	// silently undo a plain inline-style hide applied before that runs.
+	document.body?.classList.toggle("stream-mode", STREAM != null);
 
 	function defaultOU() {
 		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";

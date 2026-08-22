@@ -78,6 +78,10 @@ body::before {
 	display: none;
 }
 
+#chart {
+	max-height: 550px;
+	margin-top: 0.5rem;
+}
 #width-input, #min-odds, #max-odds {
   background-color: #1c1c1c;
   border: 1px solid #333;

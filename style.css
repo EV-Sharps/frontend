@@ -79,7 +79,7 @@ body::before {
 }
 
 #chart {
-	max-height: 550px;
+	max-height: 400px;
 	margin-top: 0.5rem;
 }
 #width-input, #min-odds, #max-odds {

@@ -37,6 +37,11 @@
 	#feed-arsenal {
 		width: 100%;
 	}
+	/* #chart defaults to 400px (style.css) for the PA/BBE Btwn Plotly charts;
+	   bumped to 550px only while showing the row-click at-bat feed table. */
+	#chart.feed-height {
+		max-height: 550px;
+	}
 	#mix-panel {
 		overflow-y: auto;
 		padding: 4px 0;
@@ -935,6 +940,7 @@
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
 			document.getElementById("feed-toggle").style.display = event.target.value == "feed" ? "flex" : "none";
 			document.getElementById("feed-arsenal").style.display = event.target.value == "feed" ? "" : "none";
+			document.getElementById("chart").classList.toggle("feed-height", event.target.value == "feed");
 			if (event.target.value == "mix") {
 				const d = TABLE.getSelectedData()[0];
 				if (d) fetchAndShowMix(d);
@@ -1664,6 +1670,7 @@
 					document.querySelector("#btwn-select").value = "pa";
 					document.getElementById("feed-toggle").style.display = "none";
 					document.getElementById("feed-arsenal").style.display = "none";
+					document.getElementById("chart").classList.remove("feed-height");
 					setTimeout(() => plotHRGap(), 50);
 				}
 			}

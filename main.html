@@ -324,27 +324,27 @@
 						</div>
 						<hr>
 
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (NV/PX over $)</label>
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (Prediction Mkts over $)</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">
 							<input id="fb-liquidity-over-amount" type="number" value="200" step="50">
 							<select id="fb-liquidity-over-book">
 								<option value="nv">NoVig</option>
 								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
+								<option value="kal">Kalshi</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
 
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (NV/PX under $)</label>
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (Prediction Mkts under $)</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">
 							<input id="fb-liquidity-amount" type="number" value="200" step="50">
 							<select id="fb-liquidity-book">
 								<option value="nv">NoVig</option>
 								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
+								<option value="kal">Kalshi</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
 
 						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-line-enabled"> Line Range</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">
@@ -523,7 +523,7 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_kambi', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_hr', 'bookOdds_br',
 			'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_bol', 'bookOdds_pn',
-			'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px', 'bookOdds_poly'
+			'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px', 'bookOdds_poly', "logs"
 		];
 
 		function getMainColumnItems() {
@@ -645,6 +645,7 @@
 				{ key: 'bookOdds_nv', label: 'NoVig', cols: [{ title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'logs',            label: 'Game Logs',        cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"} }] }
 			];
 		}
 

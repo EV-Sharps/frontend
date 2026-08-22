@@ -4326,6 +4326,9 @@ function numFrom(v) {
 	return isNaN(n) ? null : n;
 }
 
+// Books checked by the liquidity/liquidityOver filter criteria's "either"/"both" options.
+const LIQUIDITY_BOOKS = ["nv", "px", "kal"];
+
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
 	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
@@ -4484,8 +4487,8 @@ function passesFilterBuilder(row) {
 			const liq = row.liquidity?.[b];
 			return Array.isArray(liq) && numFrom(liq[1]) > min;
 		};
-		const clears = bookSel === "both" ? ["nv", "px"].every(clearsBook)
-			: bookSel === "either" ? ["nv", "px"].some(clearsBook)
+		const clears = bookSel === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
+			: bookSel === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
 			: clearsBook(bookSel);
 		if (!clears) return false;
 	}
@@ -4497,8 +4500,8 @@ function passesFilterBuilder(row) {
 			const liq = row.liquidity?.[b];
 			return Array.isArray(liq) && numFrom(liq[0]) > min;
 		};
-		const clears = bookSel === "both" ? ["nv", "px"].every(clearsBook)
-			: bookSel === "either" ? ["nv", "px"].some(clearsBook)
+		const clears = bookSel === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
+			: bookSel === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
 			: clearsBook(bookSel);
 		if (!clears) return false;
 	}

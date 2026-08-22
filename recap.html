@@ -682,27 +682,27 @@
 						</div>
 						<hr>
 
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (NV/PX over $)</label>
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (Prediction Mkts over $)</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">
 							<input id="fb-liquidity-over-amount" type="number" value="200" step="50">
 							<select id="fb-liquidity-over-book">
 								<option value="nv">NoVig</option>
 								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
+								<option value="kal">Kalshi</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
 
-						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (NV/PX under $)</label>
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (Prediction Mkts under $)</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">
 							<input id="fb-liquidity-amount" type="number" value="200" step="50">
 							<select id="fb-liquidity-book">
 								<option value="nv">NoVig</option>
 								<option value="px">ProphetX</option>
-								<option value="either">Either (NV or PX)</option>
-								<option value="both">Both (NV and PX)</option>
-							</select>
-						</div>
+								<option value="kal">Kalshi</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
 
 						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-homerrate-enabled"> Homers in last X</label>
 						<div class="fb-subrow" onclick="event.stopPropagation()">

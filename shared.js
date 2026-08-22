@@ -481,7 +481,8 @@ const evOddsFormatter = function(cell) {
 	const bookKey = field.startsWith("bookOdds.") ? field.split(".")[1] : null;
 	const liq = bookKey ? data.liquidity?.[bookKey] : null;
 	if (Array.isArray(liq) && liq.length >= 2) {
-		res = `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${res}</span><span class="liq-tip">$${liq[0]}/$${liq[1]}</span></span>`;
+		const fmtLiq = n => numFrom(n)?.toLocaleString('en-US') ?? n;
+		res = `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${res}</span><span class="liq-tip">$${fmtLiq(liq[0])}/$${fmtLiq(liq[1])}</span></span>`;
 	}
 
 	if (link) {

@@ -35,6 +35,12 @@
 		max-height: 400px;
 		margin-top: 0.5rem;
 	}
+	/* #right-body is align-items:center (not stretch), so #feed-arsenal would
+	   otherwise shrink to its own content width instead of matching #chart's
+	   table width below it. */
+	#feed-arsenal {
+		width: 100%;
+	}
 	#mix-panel {
 		overflow-y: auto;
 		padding: 4px 0;

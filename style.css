@@ -2844,6 +2844,7 @@ button#logout:hover {
 	background: #0b1220; color: #9ca3af; cursor: pointer; font-size: 11px;
 }
 .ps-btn.is-active { border-color: #a78bfa; color: #a78bfa; background: #1e1b4b; }
+#feed-arsenal { width: 100%; max-width: 585px; }
 .feed-arsenal-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .feed-arsenal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 @media (max-width: 600px) {

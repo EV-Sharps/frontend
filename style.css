@@ -597,8 +597,9 @@ body::before {
 }
 .record-summary-btn:hover { border-color: rgba(59,130,246,0.7); }
 
-/* Floats above the cell instead of swapping in place, so a wide liquidity
-   value ($bid/$ask) isn't clipped by the cell's own (narrow, fixed) width.
+/* Sits centered directly over the odds (same spot, not floating above/below
+   the cell), so a wide liquidity value ($bid/$ask) isn't clipped by the
+   cell's own (narrow, fixed) width — it just overlays the number in place.
    Tabulator's own CSS sets .tabulator-cell to overflow:hidden, which would
    still clip an absolutely-positioned child regardless — override it, scoped
    to just cells with a liquidity tooltip so every other column's normal
@@ -613,10 +614,9 @@ body::before {
 .liq-tip {
 	display: none;
 	position: absolute;
-	bottom: 100%;
+	top: 50%;
 	left: 50%;
-	transform: translateX(-50%);
-	margin-bottom: 4px;
+	transform: translate(-50%, -50%);
 	background: #1f2937;
 	color: #e5e7eb;
 	border: 1px solid #374151;
@@ -628,17 +628,14 @@ body::before {
 	pointer-events: none;
 	box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
-.tabulator-cell:hover .liq-tip,
-.liq-host.liq-open .liq-tip { display: block; }
-
-/* First row has nothing above it to float into (gets hidden against the
-   header/table edge) — spawn it below the cell there instead. */
-.tabulator-row:first-child .liq-tip {
-	bottom: auto;
-	top: 100%;
-	margin-bottom: 0;
-	margin-top: 4px;
+/* Real pointer devices: pure hover, reverts on hover-out automatically.
+   Touch devices: :hover has no reliable "out" event and can get stuck after
+   a tap, so it's excluded here entirely — only the JS-driven .liq-open
+   toggle (tap to show, tap again to revert) controls it on those. */
+@media (hover: hover) {
+	.tabulator-cell:hover .liq-tip { display: block; }
 }
+.liq-host.liq-open .liq-tip { display: block; }
 
 .book-picker,
 #dev-picker {

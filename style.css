@@ -201,6 +201,17 @@ body::before {
 	background-color: rgb(117,241,207);
 	color: #1a1a1a;
 }
+.book-segment.NV {
+	background-color: #2b2b2b;
+}
+.book-segment.KAL {
+	background-color: #179F61;
+	color: #1a1a1a;
+}
+.book-segment.PX {
+	background-color: #42D0A2;
+	color: #1a1a1a;
+}
 
 .range-btn {
   background: #0b5ed7;

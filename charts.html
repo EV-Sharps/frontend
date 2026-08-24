@@ -185,6 +185,12 @@
 	.hr-recap-book-row span:nth-child(2) { text-align: right; }
 	.hr-recap-book-row span:nth-child(3) { text-align: right; min-width: 60px; }
 	#auto-mix-panel { width: 100%; overflow-y: auto; padding: 4px 0; }
+	/* Left-edge accent instead of a row background, so it doesn't fight with
+	   the per-cell background coloring already used elsewhere in this table
+	   (EV/odds highlighting, etc.). */
+	.tabulator-row.homer-today-row {
+		box-shadow: inset 3px 0 0 0 #4ade80;
+	}
 </style>
 <body>
 	<div id="app">
@@ -228,8 +234,8 @@
 					<h3>Home Runs Today</h3>
 					<button onclick="closeHRTodayModal()">&times;</button>
 				</div>
-				<div id="hr-recap-summary" class="hr-recap-summary"></div>
-				<div id="hr-recap-books" class="hr-recap-books"></div>
+				<div id="hr-recap-summary" class="hr-recap-summary" style="display:none;"></div>
+				<div id="hr-recap-books" class="hr-recap-books" style="display:none;"></div>
 				<div style="text-align:right;margin:2px 0 8px;">
 					<button id="copy-hr-recap-btn" class="tweet-btn copy-btn" type="button" onclick="copyHRRecapText()" title="Copy devig recap as text">📋 Copy Recap</button>
 				</div>
@@ -1401,6 +1407,15 @@
 					}
 
 					renderTable(data.data)
+					// Re-apply the selected devig after every reload, not just the
+					// first (renderTable() rebuilds TABLE from scratch on each 30s
+					// auto-refresh via auth.js's setInterval, which would otherwise
+					// silently drop the EV recompute and the +EV filter/sort a few
+					// seconds after picking a devig). Called here rather than from
+					// TABLE's own "dataLoaded" handler because changeFilter() calls
+					// TABLE.replaceData(), which re-fires "dataLoaded" — hooking
+					// this into that event caused infinite recursion.
+					if (loaded) changeFilter();
 				}, 500)
 				prefetchPitcherMix();
 				prefetchFeed();
@@ -1603,7 +1618,11 @@
 						visible: MOBILE ? false : true
 					}
 					//{title: "Last HR", field: "lastHR"},
-				]
+				],
+				rowFormatter: function(row) {
+					const hr = getLastHomerFromFeed(row.getData());
+					row.getElement().classList.toggle('homer-today-row', !!hr);
+				}
 			});
 
 			TABLE.on("rowClick", function(e, row) {
@@ -1648,7 +1667,12 @@
 			FEED_LOADED = true;
 			fetch(API_BASE + '/api/feed', { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } })
 				.then(r => r.json())
-				.then(data => { Object.assign(FEED_CACHE, data); })
+				.then(data => {
+					Object.assign(FEED_CACHE, data);
+					// Table already rendered by the time this resolves — reapply
+					// rowFormatter now that FEED_CACHE has homers to check against.
+					if (TABLE) TABLE.redraw(true);
+				})
 				.catch(() => {});
 		}
 
@@ -2182,13 +2206,13 @@
 
 		let HR_RECAP = null;
 
-		// Two scenarios over today's HRs, both assuming a flat $100 bet per
-		// player (every bet here is a winner, since these are HRs that already
-		// happened): (1) betting each player at their single best available
-		// price, and (2) betting every player at one specific book's own
-		// price for them (skipping players that book didn't have a line on) —
-		// i.e. "how much would betting only Book X on every HR today have
-		// paid out," for comparing books' generosity on identical winners.
+		// For each book-as-devig (its own line devigged via probit, same as the
+		// closing-odds panel), how well did it actually perform on today's real
+		// outcomes: of the homers it had a line on (coverage), how many did it
+		// flag as +EV to bet the best available price on (calls), and betting
+		// $100 on exactly those calls, how much would that have profited —
+		// since every homer here already hit, this measures which devig source
+		// most reliably called the winners "value", not just which paid the most.
 		function computeHRRecap(rows) {
 			let bestProfit = 0, bestCount = 0;
 			rows.forEach(r => {
@@ -2198,33 +2222,45 @@
 				bestCount++;
 			});
 
-			const bookTotals = {};
+			const devigTotals = {};
 			rows.forEach(r => {
-				Object.entries(r.bookOdds || {}).forEach(([book, val]) => {
-					const token = String(val).includes('/') ? String(val).split('/')[r.under ? 1 : 0] : String(val);
-					const mult = payoutMultiplier(token);
-					if (mult == null) return;
-					if (!bookTotals[book]) bookTotals[book] = { profit: 0, n: 0 };
-					bookTotals[book].profit += HR_RECAP_BET * mult;
-					bookTotals[book].n += 1;
+				const co = computeClosingOdds(r);
+				if (!co) return;
+				co.rows.forEach(dr => {
+					if (!devigTotals[dr.book]) devigTotals[dr.book] = { coverage: 0, calls: 0, profit: 0 };
+					devigTotals[dr.book].coverage++;
+					if (dr.ev > 0) {
+						const mult = payoutMultiplier(co.best.price);
+						if (mult == null) return;
+						devigTotals[dr.book].calls++;
+						devigTotals[dr.book].profit += HR_RECAP_BET * mult;
+					}
 				});
 			});
 
-			const bookRows = Object.entries(bookTotals)
+			const bookRows = Object.entries(devigTotals)
 				.map(([book, d]) => ({ book, ...d }))
+				.filter(d => d.calls > 0)
 				.sort((a, b) => b.profit - a.profit);
 
-			return { bestProfit, bestCount, bookRows, totalHRs: rows.length };
+			const totalHRs = rows.length;
+			const gamesCount = RES?.games?.length || 0;
+			const hrPerGame = gamesCount ? totalHRs / gamesCount : null;
+
+			return { bestProfit, bestCount, bookRows, totalHRs, gamesCount, hrPerGame };
 		}
 
 		function renderHRRecap(rows) {
 			HR_RECAP = computeHRRecap(rows);
-			const { bestProfit, bestCount, bookRows, totalHRs } = HR_RECAP;
+			const { bestProfit, bestCount, bookRows, totalHRs, gamesCount, hrPerGame } = HR_RECAP;
 
 			const summaryEl = document.getElementById('hr-recap-summary');
 			if (summaryEl) {
-				summaryEl.innerHTML = bestCount
-					? `$${HR_RECAP_BET} on every HR today (${bestCount}/${totalHRs}) at best odds: <span style="color:${bestProfit >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${bestProfit >= 0 ? '+' : ''}$${Math.round(bestProfit)}</span>`
+				const hrLine = `${totalHRs} HR${totalHRs === 1 ? '' : 's'} today` + (hrPerGame != null ? ` across ${gamesCount} game${gamesCount === 1 ? '' : 's'} (${hrPerGame.toFixed(2)} HR/G)` : '');
+				summaryEl.innerHTML = totalHRs
+					? `<div>${hrLine}</div>` + (bestCount
+						? `$${HR_RECAP_BET} on every HR today (${bestCount}/${totalHRs}) at best odds: <span style="color:${bestProfit >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${bestProfit >= 0 ? '+' : ''}$${Math.round(bestProfit)}</span><br><span style="font-size:11px;color:#6b7280;">Best-performing devigs — of the HRs each one had a line on, how many it called +EV and what betting just those calls paid:</span>`
+						: '')
 					: '';
 			}
 
@@ -2236,7 +2272,7 @@
 					return `
 						<div class="hr-recap-book-row">
 							<span>${medal} ${parseBook(b.book)}</span>
-							<span style="color:#6b7280;">${b.n}/${totalHRs}</span>
+							<span style="color:#6b7280;">${b.calls}/${b.coverage} called</span>
 							<span style="color:${color};font-weight:600;">${b.profit >= 0 ? '+' : ''}$${Math.round(b.profit)}</span>
 						</div>`;
 				}).join('');
@@ -2245,15 +2281,15 @@
 
 		function copyHRRecapText() {
 			if (!HR_RECAP || !HR_RECAP.bestCount) return;
-			const { bestProfit, bestCount, bookRows, totalHRs } = HR_RECAP;
+			const { bestProfit, bestCount, bookRows, totalHRs, gamesCount, hrPerGame } = HR_RECAP;
 			const lines = [];
-			lines.push(`💣 ${totalHRs} HR${totalHRs === 1 ? '' : 's'} today`);
+			lines.push(`💣 ${totalHRs} HR${totalHRs === 1 ? '' : 's'} today` + (hrPerGame != null ? ` across ${gamesCount} game${gamesCount === 1 ? '' : 's'} (${hrPerGame.toFixed(2)} HR/G)` : ''));
 			lines.push(`$${HR_RECAP_BET} on each at best odds: ${bestProfit >= 0 ? '+' : ''}$${Math.round(bestProfit)} (${bestCount} bets)`);
 			lines.push('');
-			lines.push('Best book by profit:');
+			lines.push('Best-performing devigs:');
 			bookRows.slice(0, 5).forEach((b, i) => {
 				const medal = ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
-				lines.push(`${medal} ${parseBook(b.book)}: ${b.profit >= 0 ? '+' : ''}$${Math.round(b.profit)} (${b.n} bets)`);
+				lines.push(`${medal} ${parseBook(b.book)}: ${b.profit >= 0 ? '+' : ''}$${Math.round(b.profit)} (${b.calls}/${b.coverage} called)`);
 			});
 			const text = lines.join('\n');
 			navigator.clipboard.writeText(text).then(() => {
@@ -2286,7 +2322,8 @@
 					{ title: 'Best Book', field: 'book', width: 80, formatter: bestBookFormatter },
 					//{ title: "Circa EV", field: "circaEV", width: 70, sorter: bookEVSorter('circa'), formatter: bookEVFormatter, formatterParams: {book: 'circa'} },
 					//{ title: "Pinnacle EV", field: "pnEV", width: 80, sorter: bookEVSorter('pn'), formatter: bookEVFormatter, formatterParams: {book: 'pn'} },
-					//{ title: "FD EV", field: "fdEV", width: 70, sorter: bookEVSorter('fd'), formatter: bookEVFormatter, formatterParams: {book: 'fd'} },
+					//{ title: "Kalshi EV", field: "kalEV", width: 70, sorter: bookEVSorter('kal'), formatter: bookEVFormatter, formatterParams: {book: 'kal'} },
+					//{ title: "Novig EV", field: "nvEV", width: 70, sorter: bookEVSorter('nv'), formatter: bookEVFormatter, formatterParams: {book: 'nv'} },
 					{ title: 'Player', field: 'player', hozAlign: 'left', widthGrow: 2, minWidth: 140, formatter: hrTodayPlayerFormatter },
 					{title: "Pitcher", field: "pitcher", formatter: pitcherFormatter},
 					{ title: 'Pitch', field: 'pitch', width: 55, formatter: cell => pitchChip(cell.getValue()) },

@@ -550,7 +550,7 @@
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
-				[...data.games].sort().forEach(p => createOption(p, gameMenu));
+				populateGameOptions(RES.games, RES?.times, gameMenu);
 				restoreChkddState(gameMenu);
 				if (GAME) {
 					updateGameLabel(GAME.split(","));

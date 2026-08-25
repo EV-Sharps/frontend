@@ -232,6 +232,8 @@ function updateHeaders() {
 
 		if (book == "kal") {
 			html += `<a href='https://kalshi.com/r/evdingers' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='position:absolute;bottom:13px;left:0;font-size:10px;color:#9ca3af;text-decoration:none;'>Referral</a>`;
+		} else if (book == "px") {
+			html += `<a href='https://prophetx.onelink.me/Z8Ks/EV_DINGERS' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='position:absolute;bottom:13px;left:0;font-size:10px;color:#9ca3af;text-decoration:none;'>Referral</a>`;
 		}
 
 		let ta = timeAgo(UPDATED[PAGE][book], short=true);

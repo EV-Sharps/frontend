@@ -75,6 +75,40 @@
 					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 				</svg>
 			</div>
+			<div class="chkdd" id="filterbuilder-dd">
+				<label for="filterbuilder-dd-button" class="select-label">Filter</label>
+				<button id="filterbuilder-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('filterbuilder-dd', event)">None</button>
+				<div class="chkdd-menu" id="filterbuilder-options" style="max-height:70vh;overflow-y:auto;width:320px;">
+					<div class="fb-toprow" onclick="event.stopPropagation()">
+						<select id="fb-saved-select">
+							<option value="">Load saved filter...</option>
+						</select>
+						<button type="button" onclick="deleteSavedFilterBuilder()">Delete</button>
+					</div>
+					<div class="fb-toprow" onclick="event.stopPropagation()">
+						<input id="fb-name-input" type="text" placeholder="Filter name">
+						<button type="button" onclick="saveFilterBuilder()">Save As</button>
+					</div>
+					<hr>
+
+					<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-pitcherstat-enabled"> Pitcher Stat (SP faced)</label>
+					<div id="fb-pitcherstat-rows" onclick="event.stopPropagation()"></div>
+					<button type="button" class="fb-add-btn" onclick="event.stopPropagation(); addStatFilterRow('pitcherStat')">+ Add Pitcher Stat</button>
+
+					<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-batterstat-enabled"> Batter Stat</label>
+					<div id="fb-batterstat-rows" onclick="event.stopPropagation()"></div>
+					<button type="button" class="fb-add-btn" onclick="event.stopPropagation(); addStatFilterRow('batterStat')">+ Add Batter Stat</button>
+
+					<hr>
+					<div class="chkdd-actions" style="flex-direction:column;gap:6px;align-items:stretch;" onclick="event.stopPropagation()">
+						<div style="display:flex;gap:6px;justify-content:center;">
+							<button type="button" onclick="clearFilterBuilder()">Clear</button>
+							<button type="button" onclick="applyFilterBuilder()">Apply</button>
+						</div>
+						<div style="text-align:center;"><span id="fb-save-status"></span></div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<div id="auth-buttons">
 			<button class="discord-login loggedOut" onclick="loginWithDiscord()">
@@ -315,6 +349,16 @@
 			if (implied == null) return;
 			if (!best || implied < best.implied) best = { book, price, implied };
 		});
+		// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it
+		// wins as the actual best/bet-target price, apply Kalshi's trading fee on the fly so
+		// the price shown here reflects what you'd really pay.
+		if (best && best.book === "kal") {
+			const feePrice = parseInt(addKalshiFee(bookOdds.kal), 10);
+			const feeImplied = americanToImplied(feePrice);
+			if (Number.isFinite(feePrice) && feeImplied != null) {
+				best = { book: "kal", price: feePrice, implied: feeImplied };
+			}
+		}
 		return best;
 	}
 
@@ -385,6 +429,8 @@
 					book: best?.book || '',
 					line: best?.price ?? null,
 					bookOdds: batter.bookOdds || {},
+					savant: batter.savant || {},
+					pitcherData: pitcher.pitcherData || {},
 					...agg
 				});
 			});
@@ -575,8 +621,49 @@
 		// reliable signal than lineup-name matching, which missed real starters
 		// due to name-format mismatches between the lineup scrape and Savant IDs.
 		const hasBookOdds = Object.keys(r.bookOdds || {}).length > 0;
+		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r)) return false;
 		return (r.n ?? 0) >= minN && (!game || r.game === game) && (!STARTERS_ONLY || hasBookOdds);
 	}
+
+	// applyFilterBuilder() (shared.js) calls changeFilter() if it exists to
+	// re-run the page's filtering after Apply is clicked — this page's own
+	// refresh function is applyFilters(), so alias it under that expected name.
+	function changeFilter() { applyFilters(); }
+
+	// This page doesn't load filter.js (its changeFilter()/initChkddActions()
+	// assume a #prop-dd/#game-dd multi-select this page doesn't have), so the
+	// #filterbuilder-dd's dropdown-toggle mechanics are copied in standalone
+	// rather than pulling in the whole file.
+	function closeDropdown(dd, menu) {
+		menu.style.display = "none";
+		dd.appendChild(menu);
+		dd.setAttribute('aria-expanded', 'false');
+	}
+	function openDropdown(id, menu) {
+		const r = document.getElementById(id).getBoundingClientRect();
+		menu.style.position = "fixed";
+		menu.style.top = `${r.bottom + 6}px`;
+		menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+		menu.style.right = 'auto';
+		document.body.appendChild(menu);
+		menu.style.display = 'block';
+		document.getElementById(id).setAttribute('aria-expanded', 'true');
+	}
+	function toggleDropdown(id, event) {
+		if (event) event.stopPropagation();
+		const menu = document.querySelector(`#${id.split("-")[0]}-options`);
+		const isVisible = menu.style.display === 'block';
+		document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+		menu.style.display = isVisible ? 'none' : 'block';
+		isVisible ? closeDropdown(document.getElementById(id), menu) : openDropdown(id, menu);
+	}
+	document.addEventListener('click', (e) => {
+		const dd = document.getElementById('filterbuilder-dd');
+		const menu = document.getElementById('filterbuilder-options');
+		if (dd && menu && menu.style.display === 'block' && !menu.contains(e.target) && !dd.contains(e.target)) {
+			closeDropdown(dd, menu);
+		}
+	});
 
 	function applyFilters() {
 		if (!TABLE) return;
@@ -669,15 +756,66 @@
 		});
 	}
 
+	// Raw bbe_l/bbe_r batted-ball-event logs (needed only for BBE stat-mode)
+	// are split server-side into a separate file, top_pitches_bbe.json, since
+	// they were ~4.7MB of the ~24MB main payload for a mode most people never
+	// toggle into. Fetched once, lazily, the first time BBE mode is opened,
+	// then merged into RAW_DATA's batter windows so buildRows() has real
+	// events to compute _bbeEvents from on rebuild.
+	let BBE_DATA = null;
+	let BBE_LOADED = false;
+
+	function fetchBBEData() {
+		if (BBE_LOADED) return Promise.resolve();
+		BBE_LOADED = true;
+		// This fetch is the reason the table looked frozen on the first click
+		// into BBE mode — show a loading placeholder instead of just sitting on
+		// stale rows until it resolves.
+		if (TABLE) {
+			TABLE.options.placeholder = 'Loading BBE stats...';
+			TABLE.setData([]);
+		}
+		return fetch(API_BASE + '/api/top_pitches_bbe', {
+			headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+		}).then(r => r.json()).then(data => {
+			BBE_DATA = data;
+			mergeBBEData();
+		}).catch(err => {
+			console.error('top_pitches_bbe fetch failed', err);
+			BBE_LOADED = false; // allow retrying on the next toggle into BBE mode
+		}).finally(() => {
+			if (TABLE) TABLE.options.placeholder = 'No matchup data.';
+		});
+	}
+
+	function mergeBBEData() {
+		if (!BBE_DATA || !RAW_DATA) return;
+		Object.entries(BBE_DATA.teams || {}).forEach(([team, tdata]) => {
+			const batters = RAW_DATA.teams?.[team]?.batters || [];
+			(tdata.batters || []).forEach(bbeBatter => {
+				const batter = batters.find(b => b.player === bbeBatter.player);
+				if (!batter) return;
+				Object.entries(bbeBatter.windows || {}).forEach(([label, bbe]) => {
+					if (batter.windows?.[label]) Object.assign(batter.windows[label], bbe);
+				});
+			});
+		});
+	}
+
 	wireModeToggle('pitch-mode-toggle', mode => { PITCH_MODE = mode; rebuildFromRaw(); });
 	wireModeToggle('stat-mode-toggle', mode => {
 		STAT_MODE = mode;
 		// A BBE-count window only exists as a toggle option in BBE mode — if one
 		// was active and we're leaving BBE mode, fall back to Season instead of
 		// leaving WINDOW_MODE pointed at a now-hidden button.
-		if (STAT_MODE !== 'bbe' && WINDOW_MODE.startsWith('BBE')) {
+		const leavingBbeWindow = STAT_MODE !== 'bbe' && WINDOW_MODE.startsWith('BBE');
+		if (leavingBbeWindow) {
 			WINDOW_MODE = 'season';
 			document.querySelectorAll('#window-mode-toggle .ps-btn').forEach(b => b.classList.toggle('is-active', b.dataset.mode === 'season'));
+		}
+		if (STAT_MODE === 'bbe') {
+			fetchBBEData().then(rebuildFromRaw);
+		} else if (leavingBbeWindow) {
 			rebuildFromRaw();
 		} else {
 			applyStatModeAndRender();
@@ -781,6 +919,11 @@
 
 	window.addEventListener("resize", () => { MOBILE = window.innerWidth <= 600; });
 
+	// Not in auth.js's PAGE dispatcher (this page fetches its own data directly),
+	// so renderFilters()'s usual initFilterBuilderUI() call never runs here —
+	// call it directly instead of the full renderFilters(), since this page has
+	// no book-select/dev-picker for that function's other calls to touch.
+	initFilterBuilderUI();
 	fetchTopPitchesData();
 </script>
 <script>handleSession();</script>

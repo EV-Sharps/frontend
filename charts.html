@@ -1203,6 +1203,19 @@
 			});
 			if (!best) return null;
 
+			// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it
+			// wins as the actual best/bet-target price, apply Kalshi's trading fee on the fly so
+			// the "Best Over" header reflects what you'd really pay.
+			if (best.book === "kal") {
+				const feeStr = addKalshiFee(bookOdds.kal);
+				const feeToken = feeStr.includes('/') ? feeStr.split('/')[legIndex] : feeStr;
+				const feePrice = parseInt(feeToken, 10);
+				const feeImplied = americanToImplied(feePrice);
+				if (Number.isFinite(feePrice) && feeImplied != null) {
+					best = { book: "kal", price: feePrice, implied: feeImplied };
+				}
+			}
+
 			const fmtLeg = n => oddsDisplay(n > 0 ? `+${n}` : `${n}`);
 
 			const rows = Object.entries(bookOdds).map(([book, val]) => {

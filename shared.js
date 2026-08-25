@@ -45,6 +45,7 @@ const PAGE_SECTIONS = [
 			{ label: "💨 Ks (FREE)", value: "strikeouts" },
 			{ label: "🎯 Props", value: "mlb", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=mlb", sharp: true },
+			{ label: "📝 Main Recap", value: "main_recap?sport=mlb" },
 			{ label: "⚾ Live", value: "live?sport=mlb", sharp: true },
 			{ label: "💣💣 2+ HR", value: "dingers2" },
 			{ label: "🔮 Futures", value: "futures" },
@@ -68,6 +69,7 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "🏀 All Props", value: "nba", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nba", sharp: true },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nba" },
 			{ label: "🏀 Live", value: "live?sport=nba", sharp: true },
 			{ label: "🏀 KOTC", value: "kotc" },
 			{ label: "📊 Results", value: "analysis?sport=nba" },
@@ -84,6 +86,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 TDs", value: "tds"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
 			{ label: "🏈 Preseason", value: "main?sport=preseason", sharp: true },
 			{ label: "🔮 Futures", value: "nfl_futures" },
 			{ label: "🏈 CFB", value: "ncaaf", sharp: true },
@@ -97,6 +100,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 2+ Goals", value: "atgs2" },
 			{ label: "🏒 Props", value: "nhl", sharp: true },
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
 			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
 		]
@@ -172,6 +176,7 @@ function buildPagePicker() {
 	else if (PAGE === "movement") currentVal = `movement?sport=${SPORT}`;
 	else if (PAGE === "bets" && SPORT === "nfl") currentVal = "bets?sport=nfl";
 	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
+	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
 
 	// Active tab: favorites if any saved, else current sport
 	const sportToTab = { mlb: "mlb", nba: "nba", nhl: "nhl", ncaab: "nba" };
@@ -283,10 +288,13 @@ function changePage(page) {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
 		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (page.includes("main")) { 
+	} else if (page.includes("main_recap")) {
+		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
+		window.location.href = `./main_recap${HTML}?sport=${sport}`;
+	} else if (page.includes("main")) {
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./main${HTML}?sport=${sport}`;
-	} else if (page.includes("bets")) { 
+	} else if (page.includes("bets")) {
 		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
 		window.location.href = `./bets${HTML}?sport=${sport}`;
 	} else if (page.includes("live")) { 
@@ -1389,6 +1397,20 @@ const bestBookFormatter = function(cell, params, rendered) {
 	if (["outliers", "atgs2"].includes(PAGE)) {
 		line = data.outlierLine;
 	}
+
+	// data.bookOdds.kal is stored fee-free (used for display/devig everywhere else); when
+	// it's the best/bet-target book, apply Kalshi's trading fee on the fly for display here --
+	// derived straight from bookOdds rather than trusting data.line to already reflect it,
+	// since this formatter is also used on pages/rows that never pass through highestOver().
+	if (book === "kal" && data.bookOdds && data.bookOdds.kal) {
+		const feeParts = addKalshiFee(data.bookOdds.kal).split("/");
+		const feePick = data.under && feeParts.length > 1 ? feeParts[1] : feeParts[0];
+		const feeNum = parseInt(feePick.replace("+", ""), 10);
+		if (!isNaN(feeNum)) {
+			line = feeNum;
+		}
+	}
+
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;
 	}
@@ -3393,11 +3415,62 @@ function applyProfitBoost(american, boost) {
 function round2(n) { return Math.round(n * 100) / 100; }
 function round1(n) { return Math.round(n * 10) / 10; }
 
+// bookOdds.kal is the raw fee-free price The Odds API reports for Kalshi -- correct for
+// display and devigging everywhere, but not what you'd actually pay if Kalshi is the book
+// you're betting at. addKalshiFee() computes that fee-inclusive price on demand (no
+// pre-computed "kal_fee" field stored anywhere, so nothing needs to guard against it showing
+// up as a phantom 20th book in a generic bookOdds iteration).
+//
+// KALSHI_FEE_RATE = 0.035, HALF the generally-published 0.07 -- verified against a real order
+// ticket (Fernando Tatis Jr. 1+ HR, Yes 15c, $100 position, screenshot showed max payout
+// $647.40 = $547 profit = "+547"). Solving fee = dollars - C*P where C = payout/$1 gives an
+// implied rate of 0.03501 against the fee = rate*C*P*(1-P) formula -- a clean, near-exact 2.0x
+// ratio to the published 0.07, not rounding noise. Likely a reduced rate for this sports/
+// event-contract category rather than Kalshi's general formula. Re-derive from a fresh order
+// ticket if this ever needs re-validating.
+const KALSHI_FEE_RATE = 0.035;
+
+function kalshiCentsFromFeeFreeAmerican(odds) {
+	if (odds > 0) return 10000 / (odds + 100);
+	return 100 * (-odds) / (100 - odds);
+}
+
+function addKalshiFee(ou) {
+	const addOne = (oddsStr) => {
+		const odds = parseInt(oddsStr, 10);
+		if (isNaN(odds)) return oddsStr;
+		const cents = kalshiCentsFromFeeFreeAmerican(odds);
+		if (cents == null || cents <= 0 || cents >= 100) return oddsStr;
+		const f = KALSHI_FEE_RATE * cents * (100 - cents) / 100;
+		const cost = cents + f;
+		const profit = 100 - cost;
+		if (cost <= 0 || profit <= 0) return oddsStr;
+		const raw = profit >= cost ? (profit / cost * 100) : (-cost / profit * 100);
+		return String(Math.floor(raw));
+	};
+
+	const s = String(ou);
+	if (s.includes("/")) {
+		const [over, under] = s.split("/");
+		return `${over ? addOne(over) : over}/${under ? addOne(under) : under}`;
+	}
+	return addOne(s);
+}
+
 function highestOver(bookOdds, excluded, boost, book, under) {
 	if (!boost) {
 		boost = 0;
 	}
-	return Object.entries(bookOdds)
+
+	const parseSide = (value) => {
+		const parts = String(value).split("/");
+		if (under && parts.length <= 1) return null;
+		const pick = under && parts.length > 1 ? parts[1] : parts[0];
+		const num = parseInt(pick.replace("+", ""), 10);
+		return isNaN(num) ? null : { num, pick };
+	};
+
+	const best = Object.entries(bookOdds)
 		.filter(([key, value]) =>
 		  // exclude list
 		  !excluded.includes(key) &&
@@ -3407,24 +3480,29 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		)
 		.reduce(
 		  (max, [key, value]) => {
-			// value can be "550" or "431/-655"
-			const parts = String(value).split("/");
-			if (under && parts.length <= 1) {
-				return max;
-			}
-			const pick = under && parts.length > 1 ? parts[1] : parts[0];
-
-			// parse "+375" -> 375, "-120" -> -120
-			let num = parseInt(pick.replace("+", ""), 10);
-			if (isNaN(num)) return max;
+			const parsed = parseSide(value);
+			if (!parsed) return max;
 
 			// apply your profit boost (works for +/- American)
-			num = applyProfitBoost(num, boost);
+			const num = applyProfitBoost(parsed.num, boost);
 
-			return num > max.value ? { book: key, value: num, raw: pick } : max;
+			return num > max.value ? { book: key, value: num, raw: parsed.pick } : max;
 		  },
 		  { book: null, value: -Infinity, raw: null }
 	);
+
+	// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it wins
+	// as the actual best/bet-target price, apply Kalshi's trading fee on the fly so the number
+	// shown and used for EV here reflects what you'd really pay.
+	if (best.book === "kal") {
+		const feeParsed = parseSide(addKalshiFee(bookOdds.kal));
+		if (feeParsed) {
+			best.value = applyProfitBoost(feeParsed.num, boost);
+			best.raw = feeParsed.pick;
+		}
+	}
+
+	return best;
 }
 
 function rowClick(row) {
@@ -4119,7 +4197,7 @@ function renderBookSelect() {
 		books = books.concat(["mb", "bw", "bs", "myb"]);
 	}
 
-	if (PAGE === "main") {
+	if (PAGE === "main" || PAGE === "main_recap") {
 		books.push("hr_oh");
 		if (!books.includes("hr_az")) books.push("hr_az");
 	}

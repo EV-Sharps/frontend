@@ -513,7 +513,22 @@
 					<div style="display: flex;justify-content: center;align-items: center;">
 						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
 						<span id="save-status" style="margin: 0.5rem 0"></span>
+						<button onclick="openColReorder();">Reorder</button>
 						<button onclick="closeOverlay();">Close</button>
+					</div>
+				</div>
+			</div>
+			<div id="col-reorder-modal" class="modal" style="display:none;">
+				<div class="modal-content devig-panel" style="max-width:320px;">
+					<div class="modal-header">
+						<h3>Reorder Columns</h3>
+						<button onclick="closeColReorder()">&times;</button>
+					</div>
+					<p style="font-size:11px;color:#888;margin:4px 0 10px 0;">Drag the handles to reorder. Only visible columns shown.</p>
+					<div id="col-reorder-list"></div>
+					<div class="action-footer" style="margin-top:12px;">
+						<button onclick="saveColReorder()" class="btn-primary">Save</button>
+						<button onclick="closeColReorder()">Cancel</button>
 					</div>
 				</div>
 			</div>
@@ -595,11 +610,115 @@
 		}
 
 		let loaded = false;
+		const TDS_DEFAULT_COL_ORDER = [
+			'ev', 'outlier', 'book', 'player', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
+			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
+			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
+			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_px', 'bookOdds_nv', 'bookOdds_poly',
+			'bookOdds_kal', 'bookOdds_pn', 'logs', 'hitRate', 'hitRateLYR'
+		];
+
+		function getTdsColumnItems() {
+			return [
+				{ key: 'ev', label: 'Expected Value', cols: [{
+					title: "Expected<br>Value", field: "ev", width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0
+				}] },
+				{ key: 'outlier', label: 'Δ vs Avg', cols: [{
+					title: "Δ vs Avg", field: "outlier", width: MOBILE ? 40 : 60, sorter: "number",
+					mutator: function(value, rowData) {
+						const s = computeOutlierFromBookOdds(rowData);
+						rowData.outlierBook = s.book;
+						rowData.outlierPct  = s.pct;
+						return s.pct;
+					},
+					formatter: function(cell) {
+						const row = cell.getRow().getData();
+						return `${row.outlierPct.toFixed(1)}%`;
+					},
+					responsive: 0,
+					visible: false
+				}] },
+				{ key: 'book', label: 'Best Book', cols: [{
+					title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
+					field: "book", vertAlign:"bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams:{book:BOOK}, responsive: 0
+				}] },
+				{ key: 'player', label: 'Player', cols: [{
+					title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140,
+					formatterParams:{ sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true
+				}] },
+				{ key: 'prop', label: 'Prop', cols: [{
+					title: "Prop", field: "prop",
+					formatter: function(cell) {
+						return cell.getValue();
+					}
+				}] },
+				{ key: 'fairVal', label: 'Fair Value', cols: [{
+					title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0
+				}] },
+				{ key: 'implied', label: 'Implied', cols: [{
+					title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true
+				}] },
+				{ key: 'kelly', label: '¼ Kelly', cols: [{
+					title: "¼ Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number",
+					formatter: function(cell) { return formatKellyValue(cell.getValue()); },
+					responsive: 0, visible: MOBILE ? false : true
+				}] },
+				{ key: 'opp', label: 'Opp', cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
+				{ key: 'oppRank', label: 'RZ TD% Allowed', cols: [{ title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
+				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_fd', label: 'FD', cols: [{ title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_dk', label: 'DK', cols: [{ title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk", width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_b365', label: 'B365', cols: [{ title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_mgm', label: 'MGM', cols: [{ title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_espn', label: 'ESPN', cols: [{ title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_cz', label: 'Caesars', cols: [{ title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_fn', label: 'Fanatics', cols: [{ title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_br', label: 'BetRivers', cols: [{ title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_hr', label: 'Hard Rock', cols: [{ title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr", width: 60, sorter: "number", visible: true, formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_bv', label: 'Bovada', cols: [{ title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_re', label: 'Rebet', cols: [{ title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_fl', label: 'Fliff', cols: [{ title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_kambi', label: 'Bally (Kambi)', cols: [{ title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_bol', label: 'BetOnline', cols: [{ title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_nv', label: 'NoVig', cols: [{ title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 60, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
+				{ key: 'hitRate', label: 'Season Hit Rate', cols: [{ title: "Season", field: "hitRate", sorter: "number", formatter: percentFormatter, width: MOBILE ? 40 : 60, responsive: 2 }] },
+				{ key: 'hitRateLYR', label: 'Last Year Hit Rate', cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
+			];
+		}
+
+		function buildTdsColumns(savedOrder) {
+			return buildColumnsFromOrder(
+				savedOrder, TDS_DEFAULT_COL_ORDER, getTdsColumnItems(), null,
+				[{ field: "game", visible: false }, { field: "pos", visible: false }]
+			);
+		}
+
+		function openColReorder() {
+			const savedOrder = CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER;
+			const isVisible = meta => {
+				const fields = [];
+				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
+				return fields.some(f => TABLE.getColumn(f)?.isVisible());
+			};
+			openColReorderModal(getTdsColumnItems(), TDS_DEFAULT_COL_ORDER, savedOrder, isVisible);
+		}
+		function closeColReorder() { closeColReorderModal(); }
+
+		async function saveColReorder() {
+			await saveColReorderModal('tds-order', buildTdsColumns, () => showHideUserTable(true));
+		}
+
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
 				placeholder:"Data Loading...",
 				layout: "fitDataFill",
+				movableColumns: true,
 				responsiveLayout: MOBILE ? "" : "",
 				autoResize: true,
 				data: data,
@@ -617,134 +736,7 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: [
-					{
-						title: "Expected<br>Value",
-						field: "ev",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						formatter: evFormatter,
-						responsive: 0
-					},
-					{
-						title: "Δ vs Avg",
-						field: "outlier",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						mutator: function(value, rowData) {
-							const s = computeOutlierFromBookOdds(rowData);
-							rowData.outlierBook = s.book;
-							rowData.outlierPct  = s.pct;
-							//return s.deviation;
-							return s.pct;
-						  },
-						  formatter: function(cell) {
-							const row = cell.getRow().getData();
-							const dev = cell.getValue();
-							return `${row.outlierPct.toFixed(1)}%`;
-						},
-						responsive: 0,
-						visible: false
-					},
-					{
-						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
-						field: "book",
-						vertAlign:"bottom", width: MOBILE ? 75 : 75,
-						formatter: bestBookFormatter,
-						formatterParams:{book:BOOK},
-						responsive: 0
-					},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: true
-					},
-					{
-						title: "Prop",
-						field: "prop",
-						formatter: function(cell) {
-							return cell.getValue();
-							const data = cell.getRow().getData();
-							let line = data.handicap;
-							let prop = cell.getValue();
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
-								return prop;
-							}
-							//line = parseFloat(line) + 0.5;
-							return `o${line} ${cell.getValue()}`;
-						}
-					},
-					
-					{
-						title: "Fair<br>Value",
-						field: "fairVal",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						formatter: plusMinusFormatter,
-						responsive: 0
-					},
-					{
-						title: "Implied",
-						field: "implied",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						formatter: impliedFormatter,
-						responsive: 0,
-						visible: MOBILE ? false : true
-					},
-					{
-						title: "¼ Kelly",
-						field: "kelly",
-						width: MOBILE ? 40 : 60,
-						sorter: "number",
-						formatter: function(cell) {
-							return formatKellyValue(cell.getValue());
-						},
-						responsive: 0,
-						visible: MOBILE ? false : true
-					},
-					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
-					{title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55},
-					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter},
-					{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `FN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fn"], short=true)}`, field: "bookOdds.fn",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `BR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["br"], short=true)}`, field: "bookOdds.br",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 60, sorter: "number", visible: true, formatter: evOddsFormatter},
-					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal",  width: 60, sorter: "number", formatter: evOddsFormatter},
-					{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn",  width: 70, sorter: "number", formatter: evOddsFormatter},
-					{
-						title: "Game Logs<br> ➡️ Most Recent",
-						field: "logs",
-						width:160,
-						formatter: chartFormatter,
-						formatterParams:{type:"bar"},
-						responsive: 3,
-						visible: MOBILE ? false : true
-					},
-					{title: "Season", field: "hitRate",  sorter: "number", formatter: percentFormatter,  width: MOBILE ? 40 : 60, responsive: 2},
-					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{field: "game", visible: false},
-					{field: "pos", visible: false}
-				]
+				columns: buildTdsColumns(CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER)
 			});
 
 			TABLE.on("dataLoaded", function(data) {

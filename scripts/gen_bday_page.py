@@ -5,7 +5,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 data = json.loads((root / "bday_analysis.json").read_text(encoding="utf-8"))
 
-TODAY = date(2026, 7, 11)
+TODAY = date(2026, 8, 25)
 REF_YEAR = 2024  # leap year so Feb 29 birthdays are valid
 
 def ordinal(month, day):
@@ -54,6 +54,24 @@ for key in ordered_keys:
 
 total_entries = len(entries)
 hit_count = sum(1 for e in entries if e["hr"] > 0)
+min_year = min(int(e["year"]) for e in entries)
+max_year = max(int(e["year"]) for e in entries)
+
+# waffle-grid data (one cell per individual birthday game) for the rarity
+# section — same entries as day_groups, in that same calendar-day-from-today
+# order, reshaped to what buildRarityWaffle() in the page's own script
+# expects. Rendered client-side (not templated server-side) so the
+# tooltip/hover logic has real per-cell data to read off dataset attrs.
+waffle_data = json.dumps([
+    {
+        "hit": e["hr"] > 0,
+        "name": e["player"],
+        "year": e["year"],
+        "day": f"{MONTHS[key[0]-1]} {key[1]}",
+    }
+    for key, items in day_groups
+    for e in items
+], separators=(",", ":"))
 
 def render_group(key, items):
     m, d = key
@@ -223,12 +241,111 @@ html = f"""<!doctype html>
     font-size: 0.65rem;
     font-variant-numeric: tabular-nums;
   }}
+
+  .rarity {{
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }}
+  .rarity-head {{
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }}
+  .rarity-figure {{
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }}
+  .rarity-label {{
+    font-size: 0.85rem;
+    font-weight: 600;
+  }}
+  .rarity-sub {{
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }}
+  .rarity-legend {{
+    display: flex;
+    gap: 16px;
+    margin-bottom: 10px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }}
+  .lg-item {{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }}
+  .lg-swatch {{
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    display: inline-block;
+  }}
+  .lg-swatch.hit {{ background: var(--green); }}
+  .lg-swatch.miss {{ background: var(--border); }}
+  .waffle {{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10px, 1fr));
+    gap: 3px;
+    max-width: 620px;
+  }}
+  .cell {{
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--border);
+    cursor: default;
+  }}
+  .cell.hit {{ background: var(--green); }}
+  .cell:focus-visible {{
+    outline: 2px solid var(--text);
+    outline-offset: 1px;
+  }}
+  .waffle-tip {{
+    position: fixed;
+    pointer-events: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 0.72rem;
+    color: var(--text);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    z-index: 50;
+    transform: translate(-50%, -125%);
+    white-space: nowrap;
+  }}
+  .waffle-tip[hidden] {{ display: none; }}
+  .waffle-tip .tip-name {{ font-weight: 700; margin-bottom: 1px; }}
+  .waffle-tip .tip-detail {{ color: var(--muted); }}
+  .waffle-tip.hit .tip-detail {{ color: var(--green); }}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Birthday Homers</h1>
-  <p class="subtitle">Every individual birthday game &middot; <b>{hit_count}/{total_entries}</b> games had a bday homer ({hit_count/total_entries*100:.0f}%)</p>
+  <p class="subtitle">Every individual birthday game, {min_year}&ndash;{max_year}</p>
+
+  <section class="rarity">
+    <div class="rarity-head">
+      <div class="rarity-figure" id="rarity-figure">&nbsp;</div>
+      <div>
+        <div class="rarity-label" id="rarity-label">&nbsp;</div>
+        <div class="rarity-sub" id="rarity-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="rarity-legend">
+      <span class="lg-item"><span class="lg-swatch hit"></span><span id="lg-hit-count">Home run</span></span>
+      <span class="lg-item"><span class="lg-swatch miss"></span><span id="lg-miss-count">No home run</span></span>
+    </div>
+    <div class="waffle" id="waffle" role="img" aria-label="Grid of every birthday game; most did not include a home run"></div>
+  </section>
+
   <div class="toggle">
     <button id="btn-day" class="active" onclick="showView('day')">By Calendar Day</button>
     <button id="btn-date" onclick="showView('date')">By Date (2026 first)</button>
@@ -240,6 +357,7 @@ html = f"""<!doctype html>
     {"".join(rendered_year_groups)}
   </div>
 </div>
+<div class="waffle-tip" id="waffle-tip" hidden></div>
 <script>
   function showView(which) {{
     document.getElementById('view-day').classList.toggle('hidden', which !== 'day');
@@ -247,6 +365,71 @@ html = f"""<!doctype html>
     document.getElementById('btn-day').classList.toggle('active', which === 'day');
     document.getElementById('btn-date').classList.toggle('active', which === 'date');
   }}
+
+  const WAFFLE_DATA = {waffle_data};
+
+  (function buildRarityWaffle() {{
+    const total = WAFFLE_DATA.length;
+    const hits = WAFFLE_DATA.filter(function (d) {{ return d.hit; }}).length;
+    const pct = Math.round((hits / total) * 100);
+
+    document.getElementById('rarity-figure').textContent = pct + '%';
+    document.getElementById('rarity-label').textContent = 'of birthday games included a home run';
+    document.getElementById('rarity-sub').textContent = hits + ' of ' + total + ' individual birthday games';
+    document.getElementById('lg-hit-count').textContent = 'Home run (' + hits + ')';
+    document.getElementById('lg-miss-count').textContent = 'No home run (' + (total - hits) + ')';
+
+    const grid = document.getElementById('waffle');
+    const frag = document.createDocumentFragment();
+    WAFFLE_DATA.forEach(function (d) {{
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (d.hit ? ' hit' : '');
+      cell.tabIndex = 0;
+      cell.dataset.name = d.name;
+      cell.dataset.year = d.year;
+      cell.dataset.day = d.day;
+      cell.dataset.hit = d.hit ? '1' : '0';
+      frag.appendChild(cell);
+    }});
+    grid.appendChild(frag);
+
+    const tip = document.getElementById('waffle-tip');
+    const tipName = document.createElement('div');
+    tipName.className = 'tip-name';
+    const tipDetail = document.createElement('div');
+    tipDetail.className = 'tip-detail';
+    tip.appendChild(tipName);
+    tip.appendChild(tipDetail);
+
+    function positionTip(e) {{
+      const x = e.clientX, y = e.clientY;
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }}
+
+    function showTip(e, cell) {{
+      const isHit = cell.dataset.hit === '1';
+      tipName.textContent = cell.dataset.name;
+      tipDetail.textContent = cell.dataset.day + " '" + cell.dataset.year.slice(-2) + ' · ' + (isHit ? 'Home run' : 'No home run');
+      tip.classList.toggle('hit', isHit);
+      tip.hidden = false;
+      positionTip(e);
+    }}
+
+    grid.addEventListener('pointermove', function (e) {{
+      const cell = e.target.closest('.cell');
+      if (cell) showTip(e, cell);
+      else tip.hidden = true;
+    }});
+    grid.addEventListener('pointerleave', function () {{ tip.hidden = true; }});
+    grid.addEventListener('focusin', function (e) {{
+      const cell = e.target.closest('.cell');
+      if (!cell) return;
+      const r = cell.getBoundingClientRect();
+      showTip({{ clientX: r.left + r.width / 2, clientY: r.top }}, cell);
+    }});
+    grid.addEventListener('focusout', function () {{ tip.hidden = true; }});
+  }})();
 </script>
 </body>
 </html>

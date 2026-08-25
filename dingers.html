@@ -1766,7 +1766,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa", "bookOdds.nv", "bookOdds.pn",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "stadiumRank"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "bpp", "pitcher", "percs.hr_pa", "book", "bookOdds.circa", "bookOdds.kal", "bookOdds.nv", "bookOdds.px", "bookOdds.pn",  "homerLogs.pa.streak", "homerLogs.pa.med", "homerLogs.pa.z_median", "stadiumRank"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "ev", dir: "desc"},
@@ -1793,7 +1793,7 @@
 				tweet.push(`${currentRank}. ${title(row.player)}: +${row["ev"]} (+${row["line"]} ${row["book"].toUpperCase()})`);
 			}
 			const today = new Date();
-			let header = `🎯 Circa/NV/Pinny's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🎯 Pinnacle/Circa/Kalshi's top 10 Implied Homers (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 

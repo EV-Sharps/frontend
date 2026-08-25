@@ -521,7 +521,7 @@ function initPageData() {
 	} else if (PAGE == "sb") {
 		renderTable([]);
 		fetchSBData();
-	} else if (PAGE == "recap") {
+	} else if (PAGE == "recap" || PAGE == "main_recap") {
 		initChkddActions();
 		fetchProps();
 		//renderFilters();

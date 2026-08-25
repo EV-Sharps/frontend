@@ -1398,12 +1398,13 @@ const bestBookFormatter = function(cell, params, rendered) {
 		line = data.outlierLine;
 	}
 
-	// data.bookOdds.kal is stored fee-free (used for display/devig everywhere else); when
-	// it's the best/bet-target book, apply Kalshi's trading fee on the fly for display here --
+	// Some books (kal, px) are stored fee-free (used for display/devig everywhere else); when
+	// one of them is the best/bet-target book, apply its fee on the fly for display here --
 	// derived straight from bookOdds rather than trusting data.line to already reflect it,
 	// since this formatter is also used on pages/rows that never pass through highestOver().
-	if (book === "kal" && data.bookOdds && data.bookOdds.kal) {
-		const feeParts = addKalshiFee(data.bookOdds.kal).split("/");
+	const feeFn = BOOK_FEE_FUNCTIONS[book];
+	if (feeFn && data.bookOdds && data.bookOdds[book]) {
+		const feeParts = feeFn(data.bookOdds[book]).split("/");
 		const feePick = data.under && feeParts.length > 1 ? feeParts[1] : feeParts[0];
 		const feeNum = parseInt(feePick.replace("+", ""), 10);
 		if (!isNaN(feeNum)) {
@@ -3457,6 +3458,44 @@ function addKalshiFee(ou) {
 	return addOne(s);
 }
 
+// ProphetX ("px") charges a flat 2% commission on net winnings, unlike Kalshi's price-
+// dependent fee -- the risk side is untouched, only the payout on a win gets cut by 2%.
+// bookOdds.px is the raw fee-free price (same convention as bookOdds.kal); addPXFee()
+// computes the fee-inclusive price on demand, same as addKalshiFee().
+const PX_FEE_RATE = 0.02;
+
+function addPXFee(ou) {
+	const addOne = (oddsStr) => {
+		const odds = parseInt(oddsStr, 10);
+		if (isNaN(odds)) return oddsStr;
+		// normalize to a (risk, profit) pair on a $100 quantum, same convention American
+		// odds already use: positive odds risk $100 to win `odds`; negative odds risk
+		// `-odds` to win $100.
+		const risk = odds > 0 ? 100 : -odds;
+		const profit = odds > 0 ? odds : 100;
+		const feeProfit = profit * (1 - PX_FEE_RATE);
+		if (risk <= 0 || feeProfit <= 0) return oddsStr;
+		const raw = feeProfit >= risk ? (feeProfit / risk * 100) : (-risk / feeProfit * 100);
+		return String(Math.floor(raw));
+	};
+
+	const s = String(ou);
+	if (s.includes("/")) {
+		const [over, under] = s.split("/");
+		return `${over ? addOne(over) : over}/${under ? addOne(under) : under}`;
+	}
+	return addOne(s);
+}
+
+// Dispatch of book -> "compute this book's fee-inclusive price from its stored fee-free
+// price" function. Only books whose stored bookOdds value is fee-free need an entry here;
+// every other book's stored price is already what you'd actually pay. Add future fee-
+// charging books here rather than repeating the per-book branch at each call site below.
+const BOOK_FEE_FUNCTIONS = {
+	kal: addKalshiFee,
+	px: addPXFee,
+};
+
 function highestOver(bookOdds, excluded, boost, book, under) {
 	if (!boost) {
 		boost = 0;
@@ -3491,11 +3530,12 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		  { book: null, value: -Infinity, raw: null }
 	);
 
-	// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it wins
-	// as the actual best/bet-target price, apply Kalshi's trading fee on the fly so the number
-	// shown and used for EV here reflects what you'd really pay.
-	if (best.book === "kal") {
-		const feeParsed = parseSide(addKalshiFee(bookOdds.kal));
+	// Some books (kal, px) are stored fee-free -- used for display/devig everywhere else --
+	// so when one of them wins as the actual best/bet-target price, apply its fee on the fly
+	// so the number shown and used for EV here reflects what you'd really pay.
+	const feeFn = BOOK_FEE_FUNCTIONS[best.book];
+	if (feeFn) {
+		const feeParsed = parseSide(feeFn(bookOdds[best.book]));
 		if (feeParsed) {
 			best.value = applyProfitBoost(feeParsed.num, boost);
 			best.raw = feeParsed.pick;

@@ -1203,16 +1203,17 @@
 			});
 			if (!best) return null;
 
-			// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it
-			// wins as the actual best/bet-target price, apply Kalshi's trading fee on the fly so
-			// the "Best Over" header reflects what you'd really pay.
-			if (best.book === "kal") {
-				const feeStr = addKalshiFee(bookOdds.kal);
+			// Some books (kal, px) are stored fee-free (used for display/devig everywhere
+			// else); when one of them wins as the actual best/bet-target price, apply its fee
+			// on the fly so the "Best Over" header reflects what you'd really pay.
+			const feeFn = BOOK_FEE_FUNCTIONS[best.book];
+			if (feeFn) {
+				const feeStr = feeFn(bookOdds[best.book]);
 				const feeToken = feeStr.includes('/') ? feeStr.split('/')[legIndex] : feeStr;
 				const feePrice = parseInt(feeToken, 10);
 				const feeImplied = americanToImplied(feePrice);
 				if (Number.isFinite(feePrice) && feeImplied != null) {
-					best = { book: "kal", price: feePrice, implied: feeImplied };
+					best = { book: best.book, price: feePrice, implied: feeImplied };
 				}
 			}
 

@@ -349,14 +349,15 @@
 			if (implied == null) return;
 			if (!best || implied < best.implied) best = { book, price, implied };
 		});
-		// bookOdds.kal is stored fee-free (used for display/devig everywhere else); when it
-		// wins as the actual best/bet-target price, apply Kalshi's trading fee on the fly so
-		// the price shown here reflects what you'd really pay.
-		if (best && best.book === "kal") {
-			const feePrice = parseInt(addKalshiFee(bookOdds.kal), 10);
+		// Some books (kal, px) are stored fee-free (used for display/devig everywhere else);
+		// when one of them wins as the actual best/bet-target price, apply its fee on the fly
+		// so the price shown here reflects what you'd really pay.
+		const feeFn = best && BOOK_FEE_FUNCTIONS[best.book];
+		if (feeFn) {
+			const feePrice = parseInt(feeFn(bookOdds[best.book]), 10);
 			const feeImplied = americanToImplied(feePrice);
 			if (Number.isFinite(feePrice) && feeImplied != null) {
-				best = { book: "kal", price: feePrice, implied: feeImplied };
+				best = { book: best.book, price: feePrice, implied: feeImplied };
 			}
 		}
 		return best;

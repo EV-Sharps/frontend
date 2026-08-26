@@ -269,6 +269,10 @@ html = f"""<!doctype html>
     color: var(--muted);
     margin-top: 2px;
   }}
+  .rarity-year-toggle {{
+    margin-left: auto;
+    margin-bottom: 0;
+  }}
   .rarity-legend {{
     display: flex;
     gap: 16px;
@@ -338,6 +342,10 @@ html = f"""<!doctype html>
         <div class="rarity-label" id="rarity-label">&nbsp;</div>
         <div class="rarity-sub" id="rarity-sub">&nbsp;</div>
       </div>
+      <div class="toggle rarity-year-toggle">
+        <button id="rarity-btn-all" class="active" onclick="setRarityYear('all')">All Years</button>
+        <button id="rarity-btn-2026" onclick="setRarityYear('2026')">2026 Only</button>
+      </div>
     </div>
     <div class="rarity-legend">
       <span class="lg-item"><span class="lg-swatch hit"></span><span id="lg-hit-count">Home run</span></span>
@@ -368,10 +376,10 @@ html = f"""<!doctype html>
 
   const WAFFLE_DATA = {waffle_data};
 
-  (function buildRarityWaffle() {{
-    const total = WAFFLE_DATA.length;
-    const hits = WAFFLE_DATA.filter(function (d) {{ return d.hit; }}).length;
-    const pct = Math.round((hits / total) * 100);
+  function renderWaffle(data) {{
+    const total = data.length;
+    const hits = data.filter(function (d) {{ return d.hit; }}).length;
+    const pct = total ? Math.round((hits / total) * 100) : 0;
 
     document.getElementById('rarity-figure').textContent = pct + '%';
     document.getElementById('rarity-label').textContent = 'of birthday games included a home run';
@@ -380,8 +388,9 @@ html = f"""<!doctype html>
     document.getElementById('lg-miss-count').textContent = 'No home run (' + (total - hits) + ')';
 
     const grid = document.getElementById('waffle');
+    grid.innerHTML = '';
     const frag = document.createDocumentFragment();
-    WAFFLE_DATA.forEach(function (d) {{
+    data.forEach(function (d) {{
       const cell = document.createElement('div');
       cell.className = 'cell' + (d.hit ? ' hit' : '');
       cell.tabIndex = 0;
@@ -392,7 +401,22 @@ html = f"""<!doctype html>
       frag.appendChild(cell);
     }});
     grid.appendChild(frag);
+  }}
 
+  function setRarityYear(year) {{
+    document.getElementById('rarity-btn-all').classList.toggle('active', year === 'all');
+    document.getElementById('rarity-btn-2026').classList.toggle('active', year === '2026');
+    renderWaffle(year === 'all' ? WAFFLE_DATA : WAFFLE_DATA.filter(function (d) {{ return d.year === year; }}));
+  }}
+
+  renderWaffle(WAFFLE_DATA);
+
+  // Tooltip listeners live on the grid container itself (event delegation via
+  // closest('.cell')), not on individual cells — so they keep working across
+  // renderWaffle() re-renders that replace all of the grid's children, and
+  // only need to be wired up once here.
+  (function initWaffleTooltip() {{
+    const grid = document.getElementById('waffle');
     const tip = document.getElementById('waffle-tip');
     const tipName = document.createElement('div');
     tipName.className = 'tip-name';

@@ -549,7 +549,7 @@
 		const v = cell.getValue();
 		const threshold = STAT_MODE === 'bbe' ? 5 : 15;
 		const low = v != null && v < threshold;
-		return `<span class="n-cell${low ? ' low-n' : ''}" title="${low ? 'Small sample — treat as noisy' : ''}">${v ?? '—'}</span>`;
+		return `<span class="n-cell${low ? ' low-n' : ''}" title="${low ? 'Small sample - treat as noisy' : ''}">${v ?? '—'}</span>`;
 	}
 
 	function renderTable(rows) {

@@ -1487,6 +1487,8 @@ function changeFilter(render = true) {
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
+			row["book"] = null;
+			row["line"] = null;
 			return;
 		}
 		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
@@ -1500,6 +1502,8 @@ function changeFilter(render = true) {
 				row["fairVal"] = "";
 				row["implied"] = "";
 				row["kelly"] = "";
+				row["book"] = null;
+				row["line"] = null;
 				return;
 			}
 		}
@@ -1518,6 +1522,8 @@ function changeFilter(render = true) {
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
+			row["book"] = null;
+			row["line"] = null;
 			return;
 		}
 

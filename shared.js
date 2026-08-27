@@ -87,7 +87,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
-			{ label: "🏈 Preseason", value: "main?sport=preseason", sharp: true },
+			{ label: "🏈 Preseason", value: "preseason", sharp: true },
 			{ label: "🔮 Futures", value: "nfl_futures" },
 			{ label: "🏈 CFB", value: "ncaaf", sharp: true },
 			{ label: "🏆 CFB Main", value: "main?sport=ncaaf", sharp: true },

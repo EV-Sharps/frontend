@@ -551,7 +551,7 @@ function initPageData() {
 				}
 			}, 30 * 1000);
 		}
-	} else if (PAGE == "main" || PAGE == "soccer") {
+	} else if (PAGE == "main" || PAGE == "soccer" || PAGE == "preseason") {
 		initChkddActions();
 		fetchMain();
 		renderFilters();

@@ -628,9 +628,6 @@ function updateExistingCard(card, rowData) {
 	} else if (rowData.prop.includes("total")) {
 		teamImg = gameImg;
 	} else if (PAGE.includes("ncaa")) {
-		if (!["reb", "3ptm", "pts", "ast"].includes(rowData.prop)) {
-			player = rowData.gameId || rowData.game;
-		}
 		teamImg = gameImg;
 	}
 	const _rp = rowData.player || "";

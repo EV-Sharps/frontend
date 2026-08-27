@@ -1733,7 +1733,7 @@ const playerFormatter = function(cell, params, rendered) {
 		return player;
 	}
 
-	let team = SPORT.includes("ncaa") ? data.teamId : data.team;
+	let team = data.teamId || data.team;
 	if (team == undefined) {
 		team = "";
 	}
@@ -1743,12 +1743,10 @@ const playerFormatter = function(cell, params, rendered) {
 		isPlayerProp = false;
 		player = data.prop.replace("_", " ").toUpperCase();
 		if (data.prop.includes("ml")) {
-			const g = SPORT.includes("ncaa") ? title(data.game) : data.game.toUpperCase();
+			const g = data.game.toUpperCase();
 			player = data.under ? g.split(" @ ")[1] : g.split(" @ ")[0];
 		} else if (data.prop == "total" && SPORT == "ncaab") {
 			player = `Total (${data.gameId.toUpperCase()})`;
-		} else if (data.prop == "total" && SPORT == "ncaaf") {
-			player = `${data.gameId.toUpperCase()}`;
 		} else if (data.prop.includes("away_total") || data.prop.includes("home_total")) {
 			player = `${team.toUpperCase()} ${data.prop.replace("home_", "").replace("away_", "").toUpperCase()}`;
 		} else if (data.prop.includes("spread")) {
@@ -1771,7 +1769,7 @@ const playerFormatter = function(cell, params, rendered) {
 		let s = ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";
-		let t = sport.includes("ncaa") ? data.teamId : data.team?.replace("-gm2", "");
+		let t = data.teamId || data.team?.replace("-gm2", "");
 		if (TEAM) {
 			//t = TEAM;
 		}

@@ -398,7 +398,7 @@
 				wrap.appendChild(info);
 
 				// default selection logic: preserve DEVIG or pick first available
-				if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
+				if ((DEVIG === undefined && devigSetEquals(dev, hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && devigSetEquals(dev, DEVIG))) {
 					btn.classList.add('active');
 					DEVIG = dev;
 					if (hidden) hidden.value = dev;

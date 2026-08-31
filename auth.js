@@ -524,7 +524,7 @@ function initPageData() {
 	} else if (PAGE == "recap" || PAGE == "main_recap") {
 		initChkddActions();
 		fetchProps();
-		//renderFilters();
+		renderFilters();
 		initExcluded();
 		renderTable([]);
 	} else if (PAGE == "tracker") {

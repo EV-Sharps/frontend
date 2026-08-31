@@ -4247,6 +4247,17 @@ function renderBookSelect() {
 	bookSel.value = BOOK || "";
 }
 
+// Devig keys are "+"-joined book lists (e.g. "circa+pn+kal"); the same set of
+// books can come back in a different order (e.g. "pn+circa+kal"), so compare
+// as sets rather than as exact strings.
+function devigSetEquals(a, b) {
+	if (a === b) return true;
+	if (!a || !b) return false;
+	const setA = a.split("+").filter(Boolean).sort();
+	const setB = b.split("+").filter(Boolean).sort();
+	return setA.length === setB.length && setA.every((v, i) => v === setB[i]);
+}
+
 async function initDevPicker(data){
 	const picker = document.getElementById('dev-picker');
 	const hidden = document.getElementById('devig-select');
@@ -4369,7 +4380,7 @@ async function initDevPicker(data){
 		wrap.appendChild(info);
 
 		// default selection logic: preserve DEVIG or pick first available
-		if ((DEVIG === undefined && dev === (hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && dev === DEVIG)) {
+		if ((DEVIG === undefined && devigSetEquals(dev, hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && devigSetEquals(dev, DEVIG))) {
 			btn.classList.add('active');
 			DEVIG = dev;
 			if (hidden) hidden.value = dev;

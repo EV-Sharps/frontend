@@ -1800,7 +1800,10 @@ const playerFormatter = function(cell, params, rendered) {
 		bats = data.avgMin;
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
+	} else if (["tds", "nfl"].includes(PAGE)) {
+		bats = data.pos;
 	}
+
 	let pos = "";
 	if (["nba", "threes", "atgs", "ncaafprops", "kotc"].includes(PAGE)) {
 		pos = data.pos;

@@ -1598,7 +1598,7 @@ function changeFilter(render = true) {
 	}
 	const filters = [];
 
-	if (!["outliers", "atgs2", "dingers2"].includes(PAGE)) {
+	if (!["outliers", "atgs2", "dingers2", "tds2"].includes(PAGE)) {
 		filters.push({field: "ev", type: "!=", value: null});
 	} else {
 		
@@ -1615,7 +1615,7 @@ function changeFilter(render = true) {
 		if (OU != "ou") {
 			if (r.under !== (OU === "u")) return false;
 		}
-		if (!["outliers", "atgs2", "dingers2", "analysis"].includes(PAGE) || (PAGE == "analysis" && VIG != "0")) {
+		if (!["outliers", "atgs2", "dingers2", "tds2", "analysis"].includes(PAGE) || (PAGE == "analysis" && VIG != "0")) {
 			if (r.ev === null) return false;
 		}
 		if (minOdds && !(r.line > parseInt(minOdds, 10))) return false;

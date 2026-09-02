@@ -21,7 +21,7 @@
 	<link href="style.css" rel="stylesheet">
 	<style>
 		#table {
-			width: auto;
+			width: 100%;
 		}
 		@media (max-width: 1950px) {
 			#table {
@@ -665,7 +665,7 @@
 					responsive: 0, visible: MOBILE ? false : true
 				}] },
 				{ key: 'opp', label: 'Opp', cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
-				{ key: 'oppRank', label: 'RZ TD% Allowed', cols: [{ title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
+				//{ key: 'oppRank', label: 'RZ TD% Allowed', cols: [{ title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
 				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_fd', label: 'FD', cols: [{ title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_dk', label: 'DK', cols: [{ title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk", width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, formatter: evOddsFormatter }] },

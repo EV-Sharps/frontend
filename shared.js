@@ -1391,11 +1391,11 @@ const hedgeBookFormatter = function(cell) {
 
 const bestBookFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	const book = ["outliers", "atgs2"].includes(PAGE) ? data.outlierBook : data.book;
+	const book = ["outliers", "atgs2", "tds2"].includes(PAGE) ? data.outlierBook : data.book;
 	let cls = data.blurred ? "blurred" : "";
 	let line = data.line;
 	if (line == null) return "";
-	if (["outliers", "atgs2"].includes(PAGE)) {
+	if (["outliers", "atgs2", "tds2"].includes(PAGE)) {
 		line = data.outlierLine;
 	}
 
@@ -3049,7 +3049,7 @@ function devig(ou, finalOdds, promo, isUnder = false, manualVig = "") {
 	let under;
 	if (ou.indexOf("/") === -1 || parts.length < 2 || parts[1] === "") {
 		let vig = 0.07;
-		if (PAGE == "atgs2") {
+		if (["atgs2", "tds2"].includes(PAGE)) {
 			vig = 0;
 		}
 		if (manualVig != "") {

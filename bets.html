@@ -176,6 +176,19 @@
 			if (TABLE) TABLE.redraw(true);
 		}
 
+		// Liquidity tip on hover (tap on mobile), same markup/behavior as evOddsFormatter
+		// in shared.js — bets.html just keeps its data nested under evData instead of flat.
+		function betsOddsLiqFormatter(cell) {
+			const val = cell.getValue();
+			if (val === null || val === undefined || val === "") return "";
+			const field = cell.getField();
+			const bookKey = field === "circa" ? "circa" : field.split(".").pop();
+			const liq = cell.getRow().getData().evData?.liquidity?.[bookKey];
+			if (!Array.isArray(liq) || liq.length < 2) return val;
+			const fmtLiq = n => numFrom(n)?.toLocaleString('en-US') ?? n;
+			return `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${val}</span><span class="liq-tip">$${fmtLiq(liq[0])}/$${fmtLiq(liq[1])}</span></span>`;
+		}
+
 		const MKT_DEVIG_SELECT = `<select id="mkt-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
 			<option value="">Market</option>
 			<option value="pn">Pinnacle</option>
@@ -421,22 +434,22 @@
 						responsive: 0
 					},
 					
-					{title: "Circa", field: "circa"},
-					{title: `FD`, field: "evData.bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number"},
-					{title: `PN`, field: "evData.bookOdds.pn",  width: 70, sorter: "number"},
+					{title: "Circa", field: "circa", formatter: betsOddsLiqFormatter},
+					{title: `FD`, field: "evData.bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `PN`, field: "evData.bookOdds.pn",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
 					{title: `B365`, field: "evData.bookOdds.b365", hozAlign: "center", width: 70, sorter: "number",
-						visible: SPORT == "nfl" ? false : true
+						visible: SPORT == "nfl" ? false : true, formatter: betsOddsLiqFormatter
 					},
-					{title: `DK`, field: "evData.bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number"},
-					{title: `MGM`, field: "evData.bookOdds.mgm",  width: 70, sorter: "number"},
-					{title: `FN`, field: "evData.bookOdds.fn",  width: 70, sorter: "number"},
-					{title: `ESPN`, field: "evData.bookOdds.espn",  width: 70, sorter: "number"},
-					{title: `HR`, field: "evData.bookOdds.hr",  width: 70, sorter: "number"},
-					{title: `Kambi<br>Parx/Bally`, field: "evData.bookOdds.kambi",  width: 70, sorter: "number"},
-					{title: `CZ`, field: "evData.bookOdds.cz",  width: 50, sorter: "number"},
-					{title: `KAL`, field: "evData.bookOdds.kal",  width: 80, sorter: "number"},
-					{title: `NV`, field: "evData.bookOdds.nv",  width: 80, sorter: "number"},
-					{title: `PX`, field: "evData.bookOdds.px",  width: 80, sorter: "number"},
+					{title: `DK`, field: "evData.bookOdds.dk",  width: MOBILE ? 60 : 60, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `MGM`, field: "evData.bookOdds.mgm",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `FN`, field: "evData.bookOdds.fn",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `ESPN`, field: "evData.bookOdds.espn",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `HR`, field: "evData.bookOdds.hr",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `Kambi<br>Parx/Bally`, field: "evData.bookOdds.kambi",  width: 70, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `CZ`, field: "evData.bookOdds.cz",  width: 50, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `KAL`, field: "evData.bookOdds.kal",  width: 80, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `NV`, field: "evData.bookOdds.nv",  width: 80, sorter: "number", formatter: betsOddsLiqFormatter},
+					{title: `PX`, field: "evData.bookOdds.px",  width: 80, sorter: "number", formatter: betsOddsLiqFormatter},
 				]
 			});
 

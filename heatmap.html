@@ -486,28 +486,12 @@
 			//RES = bets;
 			initDevPicker(RES["xy"][cfg.prop][cfg.bookLabel]);
 
-			let bets = RES["xy"][cfg.prop][cfg.bookLabel][cfg.devLabel];
-
-			// Convert columnar format {ev:[...], odds:[...], ...} → [{ev, odds, ...}, ...]
-			if (bets && !Array.isArray(bets)) {
-				const keys = Object.keys(bets);
-				const len = bets[keys[0]]?.length || 0;
-				bets = Array.from({length: len}, (_, i) => {
-					const row = {};
-					keys.forEach(k => row[k] = bets[k][i]);
-					return row;
-				});
-			}
-
-			// adjust for sport-specific ranges (optional)
-			// filter to display range
-			const [evMin, evMaxRange] = cfg.evRange;
-			const [odMin, odMaxRange] = cfg.oddsRange;
-			const filtered = bets.filter(b => {
-				const ev = Number(b.ev);
-				const od = Number(b.odds);
-				return ev >= evMin && ev <= evMaxRange && od >= odMin && od <= odMaxRange;
-			});
+			// Server ships pre-binned bets — evIdx -> oddsIdx -> [wins, losses, profitSum] —
+			// at a fine grid (RES.grid) instead of one row per historical bet, so we fold
+			// each fine bin into whichever display bin (cfg.evStep/oddsStep, user-selectable)
+			// its midpoint falls into, rather than filtering/binning raw bets.
+			const fineBins = RES["xy"][cfg.prop][cfg.bookLabel][cfg.devLabel];
+			const grid = RES["grid"];
 
 			// bins
 			const evBins = arange(cfg.evRange[0], cfg.evRange[1], cfg.evStep);
@@ -521,8 +505,6 @@
 			const countMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
 			const winMatrix = Array.from({length: nY}, () => Array(nX).fill(0));
 
-			const cellBets = Array.from({length: nY}, () => Array.from({length: nX}, () => []));
-
 			function findBinIndex(value, bins){
 				if (value < bins[0] || value > bins[bins.length-1]) return -1;
 				// right-inclusive as in pandas cut(right=True)
@@ -533,33 +515,34 @@
 				return -1;
 			}
 
-			for(const b of filtered){
-				const ev = Number(b.ev);
-				const od = Number(b.odds);
-				const i = findBinIndex(od, oddsBins);
-				const j = findBinIndex(ev, evBins);
-				if (i === -1 || j === -1) continue;
-				const isWin = !!b.hit;
-				const winProfit = americanWinProfit(od);
-				let profit;
-				if (cfg.sizing === "kelly") {
-					const kellyFrac = winProfit > 0 ? ev / (100 * winProfit) : 0;
-					profit = isWin ? kellyFrac * winProfit : -kellyFrac;
-				} else {
-					profit = isWin ? winProfit : -1.0;
-				}
-				sumMatrix[i][j] += profit;
-				countMatrix[i][j] += 1;
-				if (isWin) winMatrix[i][j] += 1;
+			if (fineBins && grid) {
+				for (const evIdxStr in fineBins) {
+					const evMid = grid.evMin + (Number(evIdxStr) + 0.5) * grid.evStep;
+					const j = findBinIndex(evMid, evBins);
+					if (j === -1) continue;
 
-				// store a small bet summary in the cell list (use sensible player field fallbacks)
-                const player = b.player || '';
-                cellBets[i][j].push({
-                    ev: Number(b.ev),
-                    odds: Number(b.odds),
-                    hit: !!b.hit,
-                    player: player
-                });
+					const oddsCells = fineBins[evIdxStr];
+					for (const oddsIdxStr in oddsCells) {
+						const oddsMid = grid.oddsMin + (Number(oddsIdxStr) + 0.5) * grid.oddsStep;
+						const i = findBinIndex(oddsMid, oddsBins);
+						if (i === -1) continue;
+
+						const [w, l, p] = oddsCells[oddsIdxStr];
+						let profit;
+						if (cfg.sizing === "kelly") {
+							// Exact per-bet ev/odds no longer exist post-binning; approximate
+							// using this fine bin's midpoint for every bet inside it.
+							const winProfit = americanWinProfit(oddsMid);
+							const kellyFrac = winProfit > 0 ? evMid / (100 * winProfit) : 0;
+							profit = w * kellyFrac * winProfit - l * kellyFrac;
+						} else {
+							profit = p;
+						}
+						sumMatrix[i][j] += profit;
+						countMatrix[i][j] += (w + l);
+						winMatrix[i][j] += w;
+					}
+				}
 			}
 
 			// produce final heat values (ROI = mean profit per bet, else total)
@@ -638,8 +621,7 @@
 					x: 0.5, y: -0.30, xanchor: 'center'
 				},
 				hoverinfo: 'skip',
-				hovertemplate: '%{y}<br>%{x}<br>Value: %{z:.3f}<extra></extra>',
-				customdata: cellBets
+				hovertemplate: '%{y}<br>%{x}<br>Value: %{z:.3f}<extra></extra>'
 			};
 
 			const layout = {

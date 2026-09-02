@@ -84,6 +84,7 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
+			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
@@ -538,7 +539,7 @@ const sportFormatter = function(cell) {
 
 const percentFormatter = function(cell, params, rendered) {
 	if (!cell.getValue()) {
-		if (["tds", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
+		if (["tds", "tds2", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
 			return "0%";
 		}
 		return "";
@@ -1066,7 +1067,7 @@ const oppFormatter = function(cell, params, rendered) {
 	let pitcher = "";
 	if (PAGE == "preview") {
 		pitcher = cell.getValue().toUpperCase();
-	} else if (PAGE == "tds" || PAGE == "nfl") {
+	} else if (["tds", "tds2", "nfl"].includes(PAGE)) {
 		pitcher = data.opp.toUpperCase();
 	} else if (data.pitcher) {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
@@ -1800,7 +1801,7 @@ const playerFormatter = function(cell, params, rendered) {
 		bats = data.avgMin;
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
-	} else if (["tds", "nfl"].includes(PAGE)) {
+	} else if (["tds", "tds2", "nfl"].includes(PAGE)) {
 		bats = data.pos;
 	}
 
@@ -3746,26 +3747,37 @@ function hideUsername() {
 	document.getElementById("auth-buttons").style.display = "none";
 }
 
+// Heatmap files are split per-prop server-side (results.py) — a page only ever colors
+// rows for whichever prop(s) are actually loaded into TABLE, so fetch just those slices
+// instead of the whole sport/method file (which covers every prop, book and dev combo).
 async function loadHeatmapData() {
 	if (["outliers", "analysis"].includes(PAGE)) return;
+	if (typeof pako === 'undefined') return;
+
+	let props = [];
 	try {
-		// Load the compressed heatmap data
-		const response = await fetch(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);
-		const buffer = await response.arrayBuffer();
-		
-		// Decompress if pako is available
-		if (typeof pako !== 'undefined') {
+		if (typeof TABLE !== 'undefined' && TABLE && typeof TABLE.getData === 'function') {
+			props = [...new Set(TABLE.getData().map(r => r.prop).filter(Boolean))];
+		}
+	} catch (e) { props = []; }
+	if (!props.length) return;
+
+	if (!HEATMAP) HEATMAP = {};
+	if (!HEATMAP.xy) HEATMAP.xy = {};
+
+	await Promise.all(props.map(async prop => {
+		try {
+			const response = await fetch(`/heatmaps/${SPORT}_${METHOD || "worst"}_${prop}.json.gz`);
+			if (!response.ok) return;
+			const buffer = await response.arrayBuffer();
 			const decompressed = pako.ungzip(new Uint8Array(buffer), { to: 'string' });
 			const heatmapData = JSON.parse(decompressed);
-			
-			// Store in HEATMAP for use in getRowROI
-			if (!HEATMAP) HEATMAP = {};
-			HEATMAP.xy = heatmapData.xy;
-			HEATMAP.record = heatmapData.record;
+			HEATMAP.xy[prop] = heatmapData.xy;
+			HEATMAP.grid = HEATMAP.grid || heatmapData.grid;
+		} catch (e) {
+			console.warn(`Failed to load heatmap data for prop ${prop}:`, e);
 		}
-	} catch (e) {
-		console.warn('Failed to load heatmap data for ROI coloring:', e);
-	}
+	}));
 }
 
 // Color interpolation matching heatmap colors
@@ -3795,84 +3807,61 @@ function interpolateColor(color1, color2, t) {
 	return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
 }
 
-function findBin(value, bins) {
-	if (value < bins[0] || value > bins[bins.length-1]) return -1;
-	for(let i=0; i<bins.length-1; i++){
-		const left = bins[i], right = bins[i+1];
-		if (value >= left && value <= right) return i;
-	}
-	return -1;
-}
-
-function arange(start, stop, step) {
-	const r = [];
-	for(let v = start; v <= stop + 1e-9; v += step) r.push(v);
-	return r;
-}
-
+// Heatmap data ships pre-binned from the server (see results.py HEATMAP_GRID) as
+// evIdx -> oddsIdx -> [wins, losses, profitSum], at a finer resolution (ev step 1,
+// odds step per HEATMAP.grid.oddsStep) than this function displays at (ev step 1,
+// odds step 100). Since wins/losses/profit are additive, the display bin's stats are
+// just the sum of the fine odds-bins it covers — no raw per-bet data needed.
 function getRowROI(rowData) {
-	// Define your bin ranges (match these to your heatmap settings)
-	const evStep = 1, oddsStep = 100;
-	let evRange = [-5, 30], oddsRange = [100, 3000];
-
-	const evBins = arange(evRange[0], evRange[1], evStep);
-	const oddsBins = arange(oddsRange[0], oddsRange[1], oddsStep);
-
-	const evBin = findBin(rowData.ev || 0, evBins);
-	const oddsBin = findBin(rowData.line || 0, oddsBins);
-
-	if (evBin === -1 || oddsBin === -1) return null;
-
-	// Look up in RECORD - you'll need to fetch heatmap data
-	// This assumes you have RES loaded with the xy data structure
 	try {
-		if (typeof HEATMAP !== 'undefined' && HEATMAP && HEATMAP.xy) {
-			const propData = HEATMAP.xy[rowData.prop];
-			if (!propData) return null;
-			
-			const bookData = propData[rowData.book] || propData['best'];
-			if (!bookData) return null;
+		if (typeof HEATMAP === 'undefined' || !HEATMAP || !HEATMAP.xy || !HEATMAP.grid) return null;
 
-			let devigData = bookData[DEVIG];
-			if (!devigData && DEVIG && DEVIG.includes('+')) {
-				const reversed = DEVIG.split('+').reverse().join('+');
-				devigData = bookData[reversed];
-			}
-			if (!devigData) return null;
+		const propData = HEATMAP.xy[rowData.prop];
+		if (!propData) return null;
 
-			// Convert columnar format {ev:[...], odds:[...], ...} → [{ev, odds, ...}, ...]
-			if (!Array.isArray(devigData)) {
-				const keys = Object.keys(devigData);
-				const len = devigData[keys[0]]?.length || 0;
-				devigData = Array.from({length: len}, (_, i) => {
-					const row = {};
-					keys.forEach(k => row[k] = devigData[k][i]);
-					return row;
-				});
-			}
+		const bookData = propData[rowData.book] || propData['best'];
+		if (!bookData) return null;
 
-			// Find bets in this bin
-			const betsInBin = devigData.filter(b => {
-				const bEv = findBin(Number(b.ev), evBins);
-				const bOd = findBin(Number(b.odds), oddsBins);
-				return bEv === evBin && bOd === oddsBin;
-			});
-
-			if (betsInBin.length === 0) return null;
-
-			// Calculate ROI and W-L
-			let wins = 0, losses = 0;
-			const profits = betsInBin.map(b => {
-				const isWin = !!b.hit;
-				if (isWin) wins++;
-				else losses++;
-				const profit = isWin ? (b.odds > 0 ? b.odds/100 : 100/Math.abs(b.odds)) : -1.0;
-				return profit;
-			});
-
-			const avgROI = profits.reduce((a,b) => a+b, 0) / profits.length;
-			return { roi: avgROI, wins: wins, losses: losses };
+		let devigData = bookData[DEVIG];
+		if (!devigData && DEVIG && DEVIG.includes('+')) {
+			const reversed = DEVIG.split('+').reverse().join('+');
+			devigData = bookData[reversed];
 		}
+		if (!devigData) return null;
+
+		const g = HEATMAP.grid;
+		const ev = Number(rowData.ev) || 0;
+		const odds = Number(rowData.line) || 0;
+
+		// Same acceptance window the old per-bet implementation used.
+		if (ev < -5 || ev > 30 || odds < 100 || odds > 3000) return null;
+		// Server only stores bins for ev >= 0 (negative-EV bets are filtered out at write
+		// time) — don't clamp a negative ev into bin 0, that would misattribute a
+		// negative-EV row's ROI to real ev-in-[0,1) history.
+		if (ev < g.evMin) return null;
+
+		const evIdx = Math.min(g.evBins - 1, Math.floor((ev - g.evMin) / g.evStep));
+		const evBins = devigData[String(evIdx)];
+		if (!evBins) return null;
+
+		// Display odds step is fixed at 100; group that many fine odds-bins together.
+		const groupSize = Math.max(1, Math.round(100 / g.oddsStep));
+		const fineOddsIdx = Math.max(0, Math.min(g.oddsBins - 1, Math.floor((odds - g.oddsMin) / g.oddsStep)));
+		const groupStart = Math.floor(fineOddsIdx / groupSize) * groupSize;
+
+		let wins = 0, losses = 0, profit = 0;
+		for (let i = groupStart; i < groupStart + groupSize; i++) {
+			const cell = evBins[String(i)];
+			if (!cell) continue;
+			wins += cell[0];
+			losses += cell[1];
+			profit += cell[2];
+		}
+
+		const total = wins + losses;
+		if (!total) return null;
+
+		return { roi: profit / total, wins, losses };
 	} catch(e) {
 		console.error('Error calculating ROI:', e);
 	}
@@ -4066,7 +4055,7 @@ function parseURLParams() {
 	document.body?.classList.toggle("stream-mode", STREAM != null);
 
 	function defaultOU() {
-		if (["atgs", "tds", "dingers"].includes(PAGE)) return "o";
+		if (["atgs", "tds", "tds2", "dingers"].includes(PAGE)) return "o";
 		return "ou";
 	}
 	OU = URLParams.get("ou") || defaultOU();
@@ -4351,7 +4340,7 @@ async function initDevPicker(data){
 		const propTag = document.createElement('div');
 		propTag.className = 'dev-prop-tag';
 		propTag.textContent = prop || '';
-		if (!["atgs", "tds", "dingers"].includes(PAGE)) {
+		if (!["atgs", "tds", "tds2", "dingers"].includes(PAGE)) {
 			wrap.appendChild(propTag);
 		}
 

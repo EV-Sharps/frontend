@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Devig Methods Explained</title>
+  <link href="style.css" rel="stylesheet">
+  <style>
+    html, body { height: auto; overflow: auto; }
+    body { background: linear-gradient(160deg, #0d3b66 0%, #021526 100%) fixed; }
+    .wrap { max-width: 980px; width: 100%; margin: 0 auto; padding: 2rem 1rem 4rem; box-sizing: border-box; }
+    h1 { margin: 0 0 6px; font-size: 1.6rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; max-width: 62ch; line-height: 1.5; margin: 0 0 28px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px 20px 14px; margin-bottom: 24px; }
+    .card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .card .desc { color: var(--muted); font-size: 0.85rem; max-width: 64ch; line-height: 1.5; margin: 0 0 16px; }
+
+    .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .controls label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .controls input[type="range"] { width: 180px; accent-color: var(--accent); }
+    .vig-readout { font-size: 12px; font-weight: 650; color: var(--text); min-width: 34px; font-variant-numeric: tabular-nums; }
+    .spread-callout { margin-left: auto; font-size: 12px; color: var(--muted); }
+    .spread-callout strong { color: var(--text); font-variant-numeric: tabular-nums; }
+    .view-toggle { font-size: 11px; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+    .view-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+    svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .axis-label { fill: var(--muted); font-size: 10.5px; }
+    .tick-label { fill: var(--muted); font-size: 10px; }
+    .gridline { stroke: var(--border); stroke-width: 1; }
+    .baseline { stroke: #3a4257; stroke-width: 1; }
+    .ref-line { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 3 3; fill: none; opacity: 0.7; }
+    .series-line { stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .worst-line { stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 5 4; }
+    .spread-area { opacity: 0.28; }
+    .spread-line { stroke-width: 2; fill: none; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px 20px; margin: 16px 2px 4px; }
+    .legend-item { display: flex; align-items: flex-start; gap: 7px; max-width: 220px; }
+    .legend-swatch { width: 16px; height: 2px; border-radius: 2px; margin-top: 6px; flex: none; }
+    .legend-swatch.dashed { background: none; border-top: 2px dashed #9aa3b2; height: 0; }
+    .legend-text .name { font-size: 12px; font-weight: 650; color: var(--text); display: block; }
+    .legend-text .desc2 { font-size: 11px; color: var(--muted); line-height: 1.35; }
+
+    .chart-wrap { position: relative; }
+
+    .region-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 720px) { .region-grid { grid-template-columns: 1fr; } }
+    .region-panel { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 6px; }
+    .region-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .region-head h3 { margin: 0; font-size: 0.92rem; }
+    .region-tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 5px; }
+    .region-tag.agree { color: #3dd68c; background: rgba(61,214,140,0.14); }
+    .region-tag.disagree { color: #f5c542; background: rgba(245,197,66,0.14); }
+    .region-verdict { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin: 6px 2px 8px; }
+    .region-verdict strong { color: var(--text); }
+
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 4px; }
+    table.data-table th, table.data-table td { text-align: right; padding: 6px 8px; font-variant-numeric: tabular-nums; }
+    table.data-table th:first-child, table.data-table td:first-child { text-align: left; }
+    table.data-table thead th { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-variant-numeric: normal; }
+    table.data-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.03); }
+    table.data-table tbody td { color: var(--muted); }
+    table.data-table tbody td.hero { color: var(--text); font-weight: 650; }
+
+    .foot-note { font-size: 10.5px; color: var(--muted); margin-top: 14px; line-height: 1.5; }
+    [hidden] { display: none !important; }
+
+    .price-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .price-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .price-card .ph { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+    .price-card .ph .odds { font-size: 1.15rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+    .price-card .ph .name { font-size: 0.8rem; color: var(--muted); }
+    .price-card .rows { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .price-card .row { display: flex; align-items: center; gap: 8px; }
+    .price-card .row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .price-card .row.dashed .dot { background: none; border: 2px dashed #9aa3b2; width: 4px; height: 4px; }
+    .price-card .row .rname { font-size: 0.82rem; color: var(--muted); flex: 1; }
+    .price-card .row .rval { font-size: 0.82rem; font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+    .price-card .row .bar { width: 90px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); position: relative; flex: none; }
+    .price-card .row .bar .marker { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--panel); }
+    .price-card .spread-line2 { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--muted); }
+    .price-card .spread-line2 strong { color: var(--text); }
+
+    .method-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .method-grid .m { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .method-grid .m .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .method-grid .m h3 { margin: 0 0 6px; font-size: 0.95rem; display: flex; align-items: center; }
+    .method-grid .m p { margin: 0; color: var(--muted); font-size: 0.83rem; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Which devig method, for which bet?</h1>
+    <p class="subtitle">
+      This app defaults to Multiplicative/Additive on main lines and Probit on player props — not out
+      of habit, but because the two line up with where each actually earns its keep. Below: the same
+      bet, near pick'em vs. as a longshot prop.
+    </p>
+
+    <div class="card">
+      <h2>Main lines vs. player props</h2>
+      <p class="desc">
+        Same math, same vig, two zoomed-in slices of the odds spectrum. Left: a mainline near a
+        coinflip. Right: a longshot prop like a homer bet. Watch what happens to the gap between the
+        lines.
+      </p>
+
+      <div class="controls">
+        <label for="vig-slider">
+          Market vig (overround)
+          <input type="range" id="vig-slider" min="0" max="15" step="0.5" value="4.5">
+        </label>
+        <span class="vig-readout" id="vig-readout">4.5%</span>
+        <span class="spread-callout" id="spread-callout"></span>
+        <button class="view-toggle" id="view-toggle" type="button">View as table</button>
+      </div>
+
+      <div class="region-grid" id="region-grid">
+        <div class="region-panel">
+          <div class="region-head">
+            <h3>Main lines</h3>
+            <span class="region-tag agree">methods agree</span>
+          </div>
+          <svg id="chart-mainlines" viewBox="0 0 390 340" role="img" aria-label="Fair American odds by devig method, near pick'em"></svg>
+          <p class="region-verdict" id="verdict-mainlines"></p>
+        </div>
+        <div class="region-panel">
+          <div class="region-head">
+            <h3>Player props (longshots)</h3>
+            <span class="region-tag disagree">methods diverge</span>
+          </div>
+          <svg id="chart-props" viewBox="0 0 390 340" role="img" aria-label="Fair American odds by devig method, longshot side"></svg>
+          <p class="region-verdict" id="verdict-props"></p>
+        </div>
+      </div>
+
+      <div id="table-wrap" hidden></div>
+
+      <div class="legend" id="legend"></div>
+
+      <p class="foot-note">
+        Y-axis: the fair American odds each method assigns once the vig is stripped out. The gray
+        dotted line is the raw quoted line with no devig at all — everything else measures how far it
+        pulls the fair line, and by how much the methods disagree with each other.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>At these specific prices</h2>
+      <p class="desc">
+        The two ends of the spectrum you actually see day to day: a near-even mainline (-110) and a
+        longshot prop (+600, roughly a homer bet). Same vig slider above — drag it and watch the +600
+        card spread out while -110 barely moves.
+      </p>
+      <div class="price-cards" id="price-cards"></div>
+    </div>
+
+    <div class="card">
+      <h2>How much do they actually disagree?</h2>
+      <p class="desc">
+        Same slider, same data — this time zoomed into just the spread between the highest and lowest
+        method estimate, in probability points, so the disagreement isn't dwarfed by a 0–100% axis.
+      </p>
+      <div class="chart-wrap">
+        <svg id="spread-chart" viewBox="0 0 820 200" role="img" aria-label="Spread between highest and lowest devig method estimate"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Why the correction isn't flat</h2>
+      <p class="desc">
+        Mult/Additive assume probability itself is the right ruler — a flat markup, everywhere. Probit
+        assumes the vig lives in <em>z-score</em> space, where "how many standard deviations from the
+        market's center" behaves linearly, and converts back through this curve. The curve is steep
+        near a coinflip and flat out at the tails — so the same underlying mispricing reads as a small
+        probability move near 50%, and a bigger one out where a homer prop lives.
+      </p>
+      <div class="chart-wrap">
+        <svg id="scurve-chart" viewBox="0 0 820 300" role="img" aria-label="Normal CDF curve mapping z-score to probability, showing where -110 and +600 sit"></svg>
+      </div>
+      <p class="foot-note">
+        At -110, the tangent line (the flat, linear approximation Mult/Additive effectively use) sits
+        right on top of the actual curve — barely distinguishable. At +600, the curve has already bent
+        well away from that same straight-line approximation. Probit reads the correction off the
+        actual curve; Mult/Additive read it off the tangent — fine near the middle, increasingly wrong
+        the further out you go.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>The methods</h2>
+      <div class="method-grid" id="method-grid"></div>
+    </div>
+  </div>
+
+<script>
+// ---- devig math, ported 1:1 from shared.js so this stays accurate to the app ----
+function inverseNormalCDF(p) {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  const a1=-39.69683028665376,a2=220.9460984245205,a3=-275.9285104469687,a4=138.3577518672690,a5=-30.66479806614716,a6=2.506628277459239;
+  const b1=-54.47609879822406,b2=161.5858368580409,b3=-155.6989798598866,b4=66.80131188771972,b5=-13.28068155288572;
+  const c1=-0.007784894002430293,c2=-0.3223964580411365,c3=-2.400758277161838,c4=-2.549732539343734,c5=4.374664141464968,c6=2.938163982698783;
+  const d1=0.007784695709041462,d2=0.3224671290700398,d3=2.445134137142996,d4=3.754408661907416;
+  const plow=0.02425, phigh=1-plow;
+  let q,r;
+  if (p < plow) { q = Math.sqrt(-2*Math.log(p)); return (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1); }
+  if (p > phigh) { q = Math.sqrt(-2*Math.log(1-p)); return -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1); }
+  q = p-0.5; r = q*q;
+  return (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q/(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1);
+}
+function erf(x) {
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1/(1+0.3275911*x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;
+  const y = 1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCDF(x) { return 0.5*(1+erf(x/Math.SQRT2)); }
+function normalPdf(z) { return Math.exp(-z*z/2) / Math.sqrt(2*Math.PI); }
+
+function multMethod(pO, pU) { return pO/(pO+pU); }
+function addMethod(pO, pU) { return pO-(pO+pU-1)/2; }
+function powerMethod(pO, pU) {
+  let x = pO, y = pU;
+  for (let i=0;i<60;i++){
+    const sum = x+y;
+    if (Math.abs(sum-1) < 1e-9) break;
+    const k = Math.log(2)/Math.log(2/sum);
+    x = Math.pow(x,k); y = Math.pow(y,k);
+  }
+  return x;
+}
+function probitMethod(pO, pU) {
+  const zO = inverseNormalCDF(pO), zU = inverseNormalCDF(pU);
+  return normalCDF(zO - 0.5*(zO+zU));
+}
+function worstCase(pO, pU) { return Math.min(multMethod(pO,pU), addMethod(pO,pU), powerMethod(pO,pU)); }
+
+function impliedToAmerican(p) {
+  // Additive in particular can drift to ~0 or even negative for a longshot prop under
+  // high vig (a documented real risk of that method, not just a display bug) — clamp so
+  // a degenerate probability can't divide-by-zero into Infinity/NaN and blow up any axis
+  // or loop downstream.
+  p = Math.min(0.999, Math.max(0.001, p));
+  if (p >= 0.5) return -Math.round(100*p/(1-p));
+  return Math.round(100*(1-p)/p);
+}
+function fmtOdds(a) { return a > 0 ? `+${a}` : `${a}`; }
+
+const SERIES = [
+  { key: "mult",   name: "Multiplicative", fn: multMethod, color: "#4f9cf9",
+    desc: "Splits the vig proportionally. The simplest baseline — most other methods are compared against it." },
+  { key: "add",    name: "Additive",       fn: addMethod,  color: "#ff9f45",
+    desc: "Splits the vig equally between both sides. Nearly identical to Multiplicative near a coinflip." },
+  { key: "power",  name: "Power",          fn: powerMethod, color: "#3dd68c",
+    desc: "Raises both sides to a shared exponent so they sum to 1 — built to correct favorite-longshot bias." },
+  { key: "probit", name: "Probit",         fn: probitMethod, color: "#f5c542",
+    desc: "Assumes odds are normally distributed and shifts in z-score space — another favorite-longshot correction." },
+];
+const WORST = { key: "worst", name: "Worst-Case", color: "#9aa3b2",
+  desc: "The lowest of Mult/Add/Power at each point — the most conservative fair value, used as this app's default." };
+const ALL_METHODS = [...SERIES, WORST];
+
+// ---- render the "the methods" explainer grid ----
+const grid = document.getElementById("method-grid");
+ALL_METHODS.forEach(s => {
+  const div = document.createElement("div");
+  div.className = "m";
+  const h3 = document.createElement("h3");
+  const sw = document.createElement("span");
+  sw.className = "swatch";
+  sw.style.background = s.color;
+  h3.append(sw, document.createTextNode(s.name));
+  const p = document.createElement("p");
+  p.textContent = s.desc;
+  div.append(h3, p);
+  grid.appendChild(div);
+});
+
+// ---- shared scales / data ----
+const mainlinesSvg = document.getElementById("chart-mainlines");
+const propsSvg = document.getElementById("chart-props");
+const spreadSvg = document.getElementById("spread-chart");
+const svgNS = "http://www.w3.org/2000/svg";
+
+// the two region panels share one compact layout
+const RW = 390, RH = 340, RM = { top: 16, right: 14, bottom: 34, left: 58 };
+const rplotW = RW - RM.left - RM.right, rplotH = RH - RM.top - RM.bottom;
+
+const SW = 820, SH = 200, SM = { top: 12, right: 24, bottom: 30, left: 62 };
+const splotW = SW - SM.left - SM.right, splotH = SH - SM.top - SM.bottom;
+
+let mainlinesData = []; // [{p, mult, add, power, probit, worst}] — zoomed near pick'em, drives the "Main lines" panel
+let propsData = [];     // same shape, zoomed on the longshot side, drives the "Player props" panel
+let currentSpreadData = []; // same shape, spanning the full odds spectrum — drives chart 2 + the table
+
+// Fair value for ONE named side is well-defined regardless of whether that side is the
+// favorite or the underdog — mult/add/power/probit are all complementary (fair(other side)
+// = 1 - fair(this side)), so this same function works whichever end of the spectrum p sits at.
+function evalMethodsAt(p, T) {
+  const pU = T - p;
+  return {
+    p,
+    mult: multMethod(p, pU),
+    add: addMethod(p, pU),
+    power: powerMethod(p, pU),
+    probit: probitMethod(p, pU),
+    worst: worstCase(p, pU),
+  };
+}
+
+function computeSeries(vigPct, lo = 0.5, hiCap = 0.97) {
+  const T = 1 + vigPct / 100;
+  const hi = Math.min(hiCap, T - 0.02);
+  const N = 200;
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const p = lo + (hi - lo) * (i / N);
+    pts.push(evalMethodsAt(p, T));
+  }
+  return pts;
+}
+
+// A specific named price (e.g. -110, +600) — used by the "at these specific prices" cards
+// and the markers on chart 2. Uses whatever vig is on the slider right now.
+function evalAtAmericanOdds(americanOdds, vigPct) {
+  const T = 1 + vigPct / 100;
+  const p = americanToImplied(americanOdds);
+  return evalMethodsAt(p, T);
+}
+function americanToImplied(odds) {
+  return odds > 0 ? 100 / (odds + 100) : -odds / (-odds + 100);
+}
+
+function g(tag, attrs) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+// ================= Region panels: fair American odds, zoomed per bet type =================
+// One panel per region (main lines / player props) — each stays single-signed (all-favorite
+// or all-underdog) so the Y-axis never crosses the -100/+100 American-odds discontinuity.
+function renderRegionChart(svgEl, data, markerOdds, isFavoriteSide) {
+  svgEl.innerHTML = "";
+  const lo = data[0].p, hi = data[data.length - 1].p;
+  const xS = p => RM.left + ((p - lo) / (hi - lo)) * rplotW;
+
+  const oddsOf = key => data.map(d => impliedToAmerican(d[key]));
+  let yMin = Infinity, yMax = -Infinity;
+  [...SERIES.map(s => s.key), "worst", "p"].forEach(key => {
+    oddsOf(key).forEach(o => { if (o < yMin) yMin = o; if (o > yMax) yMax = o; });
+  });
+  const pad = (yMax - yMin) * 0.12 || 20;
+  yMin -= pad; yMax += pad;
+  const yS = o => RM.top + (1 - (o - yMin) / (yMax - yMin)) * rplotH;
+
+  // gridlines at round-ish odds steps. Loop is capped at a fixed tick count (rather than
+  // an open-ended `o += step` accumulator) so a degenerate span can never turn this into
+  // a runaway/hanging loop — worst case it just draws odd-looking gridlines, never freezes.
+  const span = yMax - yMin;
+  const step = span > 1500 ? 500 : span > 600 ? 200 : span > 200 ? 100 : 50;
+  const start = Math.ceil(yMin / step) * step;
+  const maxTicks = 40;
+  for (let i = 0, o = start; o <= yMax && i < maxTicks; o += step, i++) {
+    const y = yS(o);
+    svgEl.appendChild(g("line", { class: "gridline", x1: RM.left, x2: RW - RM.right, y1: y, y2: y }));
+    const t = g("text", { class: "tick-label", x: RM.left - 8, y: y + 3, "text-anchor": "end" });
+    t.textContent = fmtOdds(o);
+    svgEl.appendChild(t);
+  }
+
+  svgEl.appendChild(g("line", { class: "baseline", x1: RM.left, x2: RW - RM.right, y1: RH - RM.bottom, y2: RH - RM.bottom }));
+  svgEl.appendChild(g("line", { class: "baseline", x1: RM.left, x2: RM.left, y1: RM.top, y2: RH - RM.bottom }));
+
+  const xLab = g("text", { class: "axis-label", x: RM.left + rplotW / 2, y: RH - 2, "text-anchor": "middle" });
+  xLab.textContent = isFavoriteSide ? "→ more heavily favored" : "→ longer shot";
+  svgEl.appendChild(xLab);
+
+  // reference: raw quoted line (no devig)
+  const refPath = data.map((d, i) => `${i === 0 ? "M" : "L"}${xS(d.p).toFixed(2)},${yS(impliedToAmerican(d.p)).toFixed(2)}`).join(" ");
+  svgEl.appendChild(g("path", { class: "ref-line", d: refPath }));
+
+  const pathFor = key => data.map((d, i) => `${i === 0 ? "M" : "L"}${xS(d.p).toFixed(2)},${yS(impliedToAmerican(d[key])).toFixed(2)}`).join(" ");
+  svgEl.appendChild(g("path", { class: "worst-line", d: pathFor("worst"), stroke: WORST.color }));
+  SERIES.forEach(s => svgEl.appendChild(g("path", { class: "series-line", d: pathFor(s.key), stroke: s.color })));
+
+  // marker: the named reference price for this region (-110 or +600)
+  const markerP = americanToImplied(markerOdds);
+  if (markerP >= Math.min(lo, hi) && markerP <= Math.max(lo, hi)) {
+    const mx = xS(markerP);
+    svgEl.appendChild(g("line", { x1: mx, x2: mx, y1: RM.top, y2: RH - RM.bottom, stroke: "#e6e9ef", "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.5 }));
+    const mLabel = g("text", { class: "tick-label", x: mx, y: RM.top + 10, "text-anchor": "middle" });
+    mLabel.textContent = fmtOdds(markerOdds);
+    mLabel.style.opacity = 0.95;
+    mLabel.style.fontWeight = 650;
+    svgEl.appendChild(mLabel);
+  }
+
+  return { xS, yS, lo, hi };
+}
+
+function renderRegions() {
+  const T = 1 + Number(document.getElementById("vig-slider").value) / 100;
+
+  renderRegionChart(mainlinesSvg, mainlinesData, -110, true);
+  renderRegionChart(propsSvg, propsData, 600, false);
+
+  const mlEnd = evalMethodsAt(americanToImplied(-110), T);
+  const mlSpread = spreadAt(mlEnd);
+  document.getElementById("verdict-mainlines").innerHTML =
+    `At <strong>-110</strong>, every method lands within <strong>${mlSpread.toFixed(2)} pts</strong> of each other — the extra complexity of Power/Probit buys nothing here, so Mult/Additive is the simplest correct choice.`;
+
+  const propEnd = evalMethodsAt(americanToImplied(600), T);
+  const propSpread = spreadAt(propEnd);
+  document.getElementById("verdict-props").innerHTML =
+    `At <strong>+600</strong>, methods disagree by <strong>${propSpread.toFixed(2)} pts</strong> — Probit's favorite-longshot correction pulls noticeably below Mult/Additive, which is why it's the default here.`;
+}
+
+// ================= Chart 2: disagreement spread (probability points) =================
+// Spans the FULL spectrum (longshot underdog on the left, through pick'em, to heavy
+// favorite on the right) — unlike chart 1, points here can't have a sign discontinuity,
+// so one continuous curve can show both named prices (-110 and +600) at once.
+function spreadAt(d) { return (Math.max(d.mult, d.add, d.power, d.probit) - Math.min(d.mult, d.add, d.power, d.probit)) * 100; }
+
+function renderSpreadChart() {
+  spreadSvg.innerHTML = "";
+  const lo = currentSpreadData[0].p, hi = currentSpreadData[currentSpreadData.length - 1].p;
+  const xS = p => SM.left + ((p - lo) / (hi - lo)) * splotW;
+
+  const spreads = currentSpreadData.map(spreadAt);
+  const maxSpread = Math.max(...spreads);
+  const yMax = Math.ceil((maxSpread + 0.3) * 2) / 2; // round up to nearest 0.5pt with headroom
+  const yS = v => SM.top + (1 - v / yMax) * splotH;
+
+  [0, yMax / 2, yMax].forEach(v => {
+    const y = yS(v);
+    spreadSvg.appendChild(g("line", { class: "gridline", x1: SM.left, x2: SW - SM.right, y1: y, y2: y }));
+    const t = g("text", { class: "tick-label", x: SM.left - 8, y: y + 3, "text-anchor": "end" });
+    t.textContent = `${v.toFixed(1)}pt`;
+    spreadSvg.appendChild(t);
+  });
+  [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95].filter(v => v <= hi + 0.005 && v >= lo).forEach(v => {
+    const x = xS(v);
+    const t = g("text", { class: "tick-label", x, y: SH - SM.bottom + 16, "text-anchor": "middle" });
+    t.textContent = fmtOdds(impliedToAmerican(v));
+    spreadSvg.appendChild(t);
+  });
+
+  spreadSvg.appendChild(g("line", { class: "baseline", x1: SM.left, x2: SW - SM.right, y1: SH - SM.bottom, y2: SH - SM.bottom }));
+  spreadSvg.appendChild(g("line", { class: "baseline", x1: SM.left, x2: SM.left, y1: SM.top, y2: SH - SM.bottom }));
+
+  const yLab = g("text", { class: "axis-label", x: -(SM.top + splotH / 2), y: 16, "text-anchor": "middle", transform: "rotate(-90)" });
+  yLab.textContent = "Spread (percentage points)";
+  spreadSvg.appendChild(yLab);
+  const xLab = g("text", { class: "axis-label", x: SM.left + splotW / 2, y: SH - 2, "text-anchor": "middle" });
+  xLab.textContent = "Raw quoted odds — underdog (left) to favorite (right)";
+  spreadSvg.appendChild(xLab);
+
+  const areaPath = currentSpreadData.map((d, i) => `${i === 0 ? "M" : "L"}${xS(d.p).toFixed(2)},${yS(spreads[i]).toFixed(2)}`).join(" ")
+    + ` L${xS(hi).toFixed(2)},${yS(0).toFixed(2)} L${xS(lo).toFixed(2)},${yS(0).toFixed(2)} Z`;
+  spreadSvg.appendChild(g("path", { class: "spread-area", d: areaPath, fill: "#4f9cf9" }));
+  const linePath = currentSpreadData.map((d, i) => `${i === 0 ? "M" : "L"}${xS(d.p).toFixed(2)},${yS(spreads[i]).toFixed(2)}`).join(" ");
+  spreadSvg.appendChild(g("path", { class: "spread-line", d: linePath, stroke: "#4f9cf9" }));
+
+  // markers: the two named prices, with their exact spread called out
+  [{ odds: 600, label: "+600" }, { odds: -110, label: "-110" }].forEach(({ odds, label }) => {
+    const p = americanToImplied(odds);
+    if (p < lo || p > hi) return;
+    const T = 1 + Number(document.getElementById("vig-slider").value) / 100;
+    const spread = spreadAt(evalMethodsAt(p, T));
+    const mx = xS(p);
+    spreadSvg.appendChild(g("line", { x1: mx, x2: mx, y1: SM.top, y2: SH - SM.bottom, stroke: "#e6e9ef", "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.45 }));
+    const t = g("text", { class: "tick-label", x: mx, y: SM.top + 11, "text-anchor": "middle" });
+    t.textContent = `${label}: ${spread.toFixed(2)}pt`;
+    t.style.opacity = 0.9;
+    t.style.fontWeight = 650;
+    spreadSvg.appendChild(t);
+  });
+}
+
+function updateSpreadCallout() {
+  const vig = Number(document.getElementById("vig-slider").value);
+  const T = 1 + vig / 100;
+  const homer = evalMethodsAt(americanToImplied(600), T);
+  const mainline = evalMethodsAt(americanToImplied(-110), T);
+  const homerSpread = spreadAt(homer);
+  const mainlineSpread = spreadAt(mainline);
+  document.getElementById("spread-callout").innerHTML =
+    `-110: <strong>${mainlineSpread.toFixed(2)}pt</strong> spread &nbsp;·&nbsp; +600: <strong>${homerSpread.toFixed(2)}pt</strong> spread`;
+}
+
+// Nearest sample to a given probability, out of any of the computed series arrays
+// (used by the table view, which reads off currentSpreadData).
+function findNearest(data, p) {
+  let best = data[0], bestDist = Infinity;
+  for (const d of data) {
+    const dist = Math.abs(d.p - p);
+    if (dist < bestDist) { bestDist = dist; best = d; }
+  }
+  return best;
+}
+
+// ---- legend ----
+function renderLegend() {
+  const legend = document.getElementById("legend");
+  legend.replaceChildren();
+  ALL_METHODS.forEach(s => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const sw = document.createElement("span");
+    sw.className = "legend-swatch" + (s.key === "worst" ? " dashed" : "");
+    if (s.key !== "worst") sw.style.background = s.color;
+    const text = document.createElement("div");
+    text.className = "legend-text";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = s.name;
+    const desc = document.createElement("span");
+    desc.className = "desc2";
+    desc.textContent = s.desc;
+    text.append(name, desc);
+    item.append(sw, text);
+    legend.appendChild(item);
+  });
+}
+
+// ---- "at these specific prices" cards ----
+function renderPriceCard(container, americanOdds, name) {
+  const vig = Number(document.getElementById("vig-slider").value);
+  const d = evalAtAmericanOdds(americanOdds, vig);
+  const rows = ALL_METHODS.map(s => ({ ...s, prob: d[s.key], odds: impliedToAmerican(d[s.key]) }));
+
+  const probs = rows.map(r => r.prob);
+  const domainLo = Math.min(...probs), domainHi = Math.max(...probs);
+  const pad = Math.max((domainHi - domainLo) * 0.25, 0.002);
+  const trackLo = domainLo - pad, trackHi = domainHi + pad;
+
+  const card = document.createElement("div");
+  card.className = "price-card";
+
+  const ph = document.createElement("div");
+  ph.className = "ph";
+  const oddsEl = document.createElement("span");
+  oddsEl.className = "odds";
+  oddsEl.textContent = fmtOdds(americanOdds);
+  const nameEl = document.createElement("span");
+  nameEl.className = "name";
+  nameEl.textContent = name;
+  ph.append(oddsEl, nameEl);
+  card.appendChild(ph);
+
+  const rowsWrap = document.createElement("div");
+  rowsWrap.className = "rows";
+  [...rows].sort((a, b) => b.prob - a.prob).forEach(r => {
+    const row = document.createElement("div");
+    row.className = "row" + (r.key === "worst" ? " dashed" : "");
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    if (r.key !== "worst") dot.style.background = r.color;
+    const rname = document.createElement("span");
+    rname.className = "rname";
+    rname.textContent = r.name;
+    const bar = document.createElement("span");
+    bar.className = "bar";
+    const marker = document.createElement("span");
+    marker.className = "marker";
+    marker.style.left = `${((r.prob - trackLo) / (trackHi - trackLo)) * 100}%`;
+    marker.style.background = r.color;
+    bar.appendChild(marker);
+    const rval = document.createElement("span");
+    rval.className = "rval";
+    rval.textContent = fmtOdds(r.odds);
+    row.append(dot, rname, bar, rval);
+    rowsWrap.appendChild(row);
+  });
+  card.appendChild(rowsWrap);
+
+  const coreProbs = SERIES.map(s => d[s.key]);
+  const spreadPts = (Math.max(...coreProbs) - Math.min(...coreProbs)) * 100;
+  const oddsRange = SERIES.map(s => impliedToAmerican(d[s.key]));
+  const spreadFoot = document.createElement("div");
+  spreadFoot.className = "spread-line2";
+  spreadFoot.innerHTML = `Spread across methods: <strong>${spreadPts.toFixed(2)} pts</strong> (${fmtOdds(Math.min(...oddsRange))} to ${fmtOdds(Math.max(...oddsRange))})`;
+  card.appendChild(spreadFoot);
+
+  container.appendChild(card);
+}
+
+function renderPriceCards() {
+  const container = document.getElementById("price-cards");
+  container.replaceChildren();
+  renderPriceCard(container, -110, "Near-even mainline");
+  renderPriceCard(container, 600, "Longshot prop (e.g. a homer)");
+}
+
+// ---- table view ----
+function renderTable() {
+  const wrap = document.getElementById("table-wrap");
+  wrap.replaceChildren();
+  const table = document.createElement("table");
+  table.className = "data-table";
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>Implied</th><th>Raw odds</th><th>Mult</th><th>Add</th><th>Power</th><th>Probit</th><th>Worst-Case</th></tr>";
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  const steps = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95];
+  const lo = currentSpreadData[0].p, hi = currentSpreadData[currentSpreadData.length - 1].p;
+  steps.filter(v => v <= hi + 0.005 && v >= lo).forEach(v => {
+    const d = findNearest(currentSpreadData, v);
+    const tr = document.createElement("tr");
+    const cell = (txt, hero) => { const td = document.createElement("td"); if (hero) td.className = "hero"; td.textContent = txt; return td; };
+    tr.append(
+      cell(`${Math.round(d.p * 100)}%`, true),
+      cell(fmtOdds(impliedToAmerican(d.p))),
+      cell(fmtOdds(impliedToAmerican(d.mult))),
+      cell(fmtOdds(impliedToAmerican(d.add))),
+      cell(fmtOdds(impliedToAmerican(d.power))),
+      cell(fmtOdds(impliedToAmerican(d.probit))),
+      cell(fmtOdds(impliedToAmerican(d.worst)))
+    );
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+function update() {
+  const vig = Number(document.getElementById("vig-slider").value);
+  document.getElementById("vig-readout").textContent = `${vig.toFixed(1)}%`;
+  mainlinesData = computeSeries(vig, 0.35, 0.65);
+  propsData = computeSeries(vig, 0.35, 0.03); // reversed: renders left(pick'em)→right(longshot), matching its axis label
+  currentSpreadData = computeSeries(vig, 0.03, 0.97);
+  renderRegions();
+  renderSpreadChart();
+  updateSpreadCallout();
+  renderPriceCards();
+  if (!document.getElementById("table-wrap").hidden) renderTable();
+}
+
+document.getElementById("vig-slider").addEventListener("input", update);
+document.getElementById("view-toggle").addEventListener("click", () => {
+  const tableWrap = document.getElementById("table-wrap");
+  const grid = document.getElementById("region-grid");
+  const showTable = tableWrap.hidden;
+  tableWrap.hidden = !showTable;
+  grid.hidden = showTable;
+  document.getElementById("view-toggle").textContent = showTable ? "View as chart" : "View as table";
+  if (showTable) renderTable();
+});
+
+// ================= S-curve: why the correction isn't flat =================
+// Structural, not vig-dependent — this is about where -110 and +600 sit on the
+// probability<->z-score mapping itself, so it renders once and doesn't move with the slider.
+function renderSCurveChart() {
+  const svgEl = document.getElementById("scurve-chart");
+  if (!svgEl) return;
+  const CW = 820, CH = 300, CM = { top: 16, right: 24, bottom: 34, left: 50 };
+  const cplotW = CW - CM.left - CM.right, cplotH = CH - CM.top - CM.bottom;
+
+  const zLo = -3, zHi = 3;
+  const xS = z => CM.left + ((z - zLo) / (zHi - zLo)) * cplotW;
+  const yS = p => CM.top + (1 - p) * cplotH;
+
+  svgEl.innerHTML = "";
+
+  // shaded zones: "near-linear" band around the center vs. the compressed tails
+  const linZoneZ = 0.75;
+  svgEl.appendChild(g("rect", { x: xS(-linZoneZ), y: CM.top, width: xS(linZoneZ) - xS(-linZoneZ), height: cplotH, fill: "#3dd68c", opacity: 0.08 }));
+  svgEl.appendChild(g("rect", { x: xS(zLo), y: CM.top, width: xS(-linZoneZ) - xS(zLo), height: cplotH, fill: "#f5c542", opacity: 0.06 }));
+  svgEl.appendChild(g("rect", { x: xS(linZoneZ), y: CM.top, width: xS(zHi) - xS(linZoneZ), height: cplotH, fill: "#f5c542", opacity: 0.06 }));
+
+  // y gridlines at 0/25/50/75/100%
+  [0, 0.25, 0.5, 0.75, 1].forEach(p => {
+    const y = yS(p);
+    svgEl.appendChild(g("line", { class: "gridline", x1: CM.left, x2: CW - CM.right, y1: y, y2: y }));
+    const t = g("text", { class: "tick-label", x: CM.left - 8, y: y + 3, "text-anchor": "end" });
+    t.textContent = `${Math.round(p * 100)}%`;
+    svgEl.appendChild(t);
+  });
+  // x ticks at whole z-scores
+  for (let z = zLo; z <= zHi; z++) {
+    const x = xS(z);
+    const t = g("text", { class: "tick-label", x, y: CH - CM.bottom + 16, "text-anchor": "middle" });
+    t.textContent = z > 0 ? `+${z}` : `${z}`;
+    svgEl.appendChild(t);
+  }
+
+  svgEl.appendChild(g("line", { class: "baseline", x1: CM.left, x2: CW - CM.right, y1: CH - CM.bottom, y2: CH - CM.bottom }));
+  svgEl.appendChild(g("line", { class: "baseline", x1: CM.left, x2: CM.left, y1: CM.top, y2: CH - CM.bottom }));
+  const xLab = g("text", { class: "axis-label", x: CM.left + cplotW / 2, y: CH - 2, "text-anchor": "middle" });
+  xLab.textContent = "z-score (standardized distance from the market's center)";
+  svgEl.appendChild(xLab);
+  const yLab = g("text", { class: "axis-label", x: -(CM.top + cplotH / 2), y: 14, "text-anchor": "middle", transform: "rotate(-90)" });
+  yLab.textContent = "Probability";
+  svgEl.appendChild(yLab);
+
+  // the S-curve itself: the standard normal CDF
+  const N = 200;
+  const curvePath = Array.from({ length: N + 1 }, (_, i) => {
+    const z = zLo + (zHi - zLo) * (i / N);
+    return `${i === 0 ? "M" : "L"}${xS(z).toFixed(2)},${yS(normalCDF(z)).toFixed(2)}`;
+  }).join(" ");
+  svgEl.appendChild(g("path", { class: "series-line", d: curvePath, stroke: "#9aa3b2" }));
+
+  // two markers: the mainline (-110) and the homer prop (+600), each with a tangent segment
+  // showing the flat/linear approximation Mult/Additive effectively rely on at that point.
+  [
+    { odds: -110, name: "-110 (mainline)", color: "#3dd68c" },
+    { odds: 600, name: "+600 (homer prop)", color: "#f5c542" },
+  ].forEach(({ odds, name, color }) => {
+    const p = americanToImplied(odds);
+    const z = inverseNormalCDF(p);
+    if (z < zLo || z > zHi) return;
+    const slope = normalPdf(z);
+    const half = 0.5;
+    const z1 = Math.max(zLo, z - half), z2 = Math.min(zHi, z + half);
+    const p1 = p + slope * (z1 - z), p2 = p + slope * (z2 - z);
+    svgEl.appendChild(g("line", {
+      x1: xS(z1), y1: yS(p1), x2: xS(z2), y2: yS(p2),
+      stroke: color, "stroke-width": 2, "stroke-dasharray": "4 3", opacity: 0.85,
+    }));
+    svgEl.appendChild(g("circle", { cx: xS(z), cy: yS(p), r: 5, fill: color, stroke: "#0f1116", "stroke-width": 2 }));
+    const labelAbove = p < 0.85;
+    const t = g("text", { class: "tick-label", x: xS(z), y: yS(p) + (labelAbove ? -10 : 18), "text-anchor": "middle", fill: color });
+    t.style.fontWeight = 650;
+    t.textContent = name;
+    svgEl.appendChild(t);
+  });
+}
+
+renderLegend();
+renderSCurveChart();
+update();
+</script>
+</body>
+</html>

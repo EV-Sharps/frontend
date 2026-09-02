@@ -1762,11 +1762,11 @@ const playerFormatter = function(cell, params, rendered) {
 	}
 
 	let prop = "";
-	if (!["feed", "dingers", "dingers2", "recap", "strikeouts", "backfields", "tracker", "top_pitches"].includes(PAGE) && !params.noProp) {
+	if (!["feed", "dingers", "dingers2", "tds2", "recap", "strikeouts", "backfields", "tracker", "top_pitches"].includes(PAGE) && !params.noProp) {
 		prop = propFormatter(cell);
 	}
 	let gameContainer = "";
-	if (isPlayerProp || ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE)) {
+	if (isPlayerProp || ["feed", "dingers", "dingers2", "tds2", "barrels", "top_pitches"].includes(PAGE)) {
 		let s = ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";

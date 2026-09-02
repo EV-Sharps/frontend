@@ -611,7 +611,7 @@
 		}
 
 		let loaded = false;
-		const TDS_DEFAULT_COL_ORDER = [
+		const TDS2_DEFAULT_COL_ORDER = [
 			'ev', 'outlier', 'book', 'player', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
@@ -622,22 +622,23 @@
 		function getTdsColumnItems() {
 			return [
 				{ key: 'ev', label: 'Expected Value', cols: [{
-					title: "Expected<br>Value", field: "ev", width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0
+					title: "Expected<br>Value", field: "ev", width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0, visible: false
 				}] },
 				{ key: 'outlier', label: 'Δ vs Avg', cols: [{
 					title: "Δ vs Avg", field: "outlier", width: MOBILE ? 40 : 60, sorter: "number",
 					mutator: function(value, rowData) {
 						const s = computeOutlierFromBookOdds(rowData);
 						rowData.outlierBook = s.book;
+						rowData.outlierLine = s.value;
 						rowData.outlierPct  = s.pct;
 						return s.pct;
 					},
 					formatter: function(cell) {
 						const row = cell.getRow().getData();
-						return `${row.outlierPct.toFixed(1)}%`;
+						const dev = cell.getValue();
+						return `${row.outlierPct.toFixed(2)}%`;
 					},
-					responsive: 0,
-					visible: false
+					responsive: 0
 				}] },
 				{ key: 'book', label: 'Best Book', cols: [{
 					title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
@@ -694,24 +695,24 @@
 
 		function buildTdsColumns(savedOrder) {
 			return buildColumnsFromOrder(
-				savedOrder, TDS_DEFAULT_COL_ORDER, getTdsColumnItems(), null,
+				savedOrder, TDS2_DEFAULT_COL_ORDER, getTdsColumnItems(), null,
 				[{ field: "game", visible: false }, { field: "pos", visible: false }]
 			);
 		}
 
 		function openColReorder() {
-			const savedOrder = CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER;
+			const savedOrder = CURR_USER?.metadata?.['tds2-order'] || TDS2_DEFAULT_COL_ORDER;
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
 				return fields.some(f => TABLE.getColumn(f)?.isVisible());
 			};
-			openColReorderModal(getTdsColumnItems(), TDS_DEFAULT_COL_ORDER, savedOrder, isVisible);
+			openColReorderModal(getTdsColumnItems(), TDS2_DEFAULT_COL_ORDER, savedOrder, isVisible);
 		}
 		function closeColReorder() { closeColReorderModal(); }
 
 		async function saveColReorder() {
-			await saveColReorderModal('tds-order', buildTdsColumns, () => showHideUserTable(true));
+			await saveColReorderModal('tds2-order', buildTdsColumns, () => showHideUserTable(true));
 		}
 
 		function renderTable(data) {
@@ -724,7 +725,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "ev", dir: "desc"},
+					{column: "outlier", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -737,7 +738,7 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildTdsColumns(CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER)
+				columns: buildTdsColumns(CURR_USER?.metadata?.['tds2-order'] || TDS2_DEFAULT_COL_ORDER)
 			});
 
 			TABLE.on("dataLoaded", function(data) {

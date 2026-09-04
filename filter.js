@@ -986,8 +986,7 @@ function renderDevigOptions(searchTerm = "") {
 				}
 
 				devigDisplay.textContent = opt.name;
-				//REQUIRED = DEVIG.split("+");
-				REQUIRED = []; // require any by default
+				REQUIRED = DEVIG.replace("only+", "").split("+");
 				updateRequiredDropdown();
 				changeFilter();
 				const el = document.getElementById(`devig-btn-${cssSafeId(DEVIG)}`);
@@ -1627,7 +1626,7 @@ function changeFilter(render = true) {
 	});
 
 	if (!filtered.length) {
-		let t = "No data for this devig. Try adjusting your filters.";
+		let t = "No data for this devig. Try adjusting your filters or set required to Any.";
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
 	}

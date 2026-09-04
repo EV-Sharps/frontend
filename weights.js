@@ -258,6 +258,8 @@ async function saveWeights() {
 	if (!weightText) return;
 	DEVIG = bookKey;
 	WEIGHT = weightKey;
+	REQUIRED = bookKey.replace("only+", "").split("+");
+	if (typeof updateRequiredDropdown === 'function') updateRequiredDropdown();
 	metadata["weights"].push(`${DEVIG};${WEIGHT}`);
 
 	const devigSel = document.getElementById("devig-select");
@@ -512,11 +514,12 @@ function renderPreloadsList(container, items, prop = "atgs") {
 
 				DEVIG = devig;
 				WEIGHT = repeatOnes(devig).slice(1);
-				REQUIRED = [];
+				REQUIRED = devig.replace("only+", "").split("+");
 				const bookSelectEl = document.getElementById("book-select");
 				if (bookSelectEl) bookSelectEl.value = book.replace("best", "") || "";
 				setOptions("prop-options", [prop]);
 				updatePropLabel([prop]);
+				if (typeof updateRequiredDropdown === 'function') updateRequiredDropdown();
 
 				const preloadsModal = document.getElementById("preloads-modal");
 				const devigModal = document.getElementById("devig-modal");

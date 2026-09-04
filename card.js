@@ -660,13 +660,38 @@ function updateExistingCard(card, rowData) {
 
 	const allBooksHtml = renderAllBooks(rowData.bookOdds, book, rowData.links, rowData.liquidity);
 
+	// Devig pill content: book logos so it reads at a glance instead of a "FD/DK/CIRCA
+	// 20%/20%/60%" string the reader has to line up by position. Per-book % only shows up
+	// when weights actually differ — equal weights collapse to a single "Equal" caption.
+	let devigPillHtml = "";
+	if (typeof DEVIG !== 'undefined' && DEVIG) {
+		const devigBooks = DEVIG.replace("only+", "").split("+");
+		const weights = (WEIGHT || "").split("+").map(Number);
+		const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+		const percs = weights.map(w => Math.round(w * 100 / totalWeight));
+		const isEqual = new Set(weights).size <= 1;
+
+		const logosHtml = devigBooks.map((b, i) => `
+			<div style="display:flex;flex-direction:column;align-items:center;">
+				<img class="book-img" src="logos/${b.replace("hr_az", "hr").replace("hr_oh", "hr")}.png" style="width:14px;height:14px;" alt="${b}" title="${b}" />
+				${isEqual ? "" : `<span style="font-size:0.55rem;opacity:0.8;">${percs[i]}%</span>`}
+			</div>
+		`).join("");
+
+		devigPillHtml = `<div class="metric-pill">
+			<div style="display:flex;align-items:flex-end;justify-content:center;gap:3px;">${logosHtml}</div>
+			<div style="opacity:0.85; font-size:0.72rem;">${isEqual ? "Equal" : "Devig"}</div>
+		</div>`;
+	}
+
 	header.innerHTML = `
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
-		
+
 		<!-- Top metrics -->
 		<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
+				${devigPillHtml}
 				<div class="metric-pill">
 					<div style="font-weight:700; font-size:0.8rem;">${rowData.fairVal > 0 ? "+"+rowData.fairVal : rowData.fairVal}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>

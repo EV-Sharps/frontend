@@ -2570,9 +2570,15 @@ function loadWeights() {
 	}
 
 	METHOD = METHOD || CURR_USER.metadata[`${PAGE}-method`] || "";
+	// loadHeatmapData() needs TABLE to already have real rows (it reads off TABLE.getData()
+	// to know which props to fetch) — this fires on the table's dataLoaded event, so it's
+	// the reliable time to call it. Keep it outside the METHOD check below, which only
+	// gates syncing the method-select UI — METHOD defaults to "" (Worst-Case), and skipping
+	// the heatmap fetch whenever no explicit method is set left ROI coloring permanently off
+	// for anyone on the default method.
+	loadHeatmapData();
 	if (METHOD) {
 		document.getElementById("method-select").value = METHOD;
-		loadHeatmapData();
 		initDevPicker(getTopDevigs(BOOK || "best"));
 		setUrlParams({method: METHOD});
 	}
@@ -3750,7 +3756,7 @@ function hideUsername() {
 // Heatmap files are split per-prop server-side (results.py) — a page only ever colors
 // rows for whichever prop(s) are actually loaded into TABLE, so fetch just those slices
 // instead of the whole sport/method file (which covers every prop, book and dev combo).
-async function loadHeatmapData() {
+async function loadHeatmapData(_retriesLeft = 10) {
 	if (["outliers", "analysis"].includes(PAGE)) return;
 	if (typeof pako === 'undefined') return;
 
@@ -3760,7 +3766,14 @@ async function loadHeatmapData() {
 			props = [...new Set(TABLE.getData().map(r => r.prop).filter(Boolean))];
 		}
 	} catch (e) { props = []; }
-	if (!props.length) return;
+	if (!props.length) {
+		// Reading TABLE.getData() for props only works once the table has real rows, but
+		// this gets called (via renderFilters()) before the page's initial data fetch has
+		// resolved — TABLE may not even exist yet. Retry instead of silently giving up, so
+		// ROI coloring doesn't depend on some other code path calling this again later.
+		if (_retriesLeft > 0) setTimeout(() => loadHeatmapData(_retriesLeft - 1), 300);
+		return;
+	}
 
 	if (!HEATMAP) HEATMAP = {};
 	if (!HEATMAP.xy) HEATMAP.xy = {};
@@ -3822,10 +3835,14 @@ function getRowROI(rowData) {
 		const bookData = propData[rowData.book] || propData['best'];
 		if (!bookData) return null;
 
+		// Stored dev keys are "+"-joined book lists that can come back in any order (same
+		// issue devigSetEquals already handles for the dev-picker chips) — a straight
+		// reverse() only catches a 2-book swap or a full-list reversal, not an arbitrary
+		// permutation of 3+ books, so search by book-set instead of by exact string.
 		let devigData = bookData[DEVIG];
-		if (!devigData && DEVIG && DEVIG.includes('+')) {
-			const reversed = DEVIG.split('+').reverse().join('+');
-			devigData = bookData[reversed];
+		if (!devigData && DEVIG) {
+			const matchKey = Object.keys(bookData).find(k => devigSetEquals(k, DEVIG));
+			if (matchKey) devigData = bookData[matchKey];
 		}
 		if (!devigData) return null;
 

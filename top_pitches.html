@@ -583,6 +583,7 @@
 					formatter: cell => `<div class="top3-cell">${(cell.getValue() || []).map(pitchChip).join('')}</div>`
 				},
 				{ title: 'N', field: 'n', width: 50, sorter: 'number', formatter: nFormatter },
+				//{ title: 'PA', field: 'savant.pa', width: 50, sorter: 'number', headerTooltip: 'Season plate appearances (not matchup-specific)', formatter: cell => cell.getValue() ?? '—' },
 				{ title: 'HR', field: 'home_run', width: 45, sorter: 'number', formatter: bgStatFormatter },
 				{ title: 'HR%', field: 'hr_rate', width: 55, sorter: 'number', formatter: bgStatFormatter },
 				{ title: 'BA', field: 'ba', width: 55, sorter: 'number', formatter: bgStatFormatter },

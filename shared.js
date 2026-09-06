@@ -1801,12 +1801,12 @@ const playerFormatter = function(cell, params, rendered) {
 		bats = data.avgMin;
 	} else if (PAGE == "atgs") {
 		bats = data.avgTOI;
-	} else if (["tds", "tds2", "nfl"].includes(PAGE)) {
+	} else if (["tds", "tds2", "nfl", "ncaaf"].includes(PAGE)) {
 		bats = data.pos;
 	}
 
 	let pos = "";
-	if (["nba", "threes", "atgs", "ncaafprops", "kotc"].includes(PAGE)) {
+	if (["nba", "threes", "atgs", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	let lineupCircles = "";

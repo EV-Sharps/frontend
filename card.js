@@ -1,5 +1,29 @@
 let ALL_CARD_DATA = [];
 
+// oppRank is a plain rank number on most pages, but on NFL/TDS pages it's a dict of
+// {statKey: {rank, ...}} bundling several opponent-defense stats together (e.g.
+// "opp-pass-yds", "opp-rz-scoring-pct") — rendering that dict directly produces
+// "[object Object]". Picks out the one rank relevant to the current page/prop,
+// mirroring the same per-page key selection rankingFormatter uses for the table column.
+function resolveOppRankValue(data) {
+	const value = data?.oppRank;
+	if (value == null || typeof value !== "object") return value;
+	if (PAGE === "nfl") {
+		const keys = {
+			pass_yds: "opp-pass-yds", rec_yds: "opp-pass-yds", rush_yds: "opp-rush-yds",
+			rec: "opp-cmp", pass_cmp: "opp-cmp", pass_td: "opp-pass-td",
+			pass_att: "opp-pass-att", rush_att: "opp-rush-att"
+		};
+		const key = keys[data.prop];
+		return (key && value[key]) ? value[key]["rank"] : null;
+	}
+	if (["tds", "tds2"].includes(PAGE)) {
+		if (data.player?.includes("d/st")) return null;
+		return value["opp-rz-scoring-pct"]?.rank ?? null;
+	}
+	return null;
+}
+
 // ── Watchlist ────────────────────────────────────────────────────────────────
 function _normPlayer(p) { return (p || "").toLowerCase().trim(); }
 
@@ -728,6 +752,7 @@ function updateExistingCard(card, rowData) {
 			? `<div class="metric-pill" style="font-size:0.85rem;">Roof</div>`
 			: `<div class="metric-pill" style="font-weight:600; font-size:0.85rem;"><img class="wind" src="logos/${_w.windLogo}" style="height:14px;vertical-align:middle;"> ${_w.wind} mph ${_w.temp}</div>`
 	) : "";
+	const oppRankValue = resolveOppRankValue(rowData);
 	collapsedBody.innerHTML = `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
 
@@ -737,8 +762,8 @@ function updateExistingCard(card, rowData) {
 					<div style="font-weight:700; font-size:0.95rem;display: flex;">${gameImg}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">Game</div>
 				</div>
-				<div class="metric-pill" style="color:${getTDsOppRankColor(rowData.oppRank)}; font-weight:600; font-size:0.85rem;">
-					${addSuffix(rowData.oppRank)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
+				<div class="metric-pill" style="color:${getTDsOppRankColor(oppRankValue)}; font-weight:600; font-size:0.85rem;">
+					${addSuffix(oppRankValue)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
 				</div>
 				${dvpPill}
 				${stadiumPill}

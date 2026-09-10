@@ -293,6 +293,7 @@
 					<div class="chkdd-menu" id="game-options">
 						<div class="chkdd-actions">
 							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="today">Today</button>
 							<button type="button" data-act="none">None</button>
 						</div>
 					</div>
@@ -622,6 +623,7 @@
 				gameMenu.innerHTML = `
 					<div class="chkdd-actions">
 						<button type="button" data-act="all">All</button>
+						<button type="button" data-act="today">Today</button>
 						<button type="button" data-act="none">None</button>
 					</div>
 				`;
@@ -841,7 +843,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "opp"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "bookOdds.kal", "logs", "opp"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
@@ -871,7 +873,7 @@
 				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
-			let header = `🏈 Implied Anytime Touchdown Odds: Circa's top 10 (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🎯 Circa/Kal/Pinny's top 10 Implied TDs (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
 		}
 

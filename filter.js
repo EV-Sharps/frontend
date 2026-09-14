@@ -66,6 +66,7 @@ document.addEventListener("change", (e) => {
 
 	const menu = cb.closest(".chkdd-menu");
 	if (!menu) return;
+	if (menu.dataset.wired === "1") return; // The menu already handled this event.
 
 	onChkddChange(menu);
 });
@@ -1435,6 +1436,7 @@ function reorderOddsColumns(book, devig) {
 }
 
 function changeFilter(render = true) {
+	let renderComplete;
 	let [w,l,profit,kellyProfit] = [0,0,0,0];
 	let devigBook = DEVIG;
 	if (devigBook.includes(";")) {
@@ -1642,7 +1644,7 @@ function changeFilter(render = true) {
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
-		TABLE.replaceData(filtered).then(() => {
+		renderComplete = TABLE.replaceData(filtered).then(() => {
 			if (typeof restoreSelectedRow === 'function') restoreSelectedRow();
 		});
 	}
@@ -1666,4 +1668,5 @@ function changeFilter(render = true) {
 			if (col.getField()?.startsWith('bookOdds.')) col.hide();
 		});
 	}
+	return renderComplete;
 }

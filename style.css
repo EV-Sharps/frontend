@@ -12,6 +12,12 @@
 	--muted: #9aa3b2;
 	--accent: #77c3ff; /* tweak to match your brand */
 }
+#data-status {
+	padding: 0.5rem 0.75rem;
+	color: var(--text);
+	background: var(--panel);
+	flex-shrink: 0;
+}
 html, body {
 	margin: 0; padding: 0;
 	height: 100vh; overflow: hidden;

@@ -5,17 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="google" content="notranslate">
 	<title>⚾ Dingers</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="record-summary.js"></script>
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
-	 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-	<script src="jspdf.umd.min.js"></script>
-	<script src="jspdf.plugin.autotable.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
 <!-- Google tag (gtag.js) -->
@@ -921,6 +913,12 @@
 			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
 		</div>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script src="record-summary.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -1048,8 +1046,7 @@
 				hovermode: 'x unified'
 			};
 
-			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
-			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+			return renderLazyChart('chart', traces, layout, { displayModeBar: false, responsive: true });
 		}
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
@@ -1174,58 +1171,40 @@
             __countdownInterval = setInterval(update, 1000);
 		}
 
-		async function fetchDingersData() {
-			let url = "/api/ev";
-			fetch(API_BASE+url, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				UPDATED[PAGE] = data["updated"];
-
-				const gameMenu = document.getElementById("game-options");
-				gameMenu.innerHTML = `
-					<div class="chkdd-actions">
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-					</div>
-				`;
-				populateGameOptions(data.games, RES?.times, gameMenu);
-				restoreChkddState(gameMenu);
-				if (GAME) {
-					updateGameLabel(GAME.split(","));
-				}
-
-				if (data["data"].length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
-				}
-
-				addRecordSummaryButtons(null, buildHRDingersSeasonRecord, { showSportToggle: true });
-
-				setTimeout(function() {
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (SIMPLE != undefined) {
-						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
-					}
-					updateHeaders();
-					changeFilter();
-
-					if (IMP != undefined) {
-						implied();
-					}
-
-					if (!CSV_DOWNLOADED && CSV != undefined) {
-						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
-						CSV_DOWNLOADED = true;
-					}
-				}, 500)
-			}).catch(err => console.log(err));
-		}
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchDingersData = createDataRefresh(() => API_BASE + "/api/ev", async (data) => {
+			RES = data;
+			UPDATED[PAGE] = data["updated"];
+			const gameMenu = document.getElementById("game-options");
+			gameMenu.innerHTML = `
+				<div class="chkdd-actions">
+					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="none">None</button>
+				</div>
+			`;
+			populateGameOptions(data.games, RES?.times, gameMenu);
+			restoreChkddState(gameMenu);
+			if (GAME) {
+				updateGameLabel(GAME.split(","));
+			}
+			addRecordSummaryButtons(null, buildHRDingersSeasonRecord, { showSportToggle: true });
+			if (PRETTY != undefined) {
+				pretty_();
+			}
+			if (SIMPLE != undefined) {
+				["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
+			}
+			updateHeaders();
+			await changeFilter();
+			if (IMP != undefined) {
+				implied();
+			}
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
+			}
+		}, refreshDataTimestamps);
 
 		let ODDS_HIDDEN = false;
 		function toggleBookOddsColumns() {
@@ -1404,6 +1383,8 @@
 				},
 				columns: buildDingersColumns(CURR_USER?.metadata?.['dingers-order'])
 			});
+
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.target.closest('.watchlist-star')) return;

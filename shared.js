@@ -2101,6 +2101,7 @@ function plotMap(data, newX, newY) {
 			}
 		]
 	};
+	if (typeof renderLazyChart === "function") return renderLazyChart("log-chart", [tableData], layout, { responsive: true });
 	Plotly.newPlot("log-chart", [tableData], layout, { responsive: true});
 	setTimeout(() => {
 		Plotly.Plots.resize("log-chart")
@@ -2445,6 +2446,7 @@ function plotHRGap(showGames = false, mode = "pa") {
 			}
 		]
 	};
+	if (typeof renderLazyChart === "function") return renderLazyChart("chart", [graph], layout, { responsive: true, displayModeBar: false });
 	Plotly.newPlot("chart", [graph], layout, { responsive: true, displayModeBar: false});
 	setTimeout(() => {
 		Plotly.Plots.resize("chart");

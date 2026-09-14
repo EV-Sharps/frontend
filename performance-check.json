@@ -1,0 +1,66 @@
+{
+  "page": "https://www.evsharps.com/dingers",
+  "conditions": "Headless Chromium, logged out, three fresh contexts per variant, browser HTTP cache disabled, no network throttling. Local-code variant overrides selected frontend files in the browser on the production origin. Request interception changes delivery/preflight behavior; these are observations, not a controlled end-to-end speed comparison.",
+  "runs": [
+    {
+      "variant": "live",
+      "run": 1,
+      "api_ms": 806.3,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 634.4,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    },
+    {
+      "variant": "local-code",
+      "run": 1,
+      "api_ms": 182.6,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 106.0,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    },
+    {
+      "variant": "live",
+      "run": 2,
+      "api_ms": 265.7,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 96.6,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    },
+    {
+      "variant": "local-code",
+      "run": 2,
+      "api_ms": 945.4,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 832.1,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    },
+    {
+      "variant": "live",
+      "run": 3,
+      "api_ms": 260.2,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 91.9,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    },
+    {
+      "variant": "local-code",
+      "run": 3,
+      "api_ms": 175.8,
+      "api_status": 200,
+      "send_to_first_response_byte_ms": 96.5,
+      "displayed_rows": 20,
+      "response_rows": 40,
+      "javascript_errors": []
+    }
+  ]
+}

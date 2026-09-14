@@ -80,6 +80,16 @@ async function run() {
 	assert.equal(refresh(), first, 'overlapping requests must share one promise');
 	release({ ok: true, json: async () => payload() });
 	await first;
+	// Analysis and KOTC return arrays instead of the usual { data: [...] } envelope.
+	let arrayApplications = 0;
+	context.fetch = async () => ({ ok: true, json: async () => [] });
+	const refreshArray = context.createDataRefresh(() => '/api/analysis', async data => {
+		assert.ok(Array.isArray(data));
+		arrayApplications++;
+	});
+	await refreshArray();
+	await refreshArray();
+	assert.equal(arrayApplications, 1, 'unchanged array responses must also be skipped');
 	console.log('Data refresh regression checks passed.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -5,15 +5,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>⚾ Dingers</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
-	<script src="jspdf.umd.min.js"></script>
-	<script src="jspdf.plugin.autotable.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
 <!-- Google tag (gtag.js) -->
@@ -1004,6 +998,10 @@
 			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
 		</div>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -1102,8 +1100,7 @@
 				hovermode: 'x unified'
 			};
 
-			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
-			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+			return renderLazyChart('chart', traces, layout, { displayModeBar: false, responsive: true });
 		}
 
 		// Same shape/inputs as the shared devig(), but devigs via the probit method
@@ -1388,54 +1385,44 @@
             __countdownInterval = setInterval(update, 1000);
 		}
 
-		async function fetchDingersData() {
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchDingersData = createDataRefresh(() => {
 			let url = "/api/charts";
-			fetch(API_BASE+url, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(response => response.json()).then(data => {
-				RES = data;
+			return API_BASE+url;
+		}, async (data) => {
+			RES = data;
 
-				if (data["data"].length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
-				}
+			if (data["data"].length == 0) {
+				await TABLE.replaceData([]);
+				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+				TABLE.redraw(true);
+				return;
+			}
 
-				setTimeout(function() {
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (SIMPLE != undefined) {
-						["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
-					}
-					updateHeaders();
+			if (PRETTY != undefined) {
+				pretty_();
+			}
+			if (SIMPLE != undefined) {
+				["savant.exit_velocity_avg", "savant.barrels_per_bip", "pitcherData.flyballs_percent", "pitcherData.exit_velocity_avg", "pitcherData.barrel_batted_rate", "oppRank", "stadiumRank"].forEach(r => TABLE.hideColumn(r));
+			}
+			updateHeaders();
 
-					if (IMP != undefined) {
-						implied();
-					}
+			if (IMP != undefined) {
+				implied();
+			}
 
-					if (!CSV_DOWNLOADED && CSV != undefined) {
-						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
-						CSV_DOWNLOADED = true;
-					}
+			await changeFilter();
 
-					renderTable(data.data)
-					// Re-apply the selected devig after every reload, not just the
-					// first (renderTable() rebuilds TABLE from scratch on each 30s
-					// auto-refresh via auth.js's setInterval, which would otherwise
-					// silently drop the EV recompute and the +EV filter/sort a few
-					// seconds after picking a devig). Called here rather than from
-					// TABLE's own "dataLoaded" handler because changeFilter() calls
-					// TABLE.replaceData(), which re-fires "dataLoaded" — hooking
-					// this into that event caused infinite recursion.
-					if (loaded) changeFilter();
-				}, 500)
-				prefetchPitcherMix();
-				prefetchFeed();
-			}).catch(err => console.log(err));
-		}
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
+			}
+
+
+			prefetchPitcherMix();
+			prefetchFeed();
+		}, refreshDataTimestamps);
 
 		let ODDS_HIDDEN = false;
 		function toggleBookOddsColumns() {
@@ -1639,6 +1626,7 @@
 					row.getElement().classList.toggle('homer-today-row', !!hr);
 				}
 			});
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.shiftKey || e.ctrlKey) {

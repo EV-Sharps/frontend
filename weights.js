@@ -175,6 +175,7 @@ function renderWeightPieChart() {
 		}
 	};
 
+	if (typeof renderLazyChart === 'function') return renderLazyChart('weight-pie-chart', data, layout, {displayModeBar: false});
 	Plotly.newPlot('weight-pie-chart', data, layout, {displayModeBar: false});
 }
 

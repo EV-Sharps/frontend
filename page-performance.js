@@ -87,11 +87,11 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 				});
 				if (!response.ok) throw new Error(`Request failed (${response.status})`);
 				const data = await response.json();
-				if (!Array.isArray(data.data) || !data.games) throw new Error('Invalid data response');
+				if (!data || (!Array.isArray(data) && !Array.isArray(data.data))) throw new Error('Invalid data response');
 				// Capture server values before filtering adds computed fields to RES.
 				// Compare all content, including games/times/weather, except freshness metadata.
 				const { updated, ...content } = data;
-				const payload = JSON.stringify(content);
+				const payload = JSON.stringify(Array.isArray(data) ? data : content);
 				await tableReady;
 				if (payload === lastPayload && requestUrl === lastUrl && requestToken === lastToken) {
 					await onUnchanged(data);

@@ -5,18 +5,10 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>⚾ Dingers</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
-	<script src="jspdf.umd.min.js"></script>
-	<script src="jspdf.plugin.autotable.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
-	<script src="record-summary.js"></script>
-	<script src="record.js"></script>
 	<script>let SEASON_RECORD = typeof RECORD !== 'undefined' ? RECORD : null;</script>
 </head>
 <!-- Google tag (gtag.js) -->
@@ -814,6 +806,12 @@
 			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
 		</div>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="record-summary.js"></script>
+	<script src="record.js"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -872,41 +870,45 @@
 			return list;
 		}
 
-		async function fetchProps() {
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchProps = createDataRefresh(() => {
 			let url = "/api/recap";
-			fetch(API_BASE+url, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				RECORD = data.record;
+			return API_BASE+url;
+		}, async (data) => {
+			RES = data;
+			RECORD = data.record;
 
-				renderBookSelect();
-				if (data.record) {
-					initDevPicker(buildDevPickerData(data.record));
-					const col = document.getElementById('dev-picker-col') || document.querySelector('.dev-picker-col');
-					if (col) {
-						col.style.display = 'flex';
-						col.style.flexDirection = 'column';
-						col.style.alignItems = 'flex-start';
-						col.innerHTML = '';
-						addRecordSummaryButtons(data.record, buildHRSeasonRecord, { showSportToggle: true, containerEl: col });
+			renderBookSelect();
+			if (data.record) {
+				await initDevPicker(buildDevPickerData(data.record));
+				const col = document.getElementById('dev-picker-col') || document.querySelector('.dev-picker-col');
+				if (col) {
+					col.style.display = 'flex';
+					col.style.flexDirection = 'column';
+					col.style.alignItems = 'flex-start';
+					// Keep the picker controls mounted for subsequent refreshes.
+					col.querySelectorAll('#dev-window-select, #dev-record-upd').forEach(el => { el.hidden = true; });
+					let summary = col.querySelector('.recap-record-summary');
+					if (!summary) {
+						summary = document.createElement('div');
+						summary.className = 'recap-record-summary';
+						col.appendChild(summary);
 					}
+					summary.replaceChildren();
+					addRecordSummaryButtons(data.record, buildHRSeasonRecord, { showSportToggle: true, containerEl: summary });
 				}
+			}
 
-				setTimeout(function() {
 
-					updateHeaders();
-					changeFilter();
+			updateHeaders();
+			await changeFilter();
 
-					if (!CSV_DOWNLOADED && CSV != undefined) {
-						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
-						CSV_DOWNLOADED = true;
-					}
-				}, 500)
-			}).catch(err => console.log(err));
-		}
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
+			}
+		}, refreshDataTimestamps);
 
 		let ODDS_HIDDEN = false;
 		function toggleBookOddsColumns() {
@@ -1086,6 +1088,7 @@
 					},
 				]
 			});
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);

@@ -10,15 +10,9 @@
 	<script type="text/javascript" src="test.js"></script>
 	-->
 
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<script type="text/javascript" src="flatpickr.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<style>
 		#table {
 			width: auto;
@@ -505,6 +499,12 @@
 			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
 		</div>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script type="text/javascript" src="flatpickr.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -517,64 +517,59 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		function fetchProps() {
-			fetch(API_BASE+`/api/ncaab`, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				UPDATED[PAGE] = data["updated"];
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchProps = createDataRefresh(() => API_BASE+`/api/ncaab`, async (data) => {
+			RES = data;
+			UPDATED[PAGE] = data["updated"];
 
-				const gameMenu = document.getElementById("game-options");
-				gameMenu.innerHTML = `
-					<div class="chkdd-actions">
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-					</div>
-				`;
-				populateGameOptions(data.games, RES?.times, gameMenu);
-				restoreChkddState(gameMenu);
-				if (GAME) {
-					updateGameLabel(GAME.split(","));
-				}
+			const gameMenu = document.getElementById("game-options");
+			gameMenu.innerHTML = `
+				<div class="chkdd-actions">
+					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="none">None</button>
+				</div>
+			`;
+			populateGameOptions(data.games, RES?.times, gameMenu);
+			restoreChkddState(gameMenu);
+			if (GAME) {
+				updateGameLabel(GAME.split(","));
+			}
 
-				const propMenu = document.getElementById("prop-options");
-				propMenu.innerHTML = `
-					<div class="chkdd-actions">
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-						<button type="button" onclick="togglePlayerProps()">Players</button>
-					</div>
-				`;
-				[...data.props].sort().forEach(p => createOption(p, propMenu));
-				restoreChkddState(propMenu);
-				if (PROP) {
-					updatePropLabel(PROP.split(","));
-				}
+			const propMenu = document.getElementById("prop-options");
+			propMenu.innerHTML = `
+				<div class="chkdd-actions">
+					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="none">None</button>
+					<button type="button" onclick="togglePlayerProps()">Players</button>
+				</div>
+			`;
+			[...data.props].sort().forEach(p => createOption(p, propMenu));
+			restoreChkddState(propMenu);
+			if (PROP) {
+				updatePropLabel(PROP.split(","));
+			}
 
-				if (data["data"].length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
-				}
+			if (data["data"].length == 0) {
+				await TABLE.replaceData([]);
+				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+				TABLE.redraw(true);
+				return;
+			}
 
-				setTimeout(function() {
-					updateHeaders();
-					changeFilter();
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (IMP != undefined) {
-						implied();
-					}
-					if (!CSV_DOWNLOADED && CSV != undefined) {
-						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
-						CSV_DOWNLOADED = true;
-					}
-				}, 500);
-			}).catch(err => console.log(err));
-		}
+			updateHeaders();
+			await changeFilter();
+			if (PRETTY != undefined) {
+				pretty_();
+			}
+			if (IMP != undefined) {
+				implied();
+			}
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
+			}
+		}, refreshDataTimestamps);
 
 		let loaded = false;
 		function renderTable(data) {
@@ -740,6 +735,7 @@
 					{field: "game", visible: false}
 				]
 			});
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.shiftKey || e.ctrlKey) {

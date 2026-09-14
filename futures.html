@@ -6,13 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>⚾ Futures</title>
 
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="math.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -475,6 +470,11 @@
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script src="math.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -487,49 +487,48 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		function fetchProps() {
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchProps = createDataRefresh(() => {
 			let s = SPORT;
-			fetch(API_BASE+"/api/futures", {
-				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				UPDATED[PAGE] = data["updated"];
+			return API_BASE+"/api/futures";
+		}, async (data) => {
+			RES = data;
+			UPDATED[PAGE] = data["updated"];
 
-				const propMenu = document.getElementById("prop-options");
-				propMenu.innerHTML = `
-					<div class="chkdd-actions">
-						<button type="button" data-act="all">All</button>
-						<button type="button" data-act="none">None</button>
-					</div>
-				`;
-				[...data.props].sort().forEach(p => createOption(p, propMenu));
-				restoreChkddState(propMenu);
-				if (PROP) {
-					updatePropLabel(PROP.split(","));
-				}
+			const propMenu = document.getElementById("prop-options");
+			propMenu.innerHTML = `
+				<div class="chkdd-actions">
+					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="none">None</button>
+				</div>
+			`;
+			[...data.props].sort().forEach(p => createOption(p, propMenu));
+			restoreChkddState(propMenu);
+			if (PROP) {
+				updatePropLabel(PROP.split(","));
+			}
 
-				if (data["data"].length == 0) {
-					TABLE.options.placeholder = "No Data. Login or Upgrade to view";
-					TABLE.redraw(true);
-					return;
-				}
+			if (data["data"].length == 0) {
+				await TABLE.replaceData([]);
+				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+				TABLE.redraw(true);
+				return;
+			}
 
-				setTimeout(function() {
-					updateHeaders();
-					changeFilter();
-					if (PRETTY != undefined) {
-						pretty_();
-					}
-					if (IMP != undefined) {
-						implied();
-					}
-					if (!CSV_DOWNLOADED && CSV != undefined) {
-						TABLE.download("csv", `${PAGE}.csv`, { bom: true });
-						CSV_DOWNLOADED = true;
-					}
-				}, 500);
-			}).catch(err => console.log(err));
-		}
+			updateHeaders();
+			await changeFilter();
+			if (PRETTY != undefined) {
+				pretty_();
+			}
+			if (IMP != undefined) {
+				implied();
+			}
+			if (!CSV_DOWNLOADED && CSV != undefined) {
+				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
+				CSV_DOWNLOADED = true;
+			}
+		}, refreshDataTimestamps);
 
 		let loaded = false;
 		function renderTable(data) {
@@ -695,6 +694,7 @@
 					{field: "game", visible: false}
 				]
 			});
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);

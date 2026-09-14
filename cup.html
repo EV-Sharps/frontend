@@ -5,16 +5,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>⚽ Soccer</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
-	<script src="jspdf.umd.min.js"></script>
-	<script src="jspdf.plugin.autotable.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
 <!-- Google tag (gtag.js) -->
@@ -360,6 +353,11 @@
 			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with any sports league. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</div>
+	<script type="text/javascript" src="tabulator.min.js"></script>
+	<script type="text/javascript" src="peity-vanilla.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -412,20 +410,16 @@
 			}
 		}
 
-		async function fetchProps() {
+		let resolveTableReady;
+		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
+		const fetchProps = createDataRefresh(() => {
 			let url = "/api/cup";
-			fetch(API_BASE+url, {
-				headers: {
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(res => res.json()).then(res => {
-				parseData(res);
-				setTimeout(function() {
-					updateHeaders();
-					changeFilter();
-				}, 500)
-			}).catch(err => console.log(err));
-		}
+			return API_BASE+url;
+		}, async (res) => {
+			parseData(res);
+			updateHeaders();
+			await changeFilter();
+		}, refreshDataTimestamps);
 
 		function renderTable(data) {
 			data.sort((a,b) => {
@@ -605,6 +599,7 @@
 					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly",  width: 70, sorter: "number", formatter: evOddsFormatter},
 				]
 			});
+			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.shiftKey || e.ctrlKey) {

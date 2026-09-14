@@ -1649,11 +1649,14 @@
 				if (curSel === "mix") {
 					fetchAndShowMix(data);
 				} else {
+					_mixShowChart();
 					document.querySelector("#btwn-select").value = "pa";
 					document.getElementById("feed-toggle").style.display = "none";
 					document.getElementById("feed-arsenal").style.display = "none";
 					document.getElementById("chart").classList.remove("feed-height");
-					setTimeout(() => plotHRGap(), 50);
+					requestAnimationFrame(() => {
+						if (TABLE.getSelectedRows()[0] === row) plotHRGap();
+					});
 				}
 			}
 		}

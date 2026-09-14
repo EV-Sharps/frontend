@@ -28,6 +28,12 @@ async function renderLazyChart(target, data, layout, config) {
 		const plotly = await loadPlotly();
 		if (!element.isConnected || chartRequests.get(element) !== request) return;
 		await plotly.newPlot(element, data, layout, config);
+		// Opening the detail panel changes the flex layout. Size the first plot
+		// after the browser has laid out its newly visible container as well.
+		await new Promise(resolve => requestAnimationFrame(resolve));
+		if (element.isConnected && chartRequests.get(element) === request && element.getClientRects().length) {
+			await plotly.Plots.resize(element);
+		}
 	} catch (error) {
 		if (chartRequests.get(element) !== request) return;
 		const message = document.createElement('p');

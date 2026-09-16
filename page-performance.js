@@ -71,7 +71,7 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 	let lastPayload;
 	let lastUrl;
 	let lastToken;
-	return function refresh() {
+	const refresh = function refresh() {
 		if (pending) return pending;
 		pending = (async () => {
 			// Background checks should not insert a banner and shift the table.
@@ -81,12 +81,14 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 			try {
 				const requestUrl = url();
 				const requestToken = ACCESS_TOKEN;
+				const requestStarted = performance.now();
 				const response = await fetch(requestUrl, {
 					headers: { Authorization: `Bearer ${requestToken}` },
 					signal: controller.signal
 				});
 				if (!response.ok) throw new Error(`Request failed (${response.status})`);
 				const data = await response.json();
+				const receivedAt = performance.now();
 				if (!data || (!Array.isArray(data) && !Array.isArray(data.data))) throw new Error('Invalid data response');
 				// Capture server values before filtering adds computed fields to RES.
 				// Compare all content, including games/times/weather, except freshness metadata.
@@ -102,6 +104,17 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 					lastUrl = requestUrl;
 					lastToken = requestToken;
 				}
+				const timing = {
+					version: response.headers.get('X-Odds-Version'),
+					publishedAt: response.headers.get('X-Odds-Published-At'),
+					cachedAt: response.headers.get('X-Odds-Cached-At'),
+					renderedAt: new Date().toISOString(),
+					requestMs: Math.round(receivedAt - requestStarted),
+					renderMs: Math.round(performance.now() - receivedAt)
+				};
+				window.LAST_ODDS_TIMING = timing;
+				window.dispatchEvent(new CustomEvent('odds-rendered', {detail: timing}));
+				registerOddsLiveRefresh(refresh, response.headers.get('X-Odds-Dataset'));
 				showDataStatus('');
 			} catch (error) {
 				showDataStatus('Unable to update data. Any previously loaded results are still shown.', refresh);
@@ -113,10 +126,72 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 		})();
 		return pending;
 	};
+	// An invalidation during an in-flight fetch must cause a subsequent fetch.
+	refresh.requestLatest = () => pending ? pending.then(() => refresh()) : refresh();
+	registerOddsLiveRefresh(refresh, null);
+	return refresh;
 }
 
 function refreshDataTimestamps(data) {
 	UPDATED[PAGE] = data.updated;
 	RES.updated = data.updated;
 	updateHeaders();
+}
+
+// One connection per shared data loader. Existing 30s polling remains the fallback.
+const oddsLiveWatchers = new WeakMap();
+function registerOddsLiveRefresh(refresh, dataset) {
+	if (oddsLiveWatchers.has(refresh)) {
+		oddsLiveWatchers.get(refresh).setDataset(dataset);
+		return;
+	}
+	let currentDataset = dataset, source = null, timer = null, running = false, dirty = false;
+	let stopped = false;
+	const visible = () => document.visibilityState !== 'hidden';
+	async function drain() {
+		timer = null;
+		if (running || !visible() || stopped) return;
+		running = true;
+		try {
+			while (dirty && visible() && !stopped) {
+				dirty = false;
+				await refresh.requestLatest();
+			}
+		} catch (error) { console.error('Live odds refresh failed', error); }
+		finally { running = false; }
+	}
+	function request(immediate = false) {
+		dirty = true;
+		if (!visible() || stopped || running) return;
+		if (timer !== null) clearTimeout(timer);
+		timer = setTimeout(drain, immediate ? 0 : 100);
+	}
+	function disconnect() { if (source) source.close(); source = null; }
+	function connect() {
+		if (source || stopped || !visible() || !currentDataset || typeof EventSource === 'undefined') return;
+		const url = new URL('/api/odds-events', API_BASE);
+		url.searchParams.set('datasets', currentDataset);
+		source = new EventSource(url.toString());
+		// A reconnect may have missed updates. Always reconcile with the data route.
+		source.addEventListener('ready', () => request());
+		source.addEventListener('odds-update', event => {
+			try {
+				const message = JSON.parse(event.data);
+				if (message.dataset === currentDataset) request();
+			} catch (_) { /* Polling remains available for malformed events. */ }
+		});
+	}
+	document.addEventListener('visibilitychange', () => {
+		if (visible()) { connect(); request(true); } else disconnect();
+	});
+	window.addEventListener('pagehide', () => {
+		stopped = true; disconnect(); if (timer !== null) clearTimeout(timer);
+	});
+	window.addEventListener('pageshow', () => {
+		if (stopped) { stopped = false; connect(); request(true); }
+	});
+	oddsLiveWatchers.set(refresh, {setDataset(next) {
+		if (currentDataset !== next) { currentDataset = next; disconnect(); connect(); }
+	}});
+	connect();
 }

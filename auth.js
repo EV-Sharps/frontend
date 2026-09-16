@@ -521,7 +521,7 @@ function initPageData() {
 	} else if (PAGE == "sb") {
 		renderTable([]);
 		fetchSBData();
-	} else if (PAGE == "recap" || PAGE == "main_recap") {
+	} else if (["recap", "main_recap", "nfl_recap"].includes(PAGE)) {
 		initChkddActions();
 		fetchProps();
 		renderFilters();

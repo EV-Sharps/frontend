@@ -7,13 +7,18 @@ const path = require('node:path');
 async function run() {
 	let next, status, applications = 0, timestampUpdates = 0, failRender = false;
 	let current;
+	const events = [];
+	const headers = { get: name => name === 'X-Odds-Version' ? 'test-version' : null };
 	const context = vm.createContext({
-		AbortController, setTimeout, clearTimeout,
+		AbortController, setTimeout, clearTimeout, performance,
+		window: { dispatchEvent: event => events.push(event), addEventListener() {} },
+		document: { visibilityState: 'visible', addEventListener() {} },
+		CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
 		console: { error() {} },
 		ACCESS_TOKEN: 'first-session', tableReady: Promise.resolve(),
 		fetch: async () => {
 			if (next instanceof Error) throw next;
-			return { ok: true, json: async () => structuredClone(next) };
+			return { ok: true, headers, json: async () => structuredClone(next) };
 		},
 	});
 	vm.runInContext(fs.readFileSync(path.join(__dirname, '../page-performance.js'), 'utf8'), context);
@@ -31,6 +36,10 @@ async function run() {
 	await refresh();
 	assert.equal(applications, 1);
 	const original = current;
+	assert.equal(context.window.LAST_ODDS_TIMING.version, 'test-version');
+	assert.equal(events[0].type, 'odds-rendered');
+	assert.equal(typeof events[0].detail.requestMs, 'number');
+	assert.equal(typeof events[0].detail.renderMs, 'number');
 	next = payload();
 	await refresh();
 	assert.equal(applications, 1, 'computed fields must not trigger a refresh');
@@ -78,11 +87,11 @@ async function run() {
 	context.fetch = () => new Promise(resolve => { release = resolve; });
 	const first = refresh();
 	assert.equal(refresh(), first, 'overlapping requests must share one promise');
-	release({ ok: true, json: async () => payload() });
+	release({ ok: true, headers, json: async () => payload() });
 	await first;
 	// Analysis and KOTC return arrays instead of the usual { data: [...] } envelope.
 	let arrayApplications = 0;
-	context.fetch = async () => ({ ok: true, json: async () => [] });
+	context.fetch = async () => ({ ok: true, headers, json: async () => [] });
 	const refreshArray = context.createDataRefresh(() => '/api/analysis', async data => {
 		assert.ok(Array.isArray(data));
 		arrayApplications++;
@@ -90,6 +99,19 @@ async function run() {
 	await refreshArray();
 	await refreshArray();
 	assert.equal(arrayApplications, 1, 'unchanged array responses must also be skipped');
+	let releaseLatest, requestsLatest = 0;
+	context.fetch = () => {
+		requestsLatest++;
+		const response = {ok:true, headers, json:async()=>payload()};
+		return requestsLatest === 1 ? new Promise(resolve => {releaseLatest = () => resolve(response);}) : Promise.resolve(response);
+	};
+	const latestRefresh = context.createDataRefresh(() => '/api/nfl', async () => {});
+	const initial = latestRefresh();
+	const invalidated = latestRefresh.requestLatest();
+	assert.equal(requestsLatest, 1);
+	releaseLatest();
+	await Promise.all([initial, invalidated]);
+	assert.equal(requestsLatest, 2, 'in-flight invalidation must fetch again after the old request');
 	console.log('Data refresh regression checks passed.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

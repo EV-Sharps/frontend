@@ -665,6 +665,7 @@ if (methodInit) {
 }
 
 function changeView(view) {
+	CURRENT_VIEW = view;
 	const cardContainer = document.getElementById("card-container");
 	const table = document.getElementById("table");
 	const playerFilter = document.querySelector(".filter-wrapper");
@@ -672,13 +673,14 @@ function changeView(view) {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
 		playerFilter.style.display = "flex";
-		initializeCards(RES.data);
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
 		playerFilter.style.display = "none";
-		renderTable(RES.data);
 	}
+	// Both views must use the active filters, not the unfiltered API response.
+	// Reuse the existing table so switching back also preserves its settings.
+	if (RES && TABLE) return changeFilter();
 }
 
 if (document.getElementById("view-select")) {
@@ -1435,6 +1437,8 @@ function reorderOddsColumns(book, devig) {
 	updateHeaders();
 }
 
+let lastRenderedBookDevig;
+
 function changeFilter(render = true) {
 	let renderComplete;
 	let [w,l,profit,kellyProfit] = [0,0,0,0];
@@ -1637,6 +1641,10 @@ function changeFilter(render = true) {
 
 	const table = document.getElementById("table");
 	const cardContainer = document.getElementById("card-container");
+	// Compare applied selections so chips, dropdowns, and preloads behave alike.
+	const bookDevig = JSON.stringify([book, DEVIG, WEIGHT]);
+	const resetScroll = lastRenderedBookDevig !== undefined && lastRenderedBookDevig !== bookDevig;
+	lastRenderedBookDevig = bookDevig;
 	if (CURRENT_VIEW == "mobile") {
 		table.style.display = "none";
 		cardContainer.style.display = "grid";
@@ -1668,5 +1676,14 @@ function changeFilter(render = true) {
 			if (col.getField()?.startsWith('bookOdds.')) col.hide();
 		});
 	}
-	return renderComplete;
+	return Promise.resolve(renderComplete).then(() => {
+		if (!resetScroll || lastRenderedBookDevig !== bookDevig) return;
+		// Wait for replaceData to finish restoring its previous scroll position.
+		const scroller = CURRENT_VIEW === "mobile"
+			? cardContainer
+			: table.querySelector('.tabulator-tableholder');
+		if (scroller) scroller.scrollTop = 0;
+		const container = document.getElementById('table-container');
+		if (container) container.scrollTop = 0;
+	});
 }

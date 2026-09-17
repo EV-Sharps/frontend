@@ -666,6 +666,7 @@ if (methodInit) {
 
 function changeView(view) {
 	CURRENT_VIEW = view;
+	document.querySelectorAll('#custom-view-select, #header-view-select').forEach(select => { select.value = view; });
 	applyOddsTableView();
 	const cardContainer = document.getElementById("card-container");
 	const table = document.getElementById("table");
@@ -685,8 +686,21 @@ function changeView(view) {
 }
 
 if (document.getElementById("custom-view-select")) {
-	document.querySelector("#custom-view-select").value = CURRENT_VIEW || "";
-	document.querySelector("#custom-view-select").addEventListener("change", (event) => {
+	const customViewSelect = document.getElementById('custom-view-select');
+	const header = document.getElementById('header');
+	const viewSelects = [customViewSelect];
+	if (header && !header.contains(customViewSelect)) {
+		const control = document.createElement('div');
+		control.id = 'view-toggle-container';
+		control.innerHTML = `<div class="select-wrapper">
+			<label for="header-view-select" class="select-label">View</label>
+			<select id="header-view-select">${customViewSelect.innerHTML}</select>
+			<svg class="select-arrow" viewBox="0 0 20 20"><path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+		</div>`;
+		header.appendChild(control);
+		viewSelects.push(control.querySelector('select'));
+	}
+	const selectView = (event) => {
 		CURRENT_VIEW = event.target.value;
 		try { localStorage.setItem('odds-view', CURRENT_VIEW); } catch (e) {}
 		const params = new URLSearchParams(window.location.search);
@@ -694,6 +708,10 @@ if (document.getElementById("custom-view-select")) {
 		const newUrl = `${window.location.pathname}?${params.toString()}`;
 		history.pushState({}, '', newUrl);
 		changeView(event.target.value);
+	};
+	viewSelects.forEach(select => {
+		select.value = CURRENT_VIEW;
+		select.addEventListener('change', selectView);
 	});
 }
 

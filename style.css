@@ -3011,6 +3011,7 @@ button#logout:hover {
 	#table.stacked-odds .player-cell .game-container {
 		display: flex; align-items: center; justify-content: center;
 		flex: 0 0 20px; width: 20px; height: 100%;
+		margin-top: 18px;
 	}
 	#table.stacked-odds .player-cell .team-img { margin: 0; width: 18px; height: 18px; object-fit: contain; }
 	#table.stacked-odds .player-cell { gap: 5px; }
@@ -3036,3 +3037,12 @@ button#logout:hover {
 
 
 .custom-view-control { display: flex; justify-content: center; margin: 12px 0; }
+@media (max-width: 1430px) {
+	#header > .custom-view-control {
+		position: absolute;
+		top: 0.75rem;
+		right: 1rem;
+		margin: 0;
+		font-size: 0.8rem;
+	}
+}

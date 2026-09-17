@@ -158,6 +158,19 @@
 				</div>
 				<div style="justify-content: center;display: flex;gap: 1rem;">
 					<div style="display: flex;flex-direction: column;">
+						<label for="custom-view-select">View</label>
+						<div class="select-wrapper">
+							<select id="custom-view-select">
+						<option value="compact">Compact</option>
+						<option value="table">Stacked</option>
+						<option value="mobile">Mobile</option>
+						</select>
+							<svg class="select-arrow" viewBox="0 0 20 20">
+								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+							</svg>
+						</div>
+					</div>
+					<div style="display: flex;flex-direction: column;">
 						<label for="sort-select">Sort</label>
 						<div class="select-wrapper">
 							<select id="sort-select">
@@ -562,18 +575,6 @@
 				  </svg>
 				  <span class="help-label">Help</span>
 				</button>
-			</div>
-			<div id="view-toggle-container">
-				<div class="select-wrapper">
-					<label for="view-select" class="select-label">View</label>
-					<select id="view-select">
-						<option value="table" selected>Table</option>
-						<option value="mobile">Mobile</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -1255,13 +1256,13 @@
 				{ key: 'player',          label: 'Player',           cols: [{ title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 90 : 140, formatterParams:{sport: SPORT}, hozAlign: "left", responsive: 0, frozen: MOBILE ? true : true }] },
 				{ key: 'fairVal',         label: 'Fair Value',       cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: 'implied',         label: 'Implied',          cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
-				{ key: 'kelly',           label: '¼ Kelly',          cols: [{ title: "¼ Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) { return formatKellyValue(cell.getValue()); }, responsive: 0, visible: MOBILE ? false : true }] },
+				{ key: 'kelly',           label: '¼ Kelly',          cols: [{ title: "¼ Kelly", field: "kelly", width: 65, minWidth: 65, sorter: "number", formatter: function(cell) { return formatKellyValue(cell.getValue()); }, responsive: 0, visible: MOBILE ? false : true }] },
 				{ key: 'book',            label: 'Best Book',        cols: [{ title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`, field: "book", vertAlign:"bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams:{book:BOOK}, responsive: 0 }] },
 				
 				{ key: 'handicap',        label: 'Line',             cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); let ou = data.under ? "u" : "o"; return `${ou}${cell.getValue()}`; }, headerFilter:"list", headerFilterParams:{valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(headerValue, rowValue) { if (headerValue == "All") { return true; } return rowValue === headerValue; }, width: MOBILE ? 40 : 60 }] },
 				{ key: 'order',           label: 'Bat Order',        cols: [{ title: "Bat<br>Order", field: "order", width: MOBILE ? 20 : 40, sorter: "number", formatter: blurFormatter }] },
 				{ key: 'ph',              label: 'Pinch Hits',       cols: [{ title: "Pinch Hits", field: "ph", visible: PH ? true : false }] },
-				{ key: 'bookOdds_circa',  label: 'Circa',            cols: [{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter}] },
+				{ key: 'bookOdds_circa',  label: 'Circa',            cols: [{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_fd',     label: 'FD',               cols: [{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["fd"], short=true)}`, field: "bookOdds.fd", width: MOBILE ? 60 : 60, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_b365',   label: 'B365',             cols: [{title: `B365<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["b365"], short=true)}`, field: "bookOdds.b365", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_dk',     label: 'DK',               cols: [{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED["dingers"]["dk"], short=true)}`, field: "bookOdds.dk", width: MOBILE ? 60 : 60, sorter: "number", responsive: 6, visible: HISTORICAL ? false : true, formatter: evOddsFormatter}] },
@@ -1277,10 +1278,10 @@
 				{ key: 'bookOdds_fl',     label: 'Fliff',            cols: [{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_kambi',  label: 'Kambi',            cols: [{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_bol',    label: 'BetOnline',        cols: [{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_px',     label: 'ProphetX',         cols: [{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_poly',   label: 'Polymarket',       cols: [{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false}] },
+				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_px',     label: 'ProphetX',         cols: [{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_poly',   label: 'Polymarket',       cols: [{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter, visible: false}] },
 				{ key: 'bookOdds_pn',     label: 'Pinnacle',         cols: [{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'pitcher_grp',     label: 'Vs Pitcher',       cols: [{title: "Pitcher", field: "pitcherCols", columns: [{title: "Name", field: "pitcher", width: 80, formatter: pitcherFormatter},{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75}]}] },
 				{ key: 'bppProj',         label: 'BPP Proj',         cols: [{title: "BPP", field: "bppProj", visible: BPP ? true : false, width: 50, sorter: "number", formatter: percentFormatter}] },

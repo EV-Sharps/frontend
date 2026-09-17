@@ -726,7 +726,7 @@ function updateExistingCard(card, rowData) {
 				</div>
 				<div class="metric-pill">
 					<div style="font-weight:700; font-size:0.8rem;">${rowData.ev < 0 ? "-" : formatKellyValue(rowData.kelly || 0)}</div>
-					<div style="opacity:0.85; font-size:0.72rem;">¼ Kelly</div>
+					<button type="button" class="kelly-fraction-button" onclick="openKellySettings(event)" title="Change Kelly fraction for this page">${kellyFractionLabel()} Kelly</button>
 				</div>
 			</div>
 		<div class="card-body-collapsed"></div>

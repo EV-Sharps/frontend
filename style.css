@@ -12,6 +12,36 @@
 	--muted: #9aa3b2;
 	--accent: #77c3ff; /* tweak to match your brand */
 }
+.kelly-fraction-button {
+	background: transparent;
+	border: 0;
+	border-bottom: 1px dotted currentColor;
+	color: inherit;
+	font: inherit;
+	padding: 2px 0;
+	cursor: pointer;
+}
+.tabulator .kelly-fraction-button { white-space: nowrap; }
+.data-card .kelly-fraction-button { font-size: 0.72rem; }
+#kelly-settings {
+	color: var(--text);
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 20px;
+	width: min(360px, calc(100vw - 64px));
+}
+#kelly-settings::backdrop { background: rgba(0, 0, 0, 0.65); }
+#kelly-settings form, .profile-kelly-settings { display: grid; gap: 10px; }
+.profile-kelly-settings { margin-top: 16px; max-width: 380px; }
+#kelly-settings h3, #kelly-settings p, .profile-kelly-settings p { margin: 0; }
+#kelly-settings p, .profile-kelly-settings p { font-size: 0.85rem; color: var(--muted); }
+#kelly-settings select, #kelly-settings input, .profile-kelly-settings select, .profile-kelly-settings input {
+	background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 8px;
+}
+.kelly-custom input { width: 75px; }
+.kelly-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.kelly-actions button { padding: 8px 12px; }
 #data-status {
 	padding: 0.5rem 0.75rem;
 	color: var(--text);
@@ -2949,3 +2979,60 @@ button#logout:hover {
 	background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px;
 }
 #filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
+
+/* Shared stacked odds layout. Compact retains the original table styling. */
+	#table.stacked-odds .tabulator-cell { height: 42px; }
+	#table.stacked-odds .stacked-odds-stack { display: grid; grid-template-rows: 19px 19px; width: 100%; font-variant-numeric: tabular-nums; }
+	#table.stacked-odds .stacked-odds-line { display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 13px; font-weight: 600; }
+	#table.stacked-odds .stacked-odds-missing { color: #858d95; font-size: 11px; font-weight: 400; }
+	#table.stacked-odds .time-hdrs { color: #929ba5; font-weight: 400; }
+	#table.stacked-odds .tabulator-row .tabulator-cell,
+	#table.stacked-odds .tabulator-header .tabulator-col { border-right-color: #303638; }
+	#table.stacked-odds .tabulator-cell[tabulator-field="bookOdds.circa"],
+	#table.stacked-odds .tabulator-col[tabulator-field="bookOdds.circa"] { border-left: 1px solid #59636d; }
+	#table.stacked-odds .tabulator-row:focus-within { background-color: #2b3c4b !important; }
+	#table.stacked-odds .tabulator-row.tabulator-selected:focus-within { background-color: #214d79 !important; }
+	#table.stacked-odds .odds-betslip-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+	@media (hover: hover) and (pointer: fine) {
+		#table.stacked-odds .tabulator-row:hover { background-color: #2b3c4b !important; }
+		#table.stacked-odds .tabulator-row.tabulator-selected:hover { background-color: #214d79 !important; }
+		#table.stacked-odds .odds-betslip-link { opacity: 0; }
+		#table.stacked-odds .tabulator-cell:hover .odds-betslip-link,
+		#table.stacked-odds .tabulator-cell:focus-within .odds-betslip-link { opacity: 1; }
+	}
+	@media (any-pointer: coarse) {
+		#table.stacked-odds .odds-betslip-link { opacity: 1; }
+	}
+	#table.stacked-odds .stacked-odds-liquidity { margin-left: 4px; color: var(--muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+	#table.stacked-odds .odds-positive { color: #00ff66; }
+	#table.stacked-odds .liq-host, #table.stacked-odds .liq-odds { display: block; width: 100%; }
+
+	/* Alignment changes belong to the taller layout; compact keeps its original styling. */
+	#table.stacked-odds .player-cell .game-container {
+		display: flex; align-items: center; justify-content: center;
+		flex: 0 0 20px; width: 20px; height: 100%;
+	}
+	#table.stacked-odds .player-cell .team-img { margin: 0; width: 18px; height: 18px; object-fit: contain; }
+	#table.stacked-odds .player-cell { gap: 5px; }
+	#table.stacked-odds .player-cell .bats { bottom: 1px; }
+	#table.stacked-odds .player-cell .pos { top: 1px; }
+	#table.stacked-odds .tabulator-cell .book-img { vertical-align: middle; object-fit: contain; }
+	#table.stacked-odds .tabulator-col-title { text-align: center; }
+	#table.stacked-odds .tabulator-col[tabulator-field="player"] .tabulator-col-title { text-align: left; }
+	#table.stacked-odds .tabulator-col-title .book-img { vertical-align: middle; margin-top: -2px; object-fit: contain; }
+	#table.stacked-odds .time-hdrs { left: 0; right: 0; text-align: center; }
+	#table.stacked-odds .tabulator-col-title:has(.weight-hdrs:not(:empty)) .time-hdrs { left: auto; right: 0; }
+	#table.stacked-odds .weight-hdrs { text-align: center; }
+
+	#table.stacked-odds .stacked-ev-summary,
+	#table.stacked-odds .stacked-player-summary { display: grid; grid-template-rows: 19px 19px; align-items: center; text-align: center; }
+	#table.stacked-odds .stacked-fair-value { font-size: 10px; font-weight: 400; color: var(--muted); white-space: nowrap; }
+	#table.stacked-odds .stacked-player-summary .evbook-cell { height: 19px; justify-content: flex-start; margin-left: 25px; }
+	#table.stacked-odds .stacked-player-summary .book-img { width: 16px; height: 16px; order: -1; margin-left:0;margin-right:0.25rem; }
+
+	#table.stacked-odds .stacked-player-summary { text-align: left; }
+	#table.stacked-odds .stacked-player-summary .player-cell { height: 19px; }
+	#table.stacked-odds .stacked-ev-summary .ev { font-weight: 700; }
+
+
+.custom-view-control { display: flex; justify-content: center; margin: 12px 0; }

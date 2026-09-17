@@ -118,6 +118,20 @@
 		</div>
 		<div id="overlay">
 			<div class="overlay-content">
+<div class="custom-view-control">
+				<div class="select-wrapper">
+					<label for="custom-view-select" class="select-label">View</label>
+					<select id="custom-view-select">
+						<option value="compact">Compact</option>
+						<option value="table">Stacked</option>
+						<option value="mobile">Mobile</option>
+						</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+
 				<div><h2 style="justify-content: center;">Customize</h2></div>
 				<div style="justify-content: center;display: flex;gap: 1rem;">
 					<div class="select-wrapper">
@@ -364,18 +378,7 @@
 				  <span class="help-label">Help</span>
 				</button>
 			</div>
-			<div id="view-toggle-container">
-				<div class="select-wrapper">
-					<label for="view-select" class="select-label">View</label>
-					<select id="view-select">
-						<option value="table" selected>Table</option>
-						<option value="mobile">Mobile</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-			</div>
+
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<label for="page-select" class="select-label">Page</label>

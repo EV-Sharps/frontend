@@ -120,18 +120,7 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 			</div>
-			<div id="view-toggle-container">
-				<div class="select-wrapper">
-					<label for="view-select" class="select-label">View</label>
-					<select id="view-select">
-						<option value="table" selected>Table</option>
-						<option value="mobile">Mobile</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-			</div>
+
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<label for="page-select" class="select-label">Page</label>
@@ -354,6 +343,7 @@
 				 background-color: rgba(0, 0, 0, 0.7); z-index: 1001;
 				 justify-content: center; align-items: center;">
 				<div class="overlay-content" style="max-width: 400px; background: white; padding: 20px; border-radius: 8px;">
+
 					<h2>Delete Custom Devigs</h2>
 					<div id="custom-devig-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
 						</div>
@@ -364,6 +354,19 @@
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
+<div class="custom-view-control">
+				<div class="select-wrapper">
+					<label for="custom-view-select" class="select-label">View</label>
+					<select id="custom-view-select">
+						<option value="compact">Compact</option>
+						<option value="table">Stacked</option>
+						<option value="mobile">Mobile</option>
+						</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
 					<div><h2 style="justify-content: center;">Customize</h2></div>
 					<div style="justify-content: center;display: flex;gap: 1rem;">
 						<div style="display: flex;flex-direction: column;">

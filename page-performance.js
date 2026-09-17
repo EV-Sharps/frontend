@@ -74,8 +74,6 @@ function createDataRefresh(url, applyData, onUnchanged = () => {}) {
 	const refresh = function refresh() {
 		if (pending) return pending;
 		pending = (async () => {
-			// Background checks should not insert a banner and shift the table.
-			if (lastPayload === undefined) showDataStatus('Updating data…');
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), 20000);
 			try {

@@ -21,6 +21,12 @@ with sync_playwright() as p:
   try:
    page.goto(f'http://localhost:{server.server_port}/{name}',wait_until='load')
    page.wait_for_function("document.getElementById('data-status')?.hidden === true",timeout=3500)
+   assert page.locator('#custom-view-select').count()==1,'missing shared view selector'
+   assert page.locator('#view-select').count()==0,'legacy view selector remains'
+   if page.locator('#overlay').count():
+    assert page.locator('#overlay #custom-view-select').count()==1,'view selector outside Customize'
+   else:
+    assert page.locator('#custom-view-select').is_visible(),'header view selector hidden'
    fn=re.search(r'const (fetchProps|fetchMain|fetchDingersData) = createDataRefresh',Path(name).read_text(encoding='utf-8-sig'))[1]
    page.evaluate('''() => {window.replacements=0;const original=TABLE.replaceData.bind(TABLE);TABLE.replaceData=(...args)=>{replacements++;return original(...args)};window.gameButton=document.querySelector('#game-options button');}''')
    page.evaluate(fn+'()')

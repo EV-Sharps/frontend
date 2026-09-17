@@ -15,7 +15,7 @@
 	<link href="style.css" rel="stylesheet">
 	<style>
 		#table {
-			width: auto;
+			width: 100%;
 		}
 		@media (max-width: 1750px) {
 			#table {
@@ -120,18 +120,7 @@
 			<div id="title">
 				<h1>+EV Sharps</h1>
 			</div>
-			<div id="view-toggle-container">
-				<div class="select-wrapper">
-					<label for="view-select" class="select-label">View</label>
-					<select id="view-select">
-						<option value="table" selected>Table</option>
-						<option value="mobile">Mobile</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-			</div>
+
 			<div id="center-dropdown">
 				<div class="select-wrapper">
 					<label for="page-select" class="select-label">Page</label>
@@ -155,7 +144,11 @@
 						<option value="hr">HR</option>
 						<option value="bv">BV</option>
 						<option value="kambi">Kambi</option>
-					</select>
+					<option value="kal">Kalshi</option>
+<option value="nv">NoVig</option>
+<option value="px">ProphetX</option>
+<option value="poly">Polymarket</option>
+</select>
 					<svg class="select-arrow" viewBox="0 0 20 20">
 						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
 					</svg>
@@ -179,7 +172,11 @@
 					  <label><input type="checkbox" value="re"> RE</label>
 				      <label><input type="checkbox" value="kambi"> Kambi</label>
 				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
-				      <div class="chkdd-actions">
+				      <label><input type="checkbox" value="kal"> Kalshi</label>
+<label><input type="checkbox" value="nv"> NoVig</label>
+<label><input type="checkbox" value="px"> ProphetX</label>
+<label><input type="checkbox" value="poly"> Polymarket</label>
+<div class="chkdd-actions">
 				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 				        <button type="button" data-act="all">All</button>
 				        <button type="button" data-act="none">None</button>
@@ -340,6 +337,20 @@
 			</div>
 			<div id="overlay">
 				<div class="overlay-content">
+<div class="custom-view-control">
+				<div class="select-wrapper">
+					<label for="custom-view-select" class="select-label">View</label>
+					<select id="custom-view-select">
+						<option value="compact">Compact</option>
+						<option value="table">Stacked</option>
+						<option value="mobile">Mobile</option>
+						</select>
+					<svg class="select-arrow" viewBox="0 0 20 20">
+						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
+					</svg>
+				</div>
+			</div>
+
 					<div><h2 style="justify-content: center;">Customize</h2></div>
 					<div style="justify-content: center;display: flex;gap: 1rem;">
 						<div style="display: flex;flex-direction: column;">
@@ -444,6 +455,10 @@
 								<input id="custom_bookOdds_bol" type="checkbox">
 								<label for="custom_bookOdds_bol">Betonline</label>
 							</div>
+							<div><input id="custom_bookOdds_kal" type="checkbox"><label for="custom_bookOdds_kal">Kalshi</label></div>
+							<div><input id="custom_bookOdds_nv" type="checkbox"><label for="custom_bookOdds_nv">NoVig</label></div>
+							<div><input id="custom_bookOdds_px" type="checkbox"><label for="custom_bookOdds_px">ProphetX</label></div>
+							<div><input id="custom_bookOdds_poly" type="checkbox"><label for="custom_bookOdds_poly">Polymarket</label></div>
 							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
 								<label for="custom_bookOdds_pn">Pinnacle</label>
@@ -482,7 +497,22 @@
 					<div style="display: flex;justify-content: center;align-items: center;">
 						<button class="loggedIn" id="save-table" onclick="saveTableSettings();">Save</button>
 						<span id="save-status" style="margin: 0.5rem 0"></span>
+						<button onclick="openColReorder();">Reorder</button>
 						<button onclick="closeOverlay();">Close</button>
+					</div>
+				</div>
+			</div>
+			<div id="col-reorder-modal" class="modal" style="display:none;">
+				<div class="modal-content devig-panel" style="max-width:320px;">
+					<div class="modal-header">
+						<h3>Reorder Columns</h3>
+						<button onclick="closeColReorder()">&times;</button>
+					</div>
+					<p style="font-size:11px;color:#888;margin:4px 0 10px 0;">Drag the handles to reorder. Only visible columns shown.</p>
+					<div id="col-reorder-list"></div>
+					<div class="action-footer" style="margin-top:12px;">
+						<button onclick="saveColReorder()" class="btn-primary">Save</button>
+						<button onclick="closeColReorder()">Cancel</button>
 					</div>
 				</div>
 			</div>
@@ -568,30 +598,9 @@
 			}
 		}, refreshDataTimestamps);
 
-		let loaded = false;
-		function renderTable(data) {
-			TABLE = new Tabulator("#table", {
-				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
-				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
-				autoResize: true,
-				data: data,
-				initialSort: [
-					{column: "ev", dir: "desc"},
-				],
-				columnDefaults: {
-					vertAlign: "middle",
-					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc"
-				},
-				//groupBy: "game",
-				groupHeader: function(value, count, data, group){
-					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
-				},
-				groupToggleElement: "header",
-				columns: [
+		const LIVE_DEFAULT_COL_ORDER = ['ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_mgm', 'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_bol', 'bookOdds_b365', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_pn', 'bookOdds_circa', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px', 'bookOdds_poly', 'logs', 'hitRate', 'hitRateLYR'];
+		function getLiveColumnItems() {
+			const columns = [
 					{
 						title: "Expected<br>Value",
 						field: "ev",
@@ -716,6 +725,16 @@
 					{title: `HR<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["hr"], short=true)}`, field: "bookOdds.hr",  width: 60, sorter: "number", visible: true, formatter: evOddsFormatter},
 					{title: `BV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bv"], short=true)}`, field: "bookOdds.bv",  width: 60, sorter: "number", formatter: evOddsFormatter},
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol",  width: 60, sorter: "number", formatter: evOddsFormatter},
+					{ title: "B365", field: "bookOdds.b365", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Rebet", field: "bookOdds.re", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Fliff", field: "bookOdds.fl", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Kambi", field: "bookOdds.kambi", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Pinnacle", field: "bookOdds.pn", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Circa", field: "bookOdds.circa", width: 60, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Kalshi", field: "bookOdds.kal", width: 110, sorter: "number", formatter: evOddsFormatter },
+					{ title: "NoVig", field: "bookOdds.nv", width: 110, sorter: "number", formatter: evOddsFormatter },
+					{ title: "ProphetX", field: "bookOdds.px", width: 110, sorter: "number", formatter: evOddsFormatter },
+					{ title: "Polymarket", field: "bookOdds.poly", width: 110, sorter: "number", formatter: evOddsFormatter },
 					{
 						title: "Game Logs<br> ➡️ Most Recent",
 						field: "logs",
@@ -729,7 +748,52 @@
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{field: "game", visible: false},
 					{field: "pos", visible: false}
-				]
+			];
+			const labels = {ev:'Expected Value',book:'Best Book',player:'Player',handicap:'Line',prop:'Prop',fairVal:'Fair Value',implied:'Implied',kelly:'Kelly',opp:'Opponent',oppRank:'Opponent Rank',logs:'Game Logs',hitRate:'Season Hit Rate',hitRateLYR:'Last Year Hit Rate'};
+			return columns.filter(col => !['game','pos'].includes(col.field)).map(col => ({
+				key: col.field.replaceAll('.', '_'),
+				label: labels[col.field] || col.title.replace(/<[^>]*>/g, ' ').trim(),
+				cols: [col]
+			}));
+		}
+		function buildLiveColumns(savedOrder) {
+			return buildColumnsFromOrder(savedOrder, LIVE_DEFAULT_COL_ORDER, getLiveColumnItems(), null,
+				[{field:'game',visible:false},{field:'pos',visible:false}]);
+		}
+		function openColReorder() {
+			const savedOrder = CURR_USER?.metadata?.['live-order'] || LIVE_DEFAULT_COL_ORDER;
+			openColReorderModal(getLiveColumnItems(), LIVE_DEFAULT_COL_ORDER, savedOrder,
+				item => item.cols.some(col => TABLE.getColumn(col.field)?.isVisible()));
+		}
+		function closeColReorder() { closeColReorderModal(); }
+		async function saveColReorder() {
+			await saveColReorderModal('live-order', buildLiveColumns, () => showHideUserTable(true));
+		}
+
+		let loaded = false;
+		function renderTable(data) {
+			TABLE = new Tabulator("#table", {
+				tooltipsHeader: true,
+				placeholder:"Data Loading...",
+				layout: "fitDataFill",
+				responsiveLayout: MOBILE ? "" : "",
+				autoResize: true,
+				data: data,
+				initialSort: [
+					{column: "ev", dir: "desc"},
+				],
+				columnDefaults: {
+					vertAlign: "middle",
+					hozAlign: "center",
+					resizable: false,
+					headerSortStartingDir: "desc"
+				},
+				//groupBy: "game",
+				groupHeader: function(value, count, data, group){
+					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
+				},
+				groupToggleElement: "header",
+				columns: buildLiveColumns(CURR_USER?.metadata?.['live-order'])
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 

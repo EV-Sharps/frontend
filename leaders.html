@@ -282,7 +282,7 @@
 			if (data.line < 0) {
 				dec = 100 / data.line;
 			}
-			const kelly = parseFloat(data.ev) / Math.abs(dec) / 4;
+			const kelly = getKelly(data.line, parseFloat(data.ev));
 			let evStr = data.ev;
 			if (parseFloat(data.ev) > 0) {
 				evStr = "+"+evStr;
@@ -290,7 +290,7 @@
 			document.querySelector("#player-ev").innerHTML = `
 				<strong>EV:</strong> ${evStr}% | 
 				<strong>FV:</strong> ${addPlus(data.fairVal)} |
-				<strong><sup>&frac14;</sup> Kelly:</strong> ${kelly.toFixed(2)}u
+				<strong>${kellyFractionLabel()} Kelly:</strong> ${formatKellyValue(kelly)}
 			`;
 
 			// Props Nav

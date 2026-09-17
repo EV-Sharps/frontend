@@ -251,7 +251,15 @@
 							<button class="link-btn" onclick="saveUnitSize()" style="margin:0">Save</button>
 							<span id="unit-save-status" style="font-size:0.85rem;color:#4ade80"></span>
 						</div>
-						<p style="font-size:0.78rem;color:#6b7280;margin:0">Your wager per unit for the ¼ Kelly dollar toggle.</p>
+						<p style="font-size:0.78rem;color:#6b7280;margin:0">Your wager per unit for Kelly dollar amounts.</p>
+						<div class="profile-kelly-settings">
+							<label for="profile-kelly-fraction">Default Kelly fraction</label>
+							<select id="profile-kelly-fraction"></select>
+							<label class="kelly-custom">Percentage of full Kelly <input id="profile-kelly-custom" type="number" min="0.0001" max="100" step="any"> %</label>
+							<button type="button" class="link-btn" onclick="saveKellyFraction()">Save</button>
+							<span id="kelly-save-status" role="status"></span>
+							<p>Used on every odds page unless you choose a page override.</p>
+						</div>
 						<div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
 							<label for="odds-format-select" style="font-size:0.9rem;">Odds Format</label>
 							<div class="select-wrapper" style="width:120px">
@@ -294,7 +302,33 @@
 		let discordSuccess = URLParams.get("discordSuccess");
 		SAVE_DISCORD = URLParams.get("saveDiscord");
 
+		function loadProfileKellyFields() {
+			const select = document.getElementById('profile-kelly-fraction');
+			select.innerHTML = kellyFractionOptions();
+			initKellyFractionFields(select, document.getElementById('profile-kelly-custom'), getProfileKellyFraction());
+		}
+		loadProfileKellyFields();
+		async function saveKellyFraction() {
+			const status = document.getElementById('kelly-save-status');
+			try {
+				const fraction = readKellyFractionFields(document.getElementById('profile-kelly-fraction'), document.getElementById('profile-kelly-custom'));
+				status.textContent = 'Saving...';
+				if (CURR_USER) {
+					const metadata = { ...CURR_USER.metadata, kelly_fraction: fraction };
+					const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_USER.id);
+					if (error) throw new Error('Could not save. Please try again.');
+					CURR_USER.metadata = metadata;
+					cacheProfile(CURR_USER);
+					status.textContent = 'Saved';
+				} else {
+					localStorage.setItem('kelly_fraction', fraction);
+					status.textContent = 'Saved on this device';
+				}
+			} catch (error) { status.textContent = error.message; }
+		}
+
 		handleSession().then(res => {
+			loadProfileKellyFields();
 			if (CURR_USER?.discord_id) {
 				document.querySelector("#link-discord-btn").textContent = "Change Discord";
 			}

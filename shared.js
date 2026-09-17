@@ -16,6 +16,105 @@ let RES, TABLE;
 let CSV_DOWNLOADED = false;
 let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO, DERBY, STREAM;
 let KELLY_DOLLARS = false;
+const KELLY_FRACTIONS = [[1, 'Full'], [0.5, '½'], [0.25, '¼'], [0.125, '⅛'], [0.0625, '¹⁄₁₆']];
+const kellyPageOverrides = new Map();
+function validKellyFraction(value) {
+	const number = Number(value);
+	return Number.isFinite(number) && number > 0 && number <= 1;
+}
+function getProfileKellyFraction() {
+	if (CURR_USER) return validKellyFraction(CURR_USER.metadata?.kelly_fraction) ? Number(CURR_USER.metadata.kelly_fraction) : 0.25;
+	try {
+		const saved = localStorage.getItem('kelly_fraction');
+		if (validKellyFraction(saved)) return Number(saved);
+	} catch (e) {}
+	return 0.25;
+}
+function kellyPageKey() {
+	return `kelly_fraction:${CURR_USER?.id || 'guest'}:${PAGE}:${SPORT || ''}`;
+}
+function getPageKellyOverride() {
+	const key = kellyPageKey();
+	if (!kellyPageOverrides.has(key)) {
+		let value = null;
+		try { value = localStorage.getItem(key); } catch (e) {}
+		kellyPageOverrides.set(key, validKellyFraction(value) ? Number(value) : null);
+	}
+	return kellyPageOverrides.get(key);
+}
+function getKellyFraction() {
+	return getPageKellyOverride() ?? getProfileKellyFraction();
+}
+function kellyFractionLabel(value = getKellyFraction()) {
+	return KELLY_FRACTIONS.find(([fraction]) => fraction === value)?.[1] || `${Number((value * 100).toFixed(4))}%`;
+}
+function kellyFractionOptions(includeDefault = false) {
+	return (includeDefault ? `<option value="default">Use profile default (${kellyFractionLabel(getProfileKellyFraction())})</option>` : '') +
+		KELLY_FRACTIONS.map(([value, label]) => `<option value="${value}">${label} Kelly</option>`).join('') + '<option value="custom">Custom percentage</option>';
+}
+function initKellyFractionFields(select, custom, value) {
+	select.value = value === null ? 'default' : KELLY_FRACTIONS.some(([fraction]) => fraction === value) ? String(value) : 'custom';
+	custom.value = Number(((value ?? getProfileKellyFraction()) * 100).toFixed(4));
+	const update = () => {
+		custom.parentElement.hidden = select.value !== 'custom';
+		custom.disabled = select.value !== 'custom';
+		custom.required = select.value === 'custom';
+	};
+	select.onchange = update;
+	update();
+}
+function readKellyFractionFields(select, custom) {
+	if (select.value === 'default') return null;
+	const value = select.value === 'custom' ? Number(custom.value) / 100 : Number(select.value);
+	if (!validKellyFraction(value)) throw new Error('Enter a percentage greater than 0 and at most 100.');
+	return value;
+}
+async function refreshKellySizing() {
+	if (RES?.data && TABLE && typeof changeFilter === 'function') await changeFilter();
+	else if (TABLE) {
+		TABLE.getRows().forEach(row => {
+			const data = row.getData();
+			if (data.line && Number.isFinite(Number(data.ev))) data.kelly = getKelly(data.line, data.ev);
+			row.reformat();
+		});
+	}
+	initKellyToggle();
+}
+function openKellySettings(event) {
+	event?.stopPropagation();
+	let dialog = document.getElementById('kelly-settings');
+	if (!dialog) {
+		dialog = document.createElement('dialog');
+		dialog.id = 'kelly-settings';
+		dialog.setAttribute('aria-labelledby', 'kelly-settings-title');
+		dialog.innerHTML = `<form><h3 id="kelly-settings-title">Kelly sizing</h3>
+			<p>This page only. Your profile default stays unchanged.</p>
+			<label for="page-kelly-fraction">Fraction</label><select id="page-kelly-fraction"></select>
+			<label class="kelly-custom">Percentage of full Kelly <input id="page-kelly-custom" type="number" min="0.0001" max="100" step="any"> %</label>
+			<p class="kelly-status" role="status"></p>
+			<div class="kelly-actions"><button type="button" class="kelly-cancel">Cancel</button><button type="submit">Apply</button></div></form>`;
+		document.body.appendChild(dialog);
+		dialog.querySelector('.kelly-cancel').onclick = () => dialog.close();
+		dialog.querySelector('form').onsubmit = async event => {
+			event.preventDefault();
+			try {
+				const value = readKellyFractionFields(dialog.querySelector('select'), dialog.querySelector('input'));
+				const key = kellyPageKey();
+				kellyPageOverrides.set(key, value);
+				try {
+					if (value === null) localStorage.removeItem(key);
+					else localStorage.setItem(key, value);
+				} catch (e) {}
+				await refreshKellySizing();
+				dialog.close();
+			} catch (error) { dialog.querySelector('.kelly-status').textContent = error.message; }
+		};
+	}
+	dialog.querySelector('select').innerHTML = kellyFractionOptions(true);
+	initKellyFractionFields(dialog.querySelector('select'), dialog.querySelector('input'), getPageKellyOverride());
+	dialog.querySelector('.kelly-status').textContent = '';
+	dialog.showModal();
+}
 function getUnitSize() {
 	return CURR_USER?.metadata?.unit_size || 100;
 }
@@ -134,7 +233,7 @@ const PAGE_SECTIONS = [
 let _ppRenderGrid = null;
 
 function getPageFavorites() {
-	if (CURR_USER && CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
+	if (typeof CURR_USER !== 'undefined' && CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
 	try { return JSON.parse(localStorage.getItem("page_favorites") || "[]"); } catch(e) { return []; }
 }
 
@@ -459,14 +558,132 @@ function oddsDisplay(val) {
 	return oddsAmericanToDecimal(val);
 }
 
-const evOddsFormatter = function(cell) {
+// One browser preference shared by the odds screens. URL views override it.
+function supportsOddsViews() {
+	return !!document.getElementById('custom-view-select');
+}
+
+function getSavedOddsView(requested) {
+	const normalize = view => view === 'stacked' ? 'table' : ['table', 'compact', 'mobile'].includes(view) ? view : null;
+	if (!supportsOddsViews()) return requested || 'table';
+	let saved;
+	try {
+		saved = localStorage.getItem('odds-view');
+		if (!saved && localStorage.getItem('dingers-odds-layout') === 'compact') saved = 'compact';
+	} catch (e) {}
+	return normalize(requested) || normalize(saved) || 'table';
+}
+
+function isStackedOddsCell(cell) {
+	return supportsOddsViews() && CURRENT_VIEW === 'table' && cell.getTable().element.id === 'table';
+}
+
+const oddsTableViewStates = new WeakMap();
+function syncOddsSummaryColumns(table = TABLE) {
+	const state = oddsTableViewStates.get(table);
+	if (!state || state.syncing) return;
+	state.syncing = true;
+	try {
+		const columns = new Map(table.getColumns().map(col => [col.getField(), col]));
+		for (const [field, host, label, formatter] of [
+			['fairVal', 'ev', 'Expected Value', evFormatter],
+			['book', 'player', 'Player', playerFormatter]
+		]) {
+			const column = columns.get(field), parent = columns.get(host);
+			if (!column || !parent || parent.getDefinition().formatter !== formatter) continue;
+			const combined = CURRENT_VIEW === 'table' && parent.isVisible();
+			if (combined || state.visibility[field] === false) column.hide();
+			else column.show();
+			const checkbox = document.getElementById(`custom_${field}`);
+			if (checkbox) {
+				checkbox.disabled = combined;
+				checkbox.parentElement.title = combined ? `Shown underneath ${label} in Stacked view.` : '';
+			}
+		}
+	} finally { state.syncing = false; }
+}
+
+function applyOddsTableView(table = TABLE) {
+	if (!supportsOddsViews()) return;
+	const tableElement = document.getElementById('table');
+	tableElement?.classList.toggle('stacked-odds', CURRENT_VIEW === 'table');
+	const mobile = CURRENT_VIEW === 'mobile';
+	if (tableElement) tableElement.style.display = mobile ? 'none' : 'initial';
+	const cards = document.getElementById('card-container');
+	if (cards) cards.style.display = mobile ? 'grid' : 'none';
+	const playerFilter = document.querySelector('.filter-wrapper');
+	if (playerFilter) playerFilter.style.display = mobile ? 'flex' : 'none';
+	const state = oddsTableViewStates.get(table);
+	if (!state) return;
+	for (const col of table.getColumns()) {
+		const original = state.widths.get(col.getField());
+		if (!original) continue;
+		const stacked = CURRENT_VIEW === 'table';
+		const width = stacked ? Math.max(110, original.width) : original.width;
+		const def = col.getDefinition();
+		def.minWidth = stacked ? Math.max(110, original.minWidth) : original.minWidth;
+		def.width = width;
+		if (col.getWidth() !== width) col.setWidth(width);
+	}
+	syncOddsSummaryColumns(table);
+	table.getRows().forEach(row => { row.reformat(); row.normalizeHeight(); });
+	table.redraw(true);
+}
+
+function initializeOddsTableView(table) {
+	if (!supportsOddsViews() || oddsTableViewStates.has(table)) return;
+	const state = { visibility: {}, widths: new Map(), syncing: false };
+	oddsTableViewStates.set(table, state);
+	const capture = () => {
+		state.widths.clear();
+		for (const col of table.getColumns()) {
+			const field = col.getField();
+			if (['fairVal', 'book'].includes(field)) state.visibility[field] = col.isVisible();
+			if (['bookOdds.kal', 'bookOdds.nv', 'bookOdds.px', 'bookOdds.poly'].includes(field)) {
+				state.widths.set(field, { width: col.getWidth(), minWidth: col.getDefinition().minWidth || 40 });
+			}
+		}
+		applyOddsTableView(table);
+	};
+	table.on('columnVisibilityChanged', (column, visible) => {
+		if (state.syncing) return;
+		const field = column.getField();
+		if (['fairVal', 'book'].includes(field)) state.visibility[field] = visible;
+		if (['ev', 'player', 'book', 'fairVal'].includes(field)) syncOddsSummaryColumns(table);
+	});
+	table.on('columnsLoaded', capture);
+	capture();
+}
+
+const evFormatter = function(cell, params, rendered) {
+	const ev = baseEVFormatter(cell, params, rendered);
+	const data = cell.getRow().getData();
+	if (!isStackedOddsCell(cell) || data.prop === 'separator') return ev;
+	const display = ev || (cell.getValue() === 0 ? '<span class="ev">0%</span>' : '<span>-</span>');
+	const fair = data.fairVal == null || data.fairVal === '' ? '-' : plusMinusFormatter({ getValue: () => data.fairVal });
+	return `<div class="stacked-ev-summary">${display}<span class="stacked-fair-value" title="Fair Value">FV ${fair}</span></div>`;
+};
+
+const playerFormatter = function(cell, params, rendered) {
+	const player = basePlayerFormatter(cell, params, rendered);
+	if (!isStackedOddsCell(cell) || cell.getRow().getData().prop === 'separator') return player;
+	const best = bestBookFormatter(cell, { book: BOOK }, rendered);
+	return `<div class="stacked-player-summary">${player}${best || '<span></span>'}</div>`;
+};
+
+const evOddsFormatter = function(cell, params = {}) {
+	params = { ...params, stackedOdds: params.stackedOdds ?? isStackedOddsCell(cell) };
 	const data = cell.getRow().getData();
 	const odds = cell.getValue();
 
 	if (!odds) return "";
-	if (data.blurred) return `<div class='blurred'>${odds}</div>`;
+	const blurOdds = data.blurred || params.blurOdds || (cell.getField() === "bookOdds.circa" && data.circa_blurred);
+	if (blurOdds && !params.stackedOdds) return `<div class='blurred'>${odds}</div>`;
 
 	const field = cell.getField();
+	const bookKey = field.startsWith("bookOdds.") ? field.split(".")[1] : null;
+	const liq = bookKey ? data.liquidity?.[bookKey] : null;
+	const inlineLiquidity = params.stackedOdds && ["kal", "nv", "px", "poly"].includes(bookKey);
 	let link = null;
 	if (data.links && field.startsWith("bookOdds.")) {
 		const book = field.split(".")[1];
@@ -490,10 +707,22 @@ const evOddsFormatter = function(cell) {
 		}
 	}
 
-	// Liquidity tip: hover on desktop, tap on mobile
-	const bookKey = field.startsWith("bookOdds.") ? field.split(".")[1] : null;
-	const liq = bookKey ? data.liquidity?.[bookKey] : null;
-	if (Array.isArray(liq) && liq.length >= 2) {
+	if (params.stackedOdds) {
+		const highlighted = data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0);
+		const price = (raw, side) => {
+			const signed = Number(raw) > 0 && !String(raw).startsWith('+') ? `+${raw}` : raw;
+			const value = raw ? oddsDisplay(signed) : '-';
+			const color = !raw || raw === '-' ? ' stacked-odds-missing' : highlighted && idx === side ? ' odds-positive' : '';
+			const amount = inlineLiquidity && raw ? numFrom(liq?.[side]) : null;
+			const liquidity = amount === null ? '' : ` <span class="stacked-odds-liquidity">($${amount.toLocaleString('en-US')})</span>`;
+			return `<span class="stacked-odds-line${color}" title="${side ? 'Under' : 'Over'}" aria-label="${side ? 'Under' : 'Over'} ${value}">${value}${liquidity}</span>`;
+		};
+		res = `<span class="stacked-odds-stack">${price(oRaw, 0)}${price(uRaw, 1)}</span>`;
+		if (blurOdds) return `<div class="blurred">${res}</div>`;
+	}
+
+	// Compact rows and other tables keep the hover/tap liquidity tip.
+	if (!inlineLiquidity && Array.isArray(liq) && liq.length >= 2) {
 		const fmtLiq = n => numFrom(n)?.toLocaleString('en-US') ?? n;
 		res = `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${res}</span><span class="liq-tip">$${fmtLiq(liq[0])}/$${fmtLiq(liq[1])}</span></span>`;
 	}
@@ -501,7 +730,7 @@ const evOddsFormatter = function(cell) {
 	if (link) {
 		return `<div style="position:relative;display:inline-block;width:100%;">
 			${res}
-			<a href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+			<a class="odds-betslip-link" href="${link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
 				style="position:absolute;bottom:0px;right:0px;font-size:10px;font-weight:700;line-height:1;text-decoration:none;color:#6b7280;" title="Add to betslip">+</a>
 		</div>`;
 	}
@@ -1336,7 +1565,7 @@ const evMutFormatter = function(cell) {
 	return ev+"%";
 }
 
-const evFormatter = function(cell, params, rendered) {
+const baseEVFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	let ev = cell.getValue();
 	if (!ev || data.prop == "separator") return "";
@@ -1558,12 +1787,8 @@ const propFormatter = function(cell) {
 const kellyFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	if (data.prop == "separator") return "";
-	let dec = data.line / 100;
-	if (data.line < 0) {
-		dec = 100 / data.line;
-	}
 	let ev = params.circa ? data["vs-circa_ev"] : data.ev;
-	const kelly = parseFloat(ev) / Math.abs(dec) / 4;
+	const kelly = getKelly(data.line, parseFloat(ev));
 	if (KELLY_DOLLARS) {
 		return `$${(kelly * getUnitSize()).toFixed(2)}`;
 	}
@@ -1593,7 +1818,30 @@ function initKellyToggle() {
 	const col = TABLE?.getColumn("kelly");
 	if (!col) return;
 	const el = col.getElement();
-	if (!el || el.querySelector('#kelly-toggle-btn')) return;
+	if (!el) return;
+	const title = el.querySelector('.tabulator-col-title');
+	if (title) {
+		let fractionButton = title.querySelector('.kelly-fraction-button');
+		if (!fractionButton) {
+			fractionButton = document.createElement('button');
+			fractionButton.type = 'button';
+			fractionButton.className = 'kelly-fraction-button';
+			fractionButton.onclick = openKellySettings;
+			title.replaceChildren(fractionButton);
+		}
+		fractionButton.textContent = `${kellyFractionLabel()} Kelly`;
+		fractionButton.title = 'Change Kelly fraction for this page';
+		// Reserve room for the full label, header padding, and sort arrow.
+		const headerWidth = supportsOddsViews()
+			? Math.max(65, Math.ceil(fractionButton.scrollWidth) + 16)
+			: Math.max(90, Math.ceil(fractionButton.scrollWidth) + 36);
+		const definition = col.getDefinition();
+		definition.minWidth = Math.max(definition.minWidth || 0, headerWidth);
+		definition.width = Math.max(Number(definition.width) || 0, headerWidth);
+		if (col.getWidth() < headerWidth) col.setWidth(headerWidth);
+	}
+	document.querySelectorAll('label[for="custom_kelly"]').forEach(label => { label.textContent = `${kellyFractionLabel()} Kelly`; });
+	if (el.querySelector('#kelly-toggle-btn')) return;
 	const btn = document.createElement('button');
 	btn.id = 'kelly-toggle-btn';
 	btn.textContent = KELLY_DOLLARS ? '$' : 'u';
@@ -1705,7 +1953,7 @@ const ftFormatter = function(cell, params, rendered) {
 	return cell.getValue()+" ft";
 }
 
-const playerFormatter = function(cell, params, rendered) {
+const basePlayerFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	const sport = params.sport || data.sport;
 	let player = title(data.player);
@@ -2627,6 +2875,7 @@ function loadWeights() {
 }
 
 function showHideUserTable(loaded) {
+	initKellyToggle();
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
 		if (!loaded && typeof parseWeightKey === 'function') {
 			loadWeights();
@@ -3216,7 +3465,7 @@ function getKelly2(finalOdds, implied) {
 	b = 100 / Math.abs(finalOdds);
   }
 
-  const kelly = ((p * b - (1 - p)) / b) / 4; // quarter Kelly
+  const kelly = ((p * b - (1 - p)) / b) * getKellyFraction();
   return Number(kelly.toFixed(2));
 }
 
@@ -3226,7 +3475,7 @@ function getKelly(finalOdds, ev) {
 	p = 100 / finalOdds;
   }
   
-  return ev / Math.abs(p) / 4;
+  return ev / Math.abs(p) * getKellyFraction();
 }
 
 function averageCustomSharps(bookOdds, devigBook, isUnder = false) {
@@ -3909,8 +4158,8 @@ const HELP_ITEMS = [
 		getEl: () => colHeader("implied")
 	},
 	{
-		title: "¼ Kelly (QK)",
-		desc: "Recommended bet size using 25% of the Kelly Criterion. Balances growth and variance. Only shown when EV is positive.",
+		title: "Kelly sizing",
+		desc: "Bet size using your selected fraction of the Kelly Criterion. Click the Kelly header to change the fraction for this page.",
 		getEl: () => colHeader("kelly")
 	},
 	{
@@ -4060,7 +4309,8 @@ function parseURLParams() {
 	SIDE = URLParams.get("side") ?? "both";
 	REQUIRED = URLParams.get("required") || "";
 	TEAMS = URLParams.get("teams") || "";
-	CURRENT_VIEW = URLParams.get("view") || "table";
+	CURRENT_VIEW = getSavedOddsView(URLParams.get("view"));
+	document.getElementById("table")?.classList.toggle("stacked-odds", supportsOddsViews() && CURRENT_VIEW === "table");
 	TEAM = URLParams.get("team") || "det";
 	ALL = URLParams.get("all");
 	PLAYERS = URLParams.get("players") || "";
@@ -4130,7 +4380,8 @@ function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
 		item.dataset.key = key;
 		item.draggable = true;
 		item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;touch-action:none;';
-		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⋮⋮</span><span>${meta.label}</span>`;
+		const label = meta.key === 'kelly' ? `${kellyFractionLabel()} Kelly` : meta.label;
+		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⋮⋮</span><span>${label}</span>`;
 		item.addEventListener('dragstart', e => {
 			_colReorderDragSrc = item;
 			e.dataTransfer.effectAllowed = 'move';

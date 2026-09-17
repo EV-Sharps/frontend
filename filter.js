@@ -666,6 +666,7 @@ if (methodInit) {
 
 function changeView(view) {
 	CURRENT_VIEW = view;
+	applyOddsTableView();
 	const cardContainer = document.getElementById("card-container");
 	const table = document.getElementById("table");
 	const playerFilter = document.querySelector(".filter-wrapper");
@@ -683,16 +684,21 @@ function changeView(view) {
 	if (RES && TABLE) return changeFilter();
 }
 
-if (document.getElementById("view-select")) {
-	document.querySelector("#view-select").value = CURRENT_VIEW || "";
-	document.querySelector("#view-select").addEventListener("change", (event) => {
+if (document.getElementById("custom-view-select")) {
+	document.querySelector("#custom-view-select").value = CURRENT_VIEW || "";
+	document.querySelector("#custom-view-select").addEventListener("change", (event) => {
 		CURRENT_VIEW = event.target.value;
+		try { localStorage.setItem('odds-view', CURRENT_VIEW); } catch (e) {}
 		const params = new URLSearchParams(window.location.search);
 		params.set("view", CURRENT_VIEW);
 		const newUrl = `${window.location.pathname}?${params.toString()}`;
 		history.pushState({}, '', newUrl);
 		changeView(event.target.value);
 	});
+}
+
+if (supportsOddsViews() && typeof tableReady !== 'undefined') {
+	tableReady.then(() => initializeOddsTableView(TABLE));
 }
 
 const DEFAULT_DEVIGS = [
@@ -1670,6 +1676,7 @@ function changeFilter(render = true) {
 
 	reorderOddsColumns(BOOK, DEVIG);
 	updateWeightHeader();
+	initKellyToggle();
 
 	if (typeof ODDS_HIDDEN !== 'undefined' && ODDS_HIDDEN) {
 		TABLE.getColumns().forEach(col => {

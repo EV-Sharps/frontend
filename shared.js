@@ -185,6 +185,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 TDs", value: "tds"},
 			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
+			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
 			{ label: "🏈 Preseason", value: "preseason", sharp: true },

@@ -1501,7 +1501,7 @@ function changeFilter(render = true) {
 	params.set("min", MIN);
 	params.set("max", MAX);
 
-	if (PAGE.includes("main")) {
+	if (PAGE.includes("main") || PAGE === "live") {
 		params.set("sport", SPORT);
 	}
 

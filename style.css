@@ -3026,7 +3026,9 @@ button#logout:hover {
 	#table.stacked-odds .weight-hdrs { text-align: center; }
 
 	#table.stacked-odds .stacked-ev-summary,
+	#table.stacked-odds .stacked-record-summary,
 	#table.stacked-odds .stacked-player-summary { display: grid; grid-template-rows: 19px 19px; align-items: center; text-align: center; }
+	#table.stacked-odds .record-roi { font-size: 11px; white-space: nowrap; }
 	#table.stacked-odds .stacked-fair-value { font-size: 10px; font-weight: 400; color: var(--muted); white-space: nowrap; }
 	#table.stacked-odds .stacked-player-summary .evbook-cell { height: 19px; justify-content: flex-start; margin-left: 25px; }
 	#table.stacked-odds .stacked-player-summary .book-img { width: 16px; height: 16px; order: -1; margin-left:0;margin-right:0.25rem; }

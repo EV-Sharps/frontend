@@ -586,6 +586,18 @@ function syncOddsSummaryColumns(table = TABLE) {
 	state.syncing = true;
 	try {
 		const columns = new Map(table.getColumns().map(col => [col.getField(), col]));
+		const record = columns.get('roiRecord');
+		if (record) {
+			const stacked = CURRENT_VIEW === 'table';
+			if (stacked && state.visibility.roiRecord !== false) record.show();
+			else record.hide();
+			const checkbox = document.getElementById('custom_roiRecord');
+			if (checkbox) {
+				checkbox.disabled = !stacked;
+				checkbox.checked = state.visibility.roiRecord !== false;
+				checkbox.parentElement.title = stacked ? '' : 'Available in Stacked view.';
+			}
+		}
 		for (const [field, host, label, formatter] of [
 			['fairVal', 'ev', 'Expected Value', evFormatter],
 			['book', 'player', 'Player', playerFormatter]
@@ -640,6 +652,7 @@ function initializeOddsTableView(table) {
 		for (const col of table.getColumns()) {
 			const field = col.getField();
 			if (['fairVal', 'book'].includes(field)) state.visibility[field] = col.isVisible();
+			if (field === 'roiRecord' && state.visibility.roiRecord === undefined) state.visibility.roiRecord = col.isVisible();
 			if (['bookOdds.kal', 'bookOdds.nv', 'bookOdds.px', 'bookOdds.poly'].includes(field)) {
 				state.widths.set(field, { width: col.getWidth(), minWidth: col.getDefinition().minWidth || 40 });
 			}
@@ -650,7 +663,8 @@ function initializeOddsTableView(table) {
 		if (state.syncing) return;
 		const field = column.getField();
 		if (['fairVal', 'book'].includes(field)) state.visibility[field] = visible;
-		if (['ev', 'player', 'book', 'fairVal'].includes(field)) syncOddsSummaryColumns(table);
+		if (field === 'roiRecord') state.visibility.roiRecord = visible;
+		if (['ev', 'player', 'book', 'fairVal', 'roiRecord'].includes(field)) syncOddsSummaryColumns(table);
 	});
 	table.on('columnsLoaded', capture);
 	capture();
@@ -668,7 +682,7 @@ const evFormatter = function(cell, params, rendered) {
 const playerFormatter = function(cell, params, rendered) {
 	const player = basePlayerFormatter(cell, params, rendered);
 	if (!isStackedOddsCell(cell) || cell.getRow().getData().prop === 'separator') return player;
-	const best = bestBookFormatter(cell, { book: BOOK }, rendered);
+	const best = bestBookFormatter(cell, { book: BOOK, hideRecord: cell.getTable().getColumns().some(col => col.getField() === 'roiRecord') }, rendered);
 	return `<div class="stacked-player-summary">${player}${best || '<span></span>'}</div>`;
 };
 
@@ -1652,7 +1666,7 @@ const bestBookFormatter = function(cell, params, rendered) {
 	// Get ROI color for vertical slice and W-L record
 	let extra = "";
 	let borderColor = 'transparent';
-	const roiData = getRowROI(data);
+	const roiData = params?.hideRecord ? null : getRowROI(data);
 	if (roiData !== null) {
 		borderColor = roiToColor(roiData.roi);
 		extra = `${roiData.wins}W-${roiData.losses}L`;
@@ -4043,6 +4057,20 @@ async function loadHeatmapData(_retriesLeft = 10) {
 			console.warn(`Failed to load heatmap data for prop ${prop}:`, e);
 		}
 	}));
+	// Rows can render before the heatmap requests finish. Re-run their formatters
+	// now that the record and ROI data is available, including compact ROI bars.
+	if (typeof TABLE !== 'undefined' && TABLE && typeof TABLE.getRows === 'function') {
+		TABLE.getRows().forEach(row => row.reformat());
+	}
+}
+
+function recordROIFormatter(cell) {
+	const data = cell.getRow().getData();
+	if (data.prop === 'separator') return '';
+	const record = getRowROI(data);
+	if (!record) return '<span title="No historical record for this EV and odds range">-</span>';
+	const roi = `${record.roi > 0 ? '+' : ''}${(record.roi * 100).toFixed(1)}% ROI`;
+	return `<div class="stacked-record-summary${data.blurred ? ' blurred' : ''}"><span>${record.wins}W–${record.losses}L</span><span class="record-roi" style="color: ${roiToColor(record.roi)}">${roi}</span></div>`;
 }
 
 // Color interpolation matching heatmap colors
@@ -4087,10 +4115,6 @@ function getRowROI(rowData) {
 		const bookData = propData[rowData.book] || propData['best'];
 		if (!bookData) return null;
 
-		// Stored dev keys are "+"-joined book lists that can come back in any order (same
-		// issue devigSetEquals already handles for the dev-picker chips) — a straight
-		// reverse() only catches a 2-book swap or a full-list reversal, not an arbitrary
-		// permutation of 3+ books, so search by book-set instead of by exact string.
 		let devigData = bookData[DEVIG];
 		if (!devigData && DEVIG) {
 			const matchKey = Object.keys(bookData).find(k => devigSetEquals(k, DEVIG));

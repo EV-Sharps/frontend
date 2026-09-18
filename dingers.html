@@ -219,6 +219,10 @@
 							<label for="custom_ev">Expected Value</label>
 						</div>
 						<div>
+							<input id="custom_roiRecord" type="checkbox">
+							<label for="custom_roiRecord">Record (Stacked)</label>
+						</div>
+						<div>
 							<input id="custom_fairVal" type="checkbox">
 							<label for="custom_fairVal">Fair Value</label>
 						</div>
@@ -1239,7 +1243,7 @@
 		}
 
 		const DINGERS_DEFAULT_COL_ORDER = [
-			'ev', "book", "player", 'handicap', 'fairVal','implied','kelly',
+			'ev', 'roiRecord', "book", "player", 'handicap', 'fairVal','implied','kelly',
 			'bookOdds_circa','bookOdds_fd','bookOdds_b365','bookOdds_dk','bookOdds_mgm',
 			'bookOdds_espn','bookOdds_cz','bookOdds_fn','bookOdds_br','bookOdds_hr',
 			'bookOdds_hr_oh','bookOdds_bv','bookOdds_re','bookOdds_fl','bookOdds_kambi',
@@ -1252,7 +1256,8 @@
 
 		function getDingersColumnItems() {
 			return [
-				{ key: 'ev',              label: 'Expected Value',   cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 45 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
+				{ key: 'ev',              label: 'Expected Value',   cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 55 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
+				{ key: 'roiRecord', label: 'Record', cols: [{ title: 'Record<br><span style="font-size: 10px; font-weight: normal;">100-odds bins<br>1% EV bins</span>', field: 'roiRecord', width: 80, minWidth: 80, headerSort: false, formatter: recordROIFormatter, headerTooltip: 'Historical W–L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.' }] },
 				{ key: 'player',          label: 'Player',           cols: [{ title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 90 : 140, formatterParams:{sport: SPORT}, hozAlign: "left", responsive: 0, frozen: MOBILE ? true : true }] },
 				{ key: 'fairVal',         label: 'Fair Value',       cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: 'implied',         label: 'Implied',          cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
@@ -1278,8 +1283,8 @@
 				{ key: 'bookOdds_fl',     label: 'Fliff',            cols: [{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_kambi',  label: 'Kambi',            cols: [{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_bol',    label: 'BetOnline',        cols: [{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 70, minWidth: 70, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, minWidth: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_px',     label: 'ProphetX',         cols: [{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_poly',   label: 'Polymarket',       cols: [{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter, visible: false}] },
 				{ key: 'bookOdds_pn',     label: 'Pinnacle',         cols: [{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter}] },
@@ -1322,6 +1327,10 @@
 		}
 
 		function buildDingersColumns(savedOrder) {
+			if (savedOrder?.length && !savedOrder.includes('roiRecord')) {
+				savedOrder = [...savedOrder];
+				savedOrder.splice(Math.max(0, savedOrder.indexOf('ev') + 1), 0, 'roiRecord');
+			}
 			return buildColumnsFromOrder(
 				savedOrder, DINGERS_DEFAULT_COL_ORDER, getDingersColumnItems(), _dingersStarCol,
 				[
@@ -1613,6 +1622,7 @@
 			const left = document.querySelector("#table-container");
 			const table = document.querySelector("#table");
 			right.style.display = "none";
+			document.getElementById("dev-picker-wrapper").style.display = "";
 			right.classList.remove("mobile-open");
 			left.style.width = "100%";
 			table.style.display = "";
@@ -1646,6 +1656,7 @@
 					//left.style.width = "50%";
 				}
 				right.style.display = "flex";
+				document.getElementById("dev-picker-wrapper").style.display = "none";
 				const curSel = document.querySelector("#btwn-select").value;
 				if (curSel === "mix") {
 					fetchAndShowMix(data);

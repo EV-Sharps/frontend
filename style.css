@@ -3051,6 +3051,24 @@ button#logout:hover {
 	#table.stacked-odds .stacked-ev-summary .ev { font-weight: 700; }
 
 
+.snap-share { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.snap-history { display: flex; align-items: flex-end; gap: 3px; width: 48px; height: 12px; }
+.snap-history-bar { flex: 1; min-height: 1px; background: #64748b; border-radius: 1px 1px 0 0; }
+.snap-history-bar.latest { background: var(--accent, #77c3ff); }
+.snap-history-bar.missing { opacity: 0.25; }
+.snap-share-pill { justify-content: center; gap: 3px; }
+.snap-share-pill strong { font-size: 0.8rem; }
+.snap-share-pill > span:last-child { font-size: 0.65rem; text-align: center; opacity: 0.85; }
+
+button.watchlist-star {
+	background: transparent; border: 0; padding: 2px 4px; font-size: 1rem; line-height: 1; cursor: pointer;
+}
+button.watchlist-star:disabled { cursor: default; }
+button.watchlist-star:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#watchlist-status {
+	position: fixed; bottom: 16px; left: 16px; right: 16px; width: fit-content; max-width: calc(100% - 32px);
+	padding: 10px 14px; border: 1px solid #f87171; border-radius: 6px; background: #172027; color: #fff; z-index: 10002;
+}
 .custom-view-control { display: flex; justify-content: center; margin: 12px 0; }
 @media (max-width: 1430px) {
 	#header > .custom-view-control {

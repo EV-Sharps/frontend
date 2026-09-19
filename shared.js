@@ -670,6 +670,146 @@ function initializeOddsTableView(table) {
 	capture();
 }
 
+// ── Watchlist ────────────────────────────────────────────────────────────────
+function _normPlayer(p) { return (p || "").toLowerCase().trim(); }
+function watchlistSport(sport) {
+	return ({ k: "mlb", atgs: "nhl", props: "nfl" })[sport] || sport || "";
+}
+
+function isWatchlisted(player, sport = SPORT) {
+	const p = _normPlayer(player);
+	sport = watchlistSport(sport);
+	if (!p) return false;
+	return (CURR_USER?.metadata?.watchlist || []).some(w => _normPlayer(w.player ?? w) === p && (!w.sport || !sport || w.sport === sport));
+}
+
+function isTracked(player, sport = SPORT) {
+	const p = _normPlayer(player);
+	sport = watchlistSport(sport);
+	if (!p) return false;
+	return (CURR_USER?.metadata?.bets || []).some(b => {
+		const bp = _normPlayer(b.player);
+		return bp && (!b.sport || !sport || b.sport === sport) && (p.includes(bp) || bp.includes(p));
+	});
+}
+
+function _starColor(player, sport = SPORT) {
+	if (isWatchlisted(player, sport)) return "#f59e0b";
+	if (isTracked(player, sport)) return "#3b82f6";
+	return "#6b7280";
+}
+
+const pendingWatchlistPlayers = new Set();
+let watchlistSaveQueue = Promise.resolve();
+let watchlistStatusTimer;
+
+function updateWatchlistStar(star) {
+	const { player, sport } = star.dataset;
+	const watched = isWatchlisted(player, sport);
+	const tracked = isTracked(player, sport);
+	const signedIn = !!(CURR_USER && CURR_SESSION);
+	star.textContent = watched || tracked ? "★" : "☆";
+	star.style.color = _starColor(player, sport);
+	star.disabled = !signedIn || pendingWatchlistPlayers.has(JSON.stringify([sport, player]));
+	star.title = !signedIn ? "Sign in to add to your watchlist" : watched ? "Remove from watchlist" : tracked ? "In tracker; add to watchlist" : "Add to watchlist";
+	star.setAttribute("aria-label", `${star.title}: ${player}`);
+	star.setAttribute("aria-pressed", String(watched));
+}
+
+function refreshWatchlistStars() {
+	document.querySelectorAll('.watchlist-star[data-player]').forEach(updateWatchlistStar);
+}
+
+function createWatchlistStar(data) {
+	const player = _normPlayer(data.player);
+	if (!player || data.prop === "separator") return null;
+	const star = document.createElement("button");
+	star.type = "button";
+	star.className = "watchlist-star";
+	star.dataset.player = player;
+	star.dataset.sport = watchlistSport(data.sport || SPORT);
+	star.dataset.team = data.team || "";
+	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team)");
+	updateWatchlistStar(star);
+	return star;
+}
+
+function watchlistColumn() {
+	return {
+		title: "", field: "_watchlist", width: 30, minWidth: 30, maxWidth: 30,
+		headerSort: false, frozen: true, responsive: 0, hozAlign: "center",
+		formatter: cell => createWatchlistStar(cell.getRow().getData()) || ""
+	};
+}
+
+const watchlistTables = new WeakSet();
+function initializeWatchlistTable(table) {
+	if (!table || watchlistTables.has(table)) return;
+	watchlistTables.add(table);
+	let adding = false;
+	const ensureColumn = async () => {
+		if (adding || table.getColumns().some(col => col.getField() === "_watchlist")) return;
+		const hasPlayers = table.getColumns().some(col => col.getDefinition().formatter === playerFormatter);
+		if (!hasPlayers) return;
+		adding = true;
+		try { await table.addColumn(watchlistColumn(), true); }
+		finally { adding = false; }
+	};
+	table.on("columnsLoaded", ensureColumn);
+	return ensureColumn();
+}
+
+function showWatchlistError() {
+	let status = document.getElementById("watchlist-status");
+	if (!status) {
+		status = document.createElement("div");
+		status.id = "watchlist-status";
+		status.setAttribute("role", "alert");
+		document.body.appendChild(status);
+	}
+	status.textContent = "Could not save your watchlist. Please try again.";
+	status.hidden = false;
+	clearTimeout(watchlistStatusTimer);
+	watchlistStatusTimer = setTimeout(() => { status.hidden = true; }, 5000);
+}
+
+function toggleWatchlist(e, player, sport = SPORT, team = "") {
+	e?.stopPropagation();
+	const p = _normPlayer(player);
+	sport = watchlistSport(sport);
+	if (!p || !CURR_USER || !CURR_SESSION) return Promise.resolve(false);
+	const key = JSON.stringify([sport || "", p]);
+	if (pendingWatchlistPlayers.has(key)) return Promise.resolve(false);
+	const userId = CURR_SESSION.user.id;
+	pendingWatchlistPlayers.add(key);
+	refreshWatchlistStars();
+	// Serialize changes so quickly starring two players cannot overwrite either save.
+	watchlistSaveQueue = watchlistSaveQueue.then(async () => {
+		try {
+			if (CURR_SESSION?.user?.id !== userId) return false;
+			const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
+			const idx = watchlist.findIndex(w => _normPlayer(w.player ?? w) === p && (!w.sport || !sport || w.sport === sport));
+			if (idx >= 0) watchlist.splice(idx, 1);
+			else watchlist.push({ player: p, sport, team, dt: new Date().toISOString().slice(0, 10) });
+			const metadata = { ...(CURR_USER.metadata || {}), watchlist };
+			const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
+			if (error) throw error;
+			if (CURR_SESSION?.user?.id !== userId) return false;
+			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
+			if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
+			return true;
+		} catch (error) {
+			console.error("Watchlist update failed:", error);
+			showWatchlistError();
+			return false;
+		} finally {
+			pendingWatchlistPlayers.delete(key);
+			refreshWatchlistStars();
+		}
+	});
+	return watchlistSaveQueue;
+}
+
 const evFormatter = function(cell, params, rendered) {
 	const ev = baseEVFormatter(cell, params, rendered);
 	const data = cell.getRow().getData();
@@ -779,6 +919,53 @@ const sportFormatter = function(cell) {
 		sport = "🏒";
 	}
 	return `<div>${sport}</div>`;
+}
+
+// Snap shares arrive oldest to newest as percentages, e.g. ["62%", "76%"].
+function snapShareValues(snaps) {
+	return (Array.isArray(snaps) ? snaps : snaps == null ? [] : [snaps]).map(value => {
+		if (typeof value !== "number" && typeof value !== "string") return null;
+		const text = String(value).trim().replace(/%$/, "").trim();
+		if (!/^\d+(\.\d+)?$/.test(text)) return null;
+		const percent = Number(text);
+		return percent >= 0 && percent <= 100 ? percent : null;
+	});
+}
+
+function renderSnapShare(snaps, blurred = false) {
+	const values = snapShareValues(snaps);
+	const label = value => value == null ? "-" : `${value}%`;
+	const latest = label(values.at(-1));
+	const description = `Snap share (oldest to newest): ${values.map(label).join(" → ") || "No data"}`;
+	const history = values.length > 1 && values.some(value => value != null)
+		? `<span class="snap-history" aria-hidden="true">${values.slice(-5).map((value, index, recent) =>
+			`<span class="snap-history-bar${index === recent.length - 1 ? " latest" : ""}${value == null ? " missing" : ""}" style="height:${value == null ? 0 : value}%"></span>`
+		).join("")}</span>` : "";
+	return `<span class="snap-share${blurred ? " blurred" : ""}"${blurred ? "" : ` title="${description}"`}><strong>${latest}</strong>${history}</span>`;
+}
+
+function snapShareColumn() {
+	return {
+		title: "Snap %<br>Last game", field: "snaps", width: 85,
+		headerTooltip: "Last game's snap share. Bars show up to five games, oldest to newest; hover for the full history.",
+		formatter: cell => renderSnapShare(cell.getValue(), cell.getRow().getData().blurred),
+		sorter: (a, b, aRow, bRow, column, dir) => {
+			const first = snapShareValues(a).at(-1), second = snapShareValues(b).at(-1);
+			if (first == null && second == null) return 0;
+			if (first == null) return dir === "asc" ? 1 : -1;
+			if (second == null) return dir === "asc" ? -1 : 1;
+			return first - second;
+		}
+	};
+}
+
+function snapShareColumnOrder(savedOrder, defaultOrder) {
+	const order = [...new Set([...(savedOrder || []), ...defaultOrder])];
+	if (CURR_USER?.metadata?.[`${PAGE}-snaps-order-version`]) return order;
+	// Move the new column beside logs in layouts saved before this placement.
+	const withoutSnaps = order.filter(key => key !== "snaps");
+	withoutSnaps.splice(withoutSnaps.indexOf("logs") + 1, 0, "snaps");
+	return withoutSnaps;
 }
 
 const percentFormatter = function(cell, params, rendered) {
@@ -2757,9 +2944,10 @@ const DEFAULT_SHARED = [
 ]
 const DEFAULT_FIELDS = {
 	dingers: [...DEFAULT_SHARED],
-	tds: [...DEFAULT_SHARED, "oppRank"],
+	tds: [...DEFAULT_SHARED, "oppRank", "snaps"],
+	tds2: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
-	nfl: [...DEFAULT_SHARED, "handicap", "oppRank"],
+	nfl: [...DEFAULT_SHARED, "handicap", "oppRank", "snaps"],
 	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED, "handicap"],
@@ -2909,6 +3097,7 @@ function showHideUserTable(loaded) {
 		const nestedFields = getNestedFields(defs);
 
 		nestedFields.forEach(field => {
+			if (field === "_watchlist") return;
 			const metaKey = field.replace(/\./g, "_");
 			const keepVisible = !customColumns && ["opp", "handicap", "prop"].includes(metaKey);
 			if (!allowed.has(metaKey) && !keepVisible && !metaKey.includes("due")) {
@@ -4489,6 +4678,9 @@ async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	const newOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
 	if (CURR_USER?.metadata) {
 		CURR_USER.metadata[storageKey] = newOrder;
+		if (["tds-order", "tds2-order", "nfl-order"].includes(storageKey)) {
+			CURR_USER.metadata[`${PAGE}-snaps-order-version`] = 1;
+		}
 		await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
 		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
 	}

@@ -482,7 +482,7 @@ async function handleSession() {
 // Re-applies anything that depends on a live (not cached) CURR_USER, once upsertProfile()
 // resolves. Safe/idempotent to call again after initPageData() already rendered defaults.
 function hydrateAfterProfileLoad() {
-	if (["dingers", "dingers2", "charts"].includes(PAGE) && CURR_USER?.metadata) {
+	if ((typeof renderCards === "function" || PAGE === "bets") && CURR_USER?.metadata) {
 		const today = new Date().toISOString().slice(0, 10);
 		const allWL = CURR_USER.metadata.watchlist || [];
 		const freshWL = allWL.filter(w => (w.dt || w) === today);
@@ -496,6 +496,7 @@ function hydrateAfterProfileLoad() {
 	}
 	if (typeof initExcluded === "function") initExcluded();
 	if (typeof restoreFilterBuilder === "function") restoreFilterBuilder();
+	if (typeof refreshWatchlistStars === "function") refreshWatchlistStars();
 	if (typeof changeFilter === "function") changeFilter();
 }
 

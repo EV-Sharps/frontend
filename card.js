@@ -24,43 +24,8 @@ function resolveOppRankValue(data) {
 	return null;
 }
 
-// ── Watchlist ────────────────────────────────────────────────────────────────
-function _normPlayer(p) { return (p || "").toLowerCase().trim(); }
-
-function isWatchlisted(player) {
-	const p = _normPlayer(player);
-	return (CURR_USER?.metadata?.watchlist || []).some(w => _normPlayer(w.player ?? w) === p);
-}
-
-function isTracked(player) {
-	const p = _normPlayer(player);
-	return (CURR_USER?.metadata?.bets || []).some(b => {
-		const bp = _normPlayer(b.player);
-		return p.includes(bp) || bp.includes(p);
-	});
-}
-
-function _starColor(player) {
-	if (isWatchlisted(player)) return "#f59e0b";
-	if (isTracked(player)) return "#3b82f6";
-	return "#6b7280";
-}
-
-async function toggleWatchlist(e, player) {
-	e.stopPropagation();
-	if (!CURR_USER || !CURR_SESSION) return;
-	const star = e.currentTarget;
-	const p = _normPlayer(player);
-	const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
-	const idx = watchlist.findIndex(w => _normPlayer(w.player ?? w) === p);
-	if (idx >= 0) watchlist.splice(idx, 1);
-	else watchlist.push({ player: p, dt: new Date().toISOString().slice(0, 10) });
-	CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
-	await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
-	if (star && star.classList.contains('watchlist-star')) {
-		star.textContent = isWatchlisted(player) || isTracked(player) ? "★" : "☆";
-		star.style.color = _starColor(player);
-	}
+if (typeof tableReady !== "undefined") {
+	tableReady.then(() => initializeWatchlistTable(TABLE));
 }
 
 let MASTER_DATA = [];
@@ -654,9 +619,9 @@ function updateExistingCard(card, rowData) {
 	} else if (PAGE.includes("ncaa")) {
 		teamImg = gameImg;
 	}
-	const _rp = rowData.player || "";
-	const _starred = isWatchlisted(_rp) || isTracked(_rp);
-	const _starSpan = `<span class="watchlist-star" data-player="${_rp.replace(/"/g, '&quot;')}" onclick="toggleWatchlist(event,this.dataset.player)" style="cursor:pointer;font-size:1.1rem;color:${_starColor(_rp)};line-height:1;padding:2px 4px;" title="${isTracked(_rp) ? 'In tracker' : (isWatchlisted(_rp) ? 'Watchlisted' : 'Add to watchlist')}">${_starred ? "★" : "☆"}</span>`;
+	const _starSpan = createWatchlistStar(rowData)?.outerHTML || "";
+	const snapsPill = ["tds", "tds2", "nfl"].includes(PAGE)
+		? `<div class="metric-pill snap-share-pill">${renderSnapShare(rowData.snaps, rowData.blurred)}<span>Snap %<br>Last game</span></div>` : "";
 
 	const playerRowContent = `
 		<div class="player-content-stack">
@@ -716,6 +681,7 @@ function updateExistingCard(card, rowData) {
 		<!-- Top metrics -->
 		<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
 				${devigPillHtml}
+				${snapsPill}
 				<div class="metric-pill">
 					<div style="font-weight:700; font-size:0.8rem;">${rowData.fairVal > 0 ? "+"+rowData.fairVal : rowData.fairVal}</div>
 					<div style="opacity:0.85; font-size:0.72rem;">Fair Value</div>

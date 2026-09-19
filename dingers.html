@@ -1311,19 +1311,7 @@
 		}
 
 		function _dingersStarCol() {
-			return {
-				title: "", field: "player", width: 30, headerSort: false,
-				formatter: function(cell) {
-					const player = cell.getValue();
-					const starred = isWatchlisted(player) || isTracked(player);
-					const color = _starColor(player);
-					return `<span class="watchlist-star" style="cursor:pointer;font-size:1rem;color:${color};line-height:1;" title="${isTracked(player) ? 'In tracker' : (isWatchlisted(player) ? 'Watchlisted' : 'Add to watchlist')}">${starred ? "★" : "☆"}</span>`;
-				},
-				cellClick: function(e, cell) {
-					e.stopPropagation();
-					toggleWatchlist(e, cell.getValue()).then(() => cell.getColumn().getTable().redraw(true));
-				}
-			};
+			return watchlistColumn();
 		}
 
 		function buildDingersColumns(savedOrder) {

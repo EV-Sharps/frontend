@@ -541,6 +541,10 @@
 						<div>
 							<h3>Stats</h3>
 							<div>
+								<input id="custom_snaps" type="checkbox">
+								<label for="custom_snaps">Snap %</label>
+							</div>
+							<div>
 								<input id="custom_oppRank" type="checkbox">
 								<label for="custom_oppRank">Opp Rank</label>
 							</div>
@@ -675,7 +679,7 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_px', 'bookOdds_nv', 'bookOdds_poly',
-			'bookOdds_kal', 'bookOdds_pn', 'logs', 'hitRate', 'hitRateLYR'
+			'bookOdds_kal', 'bookOdds_pn', 'logs', 'snaps', 'hitRate', 'hitRateLYR'
 		];
 
 		function getTdsColumnItems() {
@@ -758,6 +762,7 @@
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'snaps', label: 'Snap %', cols: [snapShareColumn()] },
 				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 				{ key: 'hitRate', label: 'Season Hit Rate', cols: [{ title: "Season", field: "hitRate", sorter: "number", formatter: percentFormatter, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: 'hitRateLYR', label: 'Last Year Hit Rate', cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
@@ -772,7 +777,7 @@
 		}
 
 		function openColReorder() {
-			const savedOrder = CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER;
+			const savedOrder = snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER);
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
@@ -809,7 +814,7 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildTdsColumns(CURR_USER?.metadata?.['tds-order'] || TDS_DEFAULT_COL_ORDER)
+				columns: buildTdsColumns(snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER))
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 

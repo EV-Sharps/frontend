@@ -2900,7 +2900,8 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
-		if (PAGE === "ncaaf" && !CURR_USER.metadata["ncaaf-columns-version"]) {
+		const customColumns = ["ncaaf", "main"].includes(PAGE);
+		if (customColumns && !CURR_USER.metadata[`${PAGE}-columns-version`]) {
 			// These columns could not be customized in older saved layouts.
 			["handicap", "prop", "opp"].forEach(field => allowed.add(field));
 		}
@@ -2909,7 +2910,7 @@ function showHideUserTable(loaded) {
 
 		nestedFields.forEach(field => {
 			const metaKey = field.replace(/\./g, "_");
-			const keepVisible = PAGE !== "ncaaf" && ["opp", "handicap", "prop"].includes(metaKey);
+			const keepVisible = !customColumns && ["opp", "handicap", "prop"].includes(metaKey);
 			if (!allowed.has(metaKey) && !keepVisible && !metaKey.includes("due")) {
 				TABLE.getColumn(field)?.hide();
 			} else {
@@ -2928,7 +2929,7 @@ function openOverlay() {
 	if (CURR_USER?.tier || "free" === "free") {
 		//return;
 	}
-	const metadata = CURR_USER?.metadata || {};
+	const metadata = { ...(CURR_USER?.metadata || {}) };
 	if (!metadata[PAGE]) {
 		metadata[PAGE] = (typeof TABLE !== 'undefined' && TABLE)
 			? TABLE.getColumns().filter(c => c.isVisible()).map(c => c.getField()).filter(Boolean).map(f => f.replaceAll('.', '_'))
@@ -2949,7 +2950,7 @@ function openOverlay() {
 			el.checked = true;
 		}
 	}
-	if (PAGE === "ncaaf" && typeof TABLE !== 'undefined' && TABLE) {
+	if (["ncaaf", "main"].includes(PAGE) && typeof TABLE !== 'undefined' && TABLE) {
 		const viewState = oddsTableViewStates.get(TABLE);
 		items.querySelectorAll('input[type="checkbox"]').forEach(input => {
 			const field = input.id.replace(/^custom_/, '').replace('bookOdds_', 'bookOdds.');
@@ -4761,6 +4762,44 @@ function numFrom(v) {
 // Books checked by the liquidity/liquidityOver filter criteria's "either"/"both" options.
 const LIQUIDITY_BOOKS = ["nv", "px", "kal"];
 
+function initLiquidityFilterUI() {
+	const over = document.getElementById("fb-liquidity-over-enabled")?.closest("label");
+	const under = document.getElementById("fb-liquidity-enabled")?.closest("label");
+	if (!over || !under || document.getElementById("fb-liquidity-match")) return;
+	const overFields = over.nextElementSibling;
+	const underFields = under.nextElementSibling;
+	const group = document.createElement("fieldset");
+	group.className = "fb-liquidity-group";
+	group.innerHTML = `
+		<legend>Liquidity</legend>
+		<label class="fb-liquidity-logic" for="fb-liquidity-match">
+			Match
+			<select id="fb-liquidity-match">
+				<option value="all">All rules (AND)</option>
+				<option value="any">Any rule (OR)</option>
+			</select>
+		</label>
+		<p class="fb-stat-hint">Amounts are minimum liquidity on the Over or Under side. Other enabled filters must also match.</p>
+	`;
+	group.addEventListener("click", event => event.stopPropagation());
+	over.before(group);
+	group.append(over, overFields, under, underFields);
+}
+
+function passesLiquidityRule(row, config, side) {
+	const min = numFrom(config.amount) ?? 200;
+	const book = config.book || "nv";
+	const clearsBook = key => {
+		const liquidity = row.liquidity?.[key];
+		if (!Array.isArray(liquidity)) return false;
+		const amount = numFrom(liquidity[side]);
+		return amount !== null && amount > min;
+	};
+	return book === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
+		: book === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
+		: clearsBook(book);
+}
+
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
 	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
@@ -4872,7 +4911,7 @@ function applyStatFilterRows(type, rows) {
 }
 
 function readFilterBuilderFromDOM() {
-	const config = {};
+	const config = { liquidityMatch: document.getElementById("fb-liquidity-match")?.value || "all" };
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -4892,6 +4931,8 @@ function readFilterBuilderFromDOM() {
 }
 
 function applyFilterBuilderToDOM(config) {
+	const liquidityMatch = document.getElementById("fb-liquidity-match");
+	if (liquidityMatch) liquidityMatch.value = config?.liquidityMatch === "any" ? "any" : "all";
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = config?.[type] || {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -4911,31 +4952,13 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
-
-	if (c.liquidity?.enabled) {
-		const min = numFrom(c.liquidity.amount) ?? 200;
-		const bookSel = c.liquidity.book || "nv";
-		const clearsBook = b => {
-			const liq = row.liquidity?.[b];
-			return Array.isArray(liq) && numFrom(liq[1]) > min;
-		};
-		const clears = bookSel === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
-			: bookSel === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
-			: clearsBook(bookSel);
-		if (!clears) return false;
-	}
-
-	if (c.liquidityOver?.enabled) {
-		const min = numFrom(c.liquidityOver.amount) ?? 200;
-		const bookSel = c.liquidityOver.book || "nv";
-		const clearsBook = b => {
-			const liq = row.liquidity?.[b];
-			return Array.isArray(liq) && numFrom(liq[0]) > min;
-		};
-		const clears = bookSel === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
-			: bookSel === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
-			: clearsBook(bookSel);
-		if (!clears) return false;
+	const liquidityMatches = [];
+	if (c.liquidity?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidity, 1));
+	if (c.liquidityOver?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidityOver, 0));
+	if (liquidityMatches.length) {
+		// Saved filters without an operator retain their original AND behavior.
+		const matches = c.liquidityMatch === "any" ? liquidityMatches.some(Boolean) : liquidityMatches.every(Boolean);
+		if (!matches) return false;
 	}
 
 	if (c.homerRate?.enabled) {
@@ -5075,6 +5098,8 @@ async function deleteSavedFilterBuilder() {
 
 function clearFilterBuilder() {
 	document.querySelectorAll('#filterbuilder-options input[id$="-enabled"]').forEach(cb => cb.checked = false);
+	const liquidityMatch = document.getElementById("fb-liquidity-match");
+	if (liquidityMatch) liquidityMatch.value = "all";
 	Object.keys(FB_STAT_TYPES).forEach(type => applyStatFilterRows(type, []));
 	const nameInput = document.getElementById("fb-name-input");
 	if (nameInput) nameInput.value = "";
@@ -5114,6 +5139,7 @@ function initFilterBuilderUI() {
 	const dd = document.getElementById("filterbuilder-dd");
 	if (!dd || dd.dataset.filterBuilderInit) return;
 	dd.dataset.filterBuilderInit = "1";
+	initLiquidityFilterUI();
 
 	// filter.js has a document-level "change" listener that treats any checkbox inside any
 	// .chkdd-menu as a Prop/Game filter checkbox (onChkddChange). This panel reuses .chkdd-menu

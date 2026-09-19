@@ -619,7 +619,7 @@
 					formatter: function(cell) { return formatKellyValue(cell.getValue()); },
 					responsive: 0, visible: MOBILE ? false : true
 				}] },
-				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: blurCircaFormatter }] },
+				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", hozAlign: "center", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_fd', label: 'FD', cols: [{ title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_dk', label: 'DK', cols: [{ title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk", width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_mgm', label: 'MGM', cols: [{ title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm", width: 70, sorter: "number", formatter: evOddsFormatter }] },
@@ -633,7 +633,7 @@
 				{ key: 'bookOdds_re', label: 'Rebet', cols: [{ title: `RE<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["re"], short=true)}`, field: "bookOdds.re", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_fl', label: 'Fliff', cols: [{ title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_bol', label: 'BetOnline', cols: [{ title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 70, sorter: "number", visible: true, formatter: evOddsFormatter }] },
-				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", visible: true }] },
+				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", visible: true, formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_nv', label: 'NoVig', cols: [{ title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter }] },

@@ -395,6 +395,7 @@
 							</div>
 						</div>
 					</div>
+					<div style="text-align: center;">Show/Hide columns for this page</div>
 					<div id="items" style="display: flex;">
 						<div>
 							<h3>Expected Value</h3>
@@ -415,19 +416,38 @@
 								<label for="custom_kelly">¼ Kelly</label>
 							</div>
 						</div>
-						<!-- Player / Odds -->
+						<!-- Player / Stats -->
 						<div>
-							<h3>Player & Odds</h3>
+							<h3>Player & Stats</h3>
 							<div>
-								<input id="custom_player" type="checkbox" checked disabled>
+								<input id="custom_player" type="checkbox">
 								<label for="custom_player">Player</label>
 							</div>
 							<div>
-								<input id="custom_book" type="checkbox" checked disabled>
-								<label for="custom_book">EV Book</label>
+								<input id="custom_book" type="checkbox">
+								<label for="custom_book">Best Book</label>
 							</div>
 							<div>
-								<input id="custom_bookOdds_fd" type="checkbox" checked disabled>
+								<input id="custom_handicap" type="checkbox">
+								<label for="custom_handicap">Line</label>
+							</div>
+							<div>
+								<input id="custom_prop" type="checkbox">
+								<label for="custom_prop">Prop</label>
+							</div>
+							<div>
+								<input id="custom_opp" type="checkbox">
+								<label for="custom_opp">Opponent</label>
+							</div>
+							<div>
+								<input id="custom_logs" type="checkbox">
+								<label for="custom_logs">Logs</label>
+							</div>
+						</div>
+						<div>
+							<h3>Sportsbook Odds</h3>
+							<div>
+								<input id="custom_bookOdds_fd" type="checkbox">
 								<label for="custom_bookOdds_fd">Fanduel</label>
 							</div>
 							<div>
@@ -479,11 +499,27 @@
 								<label for="custom_bookOdds_bol">Betonline</label>
 							</div>
 							<div>
+								<input id="custom_bookOdds_kal" type="checkbox">
+								<label for="custom_bookOdds_kal">Kalshi</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_nv" type="checkbox">
+								<label for="custom_bookOdds_nv">NoVig</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_px" type="checkbox">
+								<label for="custom_bookOdds_px">ProphetX</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_poly" type="checkbox">
+								<label for="custom_bookOdds_poly">Polymarket</label>
+							</div>
+							<div>
 								<input id="custom_bookOdds_pn" type="checkbox">
 								<label for="custom_bookOdds_pn">Pinnacle</label>
 							</div>
 							<div>
-								<input id="custom_bookOdds_circa" type="checkbox" checked disabled>
+								<input id="custom_bookOdds_circa" type="checkbox">
 								<label for="custom_bookOdds_circa">Circa</label>
 							</div>
 						</div>
@@ -596,8 +632,20 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl',
 			'bookOdds_br', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv',
-			'bookOdds_px', 'bookOdds_poly', 'bookOdds_pn'
+			'bookOdds_px', 'bookOdds_poly', 'bookOdds_pn', 'logs'
 		];
+
+		function ncaafPlayerHeaderFilter(cell, onRendered, success) {
+			const input = document.createElement("input");
+			input.type = "search";
+			input.value = cell.getValue() ?? "";
+			input.style.cssText = "padding: 4px; width: 100%; box-sizing: border-box;";
+			const apply = debounce(() => success(input.value.trim()), 300);
+			input.addEventListener("input", apply);
+			input.addEventListener("search", apply);
+			input.addEventListener("mousedown", event => event.stopPropagation());
+			return input;
+		}
 
 		function getNcaafColumnItems() {
 			return [
@@ -609,7 +657,9 @@
 					field: "book", vertAlign:"bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams:{book:BOOK}, responsive: 0
 				}] },
 				{ key: 'player', label: 'Player', cols: [{
-					title: "Player", field: "game", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140,
+					title: "Player", field: "player", headerFilter: ncaafPlayerHeaderFilter,
+					headerFilterFunc: "like", headerFilterLiveFilter: false, headerFilterPlaceholder: "Search players...",
+					formatter: playerFormatter, width: MOBILE ? 100 : 140,
 					formatterParams:{ sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true
 				}] },
 				{ key: 'handicap', label: 'Line', cols: [{
@@ -666,6 +716,7 @@
 				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams: {type: "bar"}, responsive: 3, visible: !MOBILE }] },
 			];
 		}
 

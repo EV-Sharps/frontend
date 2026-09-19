@@ -197,6 +197,7 @@ async function saveTableSettings() {
 
 	const fields = {};
 	fields[PAGE] = [];
+	if (PAGE === "ncaaf") fields["ncaaf-columns-version"] = 1;
 	if (document.querySelector("#sort-select")) {
 		fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
 	}

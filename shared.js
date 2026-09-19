@@ -2259,6 +2259,7 @@ const chartFormatter = function(cell, params, rendered) {
 		return "";
 	}
 	let values = typeof(cell.getValue()) == "string" ? cell.getValue().split(",") : cell.getValue();
+	if (!values.length) return "";
 
 	if (!cell.getField().includes("feed")) {
 		values = values.slice(-15);
@@ -2281,7 +2282,7 @@ const chartFormatter = function(cell, params, rendered) {
 		options.stroke = "#50fa7b";
 	} else {
 		options.fill = function(value) {
-			let line = data.playerHandicap || data.handicap || data.daily.line || 0;
+			let line = data.playerHandicap ?? data.handicap ?? data.daily?.line ?? 0;
 			if (cell.getField() == "feed.evo") {
 				line = 100.0;
 			} else if (cell.getField() == "feed.dist") {
@@ -2899,12 +2900,17 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		if (PAGE === "ncaaf" && !CURR_USER.metadata["ncaaf-columns-version"]) {
+			// These columns could not be customized in older saved layouts.
+			["handicap", "prop", "opp"].forEach(field => allowed.add(field));
+		}
 		const defs = TABLE.getColumnDefinitions();
 		const nestedFields = getNestedFields(defs);
 
 		nestedFields.forEach(field => {
 			const metaKey = field.replace(/\./g, "_");
-			if (!allowed.has(metaKey) && metaKey != "opp" && metaKey != "handicap" && metaKey != "prop" && !metaKey.includes("due")) {
+			const keepVisible = PAGE !== "ncaaf" && ["opp", "handicap", "prop"].includes(metaKey);
+			if (!allowed.has(metaKey) && !keepVisible && !metaKey.includes("due")) {
 				TABLE.getColumn(field)?.hide();
 			} else {
 				TABLE.getColumn(field)?.show();
@@ -2942,6 +2948,13 @@ function openOverlay() {
 		if (el) {
 			el.checked = true;
 		}
+	}
+	if (PAGE === "ncaaf" && typeof TABLE !== 'undefined' && TABLE) {
+		const viewState = oddsTableViewStates.get(TABLE);
+		items.querySelectorAll('input[type="checkbox"]').forEach(input => {
+			const field = input.id.replace(/^custom_/, '').replace('bookOdds_', 'bookOdds.');
+			input.checked = viewState?.visibility[field] ?? TABLE.getColumn(field)?.isVisible() ?? false;
+		});
 	}
 
 	const currentFavorites = new Set(getFavoriteDevigs());

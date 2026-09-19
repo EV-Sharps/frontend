@@ -3015,7 +3015,10 @@ button#logout:hover {
 	}
 	#table.stacked-odds .player-cell .team-img { margin: 0; width: 18px; height: 18px; object-fit: contain; }
 	#table.stacked-odds .player-cell { gap: 5px; }
-	#table.stacked-odds .player-cell .bats { bottom: 1px; }
+	#table.stacked-odds .player-cell .bats {
+		bottom: 3px;
+		right: 3px;
+	}
 	#table.stacked-odds .player-cell .pos { top: 1px; }
 	#table.stacked-odds .tabulator-cell .book-img { vertical-align: middle; object-fit: contain; }
 	#table.stacked-odds .tabulator-col-title { text-align: center; }
@@ -3034,7 +3037,10 @@ button#logout:hover {
 	#table.stacked-odds .stacked-player-summary .book-img { width: 16px; height: 16px; order: -1; margin-left:0;margin-right:0.25rem; }
 
 	#table.stacked-odds .stacked-player-summary { text-align: left; }
-	#table.stacked-odds .stacked-player-summary .player-cell { height: 19px; }
+	#table.stacked-odds .stacked-player-summary .player-cell {
+		height: 19px;
+		position: initial;
+	}
 	#table.stacked-odds .stacked-ev-summary .ev { font-weight: 700; }
 
 

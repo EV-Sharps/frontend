@@ -183,6 +183,7 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
+			{ label: "🏈 Game Tracker", value: "nfl_tracker" },
 			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
@@ -280,7 +281,7 @@ function buildPagePicker() {
 	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
 
 	// Active tab: favorites if any saved, else current sport
-	const sportToTab = { mlb: "mlb", nba: "nba", nhl: "nhl", ncaab: "nba" };
+	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", nhl: "nhl", ncaab: "nba" };
 	const hasFavs = getPageFavorites().length > 0;
 	const activeTab = hasFavs ? "favorites" : (sportToTab[SPORT] || "mlb");
 

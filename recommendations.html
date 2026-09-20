@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily recommendations | +EV Sharps</title>
+  <meta name="description" content="A daily shortlist of player props and main lines, screened for price, market agreement and liquidity.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="recommendations.css">
+</head>
+<body class="recommendations-page">
+  <header class="rec-header">
+    <a class="rec-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Recommendations</option></select></div>
+      <a id="account-link" href="profile">Sign in</a>
+    </nav>
+  </header>
+  <main class="rec-main">
+    <div class="rec-intro">
+      <div><p class="rec-eyebrow">DAILY SHORTLIST <span>SHARP</span></p>
+        <h1>Recommendations</h1>
+        <p class="rec-lede">Player props and main lines with a price worth a closer look.</p></div>
+      <div class="rec-refresh"><span id="report-date">Today's slate</span><small id="generated">Loading latest shortlist…</small>
+        <button id="refresh" type="button">Refresh shortlist <span aria-hidden="true">↻</span></button></div>
+    </div>
+    <div id="request-status" class="rec-notice" role="status" hidden></div>
+    <div id="freshness-status" class="rec-notice" role="status" hidden></div>
+    <section id="access-panel" class="rec-empty" hidden>
+      <h2>Recommendations are included with Sharp</h2><p>Sign in with your Sharp account to see the daily shortlist.</p>
+      <a id="access-login" class="rec-button" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a>
+    </section>
+    <div id="report-content" aria-busy="true">
+      <div class="rec-summary" aria-label="Shortlist summary">
+        <div><strong id="pick-count">—</strong><span>Available plays</span></div>
+        <div><strong id="sport-count">—</strong><span>Sports on the list</span></div>
+        <div><strong id="edge-floor">—</strong><span>Minimum estimated EV</span></div>
+      </div>
+      <div class="rec-layout">
+        <section aria-label="Recommended plays">
+          <div class="rec-filters">
+            <label>Sport<select id="sport-filter"><option value="">All sports</option></select></label>
+            <label>Market<select id="market-filter"><option value="">All markets</option><option value="props">Player props</option><option value="main">Main lines</option></select></label>
+            <label>Book<select id="book-filter"><option value="">All books</option></select></label>
+          </div>
+          <p id="list-caption" class="rec-caption">Ranked by conservative estimated value.</p>
+          <div id="empty-state" class="rec-empty" hidden><h2>No qualifying plays</h2><p>The shortlist will appear when prices meet the criteria.</p></div>
+          <ol id="picks" class="rec-picks" aria-label="Ranked recommendations"></ol>
+        </section>
+        <aside class="rec-sidebar">
+          <section class="rec-method"><p class="rec-eyebrow">THE SCREEN</p><h2>Why these plays?</h2>
+            <dl id="criteria"><dt>Price, agreement, availability</dt><dd>Loading the current criteria.</dd></dl>
+            <p>Conservative EV uses the lower reference estimates. It is a sensitivity check, not a confidence interval.</p>
+            <p>Market-based estimates, not a proven strategy. Confirm lineups, settlement rules and the current price before betting.</p>
+          </section>
+          <details class="rec-coverage"><summary>Feed coverage</summary><div id="coverage">Loading…</div></details>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <footer class="rec-footer">Prices can move. Minimum odds apply only while the reference prices remain unchanged.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+  <script src="auth.js"></script>
+  <script src="page-performance.js"></script>
+  <script src="recommendations.js"></script>
+</body>
+</html>

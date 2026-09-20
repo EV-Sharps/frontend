@@ -453,6 +453,10 @@
 								<label for="custom_player">Player</label>
 							</div>
 							<div>
+								<input id="custom_logs" type="checkbox">
+								<label for="custom_logs">Game Logs</label>
+							</div>
+							<div>
 								<input id="custom_snaps" type="checkbox">
 								<label for="custom_snaps">Snap %</label>
 							</div>
@@ -721,7 +725,7 @@
 				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
+				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 				{ key: 'snaps', label: 'Snap %', cols: [snapShareColumn()] },
 				{ key: 'hitRate', label: 'Season Hit Rate', cols: [{ title: "Season", field: "hitRate", sorter: "number", formatter: percentFormatter, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: 'hitRateLYR', label: 'Last Year Hit Rate', cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },

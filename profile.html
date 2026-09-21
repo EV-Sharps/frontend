@@ -1,110 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="profile-root">
 <head>
 	<meta name="google" content="notranslate">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Profile</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<script type="text/javascript" src="flatpickr.min.js"></script>
-	<link href="tabulator.min.css" rel="stylesheet">
-	<link href="flatpickr.min.css" rel="stylesheet">
+	<title>Your Profile | +EV Sharps</title>
+	<meta name="description" content="Manage your +EV Sharps membership, betting preferences, and Discord connection.">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="math.min.js"></script>
+	<link href="profile.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="logos/icon2.png">
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<link rel="icon" type="image/x-icon" href="logos/icon.png">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-FX06BZ5MRL');
+	</script>
 </head>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
-<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'G-FX06BZ5MRL');
-</script>
-
-<style>
-	main {
-		flex-direction: column;
-		justify-content: flex-start;
-		overflow: auto;
-	}
-	#discord_username {
-		margin-bottom: 0.5rem;
-	}
-	.discord-error {
-	  background: #ffefef;
-	  color: #b30000;
-	  padding: 1rem;
-	  border: 1px solid #b30000;
-	  border-radius: 4px;
-	  margin-bottom: 1rem;
-	  font-size: 0.9rem;
-	  text-align: center;
-	}
-	.discord-error a {
-	  color: #b30000;
-	  font-weight: bold;
-	}
-	.discord-error button {
-	  background: #b30000;
-	  color: #fff;
-	  border: none;
-	  padding: 0.3rem 0.6rem;
-	  border-radius: 4px;
-	  cursor: pointer;
-	}
-	.discord-error button:hover {
-	  background: #ff4d4d;
-	}
-	.discord-success {
-	  background: #e6ffed;
-	  color: #14532d;
-	  padding: 1rem;
-	  border: 1px solid #1bb34b;
-	  border-radius: 4px;
-	  margin-bottom: 1rem;
-	  font-size: 0.9rem;
-	  text-align: center;
-	}
-	.discord-success strong {
-	  font-weight: 600;
-	}
-	#help {
-		background-color: #5865F2; 
-	    color: white; 
-	    padding: 14px 20px; 
-	    margin: auto; 
-	    border-radius: 10px; 
-	    font-size: 16px; 
-	    font-weight: 600; 
-	    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-	    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-	    display: flex; 
-	    align-items: center; 
-	    gap: 10px;
-	    max-width: 400px;
-	}
-	
-	@media (max-width: 768px) {
-		#help {
-			font-size: 0.9rem;
-		}
-		main {
-			justify-content: initial;
-			overflow: auto;
-		}
-	}
-</style>
-<body>
+<body class="profile-page" data-profile-state="loading">
 	<div id="app">
 		<header id="header">
 			<div id="title">
-				<h1>+EV Sharps</h1>
+				<a class="profile-brand" href="dingers.html" aria-label="+EV Sharps home"><span>+EV</span> Sharps</a>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -119,72 +37,56 @@
 					<img src="/logos/discord.png" alt="Discord logo">
 					<span class="btn-text">Sign in with Discord</span>
 				</button>
-				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()" aria-label="Sign in with Google">
 				  <div class="gsi-material-button-state"></div>
 				  <div class="gsi-material-button-content-wrapper">
-				    <div class="gsi-material-button-icon">
-				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
-				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-				        <path fill="none" d="M0 0h48v48H0z"></path>
-				      </svg>
-				    </div>
-				    <span style="display: none;">Sign in with Google</span>
+					<div class="gsi-material-button-icon">
+					  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+						<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+						<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+						<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+						<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+						<path fill="none" d="M0 0h48v48H0z"></path>
+					  </svg>
+					</div>
+					<span class="profile-google-label">Google</span>
 				  </div>
 				</button>
 
 				<span id="username" class="username loggedIn"></span>
 				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
 				<button id="hide-username" onclick="hideUsername()">Hide</button>
-				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
+				<button id="account" class="loggedIn" aria-current="page" onclick="changePage('profile')">Profile</button>
 				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
 				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
 			</div>
 		</header>
-		<main>
-			<div id="help" class="loggedIn">
-			    <span>
-			        If you have signed up <strong>before joining</strong> our Discord, make sure you 
-			        <span style="color: #FFD700; font-weight: bold;">reconnect</span> with 
-			        <a href="#link-discord-btn"><strong>Change Discord</strong></a> to get the correct role assigned!
-			    </span>
+		<main id="profile-main">
+			<div class="profile-heading">
+				<div><p class="profile-eyebrow">Account &amp; preferences</p><h1>Your profile</h1><p class="profile-intro">Your membership, your defaults, your way to follow the market.</p></div>
+				<a href="faq.html" class="profile-help-link">Need a hand? <span aria-hidden="true">&#8599;</span></a>
 			</div>
-			<div class="profile-container">
-				<div class="profile-header">
-					<div class="profile-badge"></div>
-					<div id="profile-info">
-						<h2 id="profile-username"></h2>
-						<button class="upgrade-btn" onclick="changePage('pricing')">Upgrade / Cancel / Manage</button>
-					</div>
-				</div>
-				<div class="profile-subscription">
-					<h3>Subscription Details</h3>
-					<div class="sub-grid">
-						<div>
-							<span class="label">Plan:</span>
-							<span id="profile-plan" class="value">free</span>
-						</div>
-						<div>
-							<span id="next-renewal-label" class="label">Next Renewal:</span>
-							<span id="next-renewal" class="value"></span>
-						</div>
-						<div>
-							<span class="label">Discord:</span>
-							<span class="value">
-								<span id="discord-username"></span>
-							</span>
-						</div>
-					</div>
-					<div id="discord-error"></div>
-					<!-- Betslip Settings -->
-					<div class="profile-links">
-						<h3>Betslip Settings</h3>
-						<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-							<label for="state-select" style="font-size:0.9rem;">State</label>
-							<div class="select-wrapper" style="width:120px">
-								<select id="state-select">
+			<div id="profile-notice" class="profile-notice" role="status" aria-live="polite" hidden></div>
+			<div id="profile-loading" class="profile-loading" role="status"><span class="spinner" aria-hidden="true"></span> Loading your profile&hellip;</div>
+			<section id="profile-load-error" class="profile-panel profile-empty" hidden aria-labelledby="profile-error-title">
+				<h2 id="profile-error-title">Your profile couldn&rsquo;t be loaded.</h2><p>Please try again to see your membership and saved preferences.</p><button type="button" class="profile-button primary" id="profile-retry">Try again</button>
+			</section>
+			<section id="profile-guest" class="profile-panel profile-empty" hidden aria-labelledby="guest-title">
+				<div class="profile-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></div>
+				<p class="profile-eyebrow">Make yourself at home</p><h2 id="guest-title">One account. Your own setup.</h2><p>Sign in to manage your plan, save your betting preferences, and connect your Discord account.</p>
+				<div class="profile-guest-actions"><button type="button" class="profile-button discord" onclick="loginWithDiscord()">Sign in with Discord</button><button type="button" class="profile-button" onclick="loginWithGoogle()">Sign in with Google</button></div>
+				<a href="pricing.html">Explore memberships <span aria-hidden="true">&#8594;</span></a>
+			</section>
+			<div id="profile-dashboard" hidden>
+				<section class="profile-identity" aria-label="Your account">
+					<div id="profile-avatar" aria-hidden="true">EV</div><div class="profile-identity-copy"><p class="profile-eyebrow">Signed in as</p><p id="profile-username"></p></div><span id="profile-tier-badge" class="profile-pill"></span>
+				</section>
+				<div class="profile-layout">
+					<section class="profile-panel profile-preferences" aria-labelledby="preferences-heading">
+						<div class="profile-panel-heading"><span class="profile-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg></span><div><h2 id="preferences-heading">Betting preferences</h2><p>A familiar setup on every odds page.</p></div></div>
+						<form id="profile-preferences-form">
+							<fieldset id="profile-settings-fields" aria-labelledby="preferences-heading">
+								<div class="profile-setting"><div><label for="state-select">Your state</label><p id="state-help">Open direct betslip links for your location.</p></div><div class="profile-field"><select id="state-select" aria-describedby="state-help">
 								<option value="">-- Select --</option>
 								<option value="AL">Alabama</option>
 								<option value="AK">Alaska</option>
@@ -237,197 +139,35 @@
 								<option value="WV">West Virginia</option>
 								<option value="WI">Wisconsin</option>
 								<option value="WY">Wyoming</option>
-							</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-							<button class="link-btn" onclick="saveState()" style="margin:0">Save</button>
-							<span id="state-save-status" style="font-size:0.85rem;color:#4ade80"></span>
-						</div>
-						<p style="font-size:0.78rem;color:#6b7280;margin:0">Used to generate direct betslip links for your state.</p>
-						<div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
-							<label for="unit-size-input" style="font-size:0.9rem;">Unit Size</label>
-							<span style="font-size:0.9rem;">$</span>
-							<input id="unit-size-input" type="number" min="1" step="1" value="100" style="width:80px;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);background:#172027;color:var(--text-main);font-size:0.9rem;">
-							<button class="link-btn" onclick="saveUnitSize()" style="margin:0">Save</button>
-							<span id="unit-save-status" style="font-size:0.85rem;color:#4ade80"></span>
-						</div>
-						<p style="font-size:0.78rem;color:#6b7280;margin:0">Your wager per unit for Kelly dollar amounts.</p>
-						<div class="profile-kelly-settings">
-							<label for="profile-kelly-fraction">Default Kelly fraction</label>
-							<select id="profile-kelly-fraction"></select>
-							<label class="kelly-custom">Percentage of full Kelly <input id="profile-kelly-custom" type="number" min="0.0001" max="100" step="any"> %</label>
-							<button type="button" class="link-btn" onclick="saveKellyFraction()">Save</button>
-							<span id="kelly-save-status" role="status"></span>
-							<p>Used on every odds page unless you choose a page override.</p>
-						</div>
-						<div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
-							<label for="odds-format-select" style="font-size:0.9rem;">Odds Format</label>
-							<div class="select-wrapper" style="width:120px">
-								<select id="odds-format-select">
-									<option value="american">American</option>
-									<option value="decimal">Decimal</option>
-								</select>
-								<svg class="select-arrow" viewBox="0 0 20 20">
-									<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-								</svg>
-							</div>
-							<button class="link-btn" onclick="saveOddsFormat()" style="margin:0">Save</button>
-							<span id="odds-format-save-status" style="font-size:0.85rem;color:#4ade80"></span>
-						</div>
-						<p style="font-size:0.78rem;color:#6b7280;margin:0">How odds are displayed across the site, e.g. -110 vs 1.91.</p>
-					</div>
-					<!-- Quick Links -->
-					<div class="profile-links">
-						<h3>Account Actions</h3>
-						<button id="link-discord-btn" class="link-btn" onclick="connectDiscord()">
-							Connect Discord
-							<span class="spinner" style="display: none;"></span>
-						</button>
-					</div>
+							</select></div></div>
+								<div class="profile-setting"><div><label for="odds-format-select">Odds format</label><p id="odds-help">Choose how prices appear across the site.</p></div><div class="profile-field"><select id="odds-format-select" aria-describedby="odds-help odds-preview"><option value="american">American</option><option value="decimal">Decimal</option></select><span id="odds-preview" class="profile-field-note">Example: -110 / +150</span></div></div>
+								<div class="profile-setting"><div><label for="unit-size-input">Unit size</label><p id="unit-help">The dollar value of 1 unit, used for Kelly amounts.</p></div><div class="profile-field"><div class="profile-money-input"><span aria-hidden="true">$</span><input id="unit-size-input" type="number" min="1" step="1" required value="100" aria-describedby="unit-help"></div><span class="profile-field-note">per unit</span></div></div>
+								<div class="profile-setting"><div><label for="profile-kelly-fraction">Default Kelly fraction</label><p id="kelly-help">Used across odds pages. You can choose a different fraction on an individual page.</p></div><div class="profile-field"><select id="profile-kelly-fraction" aria-describedby="kelly-help"></select><label class="profile-kelly-custom" hidden>Percentage of full Kelly<input id="profile-kelly-custom" type="number" min="0.0001" max="100" step="any" aria-label="Percentage of full Kelly"><span class="profile-field-note">% of full Kelly</span></label></div></div>
+							</fieldset>
+							<div class="profile-save-bar"><p id="profile-save-status" role="status" aria-live="polite">Your preferences are saved to your account.</p><div><button type="button" id="profile-reset" class="profile-button quiet" disabled>Reset</button><button type="submit" id="profile-save" class="profile-button primary" disabled>Save preferences</button></div></div>
+						</form>
+					</section>
+					<aside class="profile-sidebar">
+						<section class="profile-panel profile-membership" aria-labelledby="membership-heading">
+							<div class="profile-card-top"><h2 id="membership-heading" class="profile-eyebrow">Your membership</h2><span id="profile-plan-status" class="profile-pill"></span></div><p id="profile-plan" class="profile-plan-name"></p><p id="profile-plan-description"></p>
+							<ul id="profile-plan-benefits" class="profile-benefits"></ul>
+							<div class="profile-renewal"><span id="next-renewal-label">Next renewal</span><span id="next-renewal"></span></div>
+							<button type="button" id="profile-billing" class="profile-button primary">Manage billing <span aria-hidden="true">&#8599;</span></button><p id="profile-billing-status" class="profile-action-status" role="status" aria-live="polite"></p><a class="profile-compare-link" href="pricing.html">Compare all plans <span aria-hidden="true">&#8594;</span></a>
+						</section>
+						<section class="profile-panel profile-discord" aria-labelledby="discord-heading">
+							<div class="profile-card-top"><h2 id="discord-heading"><img src="logos/discord.png" alt="" width="23" height="23">Discord</h2><span id="profile-discord-status" class="profile-pill"></span></div><p id="discord-username" class="profile-discord-name">Not connected</p><p>Link your account to receive the channels included in your membership.</p>
+							<button type="button" id="link-discord-btn" class="profile-button"><span class="btn-text">Connect Discord</span><span class="spinner" hidden aria-hidden="true"></span></button><p id="discord-action-status" class="profile-action-status" role="status" aria-live="polite"></p>
+							<p class="profile-discord-help">Joined after subscribing? Reconnect to refresh your roles.</p><a href="https://discord.gg/QJdYDk3KBm" target="_blank" rel="noopener noreferrer">Join the server <span aria-hidden="true">&#8599;</span></a>
+						</section>
+					</aside>
 				</div>
+				<div class="profile-bottom-links"><span>Keep your research close.</span><a href="bets.html">Open bet tracker <span aria-hidden="true">&#8594;</span></a><a href="dingers.html">Back to the odds <span aria-hidden="true">&#8594;</span></a></div>
 			</div>
 		</main>
-		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p>
-		</footer>
+		<footer class="site-footer"><p>All content is for entertainment purposes only. +EV Sharps is not affiliated with MLB. <a href="/disclaimer">Read Full Terms</a></p></footer>
 	</div>
-	<script type="text/javascript" src="shared.js"></script>
+	<script src="shared.js"></script>
 	<script src="auth.js"></script>
-	<script type="text/javascript">
-		PAGE = "profile";
-		ENABLE_AUTH = true;
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let discordError = URLParams.get("discordError");
-		let discordSuccess = URLParams.get("discordSuccess");
-		SAVE_DISCORD = URLParams.get("saveDiscord");
-
-		function loadProfileKellyFields() {
-			const select = document.getElementById('profile-kelly-fraction');
-			select.innerHTML = kellyFractionOptions();
-			initKellyFractionFields(select, document.getElementById('profile-kelly-custom'), getProfileKellyFraction());
-		}
-		loadProfileKellyFields();
-		async function saveKellyFraction() {
-			const status = document.getElementById('kelly-save-status');
-			try {
-				const fraction = readKellyFractionFields(document.getElementById('profile-kelly-fraction'), document.getElementById('profile-kelly-custom'));
-				status.textContent = 'Saving...';
-				if (CURR_USER) {
-					const metadata = { ...CURR_USER.metadata, kelly_fraction: fraction };
-					const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_USER.id);
-					if (error) throw new Error('Could not save. Please try again.');
-					CURR_USER.metadata = metadata;
-					cacheProfile(CURR_USER);
-					status.textContent = 'Saved';
-				} else {
-					localStorage.setItem('kelly_fraction', fraction);
-					status.textContent = 'Saved on this device';
-				}
-			} catch (error) { status.textContent = error.message; }
-		}
-
-		handleSession().then(res => {
-			loadProfileKellyFields();
-			if (CURR_USER?.discord_id) {
-				document.querySelector("#link-discord-btn").textContent = "Change Discord";
-			}
-			const savedState = CURR_USER?.metadata?.state || "";
-			if (savedState) document.querySelector("#state-select").value = savedState;
-			const savedUnit = CURR_USER?.metadata?.unit_size;
-			if (savedUnit) document.querySelector("#unit-size-input").value = savedUnit;
-			let savedOddsFormat = CURR_USER?.metadata?.odds_format;
-			if (!savedOddsFormat && !CURR_USER) {
-				try { savedOddsFormat = localStorage.getItem("odds_format"); } catch (e) {}
-			}
-			document.querySelector("#odds-format-select").value = savedOddsFormat || "american";
-		});
-
-		async function saveUnitSize() {
-			if (!CURR_USER) return;
-			const val = parseInt(document.querySelector("#unit-size-input").value) || 100;
-			const status = document.querySelector("#unit-save-status");
-			status.textContent = "Saving...";
-			const newData = { ...CURR_USER.metadata, unit_size: val };
-			const { error } = await SB.from('profiles')
-				.update({ metadata: newData })
-				.eq('id', CURR_SESSION.user.id);
-			if (error) {
-				status.textContent = "Error saving";
-			} else {
-				CURR_USER.metadata = newData;
-				status.textContent = "✅ Saved!";
-				setTimeout(() => status.textContent = "", 3000);
-			}
-		}
-
-		const linkBtn = document.getElementById("link-discord-btn");
-		const spinner = linkBtn.querySelector('.spinner');
-		const btnText = linkBtn.querySelector('.btn-text');
-
-		linkBtn.addEventListener('click', () => {
-			spinner.style.display = 'inline-block';
-			btnText.textContent = 'Connecting…';
-			linkBtn.disabled = true;
-
-			window.location.href = `${API_BASE}/api/discord/login`;
-		});
-
-		if (discordSuccess != undefined) {
-			// Create a success message container
-		  const successMsg = document.createElement('div');
-		  successMsg.className = 'discord-success';
-		  successMsg.innerHTML = `
-		    ✅ <strong>Success!</strong> Your Discord account has been linked. 🎉<br>
-		    Enjoy your +EV channels and perks!
-		  `;
-		  // Insert it near the top of the profile container
-		  document.querySelector('.profile-container').prepend(successMsg);
-
-		  // Clean up the URL so the param isn't visible anymore
-			const newUrl = `${window.location.pathname}`;
-			history.replaceState({}, '', newUrl);
-		}
-
-		if (discordError === "not_in_guild") {
-			const msg = document.createElement('div');
-	    msg.className = 'discord-error';
-	    msg.innerHTML = `
-	      ⚠️ You’ve linked your Discord account, but you haven’t joined our server yet.<br>
-	      <a href="https://discord.gg/QJdYDk3KBm" target="_blank">👉 Join the Discord here 👈</a><br>
-	      After joining, click <button id="recheck-roles">Recheck Roles</button>.
-	    `;
-	    document.querySelector('.profile-container').prepend(msg);
-
-	    document.getElementById('recheck-roles').addEventListener('click', async () => {
-	      // Optional: hit an endpoint to retry role assignment
-	      await fetch('/api/discord/recheck', {
-	        method: 'POST',
-	        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
-	      });
-	      alert("We'll re-check your roles shortly.");
-	    });
-	    // Clean up the URL so the param isn't visible anymore
-			const newUrl = `${window.location.pathname}`;
-			history.replaceState({}, '', newUrl);
-		}
-
-		async function connectDiscord() {
-			const { data: { session }, error } = await SB.auth.getSession();
-			window.location.href = `${API_BASE}/api/discord/login?user_id=${session.user.id}`;
-		}
-
-		async function cancelSubscription() {
-			const response = await fetch('/api/create-portal-session', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ customerId: "CURRENT_USER_CUSTOMER_ID" })
-		});
-		const data = await response.json();
-		window.location.href = data.url; // Stripe handles the rest
-			}
-	</script>
+	<script src="profile.js"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@ async function logout() {
 }
 
 async function upsertProfile(session) {
-	const { data, error } = await SB.from('profiles')
+	let { data, error } = await SB.from('profiles')
 		.select('*')
 		.eq('id', session.user.id)
 		.maybeSingle();
@@ -65,7 +65,7 @@ async function upsertProfile(session) {
 		discordUsername = discordIdentity.identity_data?.user_name || discordIdentity.identity_data?.full_name;
 	}
 	if (!data) {
-		const { d, error: insertError } = await SB.from('profiles').insert([{
+		const { data: createdProfile, error: insertError } = await SB.from('profiles').insert([{
 				id: session.user.id,
 				tier: tier,
 				discord_id: discordId,
@@ -73,11 +73,13 @@ async function upsertProfile(session) {
 			}])
 			.select()
 			.single();
-			CURR_USER = d;
-			cacheProfile(d);
 		if (insertError) {
 			console.error("Insert profile error: ", insertError);
+			return;
 		}
+		data = createdProfile;
+		CURR_USER = data;
+		cacheProfile(data);
 	} else {
 		tier = data.tier;
 		// if discord not yet saved but now available

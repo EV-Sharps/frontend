@@ -1257,7 +1257,7 @@
 		function getDingersColumnItems() {
 			return [
 				{ key: 'ev',              label: 'Expected Value',   cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 55 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
-				{ key: 'roiRecord', label: 'Record', cols: [{ title: 'Record<br><span style="font-size: 10px; font-weight: normal;">100-odds bins<br>1% EV bins</span>', field: 'roiRecord', width: 80, minWidth: 80, headerSort: false, formatter: recordROIFormatter, headerTooltip: 'Historical W–L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.' }] },
+				{ key: 'roiRecord', label: 'Record', cols: [recordROIColumn()] },
 				{ key: 'player',          label: 'Player',           cols: [{ title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 90 : 140, formatterParams:{sport: SPORT}, hozAlign: "left", responsive: 0, frozen: MOBILE ? true : true }] },
 				{ key: 'fairVal',         label: 'Fair Value',       cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: 'implied',         label: 'Implied',          cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },

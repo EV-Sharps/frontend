@@ -255,6 +255,7 @@
 					<div class="chkdd-menu" id="prop-options">
 						<div class="chkdd-actions">
 							<button type="button" data-act="all">All</button>
+							<button type="button" data-act="attd">ATTD</button>
 							<button type="button" data-act="none">None</button>
 						</div>
 					</div>
@@ -545,6 +546,34 @@
 								<label for="custom_snaps">Snap %</label>
 							</div>
 							<div>
+								<input id="custom_usage_snaps_tot" type="checkbox">
+								<label for="custom_usage_snaps_tot">Snaps</label>
+							</div>
+							<div>
+								<input id="custom_usage_targets_tot" type="checkbox">
+								<label for="custom_usage_targets_tot">Targets</label>
+							</div>
+							<div>
+								<input id="custom_usage_targets_pos_share" type="checkbox">
+								<label for="custom_usage_targets_pos_share">Target position share</label>
+							</div>
+							<div>
+								<input id="custom_usage_targets_team_share" type="checkbox">
+								<label for="custom_usage_targets_team_share">Target team share</label>
+							</div>
+							<div>
+								<input id="custom_usage_looks_tot" type="checkbox">
+								<label for="custom_usage_looks_tot">RZ looks</label>
+							</div>
+							<div>
+								<input id="custom_usage_looks_pos_share" type="checkbox">
+								<label for="custom_usage_looks_pos_share">RZ look position share</label>
+							</div>
+							<div>
+								<input id="custom_usage_looks_team_share" type="checkbox">
+								<label for="custom_usage_looks_team_share">RZ look team share</label>
+							</div>
+							<div>
 								<input id="custom_oppRank" type="checkbox">
 								<label for="custom_oppRank">Opp Rank</label>
 							</div>
@@ -606,9 +635,11 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="nfl-usage.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "tds";
+		DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE], ...NflUsage.keys])];
 		
 		parseURLParams();
 		SPORT = "nfl";
@@ -641,14 +672,14 @@
 			propMenu.innerHTML = `
 				<div class="chkdd-actions">
 					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="attd">ATTD</button>
 					<button type="button" data-act="none">None</button>
 				</div>
 			`;
+			propMenu.querySelector('[data-act="attd"]').disabled = !data.props.includes("attd");
 			[...data.props].sort().forEach(p => createOption(p, propMenu));
 			restoreChkddState(propMenu);
-			if (PROP) {
-				updatePropLabel(PROP.split(","));
-			}
+			updatePropLabel([...propMenu.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value));
 
 			if (data["data"].length == 0) {
 				await TABLE.replaceData([]);
@@ -679,7 +710,7 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_px', 'bookOdds_nv', 'bookOdds_poly',
-			'bookOdds_kal', 'bookOdds_pn', 'logs', 'snaps', 'hitRate', 'hitRateLYR'
+			'bookOdds_kal', 'bookOdds_pn', 'logs', 'snaps', ...NflUsage.keys, 'hitRate', 'hitRateLYR'
 		];
 
 		function getTdsColumnItems() {
@@ -762,7 +793,8 @@
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: 'snaps', label: 'Snap %', cols: [snapShareColumn()] },
+				{ key: 'snaps', label: 'Snap %', cols: [NflUsage.snapColumn(snapShareColumn())] },
+				...NflUsage.items(),
 				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 				{ key: 'hitRate', label: 'Season Hit Rate', cols: [{ title: "Season", field: "hitRate", sorter: "number", formatter: percentFormatter, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: 'hitRateLYR', label: 'Last Year Hit Rate', cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
@@ -777,7 +809,7 @@
 		}
 
 		function openColReorder() {
-			const savedOrder = snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER);
+			const savedOrder = NflUsage.columnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER));
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
@@ -792,6 +824,7 @@
 		}
 
 		function renderTable(data) {
+			NflUsage.migrateProfile(CURR_USER, PAGE);
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
 				placeholder:"Data Loading...",
@@ -814,7 +847,7 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildTdsColumns(snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER))
+				columns: buildTdsColumns(NflUsage.columnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER)))
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
@@ -827,6 +860,7 @@
 			});
 
 			TABLE.on("dataLoaded", function(data) {
+				NflUsage.migrateProfile(CURR_USER, PAGE);
 				showHideUserTable(loaded);
 				if (!loaded) {
 					changeFilter();

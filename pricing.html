@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="pricing-root">
 <head>
 	<meta name="google" content="notranslate">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Pricing</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<script type="text/javascript" src="flatpickr.min.js"></script>
-	<link href="tabulator.min.css" rel="stylesheet">
-	<link href="flatpickr.min.css" rel="stylesheet">
+	<title>Pricing &amp; Memberships | +EV Sharps</title>
+	<meta name="description" content="Compare Free, Analyst and Sharp memberships. Explore player props, live markets, supported sportsbooks and tools to customize your betting research.">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="math.min.js"></script>
+	<link href="pricing.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon2.png">
 </head>
@@ -27,179 +22,11 @@
 	gtag('config', 'G-FX06BZ5MRL');
 </script>
 
-<style>
-	#pricing-cards {
-		text-align: center;
-		padding: 0rem 1rem;
-		font-family: sans-serif;
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-evenly;
-	}
-
-	#pricing-cards h2 {
-		font-size: 2rem;
-		margin-bottom: 0.25rem;
-		justify-content: center;
-	}
-
-	#pricing-cards p {
-		margin:0;font-size:1.1rem; line-height:1.4;
-	}
-
-	#pricing-cards .pricing-intro {
-		color: #aaa;
-		margin-bottom: 2rem;
-	}
-
-	.pricing-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 10rem;
-		justify-content: center;
-	}
-
-	.pricing-card {
-		background: #1b1d1e;
-		color: #fff;
-		border-radius: 12px;
-		padding: 1.5rem;
-		display: flex;
-		max-width: 400px;
-		flex-direction: column;
-		align-items: center;
-		box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-		border: 1px solid rgba(255,255,255,0.1);
-	}
-
-	.pricing-card.popular {
-		border-color: gold;
-	}
-
-	.pricing-card.vip {
-		border-color: purple;
-	}
-
-	.pricing-card h3 {
-		margin-top: 0;
-		font-size: 1.4rem;
-	}
-
-	.pricing-card .price {
-		font-size: 1.8rem;
-		margin: 0.5rem 0 1rem;
-	}
-	.pricing-card .price span {
-		font-size: 0.9rem;
-		color: #aaa;
-	}
-
-	.pricing-card ul {
-		text-align: left;
-		list-style: none;
-		padding: 0;
-		flex: 1;
-	}
-	.pricing-card ul li {
-		margin: 0.5rem 0;
-		font-size: 0.95rem;
-	}
-	.badge {
-	  display:inline-block; font-size:.72rem; font-weight:700;
-	  padding:2px 6px; border-radius:6px; vertical-align:middle;
-	  text-align: center;
-	  width: 100px; margin: auto;
-	}
-	.badge--soon {
-	  color:#f59e0b;
-	  background:rgba(245,158,11,.12);
-	  border:1px solid rgba(245,158,11,.35);
-	}
-	.plan__eyebrow {
-	  display:inline-block;
-	  font-size:.75rem;
-	  letter-spacing:.06em;
-	  color:#f1c232;
-	  background:rgba(241,194,50,.08);
-	  border:1px solid rgba(241,194,50,.25);
-	  padding:2px 8px;
-	  border-radius:999px;
-	  margin-bottom:6px;
-	}
-	.select-btn {
-		color: #fff;
-		border: none;
-		padding: 0.6rem 1.2rem;
-		border-radius: 6px;
-		cursor: pointer;
-		font-size: 0.95rem;
-		font-weight: bold;
-		transition: background 0.2s ease;
-	}
-	.select-btn:hover {
-		background: #666;
-	}
-	.select-btn.highlight {
-		background: gold;
-		color: #000;
-	}
-	.select-btn.highlight:hover {
-		background: #e6c200;
-	}
-	.select-btn:disabled {
-		background: #333;
-		color: #777;
-		cursor: default;
-	}
-	
-	.note {
-		margin: 0;
-		font-size: 0.9rem;
-		color: #777;
-	}
-	@media (max-width: 600px) {
-		body, html {
-			overflow: auto;
-		}
-		main {
-			overflow-y: auto;
-		}
-		#pricing-cards .pricing-intro {
-			margin-bottom: 1rem;
-		}
-		.pricing-grid {
-			gap: 2rem;
-			margin-bottom: 4rem;
-		}
-		#pricing-cards h2 {
-			font-size: 1.25rem;
-			margin-top: 0.5rem;
-		}
-		#pricing-cards p {
-			font-size: 0.9rem;
-			padding: 0.5rem;
-		}
-		#header {
-			flex-direction: row;
-			align-items: center;
-		}
-		#center-dropdown {
-			width: auto;
-		}
-		#page-select {
-			max-width: 150px;
-		}
-		#auth-buttons {
-			justify-content: center;
-		}
-	}
-</style>
-<body>
+<body class="pricing-page">
 	<div id="app">
 		<header id="header">
 			<div id="title">
-				<h1>+EV Sharps</h1>
+				<a class="pricing-brand" href="dingers.html" aria-label="+EV Sharps home"><span>+EV</span> Sharps</a>
 			</div>
 			<div id="center-dropdown">
 				<div class="select-wrapper">
@@ -214,7 +41,7 @@
 					<img src="/logos/discord.png" alt="Discord logo">
 					<span class="btn-text">Sign in with Discord</span>
 				</button>
-				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
+				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()" aria-label="Sign in with Google">
 				  <div class="gsi-material-button-state"></div>
 				  <div class="gsi-material-button-content-wrapper">
 					<div class="gsi-material-button-icon">
@@ -226,7 +53,7 @@
 						<path fill="none" d="M0 0h48v48H0z"></path>
 					  </svg>
 					</div>
-					<span style="display: none;">Sign in with Google</span>
+					<span class="pricing-google-label">Google</span>
 				  </div>
 				</button>
 
@@ -238,84 +65,156 @@
 				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
 			</div>
 		</header>
-		<main>
-			<section id="pricing-cards">
-				<div style="display: flex;flex-direction: column;align-items: center;">
-					<div>
-						<h2>Become a +EV Sharp today!</h2>
-						<p>
-							Our system pinpoints +EV Home Runs, Touchdowns, and Goalscorers, and other props so you can act fast, bet smart, and stay ahead of the market
-						</p>
-					</div>
-					<div class="record">
-					  <ul style="list-style:none; padding:0; margin:0;">
-					  	<li><strong>'23-'25 +EV HRs:</strong> 745-3249 <span class="units">(+233.89u)</span></li>
-						<li><strong>'25 +EV HRs:</strong> 421-1942 <span class="units">(+105.16u)</span></li>
-						<li><strong>+EV NHL ATGS:</strong> 88-304 <span class="units">(+28.65u)</span></li>
-						<li><strong>+EV NFL ATTD:</strong> 104-197 <span class="units">(+33.32u)</span></li>
-					  </ul>
-					</div>
+		<main id="pricing-content">
+			<p id="plan-status" class="pricing-status" role="status" aria-live="polite"></p>
+			<section class="pricing-hero" aria-labelledby="pricing-heading">
+				<div>
+					<p class="pricing-eyebrow">Plans &amp; memberships</p>
+					<h1 id="pricing-heading">More of the market.<br><span>All in one place.</span></h1>
+					<p class="pricing-lead">Compare prices, research player props, and build your own view of the slate. Choose the access that fits how you bet.</p>
+					<nav class="pricing-jump-links" aria-label="On this page">
+						<a href="#pricing-cards">Compare plans <span aria-hidden="true">&#8595;</span></a>
+						<a href="#book-coverage">See our books</a>
+						<a href="#pricing-questions">Questions</a>
+					</nav>
+				</div>
+				<aside class="pricing-live-preview" aria-labelledby="pricing-live-heading">
+					<div class="pricing-live-top"><span class="pricing-live-label">LIVE PAGES</span><span class="pricing-live-plan">Included with Sharp</span></div>
+					<h2 id="pricing-live-heading">The game starts.<br>Your research keeps going.</h2>
+					<p>Follow available in-game markets and compare prices as the action unfolds.</p>
+					<div class="pricing-live-sports" aria-label="Live page sports"><span>MLB</span><span>NFL</span><span>NBA</span><span>NHL</span></div>
+				</aside>
+			</section>
+
+			<section id="pricing-cards" aria-labelledby="plans-heading">
+				<div class="pricing-section-heading">
+					<div><p class="pricing-eyebrow">Your next step</p><h2 id="plans-heading">A plan for your process.</h2></div>
+					<p>Monthly memberships.<br>Change or cancel from your profile.</p>
 				</div>
 				<div class="pricing-grid">
-					<div class="pricing-card" data-tier="free">
-						<h3>🆓 Free</h3>
-						<p class="price">$0 <span>/mo</span></p>
+					<article class="pricing-card" data-tier="free" aria-labelledby="free-heading">
+						<div class="pricing-plan-heading"><h3 id="free-heading">Free</h3></div>
+						<p class="pricing-plan-description">Get a feel for the tools and explore selected pages.</p>
+						<p class="price">$0 <span>/ month</span></p>
+						<button type="button" class="select-btn" onclick="handlePlanClick(this, 'free')"><span class="btn-text">Explore free</span><span class="spinner" style="display:none;" aria-hidden="true"></span></button>
+						<p class="pricing-list-intro">Start exploring</p>
 						<ul>
-							<li>✋ Limited Website Access</li>
-							<li>📊 Basic Stats</li>
-							<li>⏳ Delayed Odds & Feed</li>
-							<li>🔓 Free Discord channels</li>
+							<li>Selected free pages</li>
+							<li>Basic stats and research previews</li>
+							<li>Limited odds and +EV access</li>
+							<li>Free Discord channels</li>
 						</ul>
-						<button class="select-btn" onclick="handlePlanClick(this, 'free')" disabled>
-							<span class="btn-text">Current</span>
-							<span class="spinner" style="display:none;"></span>
-						</button>
-					</div>
-
-					<div class="pricing-card" data-tier="analyst">
-						<h3>💻 Analyst</h3>
-						<p class="price">$10 <span>/mo</span></p>
+					</article>
+					<article class="pricing-card" data-tier="analyst" aria-labelledby="analyst-heading">
+						<div class="pricing-plan-heading"><h3 id="analyst-heading">Analyst</h3></div>
+						<p class="pricing-plan-description">Go deeper on core props with tools you can make your own.</p>
+						<p class="price">$10 <span>/ month</span></p>
+						<button type="button" class="select-btn" onclick="handlePlanClick(this, 'analyst')"><span class="btn-text">Choose Analyst</span><span class="spinner" style="display:none;" aria-hidden="true"></span></button>
+						<p class="pricing-list-intro">Your core prop toolkit</p>
 						<ul>
-							<li>⏰ Odds update every ~5min</li>
-							<li style="display: flex; flex-direction: column;">🎽 Player Props <span>(HRs/TDs/PTS/ATGS)</span></li>
-							<li>💾 Data Dumps</li>
-							<li>⚙️ Customizable Tables</li>
-							<li>🔓 Circa lines</li>
-							<li>🔓 Analysts Discord channels</li>
+							<li>Core player-prop pages<small>Home runs, touchdowns, goals, and PTS/REB/AST</small></li>
+							<li>Odds comparison, including Circa</li>
+							<li>Custom devig books and weights</li>
+							<li>Saved table layouts and filters</li>
+							<li>CSV data exports</li>
+							<li>Analyst Discord channels</li>
 						</ul>
-						<button class="select-btn" onclick="handlePlanClick(this, 'analyst')">
-							<span class="btn-text">Upgrade</span>
-							<span class="spinner" style="display:none;"></span>
-						</button>
-					</div>
-
-					<div id="sharp-card" class="pricing-card popular" data-tier="sharp">
-						<h3>🎯 Sharp</h3>
-						<p class="price">$25 <span>/mo</span></p>
-						<span class="plan__eyebrow">Early Access</span>
+					</article>
+					<article id="sharp-card" class="pricing-card popular" data-tier="sharp" aria-labelledby="sharp-heading">
+						<div class="pricing-plan-heading"><h3 id="sharp-heading">Sharp</h3><span class="pricing-plan-badge">Full access</span></div>
+						<p class="pricing-plan-description">The wider slate, from pregame research to live markets.</p>
+						<p class="price">$25 <span>/ month</span></p>
+						<button type="button" class="select-btn" onclick="handlePlanClick(this, 'sharp')"><span class="btn-text">Choose Sharp</span><span class="spinner" style="display:none;" aria-hidden="true"></span></button>
+						<p class="pricing-list-intro">Everything in Analyst, plus</p>
 						<ul>
-							<li>💻 Everything in Analyst Tier</li>
-							<li>🎟️ Full +EV Betting Slate</li>
-							<!-- <li>🎽 Expanded Player Props</li> -->
-							<li style="display: flex; flex-direction: column;">🎽 Expanded Player Props & Alts</li>
-							<li>🏆 Mainlines (Spreads/Totals/Halves)</li>
-							<li>🔓 All Discord channels</li>
+							<li class="pricing-live-benefit">Live pages<small>MLB, NFL, NBA, and NHL when markets are available</small></li>
+							<li>Expanded player props and alternate lines</li>
+							<li>Main markets<small>Moneylines, spreads, totals</small></li>
+							<li>Full +EV slate across supported pages</li>
+							<li>All Discord channels</li>
 						</ul>
-						<button class="select-btn" onclick="handlePlanClick(this, 'sharp')">
-							<span class="btn-text">Upgrade</span>
-							<span class="spinner" style="display:none;"></span>
-						</button>
-						<!-- 
-						<button class="select-btn highlight" onclick="handlePlanClick(this, 'sharp')">
-							<span class="btn-text">1st Month 40% Off!</span>
-							<span class="spinner" style="display:none;"></span>
-						</button>
-						-->
-					</div>
+					</article>
 				</div>
-				<p class="pricing-intro">
-					Pick the tier that fits your betting style. Upgrade anytime.
-				</p>
+				<p class="pricing-plan-note">Sign in with Discord or Google to choose a paid plan. Already a member? Your current plan is marked above.</p>
+			</section>
+
+			<section class="pricing-tools" aria-labelledby="tools-heading">
+				<div class="pricing-section-heading">
+					<div><p class="pricing-eyebrow">More than an odds board</p><h2 id="tools-heading">Make the slate your own.</h2></div>
+					<p>Research and customization tools on the pages included in your plan.</p>
+				</div>
+				<div class="pricing-tools-grid">
+					<article class="pricing-tool">
+						<span class="pricing-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="#142333"/><circle cx="16" cy="12" r="2" fill="#142333"/><circle cx="10" cy="18" r="2" fill="#142333"/></svg></span>
+						<h3>Control your comparison</h3>
+						<p>Choose your devig books and weights. Filter by odds, line, and liquidity, then show, hide, or reorder the columns you use.</p>
+						<p class="pricing-tool-tags">Custom devig &middot; Liquidity filters &middot; Table and card views</p>
+					</article>
+					<article class="pricing-tool">
+						<span class="pricing-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v16h17M8 16v-5M13 16V7M18 16V4"/></svg></span>
+						<h3>Put the price in context</h3>
+						<p>Read game logs, hit rates, and matchup information alongside the odds. On NFL pages, check snap share to see player usage.</p>
+						<p class="pricing-tool-tags">Game logs &middot; Matchup stats &middot; NFL snap share</p>
+					</article>
+					<article class="pricing-tool">
+						<span class="pricing-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg></span>
+						<h3>Keep your players close</h3>
+						<p>Star players across prop pages and bring them into your watchlist. Use the tracker to keep your bets and players in one place.</p>
+						<p class="pricing-tool-tags">Player favorites &middot; Watchlist &middot; Bet tracker</p>
+					</article>
+				</div>
+			</section>
+
+			<section id="book-coverage" class="pricing-coverage" aria-labelledby="coverage-heading">
+				<div class="pricing-section-heading">
+					<div><p class="pricing-eyebrow">Across the market</p><h2 id="coverage-heading">Your books. Side by side.</h2></div>
+					<p>Compare available prices from sportsbooks, exchanges, and prediction markets.</p>
+				</div>
+				<div class="pricing-book-group">
+					<h3>Sportsbooks</h3>
+					<ul class="pricing-book-grid" aria-label="Supported sportsbooks">
+						<li><img src="logos/fd.png" width="24" height="24" alt="" loading="lazy"><span>FanDuel</span></li>
+						<li><img src="logos/dk.png" width="24" height="24" alt="" loading="lazy"><span>DraftKings</span></li>
+						<li><img src="logos/b365.png" width="24" height="24" alt="" loading="lazy"><span>bet365</span></li>
+						<li><img src="logos/mgm.png" width="24" height="24" alt="" loading="lazy"><span>BetMGM</span></li>
+						<li><img src="logos/cz.png" width="24" height="24" alt="" loading="lazy"><span>Caesars</span></li>
+						<li><img src="logos/fn.png" width="24" height="24" alt="" loading="lazy"><span>Fanatics</span></li>
+						<li><img src="logos/br.png" width="24" height="24" alt="" loading="lazy"><span>BetRivers</span></li>
+						<li><img src="logos/hr.png" width="24" height="24" alt="" loading="lazy"><span>Hard Rock</span></li>
+						<li><img src="logos/circa.png" width="24" height="24" alt="" loading="lazy"><span>Circa</span></li>
+						<li><img src="logos/pn.png" width="24" height="24" alt="" loading="lazy"><span>Pinnacle</span></li>
+						<li><img src="logos/espn.png" width="24" height="24" alt="" loading="lazy"><span>ESPN</span></li>
+						<li><img src="logos/kambi.png" width="24" height="24" alt="" loading="lazy"><span>Bally Bet / Kambi</span></li>
+						<li><img src="logos/bv.png" width="24" height="24" alt="" loading="lazy"><span>Bovada</span></li>
+						<li><img src="logos/bol.png" width="24" height="24" alt="" loading="lazy"><span>BetOnline</span></li>
+						<li><img src="logos/re.png" width="24" height="24" alt="" loading="lazy"><span>Rebet</span></li>
+						<li><img src="logos/fl.png" width="24" height="24" alt="" loading="lazy"><span>Fliff</span></li>
+					</ul>
+				</div>
+				<div class="pricing-book-group">
+					<h3>Exchanges &amp; prediction markets</h3>
+					<ul class="pricing-book-grid" aria-label="Supported exchanges and prediction markets">
+						<li><img src="logos/kal.png" width="24" height="24" alt="" loading="lazy"><span>Kalshi</span></li>
+						<li><img src="logos/nv.png" width="24" height="24" alt="" loading="lazy"><span>Novig</span></li>
+						<li><img src="logos/px.png" width="24" height="24" alt="" loading="lazy"><span>ProphetX</span></li>
+						<li><img src="logos/poly.png" width="24" height="24" alt="" loading="lazy"><span>Polymarket</span></li>
+					</ul>
+				</div>
+				<p class="pricing-coverage-note">Coverage varies by sport, market, and region. Not every book or market is available on every page.</p>
+			</section>
+
+			<section id="pricing-questions" class="pricing-questions" aria-labelledby="questions-heading">
+				<div class="pricing-questions-intro">
+					<p class="pricing-eyebrow">Before you choose</p>
+					<h2 id="questions-heading">A few helpful answers.</h2>
+					<p>Want to learn more about the tools?<br><a href="faq.html">Visit the full FAQ <span aria-hidden="true">&#8599;</span></a></p>
+				</div>
+				<div class="pricing-faq">
+					<details><summary>What does Sharp add over Analyst?</summary><p>Sharp includes everything in Analyst, plus live pages, expanded player props and alternate lines, and main markets such as moneylines, spreads, and totals.</p></details>
+					<details><summary>Which live pages are included?</summary><p>Sharp includes live pages for MLB, NFL, NBA, and NHL. Available games, books, and markets depend on the sport and current coverage; a page may be empty when no live markets are available.</p></details>
+					<details><summary>Can I try the site before subscribing?</summary><p>Yes. Free access includes selected pages and research previews. Choose Explore free to start with the strikeouts page, or use the Pages menu to look around.</p></details>
+					<details><summary>How do I change or cancel my plan?</summary><p>Sign in and open your <a href="profile.html">profile</a> to access the billing portal. You can manage, change, or cancel your subscription there.</p></details>
+				</div>
 			</section>
 		</main>
 		<footer class="site-footer">
@@ -327,22 +226,36 @@
 	<script type="text/javascript">
 		PAGE = "pricing";
 
-		function handlePlanClick(button, plan) {
-
+		async function handlePlanClick(button, plan) {
+			const status = document.getElementById('plan-status');
+			if (plan === 'free') {
+				changePage(['analyst', 'sharp'].includes(CURR_USER?.tier) ? 'profile' : 'strikeouts');
+				return;
+			}
 			if (!ACCESS_TOKEN) {
-				alert("🔒 Please log in first to upgrade!");
-				// optionally focus your top-right login field
-				document.getElementById("email")?.focus();
+				status.textContent = 'Sign in with Discord or Google at the top of the page to choose a plan.';
+				document.querySelector('#auth-buttons .discord-login')?.focus();
 				return;
 			}
 			const btnText = button.querySelector('.btn-text');
 			const spinner = button.querySelector('.spinner');
-
-			// Show spinner and disable button
-			btnText.textContent = 'Processing…';
+			const originalText = btnText.textContent;
+			status.textContent = '';
+			btnText.textContent = 'Opening checkout...';
 			spinner.style.display = 'inline-block';
 			button.disabled = true;
-			upgrade(plan);
+			button.setAttribute('aria-busy', 'true');
+			try {
+				await upgrade(plan);
+			} catch (error) {
+				status.textContent = 'Checkout could not be opened. Please try again.';
+				status.scrollIntoView({ block: 'center' });
+			} finally {
+				btnText.textContent = originalText;
+				spinner.style.display = 'none';
+				button.disabled = false;
+				button.removeAttribute('aria-busy');
+			}
 		}
 
 		ENABLE_AUTH = true;

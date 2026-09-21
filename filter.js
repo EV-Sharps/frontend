@@ -19,13 +19,17 @@ function wireChkddMenu(menu, onChange = onChkddChange) {
 	menu.dataset.wired = "1";
 
 	menu.addEventListener("click", (e) => {
-		const act = e.target?.dataset?.act; // "all" | "none" | "today"
+		const act = e.target?.dataset?.act; // "all" | "none" | "today" | "attd"
 		if (!act) return;
 
 		if (act === "today") {
 			const today = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York" });
 			menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
 				cb.checked = cb.dataset.date === today;
+			});
+		} else if (act === "attd") {
+			menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+				cb.checked = cb.value === "attd";
 			});
 		} else {
 			const state = act === "all";
@@ -325,15 +329,16 @@ if (menu) {
 	});
 }
 
-document.querySelectorAll("#overlay input[type=checkbox]").forEach(checkbox => {
-	checkbox.addEventListener("change", () => {
+document.getElementById('overlay')?.addEventListener('change', event => {
+	const checkbox = event.target;
+	if (checkbox.matches('input[type="checkbox"]')) {
 		const field = checkbox.id.replace(/^custom_/, "").replace("bookOdds_", "bookOdds.").replace("savant_", "savant.").replace("batter_percs_", "batter_percs.").replace("percs_", "percs.").replace("pitcherData_", "pitcherData.").replace("homerLogs_pa_", "homerLogs.pa.").replace("hitRates_", "hitRates.");;
 		if (checkbox.checked) {
 			TABLE.getColumn(field)?.show();
 		} else {
 			TABLE.getColumn(field)?.hide();
 		}
-	});
+	}
 });
 
 function openMenu() {

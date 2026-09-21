@@ -183,11 +183,11 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
-			{ label: "🏈 Game Tracker", value: "nfl_tracker" },
 			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
+			{ label: "🏈 Game Tracker", value: "nfl_tracker" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
 			{ label: "🏈 Preseason", value: "preseason", sharp: true },
 			{ label: "🔮 Futures", value: "nfl_futures" },
@@ -201,9 +201,9 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 Goals", value: "atgs" },
 			{ label: "🏒 2+ Goals", value: "atgs2" },
 			{ label: "🏒 Props", value: "nhl", sharp: true },
+			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
-			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
 		]
 	},
@@ -580,6 +580,32 @@ function isStackedOddsCell(cell) {
 	return supportsOddsViews() && CURRENT_VIEW === 'table' && cell.getTable().element.id === 'table';
 }
 
+function recordColumnVisible() {
+	const metadata = CURR_USER?.metadata;
+	if (!metadata?.[PAGE]) return true;
+	// Dingers already offered this column; retain its existing saved preference.
+	if (PAGE !== 'dingers' && !metadata[`${PAGE}-record-column-version`]) return true;
+	return metadata[PAGE].includes('roiRecord');
+}
+
+function recordROIColumn() {
+	return {
+		title: 'Record<br><span style="font-size: 10px; font-weight: normal;">100-odds bins<br>1% EV bins</span>',
+		field: 'roiRecord', width: 80, minWidth: 80, headerSort: false,
+		formatter: recordROIFormatter, visible: recordColumnVisible(),
+		headerTooltip: 'Historical W\u2013L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.'
+	};
+}
+
+function ensureRecordColumnControl() {
+	if (document.getElementById('custom_roiRecord')) return;
+	const evControl = document.getElementById('custom_ev')?.parentElement;
+	if (!evControl) return;
+	const control = document.createElement('div');
+	control.innerHTML = '<input id="custom_roiRecord" type="checkbox"><label for="custom_roiRecord">Record (Stacked)</label>';
+	evControl.after(control);
+}
+
 const oddsTableViewStates = new WeakMap();
 function syncOddsSummaryColumns(table = TABLE) {
 	const state = oddsTableViewStates.get(table);
@@ -648,7 +674,18 @@ function initializeOddsTableView(table) {
 	if (!supportsOddsViews() || oddsTableViewStates.has(table)) return;
 	const state = { visibility: {}, widths: new Map(), syncing: false };
 	oddsTableViewStates.set(table, state);
-	const capture = () => {
+	let addingRecord = false;
+	const capture = async () => {
+		if (addingRecord) return;
+		const columns = table.getColumns();
+		if (!columns.some(col => col.getField() === 'roiRecord') &&
+			columns.some(col => col.getField() === 'ev') &&
+			columns.some(col => col.getDefinition().formatter === playerFormatter)) {
+			addingRecord = true;
+			try { await table.addColumn(recordROIColumn(), false, 'ev'); }
+			finally { addingRecord = false; }
+		}
+		if (table.getColumns().some(col => col.getField() === 'roiRecord')) ensureRecordColumnControl();
 		state.widths.clear();
 		for (const col of table.getColumns()) {
 			const field = col.getField();
@@ -668,7 +705,7 @@ function initializeOddsTableView(table) {
 		if (['ev', 'player', 'book', 'fairVal', 'roiRecord'].includes(field)) syncOddsSummaryColumns(table);
 	});
 	table.on('columnsLoaded', capture);
-	capture();
+	return capture();
 }
 
 // ── Watchlist ────────────────────────────────────────────────────────────────
@@ -3089,6 +3126,9 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		if (recordColumnVisible()) allowed.add('roiRecord');
+		const viewState = oddsTableViewStates.get(TABLE);
+		if (viewState) viewState.visibility.roiRecord = allowed.has('roiRecord');
 		const customColumns = ["ncaaf", "main"].includes(PAGE);
 		if (customColumns && !CURR_USER.metadata[`${PAGE}-columns-version`]) {
 			// These columns could not be customized in older saved layouts.
@@ -3147,6 +3187,7 @@ function openOverlay() {
 			input.checked = viewState?.visibility[field] ?? TABLE.getColumn(field)?.isVisible() ?? false;
 		});
 	}
+	syncOddsSummaryColumns();
 
 	const currentFavorites = new Set(getFavoriteDevigs());
 	let customDevigs = getCustomDevigs().map(key => ({
@@ -4562,6 +4603,23 @@ function parseURLParams() {
 
 let _colReorderDragSrc = null;
 
+function withRecordColumnOrder(savedOrder, defaultOrder, items) {
+	if (!supportsOddsViews() || !items.some(item => item.key === 'ev') ||
+		!items.some(item => item.cols.some(col => col.formatter === playerFormatter))) {
+		return { savedOrder, defaultOrder, items };
+	}
+	if (!items.some(item => item.key === 'roiRecord')) {
+		items = [...items, { key: 'roiRecord', label: 'Record', cols: [recordROIColumn()] }];
+	}
+	const insertRecord = order => {
+		if (!order?.length || order.includes('roiRecord')) return order;
+		const next = [...order];
+		next.splice(Math.max(0, next.indexOf('ev') + 1), 0, 'roiRecord');
+		return next;
+	};
+	return { savedOrder: insertRecord(savedOrder), defaultOrder: insertRecord(defaultOrder), items };
+}
+
 /**
  * Build a Tabulator columns array from a saved order.
  *
@@ -4572,6 +4630,7 @@ let _colReorderDragSrc = null;
  * @param {Array}    extraCols   - hidden utility columns to append
  */
 function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null, extraCols = []) {
+	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
 	const order = (savedOrder && savedOrder.length) ? savedOrder : defaultOrder;
 	const seen = new Set();
@@ -4596,6 +4655,7 @@ function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null
  * @param {Function} isItemVisible  - (meta) => bool; omit hidden items
  */
 function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
+	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
 	const seen = new Set(savedOrder);
 	const displayOrder = [...savedOrder, ...defaultOrder.filter(k => !seen.has(k))];

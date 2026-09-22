@@ -71,13 +71,13 @@
 			const price = entry.prices.get(book)?.[side] ?? null;
 			const display = price === null ? "&mdash;" : escape(options.formatOdds(price > 0 ? `+${price}` : String(price)));
 			const best = price !== null && payout(price) === entry.best[side];
-			return `<span class="player-lines-price${best ? " is-best" : ""}"><small>${side ? "U" : "O"}</small><span${best ? ' title="Highest listed price"' : ""}>${display}</span></span>`;
+			return `<span class="player-lines-price${best ? " is-best" : ""}"><span title="${side ? "Under" : "Over"}${best ? ' · Highest listed price' : ''}">${display}</span></span>`;
 		};
 		const selectedLine = line => selected.handicap != null && line === Number(selected.handicap);
 		const table = lines.length && books.length ? `<div class="player-lines-scroll" tabindex="0" role="region" aria-label="Prices by sportsbook and line">
-			<table><caption>Over (O) and under (U) prices. Green marks the highest listed price for each side.</caption>
-			<thead><tr><th scope="col">Book / Line</th>${lines.map(entry => `<th scope="col"${selectedLine(entry.line) ? ' class="is-selected" aria-label="Selected line ' + escape(entry.line) + '"' : ""}>${escape(entry.line)}</th>`).join("")}</tr></thead>
-			<tbody>${books.map(book => `<tr><th scope="row"><span class="player-lines-book">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="18" height="18">` : ""}${escape(book.toUpperCase())}</span></th>${lines.map(entry => `<td${selectedLine(entry.line) ? ' class="is-selected"' : ""}>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<p class="player-lines-empty">No prices are available for this player and prop.</p>';
+			<table><caption>Over prices on top, under prices below. Green marks the highest listed price for each side.</caption>
+			<thead><tr><th scope="col">Line</th>${books.map(book => `<th scope="col"><span class="player-lines-book">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="18" height="18">` : ""}${escape(book.toUpperCase())}</span></th>`).join("")}</tr></thead>
+			<tbody>${lines.map(entry => `<tr${selectedLine(entry.line) ? ' class="is-selected"' : ""}><th scope="row"${selectedLine(entry.line) ? ' aria-label="Selected line ' + escape(entry.line) + '"' : ""}>${escape(entry.line)}</th>${books.map(book => `<td>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<p class="player-lines-empty">No prices are available for this player and prop.</p>';
 		dialog.innerHTML = `<header class="player-lines-header"><div><p>Line comparison</p><h2 id="player-lines-title">${escape(options.player)} <span>&middot; ${escape(options.prop)}</span></h2><p>${escape(String(selected.game || selected.gameId || "").toUpperCase())}${lines.length ? ` &middot; ${lines.length} line${lines.length === 1 ? "" : "s"}` : ""}</p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${table}`;
 		dialog.querySelector(".player-lines-close").addEventListener("click", () => dialog.close());
 		if (!dialog.open) dialog.showModal();

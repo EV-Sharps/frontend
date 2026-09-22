@@ -152,6 +152,25 @@
     $('empty-state').querySelector('h2').textContent = fresh.length ? 'No plays match these filters' : stale || expired ? 'Waiting for fresh recommendations' : 'No plays meet the criteria';
     $('empty-state').querySelector('p').textContent = fresh.length ? 'Try another sport, market or book.'
       : 'The shortlist can be empty. Refresh checks for the latest published recommendations.';
+    const coverage = (report.coverage || []).filter(entry => (!sport || entry.sport === sport)
+      && (!book || entry.book === book) && (!market || entry.market === market));
+    if (!shown.length && !stale && coverage.length && coverage.every(entry => entry.selected === 0)) {
+      const counts = {};
+      coverage.forEach(entry => Object.entries(entry.rejections || {}).forEach(([reason, count]) => {
+        counts[reason] = (counts[reason] || 0) + Number(count);
+      }));
+      const labels = { insufficient_edge: 'below the EV or stress-EV minimum', odds_range: 'outside the odds range',
+        insufficient_reference_support: 'too few eligible reference groups', reference_disagreement: 'reference prices disagree',
+        different_date: 'not on the selected date', unsupported_settlement: 'unsupported settlement type',
+        missing_selected_side_price: 'no price for this side', insufficient_or_unknown_liquidity: 'insufficient offer liquidity' };
+      const reasons = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3)
+        .map(([reason, count]) => `${Number(count).toLocaleString()} ${labels[reason] || reason.replaceAll('_', ' ')}`).join('; ');
+      const quoted = coverage.reduce((sum, entry) => sum + Number(entry.quoted_rows || 0), 0);
+      $('empty-state').querySelector('h2').textContent = `No qualifying ${book ? bookName(book) + ' ' : ''}plays`;
+      $('empty-state').querySelector('p').textContent = `${quoted.toLocaleString()} quote rows checked, including alternate lines. `
+        + (reasons ? `Top exclusions: ${reasons}. ` : '')
+        + `Minimums: ${pct(c.min_ev)} estimated EV and ${pct(c.min_floor_ev)} conservative EV.`;
+    }
   }
   function acceptReport(data) {
     if (!data || !Array.isArray(data.picks) || !data.criteria || !Number.isFinite(Date.parse(data.generated_at))
@@ -164,8 +183,9 @@
     $('report-content').hidden = false;
     $('report-content').setAttribute('aria-busy', 'false');
     $('access-panel').hidden = true;
-    fillOptions('sport-filter', report.picks.map(p => p.sport), 'All sports');
-    fillOptions('book-filter', report.picks.map(p => p.book), 'All books');
+    const covered = [...report.picks, ...(report.coverage || [])];
+    fillOptions('sport-filter', covered.map(p => p.sport), 'All sports');
+    fillOptions('book-filter', covered.map(p => p.book), 'All books');
     $('report-date').textContent = new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     $('generated').textContent = `Published ${timeLabel(data.generated_at, data.criteria.timezone)}`;
     const c = report.criteria;
@@ -173,7 +193,7 @@
       [`${pct(c.min_ev)} estimated EV after fees`, `At least ${pct(c.min_floor_ev)} under the conservative estimate.`],
       [`${c.min_references}+ other reference groups`, c.require_anchor ? 'Includes Pinnacle or Circa. The offered book is excluded from its own estimate.' : 'The offered book is excluded from its own estimate.'],
       [`Quotes within ${c.max_age_minutes} minutes`, `Pregame only, at least ${c.min_minutes_to_start} minutes before the start.`],
-      [`${dollars(c.min_liquidity)}+ exchange liquidity`, 'The recorded amount on the selected side. Unknown exchange limits are excluded.'],
+      //[`${dollars(c.min_liquidity)}+ exchange liquidity`, 'The recorded amount on the selected side. Unknown exchange limits are excluded.'],
       [`${odds(c.min_odds)} to ${odds(c.max_odds)}`, `Reference estimates within ${Number(c.max_probability_spread * 100).toFixed(1)} percentage points of each other.`],
       [data.selection_mode === 'book_sport_market' ? `Up to ${c.limit} props + ${c.limit} main lines per book, per sport` : 'Limited repeated exposure',
         data.selection_mode === 'book_sport_market'

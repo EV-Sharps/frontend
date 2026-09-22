@@ -458,6 +458,11 @@ function createNewCard(rowData, uniqueId) {
 	
 	header.addEventListener('click', (e) => {
 		if (e.target.closest('.watchlist-star')) return;
+		if (e.target.closest('.player-lines-trigger')) {
+			e.stopPropagation();
+			openPlayerLines(card.playerLinesData);
+			return;
+		}
 		const collapsedBody = header.querySelector('.card-body-collapsed');
 		if (e.target.closest('.all-books-row')) {
 			//return;
@@ -582,6 +587,7 @@ function renderCardRecord(rowData) {
 }
 
 function updateExistingCard(card, rowData) {
+	card.playerLinesData = rowData;
 	const uniqueId = card.dataset.uniqueId;
 	const header = card.querySelector('.card-header');
 
@@ -630,7 +636,7 @@ function updateExistingCard(card, rowData) {
 				<span class="pos">${rowData.pos || ""}</span>
 				<span class="bats">${(PAGE === "dingers") ? rowData.bats : avgMin || ""}</span>
 			</div>
-			<span class="player-name">${player}</span>
+			<span class="player-name">${playerLinesName(rowData, player)}</span>
 			${_starSpan}
 		</div>
 		<div class="prop-content-stack">

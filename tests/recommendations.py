@@ -55,7 +55,7 @@ server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(SI
 Thread(target=server.serve_forever, daemon=True).start()
 try:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, args=['--disable-logging', f'--log-file={SCREENSHOTS / "chromium.log"}'])
         page = browser.new_page(viewport={'width': 1440, 'height': 1000})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -79,16 +79,28 @@ try:
         assert page.locator('.rec-pick').count() == 2
         assert '$101' in page.locator('.rec-pick').first.inner_text()
         assert page.locator('.rec-pick a[href^="javascript"]').count() == 0
-        assert page.locator('.rec-pick img').count() == 0
+        assert page.locator('.rec-book-cell img[src="logos/nv.png"]').count() == 1
+        assert page.locator('.rec-book-cell img[src="logos/dk.png"]').count() == 1
+        assert page.locator('.rec-reference-cell img').count() == 6
+        assert page.locator('#picks img[src="x"], #picks [onerror]').count() == 0
+        assert page.locator('.rec-pick').first.locator('.rec-line-cell').inner_text() == 'O49.5'
+        assert '+7.2%' in page.locator('.rec-pick').first.locator('.rec-ev-cell').inner_text()
         assert page.locator('.rec-pick a[href="https://example.com/selection"]').count() == 1
-        page.locator('.rec-details summary').first.click()
+        page.locator('.rec-toggle').first.focus()
+        page.keyboard.press('Enter')
+        assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
         assert '<img src=x' in page.locator('.rec-details').first.inner_text()
         assert page.locator('.rec-ref-table').first.is_visible()
+        page.evaluate('window.refreshRecommendations()')
+        assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
+        assert page.locator('.rec-ref-table').first.is_visible()
+        page.wait_for_function('Array.from(document.querySelectorAll("#picks img")).every(img => img.complete && img.naturalWidth > 0)')
         page.screenshot(path=str(SCREENSHOTS/'desktop.png'), full_page=True)
         page.select_option('#sport-filter', 'mlb')
         assert page.locator('.rec-pick').count() == 1
         page.select_option('#market-filter', 'props')
         assert page.locator('#empty-state').is_visible()
+        assert not page.locator('#picks-table-wrap').is_visible()
         assert 'No plays match' in page.locator('#empty-state').inner_text()
         page.select_option('#sport-filter', '')
         page.select_option('#market-filter', '')
@@ -97,10 +109,39 @@ try:
         page.select_option('#book-filter', '')
         page.set_viewport_size({'width': 390, 'height': 844})
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+        page.wait_for_function('Array.from(document.querySelectorAll("#picks img")).every(img => img.complete && img.naturalWidth > 0)')
+        assert page.locator('.rec-book-cell img').first.is_visible()
+        assert page.locator('.rec-reference-cell img').first.is_visible()
         page.screenshot(path=str(SCREENSHOTS/'mobile.png'), full_page=True)
+        for width in (320, 768, 1024, 1440):
+            page.set_viewport_size({'width': width, 'height': 900})
+            assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), width
 
         def refresh():
             page.evaluate('window.refreshRecommendations()')
+
+        # Odds format, unknown books and pagination continue to work in the table.
+        page.evaluate('localStorage.setItem("odds_format", "decimal")')
+        refresh()
+        assert page.locator('.rec-offer strong').first.inner_text() == '2.25'
+        page.evaluate('localStorage.removeItem("odds_format")')
+        state['payload'] = sample()
+        state['payload']['picks'][0]['book'] = 'newbook'
+        state['payload']['picks'][0]['under'] = True
+        refresh()
+        assert page.locator('.rec-book-cell .rec-book-fallback').count() == 1
+        assert page.locator('.rec-pick').first.locator('.rec-line-cell').inner_text() == 'U49.5'
+        state['payload'] = sample()
+        base = state['payload']['picks'][0]
+        state['payload']['picks'] = [dict(base, player=f'player {i}') for i in range(55)]
+        refresh()
+        assert page.locator('.rec-pick').count() == 50
+        page.locator('#show-more').click()
+        assert page.locator('.rec-pick').count() == 55
+        assert not page.locator('#show-more').is_visible()
+        page.select_option('#market-filter', 'props')
+        assert page.locator('.rec-pick').count() == 50
+        page.select_option('#market-filter', '')
 
         # Expire by individual quote/reference timestamps, not just publication time.
         state['payload'] = sample()
@@ -148,6 +189,6 @@ try:
         assert not page.locator('#access-panel').is_visible()
         assert not errors, errors
         browser.close()
-        print('Browser checks passed: rendering, links, escaping, filters, mobile layout, freshness, errors, access, recovery.')
+        print('Browser checks passed: table, logos, details, links, escaping, odds format, pagination, filters, responsive layout, freshness, errors, access, recovery.')
 finally:
     server.shutdown()

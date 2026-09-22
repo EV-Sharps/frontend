@@ -2193,6 +2193,16 @@ const ftFormatter = function(cell, params, rendered) {
 	return cell.getValue()+" ft";
 }
 
+function playerLinesName(data, label) {
+	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return label;
+	return `<button type="button" class="player-lines-trigger" aria-haspopup="dialog" title="Compare all lines and prices">${PlayerLines.escape(label)}</button>`;
+}
+
+function openPlayerLines(data) {
+	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
+	PlayerLines.open(data, RES?.data || [], { player: title(data.player), prop: convertProp(data.prop), formatOdds: oddsDisplay });
+}
+
 const basePlayerFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	const sport = params.sport || data.sport;
@@ -2306,10 +2316,18 @@ const basePlayerFormatter = function(cell, params, rendered) {
 			: `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:transparent;border:2px solid ${color};vertical-align:middle;margin-left:4px;" title="Projected - ${data.starting ? 'Starting' : 'Not Starting'}"></span>`;
 		lineupCircles = dot;
 	}
+	if (typeof PlayerLines !== "undefined" && PlayerLines.canOpen(PAGE, data) && typeof rendered === "function") rendered(() => {
+		const trigger = cell.getElement().querySelector(".player-lines-trigger");
+		if (trigger) trigger.onclick = event => {
+			if (event.shiftKey || event.ctrlKey || event.metaKey) return;
+			event.stopPropagation();
+			openPlayerLines(cell.getRow().getData());
+		};
+	});
 	return `
 		<div class="player-cell">
 			<div class='game-container'>${gameContainer}</div>
-			${p}${lineupCircles} ${prop}
+			${playerLinesName(data, p)}${lineupCircles} ${prop}
 			<div class="bats">${bats || ""}</div>
 			<div class="pos">${pos || ""}</div>
 		</div>

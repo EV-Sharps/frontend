@@ -7,6 +7,7 @@
   <meta name="description" content="A daily shortlist of player props and main lines, screened for price, market agreement and liquidity.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="recommendations.css">
+  <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="recommendations-page">
   <header class="rec-header">
@@ -45,14 +46,32 @@
           </div>
           <p id="list-caption" class="rec-caption">Ranked by conservative estimated value.</p>
           <div id="empty-state" class="rec-empty" hidden><h2>No qualifying plays</h2><p>The shortlist will appear when prices meet the criteria.</p></div>
-          <ol id="picks" class="rec-picks" aria-label="Ranked recommendations"></ol>
+          <div id="picks-table-wrap" class="rec-table-wrap" role="region" aria-label="Recommended plays" tabindex="0">
+            <table class="rec-table">
+              <caption class="sr-only">Recommendations ranked by conservative estimated value. Expand a row for its references and qualification details.</caption>
+              <thead><tr>
+                <th scope="col"><span class="sr-only">Rank</span>#</th>
+                <th scope="col">EV</th>
+                <th scope="col">Player / Market</th>
+                <th scope="col">Line</th>
+                <th scope="col">Book / Odds</th>
+                <th scope="col">Fair / Min. odds</th>
+                <th scope="col">Liquidity</th>
+                <th scope="col">Game</th>
+                <th scope="col">References</th>
+                <th scope="col"><span class="sr-only">Qualification details</span></th>
+              </tr></thead>
+              <tbody id="picks"></tbody>
+            </table>
+          </div>
+          <button id="show-more" type="button" aria-controls="picks" hidden>Show more</button>
         </section>
         <aside class="rec-sidebar">
-          <section class="rec-method"><p class="rec-eyebrow">THE SCREEN</p><h2>Why these plays?</h2>
+          <details class="rec-method"><summary><strong>Screening criteria</strong><span>How plays qualify</span></summary><div class="rec-method-body"><h2>Why these plays?</h2>
             <dl id="criteria"><dt>Price, agreement, availability</dt><dd>Loading the current criteria.</dd></dl>
             <p>Conservative EV uses the lower reference estimates. It is a sensitivity check, not a confidence interval.</p>
             <p>Market-based estimates, not a proven strategy. Confirm lineups, settlement rules and the current price before betting.</p>
-          </section>
+          </div></details>
           <details class="rec-coverage"><summary>Feed coverage</summary><div id="coverage">Loading…</div></details>
         </aside>
       </div>

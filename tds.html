@@ -881,7 +881,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "bookOdds.kal", "logs", "opp"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "bookOdds.kal", "bookOdds.nv", "bookOdds.px", "logs", "opp", "snaps", "usage.looks.tot", "usage.targets.team_share"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

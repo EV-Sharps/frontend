@@ -1681,7 +1681,10 @@ function changeFilter(render = true) {
 	} else {
 		table.style.display = "initial";
 		cardContainer.style.display = "none";
-		renderComplete = TABLE.replaceData(filtered).then(() => {
+		// Let Tabulator reset its virtual rows along with the scroll position.
+		// replaceData preserves the previous row window for background refreshes.
+		const update = resetScroll ? TABLE.setData(filtered) : TABLE.replaceData(filtered);
+		renderComplete = update.then(() => {
 			if (typeof restoreSelectedRow === 'function') restoreSelectedRow();
 		});
 	}
@@ -1708,11 +1711,10 @@ function changeFilter(render = true) {
 	}
 	return Promise.resolve(renderComplete).then(() => {
 		if (!resetScroll || lastRenderedBookDevig !== bookDevig) return;
-		// Wait for replaceData to finish restoring its previous scroll position.
-		const scroller = CURRENT_VIEW === "mobile"
-			? cardContainer
-			: table.querySelector('.tabulator-tableholder');
-		if (scroller) scroller.scrollTop = 0;
+		// The table reset is handled by setData; cards use their DOM scroller.
+		if (CURRENT_VIEW === "mobile") {
+			cardContainer.scrollTop = 0;
+		}
 		const container = document.getElementById('table-container');
 		if (container) container.scrollTop = 0;
 	});

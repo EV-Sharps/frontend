@@ -51,6 +51,40 @@ test('highest payouts are compared independently for each side, including even-m
 	assert.deepEqual(result.lines[0].best, [2, 1 + 100 / 105]);
 });
 
+test('prediction-market liquidity follows the over/under quote order, including zero and formatted amounts', () => {
+	const data = row({ under: true, bookOdds: { kal: '+120/-140', nv: '+120/-140', px: '+120/-140', poly: '+120/-140', fd: '+120/-140' },
+		liquidity: { kal: [0, '250'], nv: ['$1,200', 300], px: [125.5, 400], poly: [500, 600], fd: [700, 800] } });
+	const before = JSON.stringify(data);
+	const result = collect(selected, [data]).lines[0];
+	assert.deepEqual(result.liquidity.get('kal'), [0, 250]);
+	assert.deepEqual(result.liquidity.get('nv'), [1200, 300]);
+	assert.deepEqual(result.liquidity.get('px'), [125.5, 400]);
+	assert.deepEqual(result.liquidity.get('poly'), [500, 600]);
+	assert.equal(result.liquidity.has('fd'), false);
+	assert.equal(JSON.stringify(data), before);
+});
+
+test('duplicate rows fill liquidity only for the price being displayed and never for missing sides', () => {
+	const result = collect(selected, [
+		row({ bookOdds: { px: '+110/' }, liquidity: { px: [null, 999] } }),
+		row({ bookOdds: { px: '+120/-150' }, liquidity: { px: [900, 250] } }),
+		row({ bookOdds: { px: '+110/-150' }, liquidity: { px: [40, 300] } }),
+		row({ handicap: 59.5, bookOdds: { px: '/-130' }, liquidity: { px: [999, 80] } }),
+	]);
+	assert.deepEqual(result.lines[0].prices.get('px'), [110, -150]);
+	assert.deepEqual(result.lines[0].liquidity.get('px'), [40, 250]);
+	assert.deepEqual(result.lines[1].liquidity.get('px'), [null, 80]);
+});
+
+test('missing or invalid liquidity remains unknown', () => {
+	for (const amount of [null, undefined, '', ' ', '-', 'unknown', -1, Infinity, NaN, false, {}]) {
+		const result = collect(selected, [row({ bookOdds: { kal: '+120/-140' }, liquidity: { kal: [amount, amount] } })]);
+		assert.deepEqual(result.lines[0].liquidity.get('kal'), [null, null]);
+	}
+	const result = collect(selected, [row({ bookOdds: { kal: '+120/-140' }, liquidity: { kal: '500' } })]);
+	assert.deepEqual(result.lines[0].liquidity.get('kal'), [null, null]);
+});
+
 test('only the three requested pages expose playable player names', () => {
 	for (const page of ['mlb', 'nfl', 'nhl']) assert.equal(canOpen(page, selected), true);
 	for (const page of ['dingers', 'tds', 'atgs', 'main']) assert.equal(canOpen(page, selected), false);

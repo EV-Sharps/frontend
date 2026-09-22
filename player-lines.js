@@ -2,6 +2,7 @@
 (function (root) {
 	"use strict";
 	const bookOrder = ["circa", "pn", "kal", "nv", "px", "poly", "fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "kambi", "re", "fl", "bol"];
+	const predictionBooks = new Set(["kal", "nv", "px", "poly"]);
 	const escape = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 	const canOpen = (page, row) => ["mlb", "nfl", "nhl"].includes(page) && !!row?.player && !!row.prop && row.prop !== "separator" && !row.blurred;
 	const payout = price => price > 0 ? 1 + price / 100 : 1 + 100 / Math.abs(price);
@@ -11,6 +12,13 @@
 		if (!/^[+-]?\d+(?:\.\d+)?$/.test(text)) return null;
 		const price = Number(text);
 		return Number.isFinite(price) && Math.abs(price) >= 100 ? price : null;
+	}
+
+	function parseLiquidity(value) {
+		if (typeof value !== "number" && typeof value !== "string") return null;
+		const text = String(value).replace(/[$,]/g, "").trim();
+		const amount = text === "" ? NaN : Number(text);
+		return Number.isFinite(amount) && amount >= 0 ? amount : null;
 	}
 
 	function collect(selected, rows) {
@@ -24,7 +32,7 @@
 			if (row.handicap == null || String(row.handicap).trim() === "") continue;
 			const line = Number(row.handicap);
 			if (!Number.isFinite(line)) continue;
-			if (!byLine.has(line)) byLine.set(line, { line, prices: new Map() });
+			if (!byLine.has(line)) byLine.set(line, { line, prices: new Map(), liquidity: new Map() });
 			const entry = byLine.get(line);
 			for (const [book, raw] of Object.entries(row.bookOdds || {})) {
 				if (book === "circa" && row.circa_blurred) continue;
@@ -33,8 +41,18 @@
 				const prices = [parsePrice(parts[0]), parsePrice(parts[1])];
 				if (prices.every(price => price === null)) continue;
 				const merged = entry.prices.get(book) || [null, null];
-				prices.forEach((price, side) => { if (merged[side] === null) merged[side] = price; });
+				const amounts = entry.liquidity.get(book) || [null, null];
+				const liquidity = Array.isArray(row.liquidity?.[book]) ? row.liquidity[book] : [];
+				prices.forEach((price, side) => {
+					if (price === null) return;
+					if (merged[side] === null) merged[side] = price;
+					// Only attach liquidity to the same price when duplicate rows fill gaps.
+					if (predictionBooks.has(book) && merged[side] === price && amounts[side] === null) {
+						amounts[side] = parseLiquidity(liquidity[side]);
+					}
+				});
 				entry.prices.set(book, merged);
+				if (predictionBooks.has(book)) entry.liquidity.set(book, amounts);
 				availableBooks.add(book);
 			}
 		}
@@ -69,16 +87,23 @@
 		}
 		const priceHtml = (entry, book, side) => {
 			const price = entry.prices.get(book)?.[side] ?? null;
-			const display = price === null ? "&mdash;" : escape(options.formatOdds(price > 0 ? `+${price}` : String(price)));
-			const best = price !== null && payout(price) === entry.best[side];
-			return `<span class="player-lines-price${best ? " is-best" : ""}"><span title="${side ? "Under" : "Over"}${best ? ' · Highest listed price' : ''}">${display}</span></span>`;
+			if (price === null) return '<span class="player-lines-price is-missing" aria-hidden="true"></span>';
+			const display = escape(options.formatOdds(price > 0 ? `+${price}` : String(price)));
+			const best = payout(price) === entry.best[side];
+			const amount = entry.liquidity.get(book)?.[side] ?? null;
+			const liquidity = amount === null ? '' : `<small class="player-lines-liquidity" title="${side ? 'Under' : 'Over'} liquidity: $${amount.toLocaleString('en-US')}">($${amount.toLocaleString('en-US')})</small>`;
+			return `<span class="player-lines-price${best ? " is-best" : ""}"><span title="${side ? "Under" : "Over"}${best ? ' · Highest listed price' : ''}">${display}</span>${liquidity}</span>`;
 		};
 		const selectedLine = line => selected.handicap != null && line === Number(selected.handicap);
-		const table = lines.length && books.length ? `<div class="player-lines-scroll" tabindex="0" role="region" aria-label="Prices by sportsbook and line">
-			<table><caption>Over prices on top, under prices below. Green marks the highest listed price for each side.</caption>
-			<thead><tr><th scope="col">Line</th>${books.map(book => `<th scope="col"><span class="player-lines-book">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="18" height="18">` : ""}${escape(book.toUpperCase())}</span></th>`).join("")}</tr></thead>
+		const columnWidth = book => predictionBooks.has(book) ? 104 : 64;
+		const tableWidth = 44 + books.reduce((width, book) => width + columnWidth(book), 0);
+		const table = lines.length && books.length ? `<p id="player-lines-legend" class="player-lines-legend">Over above / under below. Green = highest price. ($) = liquidity.</p><div class="player-lines-scroll" tabindex="0" role="region" aria-label="Prices by sportsbook and line">
+			<table style="width:${tableWidth}px" aria-label="Line comparison" aria-describedby="player-lines-legend">
+			<colgroup><col style="width:44px">${books.map(book => `<col style="width:${columnWidth(book)}px">`).join("")}</colgroup>
+			<thead><tr><th scope="col">Line</th>${books.map(book => `<th scope="col"><span class="player-lines-book" title="${escape(book.toUpperCase())}">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="14" height="14">` : ""}${escape(book.toUpperCase())}</span></th>`).join("")}</tr></thead>
 			<tbody>${lines.map(entry => `<tr${selectedLine(entry.line) ? ' class="is-selected"' : ""}><th scope="row"${selectedLine(entry.line) ? ' aria-label="Selected line ' + escape(entry.line) + '"' : ""}>${escape(entry.line)}</th>${books.map(book => `<td>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<p class="player-lines-empty">No prices are available for this player and prop.</p>';
 		dialog.innerHTML = `<header class="player-lines-header"><div><p>Line comparison</p><h2 id="player-lines-title">${escape(options.player)} <span>&middot; ${escape(options.prop)}</span></h2><p>${escape(String(selected.game || selected.gameId || "").toUpperCase())}${lines.length ? ` &middot; ${lines.length} line${lines.length === 1 ? "" : "s"}` : ""}</p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${table}`;
+		dialog.style.setProperty('--player-lines-width', `${Math.max(520, tableWidth + 2)}px`);
 		dialog.querySelector(".player-lines-close").addEventListener("click", () => dialog.close());
 		if (!dialog.open) dialog.showModal();
 	}

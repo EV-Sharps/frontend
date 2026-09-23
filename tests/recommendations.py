@@ -91,6 +91,8 @@ try:
         assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
         assert '<img src=x' in page.locator('.rec-details').first.inner_text()
         assert page.locator('.rec-ref-table').first.is_visible()
+        assert page.locator('.rec-ref-table').first.locator('tbody tr').first.locator('td').all_text_contents() == ['Pinnacle', '48.0%', '+108']
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['+108', '+113', '+108']
         page.evaluate('window.refreshRecommendations()')
         assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
         assert page.locator('.rec-ref-table').first.is_visible()
@@ -112,6 +114,7 @@ try:
         page.wait_for_function('Array.from(document.querySelectorAll("#picks img")).every(img => img.complete && img.naturalWidth > 0)')
         assert page.locator('.rec-book-cell img').first.is_visible()
         assert page.locator('.rec-reference-cell img').first.is_visible()
+        page.locator('.rec-toggle').first.click()
         page.screenshot(path=str(SCREENSHOTS/'mobile.png'), full_page=True)
         for width in (320, 768, 1024, 1440):
             page.set_viewport_size({'width': width, 'height': 900})
@@ -124,7 +127,12 @@ try:
         page.evaluate('localStorage.setItem("odds_format", "decimal")')
         refresh()
         assert page.locator('.rec-offer strong').first.inner_text() == '2.25'
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['2.08', '2.13', '2.08']
         page.evaluate('localStorage.removeItem("odds_format")')
+        state['payload'] = sample()
+        state['payload']['picks'][0]['reference_probabilities'] = {'pn': .6, 'circa': .5, 'fd': None}
+        refresh()
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['-150', '-100', '\u2014']
         state['payload'] = sample()
         state['payload']['picks'][0]['book'] = 'newbook'
         state['payload']['picks'][0]['under'] = True

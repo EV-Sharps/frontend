@@ -90,7 +90,8 @@ main.rec-main { display: block; overflow: visible; max-width: 1660px; margin: au
 .rec-ref-table caption { text-align: left; color: #e7edf2; font-weight: 600; font-size: 12px; padding: 0 0 8px; }
 .rec-ref-table th { font-weight: 500; color: #95a8b5; text-align: left; font-size: 10px; }
 .rec-ref-table th, .rec-ref-table td { border-bottom: 1px solid #343e46; padding: 6px 0; }
-.rec-ref-table th:last-child, .rec-ref-table td:last-child { text-align: right; }
+.rec-ref-table th:not(:first-child), .rec-ref-table td:not(:first-child) { text-align: right; padding-left: 10px; white-space: nowrap; }
+.rec-reference-line { color: #e7edf2; font-variant-numeric: tabular-nums; }
 .rec-reference-book { display: flex; align-items: center; gap: 9px; }
 .rec-reference-book .rec-book-logo { width: 16px; height: 16px; }
 .rec-sidebar { display: grid; gap: 8px; }

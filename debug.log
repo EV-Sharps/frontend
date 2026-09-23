@@ -6,3 +6,4 @@
 [0916/202731.029:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:385] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
 [0919/112138.842:ERROR:net\socket\tcp_socket_win.cc:1069] connect failed: 10055
 [0919/112138.843:WARNING:net\base\net_errors_win.cc:119] Unknown error 10055 mapped to net::ERR_FAILED
+[0923/165659.798:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:287] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.

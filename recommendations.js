@@ -14,6 +14,7 @@
   const numeric = value => value !== null && value !== '' && Number.isFinite(Number(value));
   const pct = value => numeric(value) ? `${Number(value).toFixed(1)}%` : '—';
   const odds = value => numeric(value) ? oddsDisplay(`${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}`) : '—';
+  const probabilityLine = value => numeric(value) ? odds(impliedToAmerican(Number(value))) : '—';
   const edge = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${pct(value)}` : '—';
   const dollars = value => numeric(value) ? `$${Math.round(Number(value)).toLocaleString()}` : 'Unknown';
   const bookName = book => books[book] || String(book || '').toUpperCase();
@@ -89,9 +90,9 @@
     const reasons = (pick.reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('');
     const references = Object.entries(pick.reference_probabilities || {});
     const refs = references.map(([book, probability]) =>
-      `<tr><td><span class="rec-reference-book">${bookLogo(book)}${esc(bookName(book))}</span></td><td>${esc(pct(Number(probability) * 100))}</td></tr>`).join('');
+      `<tr><td><span class="rec-reference-book">${bookLogo(book)}${esc(bookName(book))}</span></td><td>${esc(pct(Number(probability) * 100))}</td><td class="rec-reference-line" title="Fair odds implied by this reference probability">${esc(probabilityLine(probability))}</td></tr>`).join('');
     const referenceLogos = references.map(([book, probability]) => {
-      const label = `${bookName(book)}: ${pct(Number(probability) * 100)}`;
+      const label = `${bookName(book)}: ${pct(Number(probability) * 100)}, fair line ${probabilityLine(probability)}`;
       return `<span class="rec-reference-logo" title="${esc(label)}">${bookLogo(book)}<span class="sr-only">${esc(label)}</span></span>`;
     }).join('');
     const history = pick.history ? `<p>Saved logs: <strong>${esc(pick.history.hits)}/${esc(pick.history.games)}</strong> hits at this line. Historical context only.</p>` : '';
@@ -112,7 +113,7 @@
       <h2>Why it qualified <span>${esc(pick.reference_groups)} reference groups</span></h2>
       <ul>${reasons}</ul><p>Fair odds: <strong>${esc(odds(pick.fair_odds))}</strong>. Quote updated ${esc(timeLabel(pick.quote_updated, report.criteria.timezone))}.</p>
       ${history}${!link ? '<p>No direct selection link is available. Locate this exact market and side at the book.</p>' : ''}</section>
-      ${refs ? `<table class="rec-ref-table"><caption>Reference estimates</caption><thead><tr><th scope="col">Book</th><th scope="col">Probability</th></tr></thead><tbody>${refs}</tbody></table>` : ''}
+      ${refs ? `<table class="rec-ref-table"><caption>Reference estimates</caption><thead><tr><th scope="col">Book</th><th scope="col">Probability</th><th scope="col">Fair line</th></tr></thead><tbody>${refs}</tbody></table>` : ''}
       </div></td>`;
     const toggle = row.querySelector('.rec-toggle');
     const setExpanded = open => {

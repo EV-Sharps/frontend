@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { collect, canOpen } = require('./player-lines.js');
+const { collect, canOpen, availableProps } = require('./player-lines.js');
 
 const selected = { player: 'test player', prop: 'rec_yds', game: 'bal @ kc', gameId: 'game-1', date: '2026-09-21', sport: 'nfl', handicap: 49.5 };
 const row = changes => ({ ...selected, bookOdds: { fd: '-110/-110' }, ...changes });
@@ -10,6 +10,26 @@ test('comparison stays with the selected player, prop, game, date, and sport', (
 	const unrelated = [{ player: 'other' }, { prop: 'rush_yds' }, { game: 'bal @ pit' }, { gameId: 'game-2' }, { date: '2026-09-22' }, { sport: 'nhl' }];
 	const result = collect(selected, [row({}), ...unrelated.map(change => row({ ...change, handicap: 99.5 }))]);
 	assert.deepEqual(result.lines.map(entry => entry.line), [49.5]);
+});
+
+test('prop choices include all unique props for this player and game, excluding locked and unrelated rows', () => {
+	const unrelated = [{ player: 'other' }, { game: 'bal @ pit' }, { gameId: 'game-2' }, { date: '2026-09-22' }, { sport: 'nhl' }, { blurred: true }];
+	const rows = [row({}), row({ prop: 'rec', handicap: 4.5 }), row({ prop: 'rec', handicap: 5.5, under: true }),
+		row({ prop: 'rush_yds', handicap: 19.5 }), row({ prop: 'separator' }), row({ prop: null }), row({ prop: '' }),
+		...unrelated.map(change => row({ ...change, prop: 'excluded' }))];
+	assert.deepEqual(availableProps(selected, rows), ['rec_yds', 'rec', 'rush_yds']);
+	assert.deepEqual(availableProps(selected, []), ['rec_yds']);
+});
+
+test('switching the prop collects only its lines, books and liquidity without changing the clicked row', () => {
+	const before = JSON.stringify(selected);
+	const rows = [row({}), row({ prop: 'rec', handicap: 4.5, bookOdds: { kal: '+120/-140' }, liquidity: { kal: [100, 200] } }),
+		row({ prop: 'rec', handicap: 5.5, bookOdds: { dk: '+200/-250' } })];
+	const result = collect({ ...selected, prop: 'rec', handicap: null }, rows);
+	assert.deepEqual(result.books, ['kal', 'dk']);
+	assert.deepEqual(result.lines.map(entry => entry.line), [4.5, 5.5]);
+	assert.deepEqual(result.lines[0].liquidity.get('kal'), [100, 200]);
+	assert.equal(JSON.stringify(selected), before);
 });
 
 test('duplicate over/under rows merge missing quotes and numeric-equivalent lines', () => {

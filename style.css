@@ -2102,8 +2102,14 @@ nav {
 #player-lines-dialog[open] { display: flex; flex-direction: column; }
 #player-lines-dialog::backdrop { background: #000b; }
 .player-lines-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 12px 8px; flex: none; }
-.player-lines-header h2 { display: block; margin: 2px 0 4px; font-size: 16px; line-height: 1.35; }
-.player-lines-header h2 span { color: #b7cadd; font-weight: 500; }
+.player-lines-heading { min-width: 0; flex: 1; }
+.player-lines-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; margin: 2px 0 4px; }
+.player-lines-header h2 { display: block; margin: 0; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.player-lines-title-row > span { color: #b7cadd; }
+#player-lines-prop { max-width: 100%; min-height: 28px; padding: 3px 6px; border: 1px solid #415b72; border-radius: 4px; background: #1c2c40; color: #dceaf7; font: inherit; font-size: 12px; cursor: pointer; }
+#player-lines-prop:hover { border-color: #7ba6cb; }
+#player-lines-prop:focus-visible { outline: 2px solid #9bd0ff; outline-offset: 2px; }
+.player-lines-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .player-lines-header p { margin: 0; color: #9db2c7; font-size: 10px; line-height: 1.4; }
 #player-lines-dialog .player-lines-close { flex: none; width: 30px; height: 30px; border: 1px solid #3a4c60; border-radius: 5px; padding: 0; background: #192638; color: #dceaf7; font-size: 22px; line-height: 1; cursor: pointer; }
 .player-lines-scroll { overflow: auto; min-height: 0; overscroll-behavior: contain; }

@@ -21,14 +21,28 @@
 		return Number.isFinite(amount) && amount >= 0 ? amount : null;
 	}
 
+	function samePlayerGame(selected, row) {
+		return row.player === selected.player && row.game === selected.game
+			&& (row.gameId == null || selected.gameId == null || row.gameId === selected.gameId)
+			&& (row.date == null || selected.date == null || row.date === selected.date)
+			&& (!row.sport || !selected.sport || row.sport === selected.sport);
+	}
+
+	function availableProps(selected, rows) {
+		const props = new Set();
+		for (const row of [selected, ...rows]) {
+			if (!row.blurred && samePlayerGame(selected, row) && typeof row.prop === "string" && row.prop && row.prop !== "separator") {
+				props.add(row.prop);
+			}
+		}
+		return [...props];
+	}
+
 	function collect(selected, rows) {
 		const byLine = new Map();
 		const availableBooks = new Set();
 		for (const row of rows) {
-			if (row.blurred || row.player !== selected.player || row.prop !== selected.prop || row.game !== selected.game) continue;
-			if (row.gameId != null && selected.gameId != null && row.gameId !== selected.gameId) continue;
-			if (row.date != null && selected.date != null && row.date !== selected.date) continue;
-			if (row.sport && selected.sport && row.sport !== selected.sport) continue;
+			if (row.blurred || row.prop !== selected.prop || !samePlayerGame(selected, row)) continue;
 			if (row.handicap == null || String(row.handicap).trim() === "") continue;
 			const line = Number(row.handicap);
 			if (!Number.isFinite(line)) continue;
@@ -70,21 +84,8 @@
 		return { books, lines };
 	}
 
-	function open(selected, rows, options) {
-		if (selected.blurred) return;
+	function comparisonTable(selected, rows, options) {
 		const { books, lines } = collect(selected, rows);
-		let dialog = root.document.getElementById("player-lines-dialog");
-		if (!dialog) {
-			dialog = root.document.createElement("dialog");
-			dialog.id = "player-lines-dialog";
-			dialog.setAttribute("aria-labelledby", "player-lines-title");
-			root.document.body.appendChild(dialog);
-			dialog.addEventListener("click", event => {
-				if (event.target !== dialog) return;
-				const rect = dialog.getBoundingClientRect();
-				if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-			});
-		}
 		const priceHtml = (entry, book, side) => {
 			const price = entry.prices.get(book)?.[side] ?? null;
 			if (price === null) return '<span class="player-lines-price is-missing" aria-hidden="true"></span>';
@@ -102,13 +103,42 @@
 			<colgroup><col style="width:44px">${books.map(book => `<col style="width:${columnWidth(book)}px">`).join("")}</colgroup>
 			<thead><tr><th scope="col">Line</th>${books.map(book => `<th scope="col"><span class="player-lines-book" title="${escape(book.toUpperCase())}">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="14" height="14">` : ""}${escape(book.toUpperCase())}</span></th>`).join("")}</tr></thead>
 			<tbody>${lines.map(entry => `<tr${selectedLine(entry.line) ? ' class="is-selected"' : ""}><th scope="row"${selectedLine(entry.line) ? ' aria-label="Selected line ' + escape(entry.line) + '"' : ""}>${escape(entry.line)}</th>${books.map(book => `<td>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<p class="player-lines-empty">No prices are available for this player and prop.</p>';
-		dialog.innerHTML = `<header class="player-lines-header"><div><p>Line comparison</p><h2 id="player-lines-title">${escape(options.player)} <span>&middot; ${escape(options.prop)}</span></h2><p>${escape(String(selected.game || selected.gameId || "").toUpperCase())}${lines.length ? ` &middot; ${lines.length} line${lines.length === 1 ? "" : "s"}` : ""}</p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${table}`;
-		dialog.style.setProperty('--player-lines-width', `${Math.max(520, tableWidth + 2)}px`);
+		return { html: table, width: Math.max(520, tableWidth + 2), count: books.length ? lines.length : 0 };
+	}
+
+	function open(selected, rows, options) {
+		if (selected.blurred) return;
+		let dialog = root.document.getElementById("player-lines-dialog");
+		if (!dialog) {
+			dialog = root.document.createElement("dialog");
+			dialog.id = "player-lines-dialog";
+			dialog.setAttribute("aria-labelledby", "player-lines-title");
+			root.document.body.appendChild(dialog);
+			dialog.addEventListener("click", event => {
+				if (event.target !== dialog) return;
+				const rect = dialog.getBoundingClientRect();
+				if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+			});
+		}
+		const formatProp = options.formatProp || (prop => prop === selected.prop && options.prop ? options.prop : prop.toUpperCase());
+		const props = availableProps(selected, rows).sort((a, b) => formatProp(a).localeCompare(formatProp(b), undefined, { numeric: true }));
+		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="Prop for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${escape(String(selected.game || selected.gameId || "").toUpperCase())} &middot; <span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header><div class="player-lines-content"></div>`;
+		const select = dialog.querySelector('#player-lines-prop');
+		select.value = selected.prop;
+		const renderProp = () => {
+			const current = { ...selected, prop: select.value, handicap: select.value === selected.prop ? selected.handicap : null };
+			const table = comparisonTable(current, rows, options);
+			dialog.querySelector('.player-lines-content').innerHTML = table.html;
+			dialog.querySelector('#player-lines-count').textContent = `${table.count} line${table.count === 1 ? '' : 's'}`;
+			dialog.style.setProperty('--player-lines-width', `${table.width}px`);
+		};
+		select.addEventListener('change', renderProp);
+		renderProp();
 		dialog.querySelector(".player-lines-close").addEventListener("click", () => dialog.close());
 		if (!dialog.open) dialog.showModal();
 	}
 
-	const api = { canOpen, collect, open, escape };
+	const api = { canOpen, collect, availableProps, open, escape };
 	root.PlayerLines = api;
 	if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis === "undefined" ? this : globalThis);

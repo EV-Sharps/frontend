@@ -2200,7 +2200,7 @@ function playerLinesName(data, label) {
 
 function openPlayerLines(data) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
-	PlayerLines.open(data, RES?.data || [], { player: title(data.player), prop: convertProp(data.prop), formatOdds: oddsDisplay });
+	PlayerLines.open(data, RES?.data || [], { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
 }
 
 const basePlayerFormatter = function(cell, params, rendered) {

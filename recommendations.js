@@ -15,6 +15,12 @@
   const pct = value => numeric(value) ? `${Number(value).toFixed(1)}%` : '—';
   const odds = value => numeric(value) ? oddsDisplay(`${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}`) : '—';
   const probabilityLine = value => numeric(value) ? odds(impliedToAmerican(Number(value))) : '—';
+  function referenceQuote(pick, book) {
+    const pair = pick.reference_odds?.[book];
+    if (!Array.isArray(pair)) return null;
+    const price = value => numeric(value) && Math.abs(Number(value)) >= 100 ? odds(value) : '—';
+    return [price(pair[0]), price(pair[1])].join(' / ');
+  }
   const edge = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${pct(value)}` : '—';
   const dollars = value => numeric(value) ? `$${Math.round(Number(value)).toLocaleString()}` : 'Unknown';
   const bookName = book => books[book] || String(book || '').toUpperCase();
@@ -89,10 +95,12 @@
     const offer = `${bookLogo(pick.book)}<span class="rec-offer-copy"><strong>${esc(odds(pick.odds))}</strong><small>${esc(bookName(pick.book))}</small></span>${link ? '<span class="rec-offer-arrow" aria-hidden="true">↗</span>' : ''}`;
     const reasons = (pick.reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('');
     const references = Object.entries(pick.reference_probabilities || {});
+    const rawSides = pick.main && (pick.prop === 'ml' || pick.prop.includes('spread')) ? 'Away / Home' : 'Over / Under';
     const refs = references.map(([book, probability]) =>
-      `<tr><td><span class="rec-reference-book">${bookLogo(book)}${esc(bookName(book))}</span></td><td>${esc(pct(Number(probability) * 100))}</td><td class="rec-reference-line" title="Fair odds implied by this reference probability">${esc(probabilityLine(probability))}</td></tr>`).join('');
+      `<tr><td><span class="rec-reference-book">${bookLogo(book)}${esc(bookName(book))}</span></td><td>${esc(pct(Number(probability) * 100))}</td><td class="rec-reference-line" title="Fair odds implied by this reference probability">${esc(probabilityLine(probability))}</td><td class="rec-reference-raw" title="${esc(rawSides)} prices saved with this recommendation">${esc(referenceQuote(pick, book) ?? 'Not saved')}</td></tr>`).join('');
     const referenceLogos = references.map(([book, probability]) => {
-      const label = `${bookName(book)}: ${pct(Number(probability) * 100)}, fair line ${probabilityLine(probability)}`;
+      const raw = referenceQuote(pick, book);
+      const label = `${bookName(book)}: ${pct(Number(probability) * 100)}, fair line ${probabilityLine(probability)}${raw ? `, raw ${rawSides}: ${raw}` : ''}`;
       return `<span class="rec-reference-logo" title="${esc(label)}">${bookLogo(book)}<span class="sr-only">${esc(label)}</span></span>`;
     }).join('');
     const history = pick.history ? `<p>Saved logs: <strong>${esc(pick.history.hits)}/${esc(pick.history.games)}</strong> hits at this line. Historical context only.</p>` : '';
@@ -113,7 +121,7 @@
       <h2>Why it qualified <span>${esc(pick.reference_groups)} reference groups</span></h2>
       <ul>${reasons}</ul><p>Fair odds: <strong>${esc(odds(pick.fair_odds))}</strong>. Quote updated ${esc(timeLabel(pick.quote_updated, report.criteria.timezone))}.</p>
       ${history}${!link ? '<p>No direct selection link is available. Locate this exact market and side at the book.</p>' : ''}</section>
-      ${refs ? `<table class="rec-ref-table"><caption>Reference estimates</caption><thead><tr><th scope="col">Book</th><th scope="col">Probability</th><th scope="col">Fair line</th></tr></thead><tbody>${refs}</tbody></table>` : ''}
+      ${refs ? `<div class="rec-ref-wrap" role="region" aria-label="Reference estimates" tabindex="0"><table class="rec-ref-table"><caption>Reference estimates</caption><thead><tr><th scope="col">Book</th><th scope="col">Probability</th><th scope="col">Fair line</th><th scope="col">Raw ${rawSides === 'Over / Under' ? 'O/U' : 'A/H'}</th></tr></thead><tbody>${refs}</tbody></table></div>` : ''}
       </div></td>`;
     const toggle = row.querySelector('.rec-toggle');
     const setExpanded = open => {

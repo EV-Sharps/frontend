@@ -142,8 +142,8 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "💣 Dingers", value: "dingers" },
 			{ label: "💨 Ks (FREE)", value: "strikeouts" },
-			{ label: "🎯 Props", value: "mlb", sharp: true },
-			{ label: "🏆 Main", value: "main?sport=mlb", sharp: true },
+			{ label: "⚾ Props", value: "mlb", sharp: true },
+			{ label: "🏆 MLB Main", value: "main?sport=mlb", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=mlb" },
 			{ label: "⚾ Live", value: "live?sport=mlb", sharp: true },
 			{ label: "💣💣 2+ HR", value: "dingers2" },
@@ -210,6 +210,7 @@ const PAGE_SECTIONS = [
 	{
 		key: "other", label: "🌐 Other",
 		pages: [
+			{ label: "🎯 Recommendations", value: "recommendations", sharp: true },
 			{ label: "⚾ NCAA", value: "baseball_ncaa" },
 			{ label: "⚽ Soccer", value: "soccer" },
 			{ label: "🌍 World Cup", value: "cup", sharp: true },

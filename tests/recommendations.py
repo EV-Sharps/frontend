@@ -34,6 +34,7 @@ def sample():
                 sport='ncaaf', main=False, book='nv', odds=125, ev=7.2, floor_ev=3.1,
                 minimum_odds=118, liquidity=100.6, prop='rec_yd', handicap='49.5', under=False,
                 reference_groups=3, reference_probabilities={'pn': .48, 'circa': .47, 'fd': .48},
+                reference_odds={'pn': [100, -120], 'circa': [105, -125], 'fd': [-110, -110]},
                 reference_age_minutes={'pn': 1, 'circa': 1, 'fd': 1},
                 quote_updated=(NOW-timedelta(minutes=1)).isoformat(), quote_age_minutes=1,
                 start=(NOW+timedelta(hours=2)).isoformat(), fair_odds=112,
@@ -91,7 +92,10 @@ try:
         assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
         assert '<img src=x' in page.locator('.rec-details').first.inner_text()
         assert page.locator('.rec-ref-table').first.is_visible()
-        assert page.locator('.rec-ref-table').first.locator('tbody tr').first.locator('td').all_text_contents() == ['Pinnacle', '48.0%', '+108']
+        assert page.locator('.rec-ref-table').first.locator('tbody tr').first.locator('td').all_text_contents() == ['Pinnacle', '48.0%', '+108', '+100 / -120']
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['+100 / -120', '+105 / -125', '-110 / -110']
+        assert page.locator('.rec-ref-table').first.locator('th').last.inner_text() == 'Raw O/U'
+        assert page.locator('.rec-ref-table').nth(1).locator('th').last.inner_text() == 'Raw A/H'
         assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['+108', '+113', '+108']
         page.evaluate('window.refreshRecommendations()')
         assert page.locator('.rec-toggle').first.get_attribute('aria-expanded') == 'true'
@@ -128,6 +132,7 @@ try:
         refresh()
         assert page.locator('.rec-offer strong').first.inner_text() == '2.25'
         assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['2.08', '2.13', '2.08']
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['2.00 / 1.83', '2.05 / 1.80', '1.91 / 1.91']
         page.evaluate('localStorage.removeItem("odds_format")')
         state['payload'] = sample()
         state['payload']['picks'][0]['reference_probabilities'] = {'pn': .6, 'circa': .5, 'fd': None}
@@ -139,6 +144,16 @@ try:
         refresh()
         assert page.locator('.rec-book-cell .rec-book-fallback').count() == 1
         assert page.locator('.rec-pick').first.locator('.rec-line-cell').inner_text() == 'U49.5'
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').first.inner_text() == '+100 / -120'
+        state['payload'] = sample()
+        del state['payload']['picks'][0]['reference_odds']
+        refresh()
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['Not saved'] * 3
+        state['payload'] = sample()
+        state['payload']['picks'][0]['reference_odds'] = {'pn': [None, -120], 'circa': [105], 'fd': ['<img src=x onerror=alert(1)>', -110]}
+        refresh()
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['\u2014 / -120', '+105 / \u2014', '\u2014 / -110']
+        assert page.locator('#picks img[src="x"], #picks [onerror]').count() == 0
         state['payload'] = sample()
         base = state['payload']['picks'][0]
         state['payload']['picks'] = [dict(base, player=f'player {i}') for i in range(55)]

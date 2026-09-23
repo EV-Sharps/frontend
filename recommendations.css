@@ -81,17 +81,19 @@ main.rec-main { display: block; overflow: visible; max-width: 1660px; margin: au
 .rec-toggle span { display: inline-block; }
 .rec-toggle[aria-expanded="true"] span { transform: rotate(180deg); }
 .rec-detail-row > td { padding: 0; border-bottom: 1px solid #495157; background: #1c2226; }
-.rec-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 350px); gap: 32px; padding: 20px 24px; border-left: 3px solid #5b9ac6; color: #b5c1ca; font-size: 12px; line-height: 1.7; }
+.rec-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 430px); gap: 32px; padding: 20px 24px; border-left: 3px solid #5b9ac6; color: #b5c1ca; font-size: 12px; line-height: 1.7; }
 .rec-details h2 { color: #e7edf2; font-size: 13px; font-weight: 650; margin: 0 0 12px; }
 .rec-details h2 span { color: #99aab6; font-weight: 400; font-size: 10px; margin-left: 10px; }
 .rec-details ul { padding-left: 17px; margin: 0 0 10px; }
 .rec-details p { margin: 9px 0 0; }
-.rec-ref-table { border-collapse: collapse; font-size: 11px; margin: 0; width: 100%; align-self: start; }
+.rec-ref-wrap { min-width: 0; overflow-x: auto; align-self: start; }
+.rec-ref-table { border-collapse: collapse; font-size: 11px; margin: 0; width: 100%; }
 .rec-ref-table caption { text-align: left; color: #e7edf2; font-weight: 600; font-size: 12px; padding: 0 0 8px; }
 .rec-ref-table th { font-weight: 500; color: #95a8b5; text-align: left; font-size: 10px; }
 .rec-ref-table th, .rec-ref-table td { border-bottom: 1px solid #343e46; padding: 6px 0; }
 .rec-ref-table th:not(:first-child), .rec-ref-table td:not(:first-child) { text-align: right; padding-left: 10px; white-space: nowrap; }
-.rec-reference-line { color: #e7edf2; font-variant-numeric: tabular-nums; }
+.rec-reference-line, .rec-reference-raw { color: #e7edf2; font-variant-numeric: tabular-nums; }
+.rec-reference-raw { font-size: 10px; }
 .rec-reference-book { display: flex; align-items: center; gap: 9px; }
 .rec-reference-book .rec-book-logo { width: 16px; height: 16px; }
 .rec-sidebar { display: grid; gap: 8px; }

@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../shared.js'), 'utf8');
 const context = vm.createContext({});
 vm.runInContext(source.slice(source.indexOf('let FB_CONFIG = {};'), source.indexOf('function getSavedFilterBuilders()')), context);
-vm.runInContext('globalThis.setConfig = config => { FB_CONFIG = normalizeFilterBuilderConfig(config); };', context);
+vm.runInContext('globalThis.setConfig = config => { FB_CONFIG = config; };', context);
 
 function matches(config, data) {
 	context.setConfig(config);
@@ -47,17 +47,27 @@ for (const missing of [undefined, null, '', 'invalid']) {
 	]), []);
 }
 
-// Previously saved side rules become one visible EV-row rule, never hidden restrictions.
-for (const key of ['liquidity', 'liquidityOver']) {
-	const legacy = { [key]: evRule, liquidityMatch: 'any', liquidityEV: { enabled: false } };
-	assert.deepEqual(matches(legacy, evRows), ['over-pass', 'under-pass', 'over-default']);
-	const normalized = JSON.parse(JSON.stringify(context.normalizeFilterBuilderConfig(legacy)));
-	assert.deepEqual(normalized, { liquidityEV: evRule });
-}
-assert.deepEqual(matches({ liquidityEV: evRule, liquidityOver: { ...evRule, amount: '500' } }, evRows),
-	['over-pass', 'under-pass', 'over-default']);
-assert.deepEqual(matches({ liquidityOver: evRule, liquidity: { ...evRule, book: 'nv' } }, evRows),
-	['over-pass', 'under-pass', 'over-default']);
+// Over and Under remain independent of the EV row's side, including old presets.
+const sideRule = { ...evRule, amount: '49' };
+assert.deepEqual(matches({ liquidityOver: sideRule }, evRows), ['over-pass', 'under-fail', 'over-default']);
+assert.deepEqual(matches({ liquidity: sideRule }, evRows), ['under-pass', 'over-fail']);
+assert.deepEqual(matches({ liquidityOver: sideRule, liquidity: sideRule }, evRows), []);
+assert.deepEqual(matches({ liquidityOver: sideRule, liquidity: sideRule, liquidityMatch: 'any' }, evRows),
+	['over-pass', 'under-fail', 'under-pass', 'over-fail', 'over-default']);
+// All three participate in AND/OR. Disabled rules cannot satisfy OR.
+const allThree = { liquidityOver: sideRule, liquidity: sideRule, liquidityEV: evRule };
+assert.deepEqual(matches(allThree, [...evRows, { id: 'both-sides', under: true, liquidity: { px: [60, 60] } }]), ['both-sides']);
+assert.deepEqual(matches({ ...allThree, liquidityMatch: 'any' }, evRows),
+	['over-pass', 'under-fail', 'under-pass', 'over-fail', 'over-default']);
+assert.deepEqual(matches({ liquidityEV: { ...evRule, enabled: false }, liquidityOver: sideRule, liquidityMatch: 'any' }, evRows),
+	['over-pass', 'under-fail', 'over-default']);
+assert.deepEqual(matches({ ...allThree, liquidityMatch: 'any', line: { enabled: true, max: '150' } }, [
+	{ ...evRows[0], id: 'in-range', line: 110 },
+	{ ...evRows[0], id: 'out-of-range', line: 200 },
+]), ['in-range']);
+// Preserve the original strict threshold on Over/Under; EV row is an inclusive minimum.
+assert.deepEqual(matches({ liquidityOver: evRule }, evRows), ['over-default']);
+assert.deepEqual(matches({ liquidity: evRule }, evRows), []);
 assert.deepEqual(matches({}, evRows), evRows.map(row => row.id));
 
-console.log('Single EV-row liquidity, legacy migration, both sides, missing amounts, book matching and thresholds passed.');
+console.log('Three liquidity rules, AND/OR, legacy presets, EV sides, missing amounts, book matching and thresholds passed.');

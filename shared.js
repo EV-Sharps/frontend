@@ -5089,6 +5089,13 @@ function initLiquidityFilterUI() {
 	group.className = "fb-liquidity-group";
 	group.innerHTML = `
 		<legend>Liquidity</legend>
+		<label class="fb-liquidity-logic" for="fb-liquidity-match">
+			Match
+			<select id="fb-liquidity-match">
+				<option value="all">All rules (AND)</option>
+				<option value="any">Any rule (OR)</option>
+			</select>
+		</label>
 		<label><input type="checkbox" id="fb-liquidity-ev-enabled"> EV row liquidity</label>
 		<div class="fb-subrow">
 			<input id="fb-liquidity-ev-amount" type="number" value="50" min="0" step="1" aria-label="Minimum EV-side liquidity in dollars">
@@ -5098,35 +5105,27 @@ function initLiquidityFilterUI() {
 	`;
 	group.addEventListener("click", event => event.stopPropagation());
 	over.before(group);
-	[over, overFields, under, underFields].forEach(el => el.remove());
+	group.querySelector("#fb-liquidity-ev-enabled").closest("label").before(over, overFields, under, underFields);
 }
 
-function passesLiquidityRule(row, config) {
-	const min = numFrom(config.amount) ?? 50;
+function passesLiquidityRule(row, config, side, inclusive = false) {
+	const min = numFrom(config.amount) ?? (inclusive ? 50 : 200);
 	const book = config.book || "nv";
-	const side = row.under ? 1 : 0;
 	const clearsBook = key => {
 		const liquidity = row.liquidity?.[key];
 		if (!Array.isArray(liquidity)) return false;
 		const amount = numFrom(liquidity[side]);
-		return amount !== null && amount >= min;
+		return amount !== null && (inclusive ? amount >= min : amount > min);
 	};
 	return book === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
 		: book === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
 		: clearsBook(book);
 }
 
-function normalizeFilterBuilderConfig(config = {}) {
-	const { liquidity, liquidityOver, liquidityMatch, ...normalized } = config || {};
-	// Carry the first enabled legacy rule's market/amount into the single EV-row control.
-	// An explicitly enabled EV-row rule takes priority when an older preset contains both.
-	const legacy = [liquidityOver, liquidity].find(rule => rule?.enabled);
-	if (!normalized.liquidityEV?.enabled && legacy) normalized.liquidityEV = { ...legacy };
-	return normalized;
-}
-
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
+	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
+	liquidityOver: { enabled: "fb-liquidity-over-enabled", book: "fb-liquidity-over-book", amount: "fb-liquidity-over-amount" },
 	liquidityEV:   { enabled: "fb-liquidity-ev-enabled", book: "fb-liquidity-ev-book", amount: "fb-liquidity-ev-amount" },
 	homerRate:   { enabled: "fb-homerrate-enabled", window: "fb-homerrate-window", min: "fb-homerrate-min" },
 	bpp:         { enabled: "fb-bpp-enabled", min: "fb-bpp-min" },
@@ -5235,7 +5234,7 @@ function applyStatFilterRows(type, rows) {
 }
 
 function readFilterBuilderFromDOM() {
-	const config = {};
+	const config = { liquidityMatch: document.getElementById("fb-liquidity-match")?.value || "all" };
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -5255,7 +5254,8 @@ function readFilterBuilderFromDOM() {
 }
 
 function applyFilterBuilderToDOM(config) {
-	config = normalizeFilterBuilderConfig(config);
+	const liquidityMatch = document.getElementById("fb-liquidity-match");
+	if (liquidityMatch) liquidityMatch.value = config?.liquidityMatch === "any" ? "any" : "all";
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = config?.[type] || {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -5275,7 +5275,15 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
-	if (c.liquidityEV?.enabled && !passesLiquidityRule(row, c.liquidityEV)) return false;
+	const liquidityMatches = [];
+	if (c.liquidityOver?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidityOver, 0));
+	if (c.liquidity?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidity, 1));
+	if (c.liquidityEV?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidityEV, row.under ? 1 : 0, true));
+	if (liquidityMatches.length) {
+		// Older saved filters without an operator retain their AND behavior.
+		const matches = c.liquidityMatch === "any" ? liquidityMatches.some(Boolean) : liquidityMatches.every(Boolean);
+		if (!matches) return false;
+	}
 
 	if (c.homerRate?.enabled) {
 		const hr = row.hitRates?.[c.homerRate.window || "L5"];
@@ -5414,6 +5422,8 @@ async function deleteSavedFilterBuilder() {
 
 function clearFilterBuilder() {
 	document.querySelectorAll('#filterbuilder-options input[id$="-enabled"]').forEach(cb => cb.checked = false);
+	const liquidityMatch = document.getElementById("fb-liquidity-match");
+	if (liquidityMatch) liquidityMatch.value = "all";
 	Object.keys(FB_STAT_TYPES).forEach(type => applyStatFilterRows(type, []));
 	const nameInput = document.getElementById("fb-name-input");
 	if (nameInput) nameInput.value = "";
@@ -5443,7 +5453,7 @@ function restoreFilterBuilder() {
 	const active = CURR_USER?.metadata?.[`${PAGE}-activeFilter`];
 	if (active) {
 		applyFilterBuilderToDOM(active);
-		FB_CONFIG = normalizeFilterBuilderConfig(active);
+		FB_CONFIG = active;
 		updateFilterBuilderButtonLabel();
 	}
 	populateSavedFilterBuilderSelect();

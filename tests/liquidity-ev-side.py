@@ -62,8 +62,8 @@ try:
             assert page.evaluate("RES.data.every(row => row.book === 'px' && Number(row.ev) > 0)")
 
             page.locator('#filterbuilder-dd-button').click()
-            assert page.locator('.fb-liquidity-group input[type="checkbox"]').count() == 1
-            assert page.locator('#fb-liquidity-enabled, #fb-liquidity-over-enabled, #fb-liquidity-match').count() == 0
+            assert page.locator('.fb-liquidity-group input[type="checkbox"]').count() == 3
+            assert page.locator('#fb-liquidity-enabled, #fb-liquidity-over-enabled, #fb-liquidity-match').count() == 3
             page.locator('#fb-liquidity-ev-enabled').check()
             page.locator('#fb-liquidity-ev-book').select_option('px')
             page.locator('#fb-liquidity-ev-amount').fill('50')
@@ -72,14 +72,30 @@ try:
             assert page.locator('#filterbuilder-dd-button').inner_text() == '1 Filter'
             config = page.evaluate('readFilterBuilderFromDOM()')
             assert config['liquidityEV'] == {'enabled': True, 'book': 'px', 'amount': '50'}
-            assert not {'liquidity', 'liquidityOver', 'liquidityMatch'}.intersection(config)
+            assert config['liquidityMatch'] == 'all'
+            assert not config['liquidity']['enabled'] and not config['liquidityOver']['enabled']
+
+            # Over, Under and EV row can all be enabled and combined with AND/OR.
+            for prefix in ['fb-liquidity', 'fb-liquidity-over']:
+                page.locator(f'#{prefix}-enabled').check()
+                page.locator(f'#{prefix}-book').select_option('px')
+                page.locator(f'#{prefix}-amount').fill('49')
+            page.locator('#filterbuilder-options').get_by_role('button', name='Apply', exact=True).click()
+            assert_rows(page, [])
+            assert page.locator('#filterbuilder-dd-button').inner_text() == '3 Filters'
+            page.locator('#fb-liquidity-match').select_option('any')
+            page.locator('#filterbuilder-options').get_by_role('button', name='Apply', exact=True).click()
+            assert_rows(page, [0, 1, 2, 3])
 
             page.locator('#filterbuilder-options').get_by_role('button', name='Clear', exact=True).click()
             assert_rows(page, [0, 1, 2, 3, 4, 5])
             assert not page.locator('#fb-liquidity-ev-enabled').is_checked()
+            assert not page.locator('#fb-liquidity-enabled').is_checked()
+            assert not page.locator('#fb-liquidity-over-enabled').is_checked()
+            assert page.locator('#fb-liquidity-match').input_value() == 'all'
             assert page.locator('#filterbuilder-dd-button').inner_text() == 'None'
 
-            # Older side presets load into the same visible EV-row control.
+            # Saved side-specific rules retain their original meaning.
             page.evaluate('''config => {
                 CURR_USER = {metadata:{[`${PAGE}-savedFilters`]:[
                     {name:'EV side PX',config},
@@ -93,9 +109,10 @@ try:
             assert_rows(page, [0, 3])
             assert page.locator('#fb-liquidity-ev-enabled').is_checked()
             page.locator('#fb-saved-select').select_option('1')
-            assert_rows(page, [0, 3])
-            assert page.locator('#fb-liquidity-ev-enabled').is_checked()
-            assert page.locator('#fb-liquidity-ev-amount').input_value() == '49'
+            assert_rows(page, [0, 1])
+            assert not page.locator('#fb-liquidity-ev-enabled').is_checked()
+            assert page.locator('#fb-liquidity-over-enabled').is_checked()
+            assert page.locator('#fb-liquidity-over-amount').input_value() == '49'
             assert page.locator('#filterbuilder-dd-button').inner_text() == '1 Filter'
             page.locator('#fb-saved-select').select_option('2')
             assert_rows(page, [0, 1, 2, 3, 4, 5])
@@ -103,12 +120,20 @@ try:
             page.locator('#fb-saved-select').select_option('0')
             assert_rows(page, [0, 3])
 
-            # Restoring an active legacy filter also normalizes the state used by the table.
+            # Active Under presets restore as Under, while EV-only presets stay EV-only.
             page.evaluate('''async () => {
-                CURR_USER.metadata[`${PAGE}-activeFilter`] = {liquidity:{enabled:true,book:'px',amount:'50'}};
+                CURR_USER.metadata[`${PAGE}-activeFilter`] = {liquidity:{enabled:true,book:'px',amount:'49'}};
                 restoreFilterBuilder();
                 await changeFilter();
             }''')
+            assert_rows(page, [2, 3])
+            assert page.locator('#fb-liquidity-enabled').is_checked()
+            assert not page.locator('#fb-liquidity-ev-enabled').is_checked()
+            page.evaluate('''async config => {
+                CURR_USER.metadata[`${PAGE}-activeFilter`] = config;
+                restoreFilterBuilder();
+                await changeFilter();
+            }''', config)
             assert_rows(page, [0, 3])
             assert page.locator('#fb-liquidity-ev-enabled').is_checked()
             assert page.locator('#filterbuilder-dd-button').inner_text() == '1 Filter'
@@ -124,7 +149,7 @@ try:
             page.evaluate("async () => { await changeView('mobile'); }")
             assert page.locator('#card-container .data-card').count() == 2
             assert not errors, errors
-            print(f'{name}: single liquidity control, both EV sides, $50 boundary, clear, legacy presets and mobile passed.', flush=True)
+            print(f'{name}: three liquidity controls, AND/OR, both EV sides, $50 boundary, clear, saved presets and mobile passed.', flush=True)
             page.close()
         browser.close()
 finally:

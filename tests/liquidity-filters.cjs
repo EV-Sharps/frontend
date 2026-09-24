@@ -7,47 +7,57 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../shared.js'), 'utf8');
 const context = vm.createContext({});
 vm.runInContext(source.slice(source.indexOf('let FB_CONFIG = {};'), source.indexOf('function getSavedFilterBuilders()')), context);
-vm.runInContext('globalThis.setConfig = config => { FB_CONFIG = config; };', context);
+vm.runInContext('globalThis.setConfig = config => { FB_CONFIG = normalizeFilterBuilderConfig(config); };', context);
 
-const rule = (book, enabled = true) => ({ enabled, book, amount: '300' });
-const rows = [
-	{ id: 'both-px', liquidity: { px: [400, 500] }, line: 110 },
-	{ id: 'over-px', liquidity: { px: [400, 100] }, line: 110 },
-	{ id: 'under-px', liquidity: { px: [100, 500] }, line: 110 },
-	{ id: 'over-nv', liquidity: { nv: [400, 100] }, line: 110 },
-	{ id: 'under-kal', liquidity: { kal: [100, 500] }, line: 200 },
-	{ id: 'boundary', liquidity: { nv: [300, 300], px: [300, 300], kal: [300, 300] }, line: 110 },
-	{ id: 'missing', line: 110 },
-];
-function matches(config) {
+function matches(config, data) {
 	context.setConfig(config);
-	return rows.filter(context.passesFilterBuilder).map(row => row.id);
+	return data.filter(context.passesFilterBuilder).map(row => row.id);
 }
 
-assert.deepEqual(matches({ liquidityMatch: 'all', liquidity: rule('px'), liquidityOver: rule('px') }), ['both-px']);
-assert.deepEqual(matches({ liquidityMatch: 'any', liquidity: rule('either'), liquidityOver: rule('nv') }),
-	['both-px', 'under-px', 'over-nv', 'under-kal']);
+// EV-side liquidity follows the row's bet, so a liquid opposite side cannot qualify it.
+const evRule = { enabled: true, book: 'px', amount: '50' };
+const evRows = [
+	{ id: 'over-pass', under: false, liquidity: { px: ['50', 5] } },
+	{ id: 'under-fail', under: true, liquidity: { px: ['50', 5] } },
+	{ id: 'under-pass', under: true, liquidity: { px: [5, '50'] } },
+	{ id: 'over-fail', under: false, liquidity: { px: [5, '50'] } },
+	{ id: 'over-default', liquidity: { px: [60, 0] } },
+	{ id: 'wrong-book', under: true, liquidity: { nv: [0, 100] } },
+	{ id: 'missing', under: true },
+];
+assert.deepEqual(matches({ liquidityEV: evRule }, evRows), ['over-pass', 'under-pass', 'over-default']);
+assert.deepEqual(matches({ liquidityEV: { ...evRule, enabled: false } }, evRows), evRows.map(row => row.id));
+assert.deepEqual(matches({ liquidityEV: { ...evRule, book: 'either' } }, evRows),
+	['over-pass', 'under-pass', 'over-default', 'wrong-book']);
+assert.deepEqual(matches({ liquidityEV: { ...evRule, book: 'both' } }, [
+	{ id: 'all-under', under: true, liquidity: { nv: [0, 50], px: [0, 50], kal: [0, 50] } },
+	{ id: 'mixed-sides', under: true, liquidity: { nv: [0, 50], px: [0, 50], kal: [100, 0] } },
+]), ['all-under']);
 
-// Old presets used AND and must keep the same meaning without the new setting.
-assert.deepEqual(matches({ liquidity: rule('px'), liquidityOver: rule('px') }), ['both-px']);
-
-// Disabled rules do not satisfy OR, and an empty group imposes no restriction.
-assert.deepEqual(matches({ liquidityMatch: 'any', liquidity: rule('px', false), liquidityOver: rule('nv') }), ['over-nv']);
-assert.deepEqual(matches({ liquidityMatch: 'any', liquidity: rule('px', false), liquidityOver: rule('nv', false) }), rows.map(row => row.id));
-
-// OR applies only within liquidity; other enabled criteria remain required.
-assert.deepEqual(matches({
-	liquidityMatch: 'any', liquidity: rule('either'), liquidityOver: rule('nv'),
-	line: { enabled: true, min: '100', max: '150' },
-}), ['both-px', 'under-px', 'over-nv']);
-
-// Book matching and the strict dollar threshold work independently on each side.
-assert.equal(context.passesLiquidityRule({ liquidity: { nv: [301, 100], px: ['400', 100], kal: [500, 100] } }, rule('both'), 0), true);
-assert.equal(context.passesLiquidityRule({ liquidity: { nv: [301, 100], px: [400, 100] } }, rule('both'), 0), false);
-assert.equal(context.passesLiquidityRule({ liquidity: { px: [300, 300] } }, rule('px'), 0), false);
+// Other enabled criteria still have to match.
+assert.deepEqual(matches({ liquidityEV: evRule,
+	line: { enabled: true, min: '100', max: '150' } }, [
+	{ ...evRows[0], id: 'in-range', line: 110 },
+	{ ...evRows[0], id: 'out-of-range', line: 200 },
+]), ['in-range']);
 for (const missing of [undefined, null, '', 'invalid']) {
-	assert.equal(context.passesLiquidityRule({ liquidity: { px: [missing, missing] } }, rule('px'), 0), false);
-	assert.equal(context.passesLiquidityRule({ liquidity: { px: [missing, missing] } }, rule('px'), 1), false);
+	assert.deepEqual(matches({ liquidityEV: evRule }, [
+		{ under: false, liquidity: { px: [missing, 100] } },
+		{ under: true, liquidity: { px: [100, missing] } },
+	]), []);
 }
 
-console.log('Liquidity AND/OR examples, legacy presets, disabled rules, other filters, and thresholds passed.');
+// Previously saved side rules become one visible EV-row rule, never hidden restrictions.
+for (const key of ['liquidity', 'liquidityOver']) {
+	const legacy = { [key]: evRule, liquidityMatch: 'any', liquidityEV: { enabled: false } };
+	assert.deepEqual(matches(legacy, evRows), ['over-pass', 'under-pass', 'over-default']);
+	const normalized = JSON.parse(JSON.stringify(context.normalizeFilterBuilderConfig(legacy)));
+	assert.deepEqual(normalized, { liquidityEV: evRule });
+}
+assert.deepEqual(matches({ liquidityEV: evRule, liquidityOver: { ...evRule, amount: '500' } }, evRows),
+	['over-pass', 'under-pass', 'over-default']);
+assert.deepEqual(matches({ liquidityOver: evRule, liquidity: { ...evRule, book: 'nv' } }, evRows),
+	['over-pass', 'under-pass', 'over-default']);
+assert.deepEqual(matches({}, evRows), evRows.map(row => row.id));
+
+console.log('Single EV-row liquidity, legacy migration, both sides, missing amounts, book matching and thresholds passed.');

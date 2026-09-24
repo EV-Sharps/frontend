@@ -652,17 +652,16 @@
 
 		// ── Table ─────────────────────────────────────────────────────────
 		function _isWatchlisted(player, sport = "mlb") {
-			const p = (player || "").toLowerCase().trim();
-			return !!p && (CURR_USER?.metadata?.watchlist || []).some(w => (w.player ?? w).toLowerCase().trim() === p && (!w.sport || w.sport === sport));
+			return isWatchlisted(player, sport, "dingers");
 		}
 
 		async function toggleWatchlistTracker(player, sport = "mlb") {
 			if (!CURR_USER) return
 			const p = (player || "").toLowerCase().trim();
 			let watchlist = [...(CURR_USER.metadata?.watchlist || [])];
-			const idx = watchlist.findIndex(w => (w.player ?? w).toLowerCase().trim() === p && (!w.sport || w.sport === sport));
+			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, "dingers"));
 			if (idx >= 0) watchlist.splice(idx, 1);
-			else watchlist.push({ player: p, sport, dt: new Date().toISOString().slice(0, 10) });
+			else watchlist.push({ player: p, sport, page: "dingers", dt: new Date().toISOString().slice(0, 10) });
 			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
 
 			if (!CURR_SESSION) {
@@ -893,7 +892,9 @@
 					const rp = (r.player || "").toLowerCase().trim();
 					return rp && (r.sport || "mlb") === sport && (rp === p || rp.includes(p) || p.includes(rp));
 				});
-				return row ? { ...row, sport } : { player: w.player ?? w, sport, team: w.team || "", prop: "", game: "" };
+				const sourcePage = watchlistPage(w);
+				return row ? { ...row, sport, watchlistPage: sourcePage }
+					: { player: w.player ?? w, sport, watchlistPage: sourcePage, team: w.team || "", prop: "", game: "" };
 			});
 		}
 
@@ -950,7 +951,7 @@
 						cellClick: function(e, cell) {
 							e.stopPropagation();
 							const data = cell.getRow().getData();
-							removeFromWatchlist(data.player, data.sport);
+							removeFromWatchlist(data.player, data.sport, data.watchlistPage);
 						}
 					},
 					{
@@ -980,6 +981,16 @@
 					{
 						title: "Sport", field: "sport", width: 65,
 						formatter: cell => (cell.getValue() || "mlb").toUpperCase()
+					},
+					{
+						title: "Page", field: "watchlistPage", width: 110,
+						formatter: cell => {
+							const page = cell.getValue();
+							const label = PAGE_SECTIONS.flatMap(section => section.pages).find(item => item.value === page)?.label;
+							const span = document.createElement("span");
+							span.textContent = label || page;
+							return span;
+						}
 					},
 					{
 						title: "Game",
@@ -1101,11 +1112,11 @@
 			}
 		}
 
-		async function removeFromWatchlist(player, sport) {
+		async function removeFromWatchlist(player, sport, page) {
 			if (!CURR_USER || !CURR_SESSION) return;
 			const p = (player || "").toLowerCase().trim();
 			const watchlist = (CURR_USER.metadata?.watchlist || [])
-				.filter(w => (w.player ?? w).toLowerCase().trim() !== p || (sport && w.sport && w.sport !== sport));
+				.filter(w => !watchlistMatches(w, p, sport, page));
 			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
 			await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
 			cacheProfile(CURR_USER);

@@ -3043,8 +3043,6 @@ button#logout:hover {
 	min-width: 0; margin: 0 0 8px; padding: 8px; border: 1px solid #2f3642; border-radius: .35rem;
 }
 #filterbuilder-options .fb-liquidity-group legend { padding: 0 4px; font-weight: 600; }
-#filterbuilder-options .fb-liquidity-logic { display: flex; align-items: center; gap: 8px; }
-#filterbuilder-options .fb-liquidity-logic select { flex: 1; min-width: 0; }
 #filterbuilder-options .fb-liquidity-group .fb-stat-hint { margin: 6px 0 10px; line-height: 1.4; }
 #filterbuilder-options .fb-add-btn {
 	margin: 0 0 10px 20px; background: #1b1f26; color: #cfd6e4; border: 1px solid #2f3642;

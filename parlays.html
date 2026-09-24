@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homer parlay calculator | +EV Sharps</title>
+  <meta name="description" content="Build a three-player homer parlay and compare its fair odds using Circa, Pinnacle and other sportsbook prices.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="parlays.css">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="parlays-page">
+  <header class="parlay-header">
+    <a class="brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Homer parlays</option></select></div>
+      <a id="account-link" href="profile">Sign in</a>
+    </nav>
+  </header>
+  <main class="parlay-main">
+    <div class="intro">
+      <div><p class="eyebrow">MLB / FAIR ODDS</p><h1>Build your homer parlay</h1>
+      <p>Pick three players from different games. See what their combined fair price is at each reference book.</p></div>
+      <div class="refresh"><span id="slate-date">Today's slate</span><small id="updated">Loading prices...</small><button type="button" id="refresh">Refresh prices</button></div>
+    </div>
+    <p id="request-status" class="notice" role="status" hidden></p>
+    <section id="access-panel" class="panel empty" hidden><h2>Sign in to build your parlay</h2><p>Included with Analyst and Sharp.</p><a id="access-login" href="profile">Sign in</a> <a id="access-pricing" href="pricing">View plans</a></section>
+    <div id="calculator" hidden>
+      <form id="parlay-form" class="panel builder">
+        <div class="section-heading"><h2>Your three legs</h2><span>Each player to hit 1+ home runs</span></div>
+        <p id="empty-slate" class="notice" hidden>No upcoming homer markets are available for today. Refresh when the next slate is posted.</p>
+        <div id="leg-inputs" class="leg-grid"></div>
+        <div class="settings">
+          <label>Devig method<select id="method"><option value="power">Power</option><option value="mult">Multiplicative</option><option value="probit">Probit</option><option value="conservative">Lowest probability of all three</option></select></label>
+          <label>Betting book <span class="optional">optional</span><select id="betting-book"><option value="">No book selected</option></select></label>
+          <label>Your quoted parlay odds <span class="optional">optional</span><input id="offered-odds" type="text" inputmode="text" placeholder="e.g. +5000" maxlength="12" autocomplete="off" aria-describedby="price-help"></label>
+        </div>
+        <p id="price-help" class="muted">Enter the final price shown in your betslip to compare its estimated EV against each reference.</p>
+        <p id="selection-status" class="notice" role="status" hidden></p>
+        <div class="form-actions"><button type="submit" class="primary" id="calculate" disabled>Calculate fair odds</button><button type="button" id="clear">Clear legs</button></div>
+      </form>
+      <section id="results" class="panel results" aria-live="polite" hidden>
+        <div class="section-heading"><div><p class="eyebrow">REFERENCE COMPARISON</p><h2>What is your parlay worth?</h2></div><span id="result-method"></span></div>
+        <p id="result-selections"></p>
+        <div class="table-wrap" role="region" aria-label="Fair parlay odds by reference book" tabindex="0">
+          <table><caption class="sr-only">Devigged three-leg homer parlay prices</caption><thead><tr><th>Reference book</th><th>Leg 1 fair</th><th>Leg 2 fair</th><th>Leg 3 fair</th><th>Fair parlay odds</th><th>Estimated hit chance</th><th id="ev-heading">EV at your price</th></tr></thead><tbody id="reference-rows"></tbody></table>
+        </div>
+        <button type="button" id="show-unavailable" aria-expanded="false" aria-controls="reference-rows" hidden>Show unavailable books</button>
+        <p id="result-status" class="muted"></p>
+        <p class="muted">Each row uses only that book's prices for all three legs. Circa and Pinnacle are references, not betting destinations.</p>
+      </section>
+      <details class="panel methodology"><summary>How the fair price is calculated</summary>
+        <p>We remove the margin from each player's over/under 0.5 home run market, multiply the three fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.</p>
+        <p>Power, multiplicative and probit remove the margin differently. The lowest-probability option takes the smallest of those estimates for each leg; it is a sensitivity check, not a confidence bound.</p>
+        <p>All three legs must have both prices at the same reference book. Missing unders are never inferred. Quotes older than 10 minutes are excluded; timestamps describe the book's feed update, not a guaranteed update of every selection.</p>
+        <p>These estimates assume independent outcomes across different matchups. Same-game and doubleheader combinations are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.</p>
+      </details>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="parlays.js"></script>
+</body>
+</html>

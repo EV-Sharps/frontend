@@ -201,6 +201,7 @@ async function saveTableSettings() {
 	fields[PAGE] = [];
 	if (document.getElementById('custom_roiRecord')) fields[`${PAGE}-record-column-version`] = 1;
 	if (["ncaaf", "main"].includes(PAGE)) fields[`${PAGE}-columns-version`] = 1;
+	if (["mlb", "nfl"].includes(PAGE)) fields[`${PAGE}-hit-rates-version`] = 1;
 	if (document.querySelector("#sort-select")) {
 		fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
 	}

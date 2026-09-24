@@ -141,6 +141,7 @@ const PAGE_SECTIONS = [
 		key: "mlb", label: "⚾ MLB",
 		pages: [
 			{ label: "💣 Dingers", value: "dingers" },
+			{ label: "Homer Parlays", value: "parlays" },
 			{ label: "💨 Ks (FREE)", value: "strikeouts" },
 			{ label: "⚾ Props", value: "mlb", sharp: true },
 			{ label: "🏆 MLB Main", value: "main?sport=mlb", sharp: true },
@@ -715,11 +716,23 @@ function watchlistSport(sport) {
 	return ({ k: "mlb", atgs: "nhl", props: "nfl" })[sport] || sport || "";
 }
 
-function isWatchlisted(player, sport = SPORT) {
+function watchlistPage(entry) {
+	// Older favorites have no source page; MLB's original home was Dingers.
+	const sport = watchlistSport(entry.sport) || "mlb";
+	return entry.page || (sport === "mlb" ? "dingers" : sport);
+}
+
+function watchlistMatches(entry, player, sport, page) {
+	return _normPlayer(entry.player ?? entry) === _normPlayer(player)
+		&& (!entry.sport || !sport || watchlistSport(entry.sport) === watchlistSport(sport))
+		&& watchlistPage(entry) === page;
+}
+
+function isWatchlisted(player, sport = SPORT, page = PAGE) {
 	const p = _normPlayer(player);
 	sport = watchlistSport(sport);
 	if (!p) return false;
-	return (CURR_USER?.metadata?.watchlist || []).some(w => _normPlayer(w.player ?? w) === p && (!w.sport || !sport || w.sport === sport));
+	return (CURR_USER?.metadata?.watchlist || []).some(w => watchlistMatches(w, p, sport, page));
 }
 
 function isTracked(player, sport = SPORT) {
@@ -732,8 +745,8 @@ function isTracked(player, sport = SPORT) {
 	});
 }
 
-function _starColor(player, sport = SPORT) {
-	if (isWatchlisted(player, sport)) return "#f59e0b";
+function _starColor(player, sport = SPORT, page = PAGE) {
+	if (isWatchlisted(player, sport, page)) return "#f59e0b";
 	if (isTracked(player, sport)) return "#3b82f6";
 	return "#6b7280";
 }
@@ -743,13 +756,13 @@ let watchlistSaveQueue = Promise.resolve();
 let watchlistStatusTimer;
 
 function updateWatchlistStar(star) {
-	const { player, sport } = star.dataset;
-	const watched = isWatchlisted(player, sport);
+	const { player, sport, page = PAGE } = star.dataset;
+	const watched = isWatchlisted(player, sport, page);
 	const tracked = isTracked(player, sport);
 	const signedIn = !!(CURR_USER && CURR_SESSION);
 	star.textContent = watched || tracked ? "★" : "☆";
-	star.style.color = _starColor(player, sport);
-	star.disabled = !signedIn || pendingWatchlistPlayers.has(JSON.stringify([sport, player]));
+	star.style.color = _starColor(player, sport, page);
+	star.disabled = !signedIn || pendingWatchlistPlayers.has(JSON.stringify([page, sport, player]));
 	star.title = !signedIn ? "Sign in to add to your watchlist" : watched ? "Remove from watchlist" : tracked ? "In tracker; add to watchlist" : "Add to watchlist";
 	star.setAttribute("aria-label", `${star.title}: ${player}`);
 	star.setAttribute("aria-pressed", String(watched));
@@ -768,7 +781,8 @@ function createWatchlistStar(data) {
 	star.dataset.player = player;
 	star.dataset.sport = watchlistSport(data.sport || SPORT);
 	star.dataset.team = data.team || "";
-	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team)");
+	star.dataset.page = PAGE;
+	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team, this.dataset.page)");
 	updateWatchlistStar(star);
 	return star;
 }
@@ -812,12 +826,12 @@ function showWatchlistError() {
 	watchlistStatusTimer = setTimeout(() => { status.hidden = true; }, 5000);
 }
 
-function toggleWatchlist(e, player, sport = SPORT, team = "") {
+function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE) {
 	e?.stopPropagation();
 	const p = _normPlayer(player);
 	sport = watchlistSport(sport);
 	if (!p || !CURR_USER || !CURR_SESSION) return Promise.resolve(false);
-	const key = JSON.stringify([sport || "", p]);
+	const key = JSON.stringify([page, sport || "", p]);
 	if (pendingWatchlistPlayers.has(key)) return Promise.resolve(false);
 	const userId = CURR_SESSION.user.id;
 	pendingWatchlistPlayers.add(key);
@@ -827,9 +841,9 @@ function toggleWatchlist(e, player, sport = SPORT, team = "") {
 		try {
 			if (CURR_SESSION?.user?.id !== userId) return false;
 			const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
-			const idx = watchlist.findIndex(w => _normPlayer(w.player ?? w) === p && (!w.sport || !sport || w.sport === sport));
+			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, page));
 			if (idx >= 0) watchlist.splice(idx, 1);
-			else watchlist.push({ player: p, sport, team, dt: new Date().toISOString().slice(0, 10) });
+			else watchlist.push({ player: p, sport, team, page, dt: new Date().toISOString().slice(0, 10) });
 			const metadata = { ...(CURR_USER.metadata || {}), watchlist };
 			const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
 			if (error) throw error;
@@ -1839,11 +1853,33 @@ const bvpFormatter = function(cell) {
 	`;
 }
 
+function hitRatePercent(value) {
+	if (value?.p == null || value.p === "") return null;
+	const percent = Number(value.p);
+	return Number.isFinite(percent) ? percent : null;
+}
+
 const hitRateFormatter = function(cell) {
-	const data = cell.getRow().getData();
-	const value = cell.getValue();
-	if (!value?.p) return "";
-	return `${value.p}%`;
+	const percent = hitRatePercent(cell.getValue());
+	if (percent === null) return "";
+	return cell.getRow().getData().blurred ? `<div class="blurred">${percent}%</div>` : `${percent}%`;
+}
+
+function getPropHitRateColumnItems() {
+	return [["szn", "Season"], ["L10", "L10"], ["L20", "L20"], ["lyr", "LYR"]].map(([key, label]) => ({
+		key: `hitRates_${key}`, label: `${label} Hit Rate`,
+		cols: [{
+			title: `${label}<br>Hit Rate`, field: `hitRates.${key}`, width: 60, responsive: 2,
+			formatter: hitRateFormatter,
+			sorter: (a, b, aRow, bRow, column, dir) => {
+				const first = hitRatePercent(a), second = hitRatePercent(b);
+				if (first === null && second === null) return 0;
+				if (first === null) return dir === "asc" ? 1 : -1;
+				if (second === null) return dir === "asc" ? -1 : 1;
+				return first - second;
+			}
+		}]
+	}));
 }
 
 const hedgeFormatter = function(cell) {
@@ -3004,10 +3040,10 @@ const DEFAULT_FIELDS = {
 	tds: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	tds2: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
-	nfl: [...DEFAULT_SHARED, "handicap", "oppRank", "snaps"],
+	nfl: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", "oppRank", "snaps", ...getPropHitRateColumnItems().map(item => item.key)],
 	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
-	mlb: [...DEFAULT_SHARED, "handicap"],
+	mlb: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", ...getPropHitRateColumnItems().map(item => item.key)],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]
 };
 
@@ -3145,6 +3181,9 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		if (["mlb", "nfl"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-hit-rates-version`]) {
+			getPropHitRateColumnItems().forEach(item => allowed.add(item.key));
+		}
 		if (recordColumnVisible()) allowed.add('roiRecord');
 		const viewState = oddsTableViewStates.get(TABLE);
 		if (viewState) viewState.visibility.roiRecord = allowed.has('roiRecord');
@@ -3204,6 +3243,12 @@ function openOverlay() {
 		items.querySelectorAll('input[type="checkbox"]').forEach(input => {
 			const field = input.id.replace(/^custom_/, '').replace('bookOdds_', 'bookOdds.');
 			input.checked = viewState?.visibility[field] ?? TABLE.getColumn(field)?.isVisible() ?? false;
+		});
+	}
+	if (["mlb", "nfl"].includes(PAGE) && typeof TABLE !== 'undefined' && TABLE) {
+		getPropHitRateColumnItems().forEach(item => {
+			const checkbox = document.getElementById(`custom_${item.key}`);
+			if (checkbox) checkbox.checked = TABLE.getColumn(item.cols[0].field)?.isVisible() ?? false;
 		});
 	}
 	syncOddsSummaryColumns();
@@ -5031,51 +5076,58 @@ function numFrom(v) {
 	return isNaN(n) ? null : n;
 }
 
-// Books checked by the liquidity/liquidityOver filter criteria's "either"/"both" options.
+// Books checked by the liquidity filter criteria's "either"/"both" options.
 const LIQUIDITY_BOOKS = ["nv", "px", "kal"];
 
 function initLiquidityFilterUI() {
 	const over = document.getElementById("fb-liquidity-over-enabled")?.closest("label");
 	const under = document.getElementById("fb-liquidity-enabled")?.closest("label");
-	if (!over || !under || document.getElementById("fb-liquidity-match")) return;
+	if (!over || !under || document.getElementById("fb-liquidity-ev-enabled")) return;
 	const overFields = over.nextElementSibling;
 	const underFields = under.nextElementSibling;
 	const group = document.createElement("fieldset");
 	group.className = "fb-liquidity-group";
 	group.innerHTML = `
 		<legend>Liquidity</legend>
-		<label class="fb-liquidity-logic" for="fb-liquidity-match">
-			Match
-			<select id="fb-liquidity-match">
-				<option value="all">All rules (AND)</option>
-				<option value="any">Any rule (OR)</option>
-			</select>
-		</label>
-		<p class="fb-stat-hint">Amounts are minimum liquidity on the Over or Under side. Other enabled filters must also match.</p>
+		<label><input type="checkbox" id="fb-liquidity-ev-enabled"> EV row liquidity</label>
+		<div class="fb-subrow">
+			<input id="fb-liquidity-ev-amount" type="number" value="50" min="0" step="1" aria-label="Minimum EV-side liquidity in dollars">
+			<select id="fb-liquidity-ev-book" aria-label="EV-side liquidity market">${overFields.querySelector("select").innerHTML}</select>
+		</div>
+		<p class="fb-stat-hint">Requires at least this amount on the EV row's Over or Under side at the selected market.</p>
 	`;
 	group.addEventListener("click", event => event.stopPropagation());
 	over.before(group);
-	group.append(over, overFields, under, underFields);
+	[over, overFields, under, underFields].forEach(el => el.remove());
 }
 
-function passesLiquidityRule(row, config, side) {
-	const min = numFrom(config.amount) ?? 200;
+function passesLiquidityRule(row, config) {
+	const min = numFrom(config.amount) ?? 50;
 	const book = config.book || "nv";
+	const side = row.under ? 1 : 0;
 	const clearsBook = key => {
 		const liquidity = row.liquidity?.[key];
 		if (!Array.isArray(liquidity)) return false;
 		const amount = numFrom(liquidity[side]);
-		return amount !== null && amount > min;
+		return amount !== null && amount >= min;
 	};
 	return book === "both" ? LIQUIDITY_BOOKS.every(clearsBook)
 		: book === "either" ? LIQUIDITY_BOOKS.some(clearsBook)
 		: clearsBook(book);
 }
 
+function normalizeFilterBuilderConfig(config = {}) {
+	const { liquidity, liquidityOver, liquidityMatch, ...normalized } = config || {};
+	// Carry the first enabled legacy rule's market/amount into the single EV-row control.
+	// An explicitly enabled EV-row rule takes priority when an older preset contains both.
+	const legacy = [liquidityOver, liquidity].find(rule => rule?.enabled);
+	if (!normalized.liquidityEV?.enabled && legacy) normalized.liquidityEV = { ...legacy };
+	return normalized;
+}
+
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
-	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
-	liquidityOver: { enabled: "fb-liquidity-over-enabled", book: "fb-liquidity-over-book", amount: "fb-liquidity-over-amount" },
+	liquidityEV:   { enabled: "fb-liquidity-ev-enabled", book: "fb-liquidity-ev-book", amount: "fb-liquidity-ev-amount" },
 	homerRate:   { enabled: "fb-homerrate-enabled", window: "fb-homerrate-window", min: "fb-homerrate-min" },
 	bpp:         { enabled: "fb-bpp-enabled", min: "fb-bpp-min" },
 	due:         { enabled: "fb-due-enabled" },
@@ -5183,7 +5235,7 @@ function applyStatFilterRows(type, rows) {
 }
 
 function readFilterBuilderFromDOM() {
-	const config = { liquidityMatch: document.getElementById("fb-liquidity-match")?.value || "all" };
+	const config = {};
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -5203,8 +5255,7 @@ function readFilterBuilderFromDOM() {
 }
 
 function applyFilterBuilderToDOM(config) {
-	const liquidityMatch = document.getElementById("fb-liquidity-match");
-	if (liquidityMatch) liquidityMatch.value = config?.liquidityMatch === "any" ? "any" : "all";
+	config = normalizeFilterBuilderConfig(config);
 	Object.entries(FB_FIELDS).forEach(([type, ids]) => {
 		const entry = config?.[type] || {};
 		Object.entries(ids).forEach(([key, id]) => {
@@ -5224,14 +5275,7 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
-	const liquidityMatches = [];
-	if (c.liquidity?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidity, 1));
-	if (c.liquidityOver?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidityOver, 0));
-	if (liquidityMatches.length) {
-		// Saved filters without an operator retain their original AND behavior.
-		const matches = c.liquidityMatch === "any" ? liquidityMatches.some(Boolean) : liquidityMatches.every(Boolean);
-		if (!matches) return false;
-	}
+	if (c.liquidityEV?.enabled && !passesLiquidityRule(row, c.liquidityEV)) return false;
 
 	if (c.homerRate?.enabled) {
 		const hr = row.hitRates?.[c.homerRate.window || "L5"];
@@ -5370,8 +5414,6 @@ async function deleteSavedFilterBuilder() {
 
 function clearFilterBuilder() {
 	document.querySelectorAll('#filterbuilder-options input[id$="-enabled"]').forEach(cb => cb.checked = false);
-	const liquidityMatch = document.getElementById("fb-liquidity-match");
-	if (liquidityMatch) liquidityMatch.value = "all";
 	Object.keys(FB_STAT_TYPES).forEach(type => applyStatFilterRows(type, []));
 	const nameInput = document.getElementById("fb-name-input");
 	if (nameInput) nameInput.value = "";
@@ -5401,7 +5443,7 @@ function restoreFilterBuilder() {
 	const active = CURR_USER?.metadata?.[`${PAGE}-activeFilter`];
 	if (active) {
 		applyFilterBuilderToDOM(active);
-		FB_CONFIG = active;
+		FB_CONFIG = normalizeFilterBuilderConfig(active);
 		updateFilterBuilderButtonLabel();
 	}
 	populateSavedFilterBuilderSelect();

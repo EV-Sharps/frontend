@@ -342,6 +342,25 @@
 							<label for="custom_pitcherData_barrel_batted_rate">Barrel %</label>
 						</div>
 					</div>
+					<div>
+						<h3>Hit Rates</h3>
+						<div>
+							<input id="custom_hitRates_szn" type="checkbox">
+							<label for="custom_hitRates_szn">Season</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_L10" type="checkbox">
+							<label for="custom_hitRates_L10">L10</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_L20" type="checkbox">
+							<label for="custom_hitRates_L20">L20</label>
+						</div>
+						<div>
+							<input id="custom_hitRates_lyr" type="checkbox">
+							<label for="custom_hitRates_lyr">LYR</label>
+						</div>
+					</div>
 					<!-- MISC -->
 					<div>
 						<h3>Misc</h3>
@@ -936,6 +955,7 @@
 						responsive: 3,
 						visible: MOBILE ? false : true
 					},
+					...getPropHitRateColumnItems().flatMap(item => item.cols),
 				]
 			});
 			TABLE.on('tableBuilt', resolveTableReady);

@@ -445,6 +445,25 @@
 								<label for="custom_kelly">¼ Kelly</label>
 							</div>
 						</div>
+						<div>
+							<h3>Hit Rates</h3>
+							<div>
+								<input id="custom_hitRates_szn" type="checkbox">
+								<label for="custom_hitRates_szn">Season</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_L10" type="checkbox">
+								<label for="custom_hitRates_L10">L10</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_L20" type="checkbox">
+								<label for="custom_hitRates_L20">L20</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_lyr" type="checkbox">
+								<label for="custom_hitRates_lyr">LYR</label>
+							</div>
+						</div>
 						<!-- Player / Odds -->
 						<div>
 							<h3>Player & Odds</h3>
@@ -685,7 +704,7 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px',
-			'bookOdds_poly', 'bookOdds_pn', 'logs', 'snaps', ...NflUsage.keys, 'hitRate', 'hitRateLYR'
+			'bookOdds_poly', 'bookOdds_pn', 'logs', ...getPropHitRateColumnItems().map(item => item.key), 'snaps', ...NflUsage.keys
 		];
 
 		function getNflColumnItems() {
@@ -759,8 +778,7 @@
 				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams:{type:"bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 				{ key: 'snaps', label: 'Snap %', cols: [NflUsage.snapColumn(snapShareColumn())] },
 				...NflUsage.items(),
-				{ key: 'hitRate', label: 'Season Hit Rate', cols: [{ title: "Season", field: "hitRate", sorter: "number", formatter: percentFormatter, width: MOBILE ? 40 : 60, responsive: 2 }] },
-				{ key: 'hitRateLYR', label: 'Last Year Hit Rate', cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
+				...getPropHitRateColumnItems(),
 			];
 		}
 

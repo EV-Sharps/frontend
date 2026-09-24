@@ -72,7 +72,7 @@ const FAQ = [
 	},
 	{
 		id: 'q-player-favorites', topic: 'using-tools', q: 'How do player stars and the watchlist work?',
-		answer: `<p>Sign in, then select the <strong>star beside a player</strong> on a prop page to add or remove them from your watchlist. The selection follows the player across supported prop pages for that sport.</p><p>Open the <a href="bets.html">bet tracker</a> to find your watchlist and tracked bets together.</p>`
+		answer: `<p>Sign in, then select the <strong>star beside a player</strong> on a prop page to add or remove them from your watchlist. Favorites are separate for each page, so starring a player on Dingers does not star them on MLB Props.</p><p>Open the <a href="tracker.html">bet tracker</a> to see favorites from each page alongside your tracked bets.</p>`
 	},
 	{
 		id: 'q-download-csv', topic: 'using-tools', q: 'How do I download a CSV?',

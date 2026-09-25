@@ -722,17 +722,24 @@ function watchlistPage(entry) {
 	return entry.page || (sport === "mlb" ? "dingers" : sport);
 }
 
-function watchlistMatches(entry, player, sport, page) {
-	return _normPlayer(entry.player ?? entry) === _normPlayer(player)
-		&& (!entry.sport || !sport || watchlistSport(entry.sport) === watchlistSport(sport))
-		&& watchlistPage(entry) === page;
+function watchlistProp(entry) {
+	// Only infer a missing prop for pages dedicated to a single market.
+	const legacyProp = ({ dingers: "hr", strikeouts: "k" })[watchlistPage(entry)];
+	return (entry.prop || legacyProp || "").toLowerCase().trim();
 }
 
-function isWatchlisted(player, sport = SPORT, page = PAGE) {
+function watchlistMatches(entry, player, sport, page, prop = "") {
+	return _normPlayer(entry.player ?? entry) === _normPlayer(player)
+		&& (!entry.sport || !sport || watchlistSport(entry.sport) === watchlistSport(sport))
+		&& watchlistPage(entry) === page
+		&& watchlistProp(entry) === watchlistProp({ page, prop });
+}
+
+function isWatchlisted(player, sport = SPORT, page = PAGE, prop = "") {
 	const p = _normPlayer(player);
 	sport = watchlistSport(sport);
 	if (!p) return false;
-	return (CURR_USER?.metadata?.watchlist || []).some(w => watchlistMatches(w, p, sport, page));
+	return (CURR_USER?.metadata?.watchlist || []).some(w => watchlistMatches(w, p, sport, page, prop));
 }
 
 function isTracked(player, sport = SPORT) {
@@ -745,8 +752,8 @@ function isTracked(player, sport = SPORT) {
 	});
 }
 
-function _starColor(player, sport = SPORT, page = PAGE) {
-	if (isWatchlisted(player, sport, page)) return "#f59e0b";
+function _starColor(player, sport = SPORT, page = PAGE, prop = "") {
+	if (isWatchlisted(player, sport, page, prop)) return "#f59e0b";
 	if (isTracked(player, sport)) return "#3b82f6";
 	return "#6b7280";
 }
@@ -756,15 +763,15 @@ let watchlistSaveQueue = Promise.resolve();
 let watchlistStatusTimer;
 
 function updateWatchlistStar(star) {
-	const { player, sport, page = PAGE } = star.dataset;
-	const watched = isWatchlisted(player, sport, page);
+	const { player, sport, page = PAGE, prop = "" } = star.dataset;
+	const watched = isWatchlisted(player, sport, page, prop);
 	const tracked = isTracked(player, sport);
 	const signedIn = !!(CURR_USER && CURR_SESSION);
 	star.textContent = watched || tracked ? "★" : "☆";
-	star.style.color = _starColor(player, sport, page);
-	star.disabled = !signedIn || pendingWatchlistPlayers.has(JSON.stringify([page, sport, player]));
+	star.style.color = _starColor(player, sport, page, prop);
+	star.disabled = !signedIn || pendingWatchlistPlayers.has(JSON.stringify([page, sport, player, prop]));
 	star.title = !signedIn ? "Sign in to add to your watchlist" : watched ? "Remove from watchlist" : tracked ? "In tracker; add to watchlist" : "Add to watchlist";
-	star.setAttribute("aria-label", `${star.title}: ${player}`);
+	star.setAttribute("aria-label", `${star.title}: ${player}${prop ? ` ${convertProp(prop)}` : ""}`);
 	star.setAttribute("aria-pressed", String(watched));
 }
 
@@ -782,7 +789,8 @@ function createWatchlistStar(data) {
 	star.dataset.sport = watchlistSport(data.sport || SPORT);
 	star.dataset.team = data.team || "";
 	star.dataset.page = PAGE;
-	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team, this.dataset.page)");
+	star.dataset.prop = watchlistProp({ page: PAGE, prop: data.prop });
+	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team, this.dataset.page, this.dataset.prop)");
 	updateWatchlistStar(star);
 	return star;
 }
@@ -826,24 +834,25 @@ function showWatchlistError() {
 	watchlistStatusTimer = setTimeout(() => { status.hidden = true; }, 5000);
 }
 
-function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE) {
+function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE, prop = "") {
 	e?.stopPropagation();
 	const p = _normPlayer(player);
 	sport = watchlistSport(sport);
+	prop = watchlistProp({ page, prop });
 	if (!p || !CURR_USER || !CURR_SESSION) return Promise.resolve(false);
-	const key = JSON.stringify([page, sport || "", p]);
+	const key = JSON.stringify([page, sport || "", p, prop]);
 	if (pendingWatchlistPlayers.has(key)) return Promise.resolve(false);
 	const userId = CURR_SESSION.user.id;
 	pendingWatchlistPlayers.add(key);
 	refreshWatchlistStars();
-	// Serialize changes so quickly starring two players cannot overwrite either save.
+	// Serialize changes so quickly starring two props cannot overwrite either save.
 	watchlistSaveQueue = watchlistSaveQueue.then(async () => {
 		try {
 			if (CURR_SESSION?.user?.id !== userId) return false;
 			const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
-			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, page));
+			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, page, prop));
 			if (idx >= 0) watchlist.splice(idx, 1);
-			else watchlist.push({ player: p, sport, team, page, dt: new Date().toISOString().slice(0, 10) });
+			else watchlist.push({ player: p, sport, team, page, prop, dt: new Date().toISOString().slice(0, 10) });
 			const metadata = { ...(CURR_USER.metadata || {}), watchlist };
 			const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
 			if (error) throw error;

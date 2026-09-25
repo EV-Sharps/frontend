@@ -1,4 +1,4 @@
-"""Verify independent Dingers/MLB stars in tables, mobile cards and the tracker."""
+"""Verify independent prop/page stars in tables, mobile cards and the tracker."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -45,21 +45,22 @@ try:
                 SB = {from:()=>({update:()=>({eq:async()=>({error:null})})}),rpc:async()=>({data:[]})};
             }''', profile)
 
-        def visit(name, profile):
+        def visit(name, profile, props=('hr',)):
             page.goto(f'http://localhost:{server.server_port}/{name}.html')
             page.wait_for_function("document.getElementById('data-status')?.hidden === true")
             setup_profile(profile)
-            page.evaluate('''async () => {
+            page.evaluate('''async props => {
                 RES = null;
                 TABLE.clearFilter(true); TABLE.clearSort();
                 TABLE.setColumns([watchlistColumn(),{title:'Player',field:'player',width:200}]);
                 const row = {player:'test player',team:'bal',sport:'mlb',game:'bal @ kc',
                     prop:'hr',handicap:0.5,under:false,book:'fd',line:500,ev:10,fairVal:450,
                     bookOdds:{fd:'+500/-700',pn:'+450/-650'},logs:[0,1,0],hitRates:{}};
-                await TABLE.setData([row]);
-                initializeCards([row]);
+                const rows = props.map(prop => ({...row, prop}));
+                await TABLE.setData(rows);
+                initializeCards(rows);
                 CURRENT_VIEW = 'table'; applyOddsTableView();
-            }''')
+            }''', list(props))
 
         def toggle(selector, watched):
             star = page.locator(selector)
@@ -97,21 +98,57 @@ try:
         visit('dingers', profile)
         assert page.locator(table_star).get_attribute('aria-pressed') == 'true'
 
-        # Tracker retains both sources and removes only the selected page's favorite.
+        # Doubles can be starred without starring singles or total bases.
+        visit('mlb', profile, ('double', 'single', 'tb', 'hr'))
+        double_table = table_star + '[data-prop="double"]'
+        single_table = table_star + '[data-prop="single"]'
+        double_card = card_star + '[data-prop="double"]'
+        single_card = card_star + '[data-prop="single"]'
+        toggle(double_table, True)
+        assert page.locator(single_table).get_attribute('aria-pressed') == 'false'
+        assert page.locator(table_star + '[data-prop="tb"]').get_attribute('aria-pressed') == 'false'
+        assert page.locator(double_card).get_attribute('aria-pressed') == 'true'
+        page.evaluate("CURRENT_VIEW='mobile'; applyOddsTableView()")
+        toggle(single_card, True)
+        toggle(double_card, False)
+        assert page.locator(single_card).get_attribute('aria-pressed') == 'true'
+        toggle(double_card, True)
+        profile = page.evaluate('CURR_USER')
+        assert len(profile['metadata']['watchlist']) == 4
+        visit('mlb', profile, ('double', 'single', 'tb', 'hr'))
+        assert page.locator(double_table).get_attribute('aria-pressed') == 'true'
+        assert page.locator(single_table).get_attribute('aria-pressed') == 'true'
+        assert page.locator(table_star + '[data-prop="tb"]').get_attribute('aria-pressed') == 'false'
+
+        # Tracker matches odds by prop and removes only the selected favorite.
         page.goto(f'http://localhost:{server.server_port}/tracker.html')
         page.wait_for_function("typeof WATCHLIST_TABLE !== 'undefined' && WATCHLIST_TABLE !== null")
         setup_profile(profile)
-        page.evaluate('refreshWatchlist()')
+        page.evaluate('''() => {
+            ALL_ROWS = [{player:'test player',sport:'mlb',team:'bal',prop:'hr',
+                game:'bal @ kc',handicap:0.5,bookOdds:{fd:'+500/-700'}}];
+            refreshWatchlist();
+        }''')
+        page.wait_for_function("WATCHLIST_TABLE.getData().length === 4")
+        assert page.evaluate("WATCHLIST_TABLE.getData().map(row => row.prop).sort()") == ['double', 'hr', 'hr', 'single']
+        assert page.evaluate("WATCHLIST_TABLE.getData().filter(row => row.bookOdds).every(row => row.prop === 'hr')")
+        assert page.locator('#watchlist-table [tabulator-field="watchlistPage"]').count() >= 5
+        double_row = page.locator('#watchlist-table .tabulator-row').filter(
+            has=page.locator('[tabulator-field="prop"]', has_text='2B'))
+        double_row.locator('.wl-remove').click()
+        page.wait_for_function("WATCHLIST_TABLE.getData().length === 3")
+        assert page.evaluate("isWatchlisted('test player','mlb','mlb','single')")
+        assert not page.evaluate("isWatchlisted('test player','mlb','mlb','double')")
+        page.evaluate("removeFromWatchlist('test player','mlb','mlb','hr')")
         page.wait_for_function("WATCHLIST_TABLE.getData().length === 2")
-        assert page.evaluate("WATCHLIST_TABLE.getData().map(row => row.watchlistPage).sort()") == ['dingers', 'mlb']
-        assert page.locator('#watchlist-table [tabulator-field="watchlistPage"]').count() >= 3
-        page.evaluate("removeFromWatchlist('test player','mlb','mlb')")
-        page.wait_for_function("WATCHLIST_TABLE.getData().length === 1")
-        assert page.evaluate("CURR_USER.metadata.watchlist.map(entry => entry.page)") == ['dingers']
+        assert page.evaluate("isWatchlisted('test player','mlb','dingers','hr')")
         page.evaluate("toggleWatchlistTracker('test player')")
+        page.wait_for_function("WATCHLIST_TABLE.getData().length === 1")
+        assert page.evaluate("isWatchlisted('test player','mlb','mlb','single')")
+        page.evaluate("removeFromWatchlist('test player','mlb','mlb','single')")
         page.wait_for_function("WATCHLIST_TABLE.getData().length === 0")
         assert not errors, errors
-        print('Dingers/MLB navigation, independent table and mobile stars, persisted page identity and tracker removal passed.')
+        print('Prop/page isolation, table and mobile stars, navigation persistence, tracker prop matching and removal passed.')
         browser.close()
 finally:
     server.shutdown()

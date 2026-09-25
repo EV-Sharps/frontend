@@ -1,4 +1,4 @@
-"""Exercise player-click prop switching on the three comparison pages with local fixtures."""
+"""Exercise player-click prop switching on the comparison pages with local fixtures."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -28,6 +28,7 @@ try:
             ('mlb', 'k', 'bb', 'outs'),
             ('nfl', 'rec_yd', 'rec', 'rush_yd'),
             ('nhl', 'sog', 'pts', 'atgs'),
+            ('ncaaf', 'rec_yd', 'rec', 'rush_yd'),
         ]:
             page = browser.new_page(viewport={'width': 1280, 'height': 800})
             errors = []

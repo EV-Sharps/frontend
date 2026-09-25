@@ -4,7 +4,7 @@
 	const bookOrder = ["circa", "pn", "kal", "nv", "px", "poly", "fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "kambi", "re", "fl", "bol"];
 	const predictionBooks = new Set(["kal", "nv", "px", "poly"]);
 	const escape = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
-	const canOpen = (page, row) => ["mlb", "nfl", "nhl"].includes(page) && !!row?.player && !!row.prop && row.prop !== "separator" && !row.blurred;
+	const canOpen = (page, row) => ["mlb", "nfl", "nhl", "ncaaf"].includes(page) && !!row?.player && !!row.prop && row.prop !== "separator" && !row.blurred;
 	const payout = price => price > 0 ? 1 + price / 100 : 1 + 100 / Math.abs(price);
 
 	function parsePrice(value) {

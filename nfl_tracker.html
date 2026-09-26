@@ -34,7 +34,17 @@
         <button type="button" data-filter="in" aria-pressed="false"><i class="gt-live-dot" aria-hidden="true"></i> Live <span id="count-in">—</span></button>
         <button type="button" data-filter="pre" aria-pressed="false">Upcoming <span id="count-pre">—</span></button>
         <button type="button" data-filter="post" aria-pressed="false">Final <span id="count-post">—</span></button>
-      </div><button id="all-scorers" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="touchdown-dialog" disabled>All scorers</button><button id="all-stats" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="stats-dialog" disabled>All Stats</button></div>
+      </div>
+      <details id="game-picker" class="gt-game-picker">
+        <summary><span id="game-picker-label">Games: All</span></summary>
+        <div class="gt-game-picker-menu">
+          <div class="gt-game-picker-actions"><strong>Show games</strong><button id="games-select-all" type="button" disabled>All</button><button id="games-select-none" type="button" disabled>None</button></div>
+          <label class="gt-sr-only" for="games-search">Search games</label><input id="games-search" type="search" placeholder="Search teams" autocomplete="off">
+          <div id="game-picker-options" class="gt-game-picker-options" role="group" aria-label="Games to show"></div>
+          <p id="game-picker-empty">Loading games…</p>
+        </div>
+      </details>
+      <button id="all-scorers" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="touchdown-dialog" disabled>All scorers</button><button id="all-stats" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="stats-dialog" disabled>All Stats</button></div>
     </section>
     <div id="games" class="gt-grid" aria-label="NFL games" aria-busy="true"></div>
     <div id="empty-state" class="gt-empty" role="status">Loading today's games…</div>

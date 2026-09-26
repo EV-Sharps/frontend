@@ -25,10 +25,13 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
   const elapsed = seconds => !Number.isFinite(seconds) ? 'unknown' : seconds < 60 ? `${Math.floor(seconds)}s` : seconds < 3600 ? `${Math.floor(seconds / 60)}m` : `${Math.floor(seconds / 3600)}h`;
   const abbrev = team => String(team?.abbreviation || team?.key || '?').toUpperCase();
   const cards = new Map();
+  const gameOptions = new Map();
   let snapshot = null, filter = 'all', pending = null, requestFailed = false;
+  let selectedGames = null; // null follows the full slate, including newly reported games.
   let touchdownGameId = null, touchdownHTML = null, touchdownScroll = null;
   let allScorersOpen = false;
   let statsHTML = null, statsScroll = null, statsGameOptions = null, statsCategoryOptions = null;
+  let statsTriggerGameId = null;
   const statCategories = {
     passing: 'Passing', rushing: 'Rushing', receiving: 'Receiving', defensive: 'Defense',
     fumbles: 'Fumbles', kicking: 'Kicking', kickReturns: 'Kick returns', puntReturns: 'Punt returns', punting: 'Punting',
@@ -93,6 +96,48 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
 
   function orderedGames() {
     return [...(snapshot?.data || [])].sort((a, b) => String(a.start || '').localeCompare(String(b.start || '')) || String(a.game || '').localeCompare(String(b.game || '')));
+  }
+
+  function filterGameOptions() {
+    const query = $('games-search').value.trim().toLowerCase();
+    let visible = 0;
+    for (const entry of gameOptions.values()) {
+      entry.label.hidden = !entry.search.includes(query);
+      if (!entry.label.hidden) visible++;
+    }
+    $('game-picker-empty').hidden = visible > 0;
+    $('game-picker-empty').textContent = gameOptions.size ? 'No matching games.' : snapshot ? 'No games on this slate.' : 'Loading games…';
+  }
+
+  function renderGamePicker(games) {
+    const available = new Set(games.map(game => String(game.id)));
+    for (const [id, entry] of gameOptions) if (!available.has(id)) {
+      if (entry.label.contains(document.activeElement)) $('game-picker').querySelector('summary').focus({ preventScroll: true });
+      entry.label.remove(); gameOptions.delete(id);
+    }
+    if (selectedGames) for (const id of selectedGames) if (!available.has(id)) selectedGames.delete(id);
+    games.forEach((game, index) => {
+      const id = String(game.id);
+      let entry = gameOptions.get(id);
+      if (!entry) {
+        const label = document.createElement('label');
+        label.className = 'gt-game-option';
+        label.innerHTML = '<input type="checkbox"><span><strong></strong><small></small></span>';
+        const input = label.querySelector('input');
+        input.dataset.gameSelect = id;
+        entry = { label, input, title: label.querySelector('strong'), status: label.querySelector('small') };
+        gameOptions.set(id, entry);
+      }
+      entry.input.checked = selectedGames === null || selectedGames.has(id);
+      entry.title.textContent = `${abbrev(game.away)} at ${abbrev(game.home)}`;
+      entry.status.textContent = game.status?.state === 'pre' ? `Kickoff ${kickoff(game)}` : game.status?.detail || kickoff(game);
+      entry.search = [game.game, ...[game.away, game.home].flatMap(team => [abbrev(team), team?.name, team?.short_name])].join(' ').toLowerCase();
+      if ($('game-picker-options').children[index] !== entry.label) $('game-picker-options').insertBefore(entry.label, $('game-picker-options').children[index] || null);
+    });
+    const count = selectedGames === null ? games.length : selectedGames.size;
+    $('game-picker-label').textContent = selectedGames === null ? 'Games: All' : `Games: ${count} selected`;
+    $('games-select-all').disabled = $('games-select-none').disabled = !games.length;
+    filterGameOptions();
   }
 
   function renderTouchdowns() {
@@ -195,7 +240,7 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
     return orderedGames().filter(game => !$('stats-game').value || String(game.id) === $('stats-game').value);
   }
 
-  function renderStats() {
+  function renderStats(initialGameId = null) {
     if (!$('stats-dialog').open) return;
     const games = orderedGames(), gameSelect = $('stats-game'), categorySelect = $('stats-category');
     const allGroups = games.map(game => ({ game, groups: playerStatGroups(game) }));
@@ -206,6 +251,7 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
       gameSelect.value = games.some(game => String(game.id) === selected) ? selected : '';
       statsGameOptions = gameOptions;
     }
+    if (initialGameId !== null) gameSelect.value = initialGameId;
     const available = new Set(allGroups.flatMap(({ groups }) => [...groups.keys()]));
     if (categorySelect.value) available.add(categorySelect.value);
     const categories = [...Object.keys(statCategories).filter(category => available.has(category)), ...[...available].filter(category => !Object.hasOwn(statCategories, category)).sort()];
@@ -220,6 +266,8 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
       game, categories: categories.filter(category => (!categorySelect.value || categorySelect.value === category) && groups.has(category)), groups,
     }));
     const reported = selectedGroups.filter(group => group.categories.length);
+    const selectedGame = games.find(game => String(game.id) === gameSelect.value);
+    $('stats-title').textContent = selectedGame ? `${abbrev(selectedGame.away)} at ${abbrev(selectedGame.home)} Stats` : 'All Stats';
     $('stats-slate-status').textContent = `${league} / ${$('slate-date').textContent} / Stats available for ${reported.length} of ${selectedGroups.length} game${selectedGroups.length === 1 ? '' : 's'}`;
     const html = reported.length ? reported.map(({ game, categories, groups }, index) => `<section class="gt-stats-group" data-stats-game="${escape(game.id)}" aria-labelledby="stats-game-heading-${index}">
       <div class="gt-td-group-heading"><h3 id="stats-game-heading-${index}">${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}</h3><p>${escape(gameScoreStatus(game))}</p></div>
@@ -253,15 +301,16 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
     ].filter(Boolean).join(' ');
   }
 
-  function openStats() {
-    if (!snapshot) return;
+  function openStats(id = null) {
+    if (!snapshot || (id !== null && !cards.has(id))) return;
+    statsTriggerGameId = id;
     statsHTML = null;
     statsScroll = { x: window.scrollX, y: window.scrollY };
     $('stats-game').value = '';
     $('stats-category').value = '';
     document.documentElement.classList.add('gt-dialog-open');
     $('stats-dialog').showModal();
-    renderStats();
+    renderStats(id);
     $('stats-content').scrollTop = 0;
   }
 
@@ -369,23 +418,24 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
         <div class="gt-field-caption"><span>${live ? direction : status.state === 'post' ? 'Final score' : 'Waiting for kickoff'}</span><span>${x !== null ? escape(s.possession_text || '') : '—'}</span></div>
       </div>
       <section class="gt-last-play"><div class="gt-play-heading"><h3>LAST PLAY</h3><span>${escape(playClock)}</span></div><p class="gt-play-text">${escape(playText)}</p></section>
-      <div class="gt-game-foot"><span class="gt-game-age"></span><div class="gt-game-actions"><button type="button" class="gt-touchdowns" data-touchdowns="${escape(game.id)}" aria-haspopup="dialog" aria-controls="touchdown-dialog" aria-label="Touchdowns for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Touchdowns${tdCount === null ? '' : ` <span>${tdCount}</span>`}</button>${url ? `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">Game details ↗</a>` : '<span>ESPN</span>'}</div></div>`;
+      <div class="gt-game-foot"><span class="gt-game-age"></span><div class="gt-game-actions"><button type="button" class="gt-touchdowns" data-touchdowns="${escape(game.id)}" aria-haspopup="dialog" aria-controls="touchdown-dialog" aria-label="Touchdowns for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Touchdowns${tdCount === null ? '' : ` <span>${tdCount}</span>`}</button><button type="button" class="gt-touchdowns" data-stats="${escape(game.id)}" aria-haspopup="dialog" aria-controls="stats-dialog" aria-label="Stats for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Stats</button>${url ? `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">Game details ↗</a>` : '<span>ESPN</span>'}</div></div>`;
   }
 
   function render() {
     if (!snapshot) return;
     $('all-scorers').disabled = false;
     $('all-stats').disabled = false;
-    const counts = { all: snapshot.data.length, in: 0, pre: 0, post: 0 };
-    for (const game of snapshot.data) if (game.status?.state in counts && game.status.state !== 'all') counts[game.status.state]++;
+    const ordered = orderedGames();
+    renderGamePicker(ordered);
+    const selected = ordered.filter(game => selectedGames === null || selectedGames.has(String(game.id)));
+    const counts = { all: selected.length, in: 0, pre: 0, post: 0 };
+    for (const game of selected) if (game.status?.state in counts && game.status.state !== 'all') counts[game.status.state]++;
     for (const [key, count] of Object.entries(counts)) $('count-' + key).textContent = count;
-    $('game-count').textContent = `${counts.all} game${counts.all === 1 ? '' : 's'}`;
     const day = new Date(snapshot.date + 'T12:00:00Z');
     $('slate-date').textContent = Number.isFinite(day.getTime()) ? day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : `${league} slate`;
     const keep = new Set(snapshot.data.map(game => String(game.id)));
     for (const [id, entry] of cards) if (!keep.has(id)) { entry.element.remove(); cards.delete(id); }
     let visible = 0;
-    const ordered = orderedGames();
     ordered.forEach((game, index) => {
       const id = String(game.id), html = gameHTML(game);
       let entry = cards.get(id);
@@ -398,13 +448,14 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
       if (entry.html !== html) { entry.element.innerHTML = html; entry.html = html; }
       entry.element.setAttribute('aria-label', String(game.game || `${abbrev(game.away)} at ${abbrev(game.home)}`));
       entry.element.classList.toggle('is-red-zone', Boolean(offense(game) && game.situation?.down >= 1 && game.situation?.down <= 4 && game.situation?.red_zone));
-      entry.element.hidden = filter !== 'all' && game.status?.state !== filter;
+      entry.element.hidden = (filter !== 'all' && game.status?.state !== filter) || (selectedGames !== null && !selectedGames.has(id));
       if (!entry.element.hidden) visible++;
       // Do not replace unchanged cards on every poll (preserves keyboard focus).
       if ($('games').children[index] !== entry.element) $('games').insertBefore(entry.element, $('games').children[index] || null);
     });
     $('empty-state').hidden = visible > 0;
-    $('empty-state').textContent = counts.all ? 'No games in this view. Try All games.' : `No ${league === 'NFL' ? 'NFL' : 'college football'} games scheduled for this date.`;
+    $('game-count').textContent = `${visible === ordered.length ? visible : `${visible} of ${ordered.length}`} game${ordered.length === 1 ? '' : 's'}`;
+    $('empty-state').textContent = !ordered.length ? `No ${league === 'NFL' ? 'NFL' : 'college football'} games scheduled for this date.` : !selected.length ? 'No games selected. Choose games from the Games dropdown.' : 'No selected games in this view. Try All games or change your game selection.';
     $('games').setAttribute('aria-busy', 'false');
     renderTouchdowns();
     renderStats();
@@ -476,9 +527,32 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
   $('games').addEventListener('click', event => {
     const button = event.target.closest('button[data-touchdowns]');
     if (button) openTouchdowns(button.dataset.touchdowns);
+    const stats = event.target.closest('button[data-stats]');
+    if (stats) openStats(stats.dataset.stats);
+  });
+  $('games-search').addEventListener('input', filterGameOptions);
+  $('game-picker-options').addEventListener('change', event => {
+    const input = event.target.closest('input[data-game-select]');
+    if (!input || !snapshot) return;
+    if (selectedGames === null) selectedGames = new Set(snapshot.data.map(game => String(game.id)));
+    if (input.checked) selectedGames.add(input.dataset.gameSelect);
+    else selectedGames.delete(input.dataset.gameSelect);
+    if (selectedGames.size === snapshot.data.length) selectedGames = null;
+    render();
+  });
+  $('games-select-all').addEventListener('click', () => { selectedGames = null; render(); });
+  $('games-select-none').addEventListener('click', () => { selectedGames = new Set(); render(); });
+  document.addEventListener('click', event => {
+    if (!$('game-picker').contains(event.target)) $('game-picker').open = false;
+  });
+  $('game-picker').addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !$('game-picker').open) return;
+    event.preventDefault();
+    $('game-picker').open = false;
+    $('game-picker').querySelector('summary').focus({ preventScroll: true });
   });
   $('all-scorers').addEventListener('click', () => openTouchdowns());
-  $('all-stats').addEventListener('click', openStats);
+  $('all-stats').addEventListener('click', () => openStats());
   for (const id of ['stats-game', 'stats-category']) $(id).addEventListener('change', () => {
     renderStats();
     $('stats-content').scrollTop = 0;
@@ -492,7 +566,9 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
   $('stats-dialog').addEventListener('close', () => {
     statsHTML = null;
     document.documentElement.classList.remove('gt-dialog-open');
-    $('all-stats').focus({ preventScroll: true });
+    const button = cards.get(statsTriggerGameId)?.element.querySelector('[data-stats]');
+    (button && !button.closest('[hidden]') ? button : $('all-stats')).focus({ preventScroll: true });
+    statsTriggerGameId = null;
     if (statsScroll) window.scrollTo({ left: statsScroll.x, top: statsScroll.y, behavior: 'instant' });
     statsScroll = null;
   });

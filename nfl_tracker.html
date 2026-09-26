@@ -29,17 +29,33 @@
     <div id="freshness-status" class="gt-notice" role="status" hidden></div>
     <section class="gt-slate" aria-label="Game filters">
       <div class="gt-slate-heading"><h2 id="slate-date">Today's slate</h2><span id="game-count">— games</span></div>
-      <div class="gt-filters" role="group" aria-label="Filter games">
+      <div class="gt-slate-actions"><div class="gt-filters" role="group" aria-label="Filter games">
         <button type="button" data-filter="all" aria-pressed="true">All games <span id="count-all">—</span></button>
         <button type="button" data-filter="in" aria-pressed="false"><i class="gt-live-dot" aria-hidden="true"></i> Live <span id="count-in">—</span></button>
         <button type="button" data-filter="pre" aria-pressed="false">Upcoming <span id="count-pre">—</span></button>
         <button type="button" data-filter="post" aria-pressed="false">Final <span id="count-post">—</span></button>
-      </div>
+      </div><button id="all-scorers" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="touchdown-dialog" disabled>All scorers</button><button id="all-stats" class="gt-touchdowns gt-all-scorers" type="button" aria-haspopup="dialog" aria-controls="stats-dialog" disabled>All Stats</button></div>
     </section>
     <div id="games" class="gt-grid" aria-label="NFL games" aria-busy="true"></div>
     <div id="empty-state" class="gt-empty" role="status">Loading today's games…</div>
     <div class="gt-legend"><span><i class="gt-legend-los"></i> Ball / line of scrimmage</span><span><i class="gt-legend-gain"></i> First down</span><span>Fields show team ends, not stadium direction.</span></div>
   </main>
+  <dialog id="touchdown-dialog" class="gt-td-dialog" aria-labelledby="touchdown-title" aria-describedby="touchdown-game-status">
+    <div class="gt-td-header"><div><p class="gt-eyebrow">TOUCHDOWNS</p><h2 id="touchdown-title"></h2></div><button id="touchdown-close" class="gt-dialog-close" type="button" aria-label="Close touchdowns" autofocus>&times;</button></div>
+    <p id="touchdown-game-status" class="gt-td-game-status"></p>
+    <div id="touchdown-feed-status" class="gt-td-feed-status" role="status"></div>
+    <div id="touchdown-content" class="gt-td-content"></div>
+  </dialog>
+  <dialog id="stats-dialog" class="gt-td-dialog gt-stats-dialog" aria-labelledby="stats-title" aria-describedby="stats-slate-status">
+    <div class="gt-td-header"><div><p class="gt-eyebrow">PLAYER BOX SCORES</p><h2 id="stats-title">All Stats</h2></div><button id="stats-close" class="gt-dialog-close" type="button" aria-label="Close stats" autofocus>&times;</button></div>
+    <p id="stats-slate-status" class="gt-td-game-status"></p>
+    <div class="gt-stats-filters">
+      <label>Game<select id="stats-game"><option value="">All games</option></select></label>
+      <label>Stats<select id="stats-category"><option value="">All stats</option></select></label>
+    </div>
+    <div id="stats-feed-status" class="gt-td-feed-status" role="status"></div>
+    <div id="stats-content" class="gt-td-content"></div>
+  </dialog>
   <footer class="gt-footer"><span>+EV Sharps <span class="gt-footer-slash">/</span> <span id="tracker-footer-label">NFL Game Tracker</span></span><span>ESPN data · Checks every 15 seconds · Game clocks follow the feed</span></footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>

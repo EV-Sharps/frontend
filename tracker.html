@@ -761,7 +761,7 @@
 						}
 					},
 					{
-						title: `My EV<br><select id="circa-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+						title: `My EV<br><select id="circa-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:min(70px,100%)">
 							<option value="market">Market</option>
 							<option value="pn">Pinnacle</option>
 							<option value="fd">FanDuel</option>
@@ -775,7 +775,7 @@
 							<option value="nv">NoVig</option>
 						</select>`,
 						field: "_circaEV",
-						width: 90,
+						width: MOBILE ? 55 : 90,
 						sorter: function(a, b, aRow, bRow) {
 							const evA = calcEV(getFairProb(aRow.getData()), aRow.getData()._betOdds) ?? -999;
 							const evB = calcEV(getFairProb(bRow.getData()), bRow.getData()._betOdds) ?? -999;
@@ -1036,7 +1036,7 @@
 						}
 					},
 					{
-						title: `My EV<br><select id="wl-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+						title: `My EV<br><select id="wl-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:min(70px,100%)">
 							<option value="market">Market</option>
 							<option value="pn">Pinnacle</option>
 							<option value="fd">FanDuel</option>
@@ -1050,7 +1050,7 @@
 							<option value="nv">NoVig</option>
 						</select>`,
 						field: "_wlEV",
-						width: 70,
+						width: MOBILE ? 55 : 70,
 						sorter: function(a, b, aRow, bRow) {
 							const evA = calcEV(getFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
 							const evB = calcEV(getFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;

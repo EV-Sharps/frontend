@@ -173,7 +173,7 @@
 			return `<span class="liq-host" onclick="if(typeof MOBILE!=='undefined'&&MOBILE){event.stopPropagation();this.classList.toggle('liq-open');}"><span class="liq-odds">${val}</span><span class="liq-tip">$${fmtLiq(liq[0])}/$${fmtLiq(liq[1])}</span></span>`;
 		}
 
-		const MKT_DEVIG_SELECT = `<select id="mkt-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:70px">
+		const MKT_DEVIG_SELECT = `<select id="mkt-devig-select" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:1px 2px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);color:var(--text,#e5e7eb);border-radius:3px;max-width:min(70px,100%)">
 			<option value="">Market</option>
 			<option value="pn">Pinnacle</option>
 			<option value="circa">Circa</option>
@@ -313,7 +313,7 @@
 					{
 						title: "Circa<br>+EV",
 						field: "ev",
-						width: MOBILE ? 45 : 60,
+						width: MOBILE ? 55 : 60,
 						sorter: "number",
 						responsive: 0,
 						formatter: evFormatter
@@ -321,7 +321,7 @@
 					{
 						title: "PN<br>+EV",
 						field: "pn_ev",
-						width: MOBILE ? 45 : 60,
+						width: MOBILE ? 55 : 60,
 						sorter: "number",
 						responsive: 0,
 						formatter: evFormatter,
@@ -381,7 +381,7 @@
 					{
 						title: `Market<br>+EV<br>${MKT_DEVIG_SELECT}`,
 						field: "mkt_ev",
-						width: MOBILE ? 60 : 75,
+						width: MOBILE ? 55 : 75,
 						sorter: function(a, b, aRow, bRow) {
 							if (!BETS_DEVIG) return (a ?? -999) - (b ?? -999);
 							const evA = betsCalcEV(betsGetFairProb(aRow.getData()), betsGetBestOdds(aRow.getData())) ?? -999;

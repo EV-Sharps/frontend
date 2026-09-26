@@ -668,7 +668,7 @@
 
 		function getAtgsColumnItems() {
 			return [
-				{ key: "ev",             label: "Expected Value",    cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 40 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
+				{ key: "ev",             label: "Expected Value",    cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 55 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
 				{ key: "outlier",        label: "Delta vs Avg",      cols: [{ title: "Delta vs Avg", field: "outlier", width: MOBILE ? 40 : 60, sorter: "number", mutator: function(value, rowData) { const s = computeOutlierFromBookOdds(rowData); rowData.outlierBook = s.book; rowData.outlierPct = s.pct; return s.pct; }, formatter: function(cell) { const row = cell.getRow().getData(); return row.outlierPct.toFixed(1) + "%"; }, responsive: 0, visible: false }] },
 				{ key: "book",           label: "Best Book",         cols: [{ title: "Best Book<br><br><button id='toggle-bookodds-btn' onclick='event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();'><span id='book-odds-toggle'>-</span> Hide Odds</button>", field: "book", vertAlign: "bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams: {book: BOOK}, responsive: 0, titleFormatter: "html" }] },
 				{ key: "player",         label: "Player",            cols: [{ title: "Player (L5 TOI/g)", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140, formatterParams: { sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true }] },

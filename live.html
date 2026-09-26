@@ -797,6 +797,14 @@
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
+			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('.watchlist-star')) return;
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
+			});
+
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
 				if (!loaded) {

@@ -188,7 +188,8 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
-			{ label: "🏈 Game Tracker", value: "nfl_tracker" },
+			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker" },
+			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
 			{ label: "🏈 Preseason", value: "preseason", sharp: true },
 			{ label: "🔮 Futures", value: "nfl_futures" },
@@ -281,9 +282,10 @@ function buildPagePicker() {
 	else if (PAGE === "bets" && SPORT === "nfl") currentVal = "bets?sport=nfl";
 	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
 	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
+	else if (PAGE === "nfl_tracker" && SPORT === "ncaaf") currentVal = "nfl_tracker?sport=ncaaf";
 
 	// Active tab: favorites if any saved, else current sport
-	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", nhl: "nhl", ncaab: "nba" };
+	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", ncaaf: "nfl", nhl: "nhl", ncaab: "nba" };
 	const hasFavs = getPageFavorites().length > 0;
 	const activeTab = hasFavs ? "favorites" : (sportToTab[SPORT] || "mlb");
 
@@ -5111,7 +5113,7 @@ async function initDevPicker(data){
 // Every criterion is available at once, each independently enabled via its own
 // checkbox. FB_CONFIG only updates (and the table only re-filters) when the user
 // clicks Apply. Named combinations can be saved/recalled via Supabase profile
-// metadata, and the last-applied config auto-persists so it survives a reload.
+// metadata. Active filters only last for the current page visit.
 
 let FB_CONFIG = {};
 
@@ -5499,33 +5501,11 @@ function clearFilterBuilder() {
 	applyFilterBuilder();
 }
 
-// Reads the current DOM state as the active filter, applies it to the table, and
-// auto-persists it (separately from named saved presets) so it survives a reload.
-async function applyFilterBuilder() {
+// Apply for this page visit. Only Save As persists a filter for later use.
+function applyFilterBuilder() {
 	FB_CONFIG = readFilterBuilderFromDOM();
 	updateFilterBuilderButtonLabel();
-	if (typeof changeFilter === "function") changeFilter();
-	if (!CURR_USER || !CURR_SESSION) return;
-	const metadata = { ...CURR_USER.metadata, [`${PAGE}-activeFilter`]: FB_CONFIG };
-	const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
-	if (!error) {
-		CURR_USER.metadata = metadata;
-		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
-	}
-}
-
-// Restores the last-applied config (not just named presets) once CURR_USER is available.
-// Called on init (using whatever's cached) and again from hydrateAfterProfileLoad() once
-// the live profile resolves.
-function restoreFilterBuilder() {
-	if (!document.getElementById("filterbuilder-dd")) return;
-	const active = CURR_USER?.metadata?.[`${PAGE}-activeFilter`];
-	if (active) {
-		applyFilterBuilderToDOM(active);
-		FB_CONFIG = active;
-		updateFilterBuilderButtonLabel();
-	}
-	populateSavedFilterBuilderSelect();
+	if (typeof changeFilter === "function") return changeFilter();
 }
 
 function initFilterBuilderUI() {
@@ -5544,7 +5524,11 @@ function initFilterBuilderUI() {
 		if (e.target.value !== "") loadSavedFilterBuilder(Number(e.target.value));
 	});
 
-	restoreFilterBuilder();
+	// Ignore legacy activeFilter metadata, including the synchronously cached profile.
+	FB_CONFIG = {};
+	applyFilterBuilderToDOM(FB_CONFIG);
+	updateFilterBuilderButtonLabel();
+	populateSavedFilterBuilderSelect();
 }
 
 function renderFilters() {

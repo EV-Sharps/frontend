@@ -17,7 +17,7 @@ body.nfl-tracker-page { --gt-bg: #0c1119; --gt-card: #131c29; --gt-border: #2733
 .gt-main { max-width: 1640px; margin: 0 auto; padding: 40px 36px 30px; }
 .gt-intro { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 32px; }
 .gt-eyebrow { font-size: 10px; letter-spacing: 2px; font-weight: 700; color: #94a4bb; margin: 0 0 12px; }
-.gt-eyebrow span { margin: 0 8px; color: #5d7292; }
+.gt-eyebrow span:not(#league-name) { margin: 0 8px; color: #5d7292; }
 .gt-intro h1 { margin: 0; font-size: clamp(30px, 3.5vw, 44px); letter-spacing: -1.7px; line-height: 1.15; }
 .gt-title-dot { color: var(--gt-green); }
 .gt-lede { color: var(--gt-muted); font-size: 14px; margin: 12px 0 0; }
@@ -30,6 +30,11 @@ body.nfl-tracker-page { --gt-bg: #0c1119; --gt-card: #131c29; --gt-border: #2733
 .gt-refresh { border: 1px solid #35435a; border-radius: 6px; background: #182334; color: #dce6f6; padding: 7px 11px; font-size: 11px !important; }
 .gt-refresh span { font-size: 15px; margin-right: 4px; }
 .gt-refresh:disabled { opacity: .6; cursor: wait; }
+.gt-leagues { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 24px; }
+.gt-leagues a { border: 1px solid #35435a; border-radius: 7px; padding: 9px 15px; color: #b4c0d1; background: #111925; font-size: 12px; }
+.gt-leagues a:hover { border-color: #7998c2; color: #fff; }
+.gt-leagues a[aria-current="page"] { background: #2a3b54; border-color: #527198; color: #fff; }
+.gt-leagues > span { color: var(--gt-muted); font-size: 11px; margin-left: 4px; }
 .gt-notice { padding: 12px 16px; border: 1px solid #665132; background: #2c241b; color: #ffd29b; border-radius: 8px; font-size: 13px; line-height: 1.5; margin: 0 0 16px; }
 .gt-slate { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 20px; border-top: 1px solid var(--gt-border); padding-top: 24px; }
 .gt-slate-heading { display: flex; align-items: center; gap: 12px; }

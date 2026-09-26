@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NFL Game Tracker | +EV Sharps</title>
-  <meta name="description" content="Follow every NFL game: scores, possession, field position and the latest play in one place.">
+  <title>Football Game Tracker | +EV Sharps</title>
+  <meta name="description" content="Follow NFL and college football games: scores, possession, field position and the latest play in one place.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nfl_tracker.css">
 </head>
@@ -15,11 +15,16 @@
   </header>
   <main class="gt-main">
     <section class="gt-intro" aria-labelledby="tracker-title">
-      <div><p class="gt-eyebrow">NFL <span>•</span> EVERY SNAP, ONE SCREEN</p><h1 id="tracker-title">Game Tracker<span class="gt-title-dot">.</span></h1>
+      <div><p class="gt-eyebrow"><span id="league-name">NFL</span> <span aria-hidden="true">•</span> EVERY SNAP, ONE SCREEN</p><h1 id="tracker-title">Game Tracker<span class="gt-title-dot">.</span></h1>
         <p class="gt-lede">Who's got it. Where they are. What just happened.</p></div>
       <div class="gt-update-panel"><div id="connection" class="gt-connection">Connecting to the scoreboard</div>
         <p id="feed-age">Checking for the latest games…</p><button id="refresh" class="gt-refresh" type="button"><span aria-hidden="true">↻</span> Refresh now</button></div>
     </section>
+    <nav class="gt-leagues" aria-label="Football league">
+      <a href="?sport=nfl" data-league="nfl" aria-current="page">NFL</a>
+      <a href="?sport=ncaaf" data-league="ncaaf">College football</a>
+      <span id="league-coverage" hidden>FBS + FCS</span>
+    </nav>
     <div id="request-status" class="gt-notice" role="status" hidden></div>
     <div id="freshness-status" class="gt-notice" role="status" hidden></div>
     <section class="gt-slate" aria-label="Game filters">
@@ -35,7 +40,7 @@
     <div id="empty-state" class="gt-empty" role="status">Loading today's games…</div>
     <div class="gt-legend"><span><i class="gt-legend-los"></i> Ball / line of scrimmage</span><span><i class="gt-legend-gain"></i> First down</span><span>Fields show team ends, not stadium direction.</span></div>
   </main>
-  <footer class="gt-footer"><span>+EV Sharps <span class="gt-footer-slash">/</span> NFL Game Tracker</span><span>ESPN data · Checks every 15 seconds · Game clocks follow the feed</span></footer>
+  <footer class="gt-footer"><span>+EV Sharps <span class="gt-footer-slash">/</span> <span id="tracker-footer-label">NFL Game Tracker</span></span><span>ESPN data · Checks every 15 seconds · Game clocks follow the feed</span></footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
   <script src="auth.js"></script>

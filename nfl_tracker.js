@@ -1,10 +1,22 @@
 /* The collector supplies game clocks. Never run a simulated clock in the browser. */
 PAGE = 'nfl_tracker';
-SPORT = 'nfl';
+SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? 'ncaaf' : 'nfl';
 
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const sport = SPORT;
+  const league = sport === 'ncaaf' ? 'College football' : 'NFL';
+  const dataset = `${sport}_tracker`;
+  document.title = `${league} Game Tracker | +EV Sharps`;
+  $('league-name').textContent = sport === 'ncaaf' ? 'COLLEGE FOOTBALL' : 'NFL';
+  $('tracker-footer-label').textContent = `${league} Game Tracker`;
+  $('games').setAttribute('aria-label', `${league} games`);
+  $('league-coverage').hidden = sport !== 'ncaaf';
+  for (const link of document.querySelectorAll('[data-league]')) {
+    if (link.dataset.league === sport) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[c]);
@@ -128,7 +140,7 @@ SPORT = 'nfl';
     for (const [key, count] of Object.entries(counts)) $('count-' + key).textContent = count;
     $('game-count').textContent = `${counts.all} game${counts.all === 1 ? '' : 's'}`;
     const day = new Date(snapshot.date + 'T12:00:00Z');
-    $('slate-date').textContent = Number.isFinite(day.getTime()) ? day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : 'NFL slate';
+    $('slate-date').textContent = Number.isFinite(day.getTime()) ? day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) : `${league} slate`;
     const keep = new Set(snapshot.data.map(game => String(game.id)));
     for (const [id, entry] of cards) if (!keep.has(id)) { entry.element.remove(); cards.delete(id); }
     let visible = 0;
@@ -151,7 +163,7 @@ SPORT = 'nfl';
       if ($('games').children[index] !== entry.element) $('games').insertBefore(entry.element, $('games').children[index] || null);
     });
     $('empty-state').hidden = visible > 0;
-    $('empty-state').textContent = counts.all ? 'No games in this view. Try All games.' : 'No NFL games scheduled for this date.';
+    $('empty-state').textContent = counts.all ? 'No games in this view. Try All games.' : `No ${league === 'NFL' ? 'NFL' : 'college football'} games scheduled for this date.`;
     $('games').setAttribute('aria-busy', 'false');
     updateFreshness();
   }
@@ -180,10 +192,10 @@ SPORT = 'nfl';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch(`${API_BASE}/api/nfl-tracker`, { cache: 'no-store', signal: controller.signal });
+      const response = await fetch(`${API_BASE}/api/${sport}-tracker`, { cache: 'no-store', signal: controller.signal });
       if (!response.ok) throw Error('unavailable');
       const next = await response.json();
-      if (next?.schema_version !== 1 || next.sport !== 'nfl' || !Array.isArray(next.data) || !Number.isFinite(Date.parse(next.updated)) ||
+      if (next?.schema_version !== 1 || next.sport !== sport || !Array.isArray(next.data) || !Number.isFinite(Date.parse(next.updated)) ||
           next.data.some(game => !game || !game.id) || new Set(next.data.map(game => String(game.id))).size !== next.data.length) throw Error('invalid snapshot');
       if (snapshot && Date.parse(next.updated) < Date.parse(snapshot.updated)) throw Error('older snapshot');
       snapshot = next; requestFailed = false;
@@ -222,7 +234,7 @@ SPORT = 'nfl';
       fallback.textContent = event.target.dataset.abbr; event.target.replaceWith(fallback);
     }
   }, true);
-  registerOddsLiveRefresh(refresh, 'nfl_tracker');
+  registerOddsLiveRefresh(refresh, dataset);
   setInterval(() => { if (document.visibilityState !== 'hidden') refresh(); }, 15000);
   setInterval(updateFreshness, 5000);
   refresh();

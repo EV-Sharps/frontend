@@ -1,4 +1,4 @@
-"""Exercise EV-side liquidity through the shared filter UI with local fixtures."""
+"""Exercise liquidity filters, saved presets and clean page loads with local fixtures."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -22,6 +22,23 @@ def assert_rows(page, expected):
     )
 
 
+def populate_rows(page):
+    page.evaluate('''async () => {
+        DEVIG = 'pn'; WEIGHT = '100';
+        document.getElementById('book-select').value = 'px';
+        document.getElementById('ou-select').value = 'ou';
+        RES.data = Array.from({length:6}, (_, i) => ({
+            id:i, player:'test player ' + Math.floor(i / 2),
+            sport:PAGE === 'dingers' ? 'mlb' : 'nfl', team:'bal', opp:'kc', away:true,
+            game:'bal @ kc', prop:PAGE === 'dingers' ? 'hr' : PAGE === 'main' ? 'total' : 'attd',
+            handicap:0.5, under:!!(i % 2), pos:'WR', hitRates:{}, logs:[0,1,0],
+            bookOdds:{pn:'-110/-110',px:'+120/+120'},
+            liquidity:{px:i < 2 ? [50,5] : i < 4 ? [5,50] : [5,5]},
+        }));
+        await changeView('table');
+    }''')
+
+
 server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
 Thread(target=server.serve_forever, daemon=True).start()
 try:
@@ -33,7 +50,17 @@ try:
             page = browser.new_page(viewport={'width': 1440, 'height': 900})
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
-            page.add_init_script('window.EventSource = undefined;')
+            page.add_init_script('''
+                window.EventSource = undefined;
+                if (!localStorage.getItem('cached_profile')) {
+                    const metadata = {};
+                    for (const name of ['tds', 'dingers', 'main']) {
+                        metadata[`${name}-activeFilter`] = {liquidity:{enabled:true,book:'px',amount:'49'}};
+                        metadata[`${name}-savedFilters`] = [{name:'Saved PX under',config:metadata[`${name}-activeFilter`]}];
+                    }
+                    localStorage.setItem('cached_profile', JSON.stringify({id:'fixture',metadata}));
+                }
+            ''')
             page.route('https://**/*', lambda route: route.fulfill(body='', content_type='application/javascript'))
             page.route('**/auth.js', lambda route: route.fulfill(
                 body=(ROOT / 'auth.js').read_text(encoding='utf-8').replace('let ENABLE_AUTH = true;', 'let ENABLE_AUTH = false;'),
@@ -44,21 +71,23 @@ try:
             }))
             page.goto(f'http://localhost:{server.server_port}/{name}.html?devig=pn&weight=100&book=px')
             page.wait_for_function("document.getElementById('data-status')?.hidden === true")
-            page.evaluate('''async () => {
-                DEVIG = 'pn'; WEIGHT = '100';
-                document.getElementById('book-select').value = 'px';
-                document.getElementById('ou-select').value = 'ou';
-                RES.data = Array.from({length:6}, (_, i) => ({
-                    id:i, player:'test player ' + Math.floor(i / 2),
-                    sport:PAGE === 'dingers' ? 'mlb' : 'nfl', team:'bal', opp:'kc', away:true,
-                    game:'bal @ kc', prop:PAGE === 'dingers' ? 'hr' : PAGE === 'main' ? 'total' : 'attd',
-                    handicap:0.5, under:!!(i % 2), pos:'WR', hitRates:{}, logs:[0,1,0],
-                    bookOdds:{pn:'-110/-110',px:'+120/+120'},
-                    liquidity:{px:i < 2 ? [50,5] : i < 4 ? [5,50] : [5,5]},
-                }));
-                await changeView('table');
+            assert page.locator('#filterbuilder-dd-button').inner_text() == 'None'
+            assert page.evaluate('FB_CONFIG') == {}
+            assert not page.locator('#fb-liquidity-enabled').is_checked()
+            assert page.locator('#fb-saved-select option').count() == 2
+            populate_rows(page)
+            # A late live profile may offer presets, but must not reapply old filters.
+            page.evaluate('''() => {
+                window.profileWrites = 0;
+                CURR_SESSION = {user:{id:'fixture'}};
+                SB = {from:()=>({update:()=>({eq:async()=>{
+                    window.profileWrites++;
+                    return {error:null};
+                }})})};
+                hydrateAfterProfileLoad();
             }''')
             assert_rows(page, [0, 1, 2, 3, 4, 5])
+            assert page.locator('#filterbuilder-dd-button').inner_text() == 'None'
             assert page.evaluate("RES.data.every(row => row.book === 'px' && Number(row.ev) > 0)")
 
             page.locator('#filterbuilder-dd-button').click()
@@ -74,6 +103,7 @@ try:
             assert config['liquidityEV'] == {'enabled': True, 'book': 'px', 'amount': '50'}
             assert config['liquidityMatch'] == 'all'
             assert not config['liquidity']['enabled'] and not config['liquidityOver']['enabled']
+            assert page.evaluate('window.profileWrites') == 0, 'Apply must not persist active filters'
 
             # Over, Under and EV row can all be enabled and combined with AND/OR.
             for prefix in ['fb-liquidity', 'fb-liquidity-over']:
@@ -120,19 +150,26 @@ try:
             page.locator('#fb-saved-select').select_option('0')
             assert_rows(page, [0, 3])
 
-            # Active Under presets restore as Under, while EV-only presets stay EV-only.
+            # Profile hydration and UI refreshes preserve a filter chosen during this visit.
             page.evaluate('''async () => {
                 CURR_USER.metadata[`${PAGE}-activeFilter`] = {liquidity:{enabled:true,book:'px',amount:'49'}};
-                restoreFilterBuilder();
+                hydrateAfterProfileLoad();
+                initFilterBuilderUI();
                 await changeFilter();
             }''')
-            assert_rows(page, [2, 3])
-            assert page.locator('#fb-liquidity-enabled').is_checked()
-            assert not page.locator('#fb-liquidity-ev-enabled').is_checked()
-            page.evaluate('''async config => {
-                CURR_USER.metadata[`${PAGE}-activeFilter`] = config;
-                restoreFilterBuilder();
+            assert_rows(page, [0, 3])
+            assert not page.locator('#fb-liquidity-enabled').is_checked()
+            assert page.locator('#fb-liquidity-ev-enabled').is_checked()
+            page.evaluate('''async () => {
+                clearFilterBuilder();
+                hydrateAfterProfileLoad();
                 await changeFilter();
+            }''')
+            assert_rows(page, [0, 1, 2, 3, 4, 5])
+            assert page.locator('#filterbuilder-dd-button').inner_text() == 'None'
+            page.evaluate('''async config => {
+                applyFilterBuilderToDOM(config);
+                await applyFilterBuilder();
             }''', config)
             assert_rows(page, [0, 3])
             assert page.locator('#fb-liquidity-ev-enabled').is_checked()
@@ -148,8 +185,28 @@ try:
             page.set_viewport_size({'width': 390, 'height': 844})
             page.evaluate("async () => { await changeView('mobile'); }")
             assert page.locator('#card-container .data-card').count() == 2
+
+            # Save As persists a named preset, but reloading starts unfiltered.
+            assert page.evaluate('window.profileWrites') == 0
+            page.evaluate('''async () => {
+                document.getElementById('fb-name-input').value = 'My PX filter';
+                await saveFilterBuilder();
+            }''')
+            assert page.evaluate('window.profileWrites') == 1
+            page.reload()
+            page.wait_for_function("document.getElementById('data-status')?.hidden === true")
+            assert page.evaluate('FB_CONFIG') == {}
+            assert page.locator('#filterbuilder-dd-button').inner_text() == 'None'
+            assert page.locator('#fb-saved-select').input_value() == ''
+            assert not page.locator('#fb-liquidity-enabled').is_checked()
+            assert not page.locator('#fb-liquidity-ev-enabled').is_checked()
+            populate_rows(page)
+            assert_rows(page, [0, 1, 2, 3, 4, 5])
+            page.locator('#filterbuilder-dd-button').click()
+            page.locator('#fb-saved-select').select_option(label='My PX filter')
+            assert_rows(page, [0, 3])
             assert not errors, errors
-            print(f'{name}: three liquidity controls, AND/OR, both EV sides, $50 boundary, clear, saved presets and mobile passed.', flush=True)
+            print(f'{name}: liquidity rules, mobile, clean cached/live profile loads, late hydration, reload reset and manual saved presets passed.', flush=True)
             page.close()
         browser.close()
 finally:

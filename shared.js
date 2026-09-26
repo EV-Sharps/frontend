@@ -2541,8 +2541,68 @@ function fetchFile(file, cb) {
 	}).catch(err => console.log(err));
 }
 
+function renderGameLogChart(logs, data, height = 34) {
+	const recent = (Array.isArray(logs) ? logs : String(logs ?? "").split(",")).slice(-15).map(value => {
+		if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") return null;
+		const number = Number(value);
+		return Number.isFinite(number) ? number : null;
+	});
+	if (!recent.some(value => value !== null)) return "";
+
+	const width = 145;
+	const label = value => value === null ? "-" : String(value);
+	// Keep values legible within the existing column, including three-digit yardage.
+	const labelWidth = Math.max(...recent.map(value => label(value).length)) * 5.5 + 4;
+	const values = recent.slice(-Math.max(1, Math.floor(width / labelWidth)));
+	const numbers = values.filter(value => value !== null);
+	const low = Math.min(0, ...numbers);
+	const high = Math.max(0, ...numbers) || (low === 0 ? 1 : 0);
+	const plotTop = 11, plotBottom = height - 1;
+	const y = value => plotTop + (high - value) / (high - low) * (plotBottom - plotTop);
+	const baseline = y(0);
+	const line = Number(data.playerHandicap ?? data.handicap ?? data.daily?.line ?? 0);
+	const hasLine = Number.isFinite(line);
+	const step = width / values.length;
+	const barWidth = Math.min(18, step - 3);
+	const description = `Showing last ${values.length} games, oldest to newest. Recent game logs: ${recent.map(label).join(", ")}.${hasLine ? ` ${data.under ? "Under" : "Over"} ${line}; gold indicates a push.` : ""}`;
+	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+	svg.setAttribute("class", `game-log-chart${data.blurred ? " blurred" : ""}`);
+	svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+	svg.setAttribute("width", width);
+	svg.setAttribute("height", height);
+	svg.setAttribute("role", "img");
+	svg.setAttribute("aria-label", data.blurred ? "Game logs" : description);
+	const title = document.createElementNS(svg.namespaceURI, "title");
+	title.textContent = data.blurred ? "Game logs" : description;
+	svg.appendChild(title);
+	let chart = `<rect class="game-log-latest" x="${width - step}" y="0" width="${step}" height="${height}" rx="2" />`;
+	chart += `<line class="game-log-baseline" x1="0" x2="${width}" y1="${baseline}" y2="${baseline}" />`;
+	if (hasLine && line > low && line < high) {
+		chart += `<line class="game-log-line" x1="0" x2="${width}" y1="${y(line)}" y2="${y(line)}" />`;
+	}
+	values.forEach((value, index) => {
+		const center = step * (index + 0.5);
+		const top = Math.min(baseline, y(value ?? 0));
+		const barHeight = Math.max(2, Math.abs(baseline - y(value ?? 0)));
+		const barY = Math.min(top, plotBottom - barHeight);
+		const outcome = value === null || !hasLine ? "missing" : value === line ? "push"
+			: (data.under ? value < line : value > line) ? "hit" : "miss";
+		const latest = index === values.length - 1;
+		chart += `<g class="game-log-game${latest ? " latest" : ""}">
+			${data.blurred ? "" : `<title>${latest ? "Most recent game" : `${values.length - 1 - index} games ago`}: ${label(value)}${value === null ? " (no data)" : hasLine ? ` (${outcome})` : ""}</title>`}
+			<rect class="game-log-bar ${outcome}" x="${center - barWidth / 2}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="1.5" />
+			<text class="game-log-value" x="${center}" y="${Math.max(8, barY - 2)}" text-anchor="middle">${label(value)}</text>
+		</g>`;
+	});
+	svg.insertAdjacentHTML("beforeend", chart);
+	return svg;
+}
+
 const chartFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
+	if (cell.getField() === "logs" && params.type === "bar") {
+		return renderGameLogChart(cell.getValue(), data, isStackedOddsCell(cell) ? 34 : 18);
+	}
 	const content = document.createElement("span");
 	if (!cell.getValue()) {
 		return "";

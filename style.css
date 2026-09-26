@@ -3119,6 +3119,18 @@ button#logout:hover {
 	#table.stacked-odds .stacked-ev-summary .ev { font-weight: 700; }
 
 
+.game-log-chart { display: block; max-width: 100%; margin: 0 auto; overflow: visible; }
+.game-log-latest { fill: var(--accent, #77c3ff); fill-opacity: 0.08; }
+.game-log-baseline { stroke: #59636d; stroke-opacity: 0.4; stroke-width: 0.5; }
+.game-log-line { stroke: #a4aebb; stroke-opacity: 0.5; stroke-width: 0.7; stroke-dasharray: 2 2; }
+.game-log-bar.hit { fill: #359967; }
+.game-log-bar.miss { fill: #bf5b65; }
+.game-log-bar.push { fill: #bd954a; }
+.game-log-bar.missing { fill: #64748b; fill-opacity: 0.45; }
+.game-log-value { fill: #dce2e8; font: 9px ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.game-log-game.latest .game-log-value { fill: var(--accent, #77c3ff); font-weight: 700; }
+.game-log-game:hover .game-log-bar { filter: brightness(1.25); }
+
 .snap-share { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .snap-history { display: flex; align-items: flex-end; gap: 3px; width: 48px; height: 12px; }
 .snap-history-bar { flex: 1; min-height: 1px; background: #64748b; border-radius: 1px 1px 0 0; }

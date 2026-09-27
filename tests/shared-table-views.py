@@ -31,7 +31,7 @@ with sync_playwright() as p:
         if page.locator('#overlay').count():
             page.evaluate('closeOverlay()')
 
-    for name in ['dingers.html', 'tds.html', 'nfl.html', 'nba.html', 'soccer.html']:
+    for name in ['dingers.html', 'dingers2.html', 'tds.html', 'nfl.html', 'nba.html', 'soccer.html']:
         visit(name + '?view=stacked')
         assert page.locator('#custom-view-select').input_value() == 'table'
         if page.locator('#overlay').count():
@@ -41,7 +41,7 @@ with sync_playwright() as p:
         page.evaluate('''async () => {
             RES = null;
             const fields = ['ev','player','book','fairVal','kelly','bookOdds.fd','bookOdds.kal'];
-            TABLE.setColumns(TABLE.getColumnDefinitions().filter(col => fields.includes(col.field)));
+            TABLE.setColumns(TABLE.getColumnDefinitions().filter(col => fields.includes(col.field) || col.field?.startsWith('hitRates.')));
             TABLE.clearFilter(true);
             TABLE.clearSort();
             await TABLE.replaceData([{player:'test player',team:'bos',sport:'mlb',prop:'hr',
@@ -57,17 +57,63 @@ with sync_playwright() as p:
         if combined:
             assert '+500' in row.locator('.stacked-player-summary').inner_text()
             assert not page.evaluate("TABLE.getColumn('book').isVisible()")
+        # Reorder/rebuild while Stacked hides the separate summary columns.
+        # That temporary layout must not become the user's Compact preference.
+        page.evaluate('TABLE.setColumns(TABLE.getColumnDefinitions())')
         choose('compact')
         assert row.bounding_box()['height'] == 24, name
         assert row.locator('.stacked-odds-stack').count() == 0
         assert page.evaluate("TABLE.getColumn('fairVal').isVisible()")
         if combined:
             assert page.evaluate("TABLE.getColumn('book').isVisible()")
+            assert '+500' in row.locator('[tabulator-field="book"]').inner_text()
+            assert row.locator('[tabulator-field="book"] img').get_attribute('alt') == 'fd'
         # Rebuilding columns (Customize reorder) must preserve the current layout.
         page.evaluate('TABLE.setColumns(TABLE.getColumnDefinitions())')
         choose('table')
         assert row.bounding_box()['height'] == 42, name
         assert not page.evaluate("TABLE.getColumn('fairVal').isVisible()")
+        if combined and page.locator('#overlay').count():
+            page.evaluate('''() => {
+                ENABLE_AUTH = true;
+                CURR_USER = {metadata:{[PAGE]:['ev','player','book','fairVal']}};
+                CURR_SESSION = {user:{id:'fixture'}};
+                SB = {from:()=>({update:payload=>({eq:async()=>{
+                    window.savedProfile = payload.metadata;
+                    return {error:null};
+                }})})};
+                showHideUserTable(true);
+                // Page reorder builders recreate their columns, then restore the profile.
+                // The shared Record column is added asynchronously during that rebuild.
+                TABLE.setColumns(TABLE.getColumnDefinitions().filter(col => col.field !== 'roiRecord'));
+                showHideUserTable(true);
+                openOverlay();
+            }''')
+            assert page.locator('#custom_book').is_checked(), name
+            assert page.locator('#custom_fairVal').is_checked(), name
+            page.evaluate('saveTableSettings()')
+            assert page.evaluate("savedProfile[PAGE].includes('book')"), name
+            assert page.evaluate("savedProfile[PAGE].includes('fairVal')"), name
+            page.evaluate('closeOverlay()')
+            choose('compact')
+            assert page.evaluate("TABLE.getColumn('book').isVisible()"), name
+            # An explicit hide survives a rebuild, Stacked, and opening Customize.
+            page.evaluate('openOverlay()')
+            page.locator('#custom_book').uncheck()
+            page.evaluate('closeOverlay()')
+            page.evaluate('TABLE.setColumns(TABLE.getColumnDefinitions())')
+            choose('table')
+            choose('compact')
+            assert not page.evaluate("TABLE.getColumn('book').isVisible()"), name
+            page.evaluate('openOverlay()')
+            assert not page.locator('#custom_book').is_checked(), name
+            page.evaluate('saveTableSettings()')
+            assert not page.evaluate("savedProfile[PAGE].includes('book')"), name
+            page.locator('#custom_book').check()
+            page.evaluate("closeOverlay(); changeView('table'); showHideUserTable(true)")
+            choose('compact')
+            assert not page.evaluate("TABLE.getColumn('book').isVisible()"), name
+            page.evaluate('closeOverlay(); CURR_USER = null; ENABLE_AUTH = false;')
         print(name + ': stacked/compact formatters and column rebuild passed', flush=True)
 
     choose('compact')

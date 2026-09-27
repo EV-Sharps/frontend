@@ -645,6 +645,7 @@ function syncOddsSummaryColumns(table = TABLE) {
 			const checkbox = document.getElementById(`custom_${field}`);
 			if (checkbox) {
 				checkbox.disabled = combined;
+				checkbox.checked = state.visibility[field] !== false;
 				checkbox.parentElement.title = combined ? `Shown underneath ${label} in Stacked view.` : '';
 			}
 		}
@@ -697,8 +698,11 @@ function initializeOddsTableView(table) {
 		state.widths.clear();
 		for (const col of table.getColumns()) {
 			const field = col.getField();
-			if (['fairVal', 'book'].includes(field)) state.visibility[field] = col.isVisible();
-			if (field === 'roiRecord' && state.visibility.roiRecord === undefined) state.visibility.roiRecord = col.isVisible();
+			// Rebuilds can finish after Stacked has hidden these separate columns.
+			// Keep the user's preference instead of capturing that temporary layout.
+			if (['fairVal', 'book', 'roiRecord'].includes(field) && state.visibility[field] === undefined) {
+				state.visibility[field] = col.isVisible();
+			}
 			if (['bookOdds.kal', 'bookOdds.nv', 'bookOdds.px', 'bookOdds.poly'].includes(field)) {
 				state.widths.set(field, { width: col.getWidth(), minWidth: col.getDefinition().minWidth || 40 });
 			}
@@ -3297,7 +3301,10 @@ function showHideUserTable(loaded) {
 		}
 		if (recordColumnVisible()) allowed.add('roiRecord');
 		const viewState = oddsTableViewStates.get(TABLE);
-		if (viewState) viewState.visibility.roiRecord = allowed.has('roiRecord');
+		if (viewState) {
+			// Already-hidden Stacked columns do not emit another hide event.
+			for (const field of ['fairVal', 'book', 'roiRecord']) viewState.visibility[field] = allowed.has(field);
+		}
 		const customColumns = ["ncaaf", "main"].includes(PAGE);
 		if (customColumns && !CURR_USER.metadata[`${PAGE}-columns-version`]) {
 			// These columns could not be customized in older saved layouts.
@@ -3316,6 +3323,7 @@ function showHideUserTable(loaded) {
 				TABLE.getColumn(field)?.show();
 			}
 		});
+		syncOddsSummaryColumns();
 	}
 }
 

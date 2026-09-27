@@ -283,6 +283,41 @@ function sliceLogs(logs, interval) {
 	return { slicedLogs, slicedIndices };
 }
 
+function renderCardSnapShare(rowData) {
+	const weekly = rowData.usage && typeof NflUsage !== "undefined";
+	const value = weekly ? NflUsage.render(rowData, NflUsage.snapSpec)
+		: renderSnapShare(rowData.snaps, rowData.blurred);
+	return `<div class="metric-pill snap-share-pill">${value}<span>Snap %<br>${weekly ? "Latest week" : "Last game"}</span></div>`;
+}
+
+function cardHitRates(rowData) {
+	const rates = { ...rowData.hitRates };
+	if (!["nfl", "tds", "tds2"].includes(PAGE)) return rates;
+	const number = value => {
+		if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") return null;
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : null;
+	};
+	const hasRate = key => number(rates[key]?.p) != null;
+	const logs = (Array.isArray(rowData.logs) ? rowData.logs : []).map(number).filter(value => value != null);
+	const line = number(rowData.handicap);
+	const under = rowData.ouIdx == null ? !!rowData.under : rowData.ouIdx == 1;
+	// Older football feeds supply season logs and scalar rates instead of hitRates.
+	if (logs.length && line != null) {
+		for (const [key, count] of [["szn", logs.length], ["L5", 5], ["L10", 10], ["L20", 20]]) {
+			if (hasRate(key)) continue;
+			const recent = logs.slice(-count);
+			const w = recent.filter(value => under ? value < line : value > line).length;
+			rates[key] = { w, t: recent.length, p: Math.round(100 * w / recent.length) };
+		}
+	}
+	for (const [key, value] of [["szn", rowData.hitRate], ["lyr", rowData.hitRateLYR]]) {
+		const p = number(value);
+		if (!hasRate(key) && p != null && p >= 0 && p <= 100) rates[key] = { p };
+	}
+	return rates;
+}
+
 function renderTrends(trends, prop) {
 	const LABELS = {
 		lyr: "Last Yr",
@@ -291,10 +326,13 @@ function renderTrends(trends, prop) {
 	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
 	const isHomer = prop === 'hr';
 	const pills = ORDER
-		.filter(k => trends?.[k])
+		.filter(k => trends?.[k]?.p != null && trends[k].p !== "" && Number.isFinite(Number(trends[k].p)))
 		.map(k => {
-			const { w = 0, t = 0, p = 0 } = trends[k];
+			const { w, t } = trends[k];
+			const p = Number(trends[k].p);
 			const label = LABELS[k] ?? k;
+			const counts = Number.isFinite(Number(w)) && Number(t) > 0 && w != null
+				? `<div class="trend-frac">${Number(w)}/${Number(t)}</div>` : "";
 
 			const tone = isHomer
 				? (p >= 30 ? "good" : p >= 15 ? "mid" : "bad")
@@ -304,7 +342,7 @@ function renderTrends(trends, prop) {
 				<div class="trend-pill">
 				  <div class="trend-label">${label}</div>
 				  <div class="trend-box ${tone}">
-					<div class="trend-frac">${w}/${t}</div>
+					${counts}
 					<div class="trend-pct">${p}%</div>
 				  </div>
 				</div>
@@ -628,7 +666,7 @@ function updateExistingCard(card, rowData) {
 	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
 		{ quotePage: "", applyFees: false })?.outerHTML || "";
 	const snapsPill = ["tds", "tds2", "nfl"].includes(PAGE)
-		? `<div class="metric-pill snap-share-pill">${renderSnapShare(rowData.snaps, rowData.blurred)}<span>Snap %<br>Last game</span></div>` : "";
+		? renderCardSnapShare(rowData) : "";
 
 	const playerRowContent = `
 		<div class="player-content-stack">
@@ -751,7 +789,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(rowData.hitRates || {}, rowData.prop)}
+					${renderTrends(cardHitRates(rowData), rowData.prop)}
 				</div>
 				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}

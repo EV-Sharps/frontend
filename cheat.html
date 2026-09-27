@@ -779,7 +779,7 @@
 			for (const devig of devigs) {
 				const cell = matrix[prop]?.[devig];
 				if (!cell) {
-					rows += `<td class="matrix-cell empty">—</td>`;
+					rows += `<td class="matrix-cell empty">-</td>`;
 				} else {
 					const total = cell.w + cell.l;
 					const winPct = total > 0 ? Math.round(cell.w / total * 100) : 0;

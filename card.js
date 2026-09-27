@@ -2,7 +2,7 @@ let ALL_CARD_DATA = [];
 
 // oppRank is a plain rank number on most pages, but on NFL/TDS pages it's a dict of
 // {statKey: {rank, ...}} bundling several opponent-defense stats together (e.g.
-// "opp-pass-yds", "opp-rz-scoring-pct") — rendering that dict directly produces
+// "opp-pass-yds", "opp-rz-scoring-pct") - rendering that dict directly produces
 // "[object Object]". Picks out the one rank relevant to the current page/prop,
 // mirroring the same per-page key selection rankingFormatter uses for the table column.
 function resolveOppRankValue(data) {
@@ -331,7 +331,7 @@ function renderDue(pa) {
 		return `
 			<div class="trend-pill">
 				<div class="trend-label">${label}</div>
-				<div class="trend-box"${style}>${value ?? "—"}</div>
+				<div class="trend-box"${style}>${value ?? "-"}</div>
 			</div>
 		`;
 	}).join("");
@@ -657,7 +657,7 @@ function updateExistingCard(card, rowData) {
 
 	// Devig pill content: book logos so it reads at a glance instead of a "FD/DK/CIRCA
 	// 20%/20%/60%" string the reader has to line up by position. Per-book % only shows up
-	// when weights actually differ — equal weights collapse to a single "Equal" caption.
+	// when weights actually differ - equal weights collapse to a single "Equal" caption.
 	let devigPillHtml = "";
 	if (typeof DEVIG !== 'undefined' && DEVIG) {
 		const devigBooks = DEVIG.replace("only+", "").split("+");

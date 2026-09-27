@@ -94,7 +94,7 @@ function _renderSummaryTable() {
 		html += `<tr><td class="devig-name">${b.toUpperCase()}</td>`;
 		devigs.forEach(d => {
 			const c = _summaryCell(grid, b, d);
-			if (!c) { html += '<td>—</td>'; return; }
+			if (!c) { html += '<td>-</td>'; return; }
 			const cls = c.pos ? 'roi-pos' : c.neg ? 'roi-neg' : '';
 			html += `<td class="${cls}"><div>${c.disp}</div><div style="font-size:9px;opacity:0.6;">${c.w}W-${c.l}L</div></td>`;
 		});
@@ -205,7 +205,7 @@ async function exportSummaryImage() {
 			mctx.font = boldFont;
 			if (c) w = Math.max(w, mctx.measureText(c.disp).width);
 			mctx.font = font;
-			w = Math.max(w, mctx.measureText(c ? `${c.w}W-${c.l}L` : '—').width);
+			w = Math.max(w, mctx.measureText(c ? `${c.w}W-${c.l}L` : '-').width);
 		});
 		colW[d] = Math.max(w + cellPadX * 2, 56);
 	});
@@ -275,7 +275,7 @@ async function exportSummaryImage() {
 			} else {
 				ctx.fillStyle = dim;
 				ctx.font = font;
-				ctx.fillText('—', cx + cellPadX, y + 11);
+				ctx.fillText('-', cx + cellPadX, y + 11);
 			}
 			cx += colW[d];
 		});

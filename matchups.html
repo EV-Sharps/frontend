@@ -142,7 +142,7 @@
 
 	function opsFormatter(cell) {
 		const v = cell.getValue();
-		if (v === null || v === undefined) return '<span style="color:#334155">—</span>';
+		if (v === null || v === undefined) return '<span style="color:#334155">-</span>';
 		const c = opsColor(v);
 		return `<span class="ops-badge" style="background:${c.bg || 'transparent'};color:${c.fg};">${v.toFixed(3)}</span>`;
 	}
@@ -150,7 +150,7 @@
 	function paFormatter(cell) {
 		const v = cell.getValue();
 		const low = v != null && v < 5;
-		return `<span class="pa-cell${low ? ' low-pa' : ''}" title="${low ? 'Small sample — treat as noisy' : ''}">${v ?? '—'}</span>`;
+		return `<span class="pa-cell${low ? ' low-pa' : ''}" title="${low ? 'Small sample - treat as noisy' : ''}">${v ?? '-'}</span>`;
 	}
 
 	function renderTable(rows) {
@@ -235,9 +235,9 @@
 		const pieces = (row.breakdown || []).map(b => `
 			<tr>
 				<td>${b.pitch_type}</td>
-				<td>${b.usage_pct != null ? b.usage_pct.toFixed(1) + '%' : '—'}</td>
+				<td>${b.usage_pct != null ? b.usage_pct.toFixed(1) + '%' : '-'}</td>
 				<td>${b.pa ?? 0}</td>
-				<td>${b.ops != null ? b.ops.toFixed(3) : '—'}</td>
+				<td>${b.ops != null ? b.ops.toFixed(3) : '-'}</td>
 				<td>${b.h ?? 0}</td>
 				<td>${b.hr ?? 0}</td>
 				<td>${b.brl ?? 0}</td>

@@ -1,0 +1,28 @@
+.tabulator-row .tabulator-cell.nfl-defense-cell { height: auto; min-height: 42px; }
+.nfl-defense-value {
+	display: inline-flex; flex-direction: column; justify-content: center; gap: 2px;
+	min-height: 34px; max-width: 100%; margin: 0; padding: 2px 3px;
+	border: 0; border-radius: 4px; background: transparent; color: inherit;
+	font: inherit; line-height: 1.2; text-align: center; cursor: pointer;
+}
+.nfl-defense-value strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+.nfl-defense-value small { font-size: 10px; opacity: .75; white-space: nowrap; }
+.nfl-defense-total { font-size: 10px; font-weight: normal; opacity: .65; }
+.nfl-defense-context small { color: #e5bc79; opacity: 1; }
+.nfl-defense-value:hover { background: rgba(128, 155, 175, .12); }
+.nfl-defense-value:focus-visible { outline: 2px solid #91bfd8; outline-offset: 1px; }
+.nfl-defense-empty { opacity: .4; }
+#table:not(.stacked-odds) .tabulator-cell.nfl-defense-cell { min-height: 24px; }
+#table:not(.stacked-odds) .nfl-defense-value { flex-direction: row; align-items: baseline; gap: 4px; min-height: 16px; padding: 0 2px; }
+#table:not(.stacked-odds) .nfl-defense-value small { display: none; }
+#table:not(.stacked-odds) .nfl-defense-context small { display: inline; font-size: 8px; }
+#nfl-defense-dialog {
+	box-sizing: border-box; width: min(440px, calc(100vw - 28px)); max-height: 85vh;
+	margin: auto; padding: 22px; border: 1px solid #43515b; border-radius: 12px;
+	background: #172027; color: #e9edef; box-shadow: 0 18px 70px #0009;
+}
+#nfl-defense-dialog::backdrop { background: #0009; }
+#nfl-defense-dialog h2 { margin: 0 0 16px; font: 600 17px/1.4 system-ui, sans-serif; }
+#nfl-defense-dialog p { margin: 0 0 18px; white-space: pre-line; font: 13px/1.5 system-ui, sans-serif; }
+#nfl-defense-dialog form { margin: 0; text-align: right; }
+#nfl-defense-dialog button { padding: 9px 18px; border: 1px solid #627685; border-radius: 6px; background: #263944; color: inherit; cursor: pointer; }

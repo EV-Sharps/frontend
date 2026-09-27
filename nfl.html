@@ -13,6 +13,7 @@
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
+	<link href="nfl-defense.css" rel="stylesheet">
 	<style>
 		#table {
 			width: 100%;
@@ -73,7 +74,7 @@
 		<div id="preloads-modal" class="modal" style="display:none;">
             <div class="modal-content devig-panel">
                 <div class="modal-header">
-                    <h3>Preloads — Top Devigs</h3>
+                    <h3>Preloads - Top Devigs</h3>
                     <button id="close-preloads-modal">&times;</button>
                 </div>
 
@@ -469,6 +470,18 @@
 						<div>
 							<h3>Player & Odds</h3>
 							<div>
+								<input id="custom_dvpRank" type="checkbox">
+								<label for="custom_dvpRank">Opponent vs position rank</label>
+							</div>
+							<div>
+								<input id="custom_dvpAllowed" type="checkbox">
+								<label for="custom_dvpAllowed">Allowed per game vs position</label>
+							</div>
+							<div>
+								<input id="custom_dvpGames" type="checkbox">
+								<label for="custom_dvpGames">Defense sample games</label>
+							</div>
+							<div>
 								<input id="custom_player" type="checkbox" checked disabled>
 								<label for="custom_player">Player</label>
 							</div>
@@ -640,10 +653,11 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="player-lines.js"></script>
 	<script src="nfl-usage.js"></script>
+	<script src="nfl-defense.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "nfl";
-		DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE], ...NflUsage.keys])];
+		DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE], ...NflUsage.keys, ...NflDefense.defaultKeys])];
 
 		parseURLParams();
 		SPORT = "nfl";
@@ -656,6 +670,7 @@
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
 		const fetchProps = createDataRefresh(() => API_BASE+`/api/nfl`, async (data) => {
 			RES = data;
+			NflDefense.setFeed(data);
 			UPDATED[PAGE] = data["updated"];
 
 			const gameMenu = document.getElementById("game-options");
@@ -701,7 +716,7 @@
 		}, refreshDataTimestamps);
 
 		const NFL_DEFAULT_COL_ORDER = [
-			'ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
+			'ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', ...NflDefense.keys, 'oppRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px',
@@ -755,7 +770,8 @@
 					responsive: 0, visible: MOBILE ? false : true
 				}] },
 				{ key: 'opp', label: 'Opp', cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
-				{ key: 'oppRank', label: 'Opp Rank', cols: [{ title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
+				...NflDefense.items(),
+				{ key: 'oppRank', label: 'Overall team rank', cols: [{ title: "Team<br>Rank", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
 				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_fd', label: 'FD', cols: [{ title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_dk', label: 'DK', cols: [{ title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk", width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter }] },
@@ -783,6 +799,10 @@
 			];
 		}
 
+		function getNflColumnOrder(savedOrder) {
+			return NflDefense.columnOrder(savedOrder, NflUsage.columnOrder(savedOrder, NFL_DEFAULT_COL_ORDER, snapShareColumnOrder(savedOrder, NFL_DEFAULT_COL_ORDER)));
+		}
+
 		function buildNflColumns(savedOrder) {
 			return buildColumnsFromOrder(
 				savedOrder, NFL_DEFAULT_COL_ORDER, getNflColumnItems(), null,
@@ -791,7 +811,7 @@
 		}
 
 		function openColReorder() {
-			const savedOrder = NflUsage.columnOrder(CURR_USER?.metadata?.['nfl-order'], NFL_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['nfl-order'], NFL_DEFAULT_COL_ORDER));
+			const savedOrder = getNflColumnOrder(CURR_USER?.metadata?.['nfl-order']);
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
@@ -808,6 +828,7 @@
 		let loaded = false;
 		function renderTable(data) {
 			NflUsage.migrateProfile(CURR_USER, PAGE);
+			NflDefense.migrateProfile(CURR_USER, PAGE);
 			const allProps = [...new Set(data.map(row => row.prop))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
@@ -831,12 +852,13 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildNflColumns(NflUsage.columnOrder(CURR_USER?.metadata?.['nfl-order'], NFL_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['nfl-order'], NFL_DEFAULT_COL_ORDER)))
+				columns: buildNflColumns(getNflColumnOrder(CURR_USER?.metadata?.['nfl-order']))
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("dataLoaded", function(data) {
 				NflUsage.migrateProfile(CURR_USER, PAGE);
+				NflDefense.migrateProfile(CURR_USER, PAGE);
 				showHideUserTable(loaded);
 				if (!loaded) {
 					changeFilter();

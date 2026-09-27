@@ -656,9 +656,9 @@ body::before {
 
 /* Sits centered directly over the odds (same spot, not floating above/below
    the cell), so a wide liquidity value ($bid/$ask) isn't clipped by the
-   cell's own (narrow, fixed) width — it just overlays the number in place.
+   cell's own (narrow, fixed) width - it just overlays the number in place.
    Tabulator's own CSS sets .tabulator-cell to overflow:hidden, which would
-   still clip an absolutely-positioned child regardless — override it, scoped
+   still clip an absolutely-positioned child regardless - override it, scoped
    to just cells with a liquidity tooltip so every other column's normal
    text-overflow:ellipsis truncation is untouched. */
 .tabulator-cell:has(.liq-host) {
@@ -687,7 +687,7 @@ body::before {
 }
 /* Real pointer devices: pure hover, reverts on hover-out automatically.
    Touch devices: :hover has no reliable "out" event and can get stuck after
-   a tap, so it's excluded here entirely — only the JS-driven .liq-open
+   a tap, so it's excluded here entirely - only the JS-driven .liq-open
    toggle (tap to show, tap again to revert) controls it on those. */
 @media (hover: hover) {
 	.tabulator-cell:hover .liq-tip { display: block; }

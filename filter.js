@@ -1627,7 +1627,7 @@ function changeFilter(render = true) {
 	const newUrl = `${window.location.pathname}?${params.toString()}`;
 	// changeFilter() now also runs on charts/dingers/dingers2's 30s auto-refresh
 	// (to reapply the selected devig after renderTable() rebuilds the table),
-	// not just on user-driven filter changes — skip the push when nothing
+	// not just on user-driven filter changes - skip the push when nothing
 	// actually changed so that timer doesn't spam browser history.
 	if (newUrl !== `${window.location.pathname}${window.location.search}`) {
 		history.pushState({}, '', newUrl);

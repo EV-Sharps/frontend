@@ -241,7 +241,7 @@
 		<div id="preloads-modal" class="modal" style="display:none;">
             <div class="modal-content devig-panel">
                 <div class="modal-header">
-                    <h3>Preloads — Top Devigs</h3>
+                    <h3>Preloads - Top Devigs</h3>
                     <button id="close-preloads-modal">&times;</button>
                 </div>
 
@@ -1057,7 +1057,7 @@
 			});
 
 			const now = new Date();
-			// Odds stop mattering once the game starts — don't let the line run past it.
+			// Odds stop mattering once the game starts - don't let the line run past it.
 			const gameTime = RES.times?.[data.game] ? new Date(RES.times[data.game]) : null;
 			const cutoff = gameTime && gameTime < now ? gameTime : now;
 			const BOOK_COLORS = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
@@ -1676,7 +1676,7 @@
 				.then(r => r.json())
 				.then(data => {
 					Object.assign(FEED_CACHE, data);
-					// Table already rendered by the time this resolves — reapply
+					// Table already rendered by the time this resolves - reapply
 					// rowFormatter now that FEED_CACHE has homers to check against.
 					if (TABLE) TABLE.redraw(true);
 				})
@@ -2202,7 +2202,7 @@
 		}
 
 		// Profit per $1 bet at American odds `odds`, assuming the bet wins
-		// (which every row here does, by construction — these are HRs that
+		// (which every row here does, by construction - these are HRs that
 		// already hit). null if `odds` isn't a usable number.
 		const HR_RECAP_BET = 100;
 		function payoutMultiplier(odds) {
@@ -2217,7 +2217,7 @@
 		// closing-odds panel), how well did it actually perform on today's real
 		// outcomes: of the homers it had a line on (coverage), how many did it
 		// flag as +EV to bet the best available price on (calls), and betting
-		// $100 on exactly those calls, how much would that have profited —
+		// $100 on exactly those calls, how much would that have profited -
 		// since every homer here already hit, this measures which devig source
 		// most reliably called the winners "value", not just which paid the most.
 		function computeHRRecap(rows) {
@@ -2266,7 +2266,7 @@
 				const hrLine = `${totalHRs} HR${totalHRs === 1 ? '' : 's'} today` + (hrPerGame != null ? ` across ${gamesCount} game${gamesCount === 1 ? '' : 's'} (${hrPerGame.toFixed(2)} HR/G)` : '');
 				summaryEl.innerHTML = totalHRs
 					? `<div>${hrLine}</div>` + (bestCount
-						? `$${HR_RECAP_BET} on every HR today (${bestCount}/${totalHRs}) at best odds: <span style="color:${bestProfit >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${bestProfit >= 0 ? '+' : ''}$${Math.round(bestProfit)}</span><br><span style="font-size:11px;color:#6b7280;">Best-performing devigs — of the HRs each one had a line on, how many it called +EV and what betting just those calls paid:</span>`
+						? `$${HR_RECAP_BET} on every HR today (${bestCount}/${totalHRs}) at best odds: <span style="color:${bestProfit >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${bestProfit >= 0 ? '+' : ''}$${Math.round(bestProfit)}</span><br><span style="font-size:11px;color:#6b7280;">Best-performing devigs - of the HRs each one had a line on, how many it called +EV and what betting just those calls paid:</span>`
 						: '')
 					: '';
 			}

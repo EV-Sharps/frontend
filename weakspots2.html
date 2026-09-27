@@ -134,7 +134,7 @@
 			(d.career?.slots || []).forEach(s => { careerBySlot[s.slot] = s; });
 			d.this_year.slots.forEach((slot, idx) => {
 				const batterRaw = d.batting?.[idx] || '';
-				const batter = batterRaw ? title(batterRaw) : '—';
+				const batter = batterRaw ? title(batterRaw) : '-';
 				const career = careerBySlot[slot.slot] ?? null;
 
 				rows.push({
@@ -204,7 +204,7 @@
               title: "OPS", field: 'ops', width: 85, sorter: 'number',
               formatter(cell) {
                 const v = cell.getValue();
-                if (v == null) return '—';
+                if (v == null) return '-';
                 const c = opsColor(v);
                 return `<span style="background:${c.bg||'transparent'};color:${c.fg};font-weight:700;padding:1px 7px;border-radius:4px;">${v.toFixed(3)}</span>`;
               }
@@ -227,7 +227,7 @@
               title: 'OPS', field: 'careerOps', width: 85, sorter: 'number',
               formatter(cell) {
                 const v = cell.getValue();
-                if (v == null) return '<span style="color:#334155">—</span>';
+                if (v == null) return '<span style="color:#334155">-</span>';
                 const c = opsColor(v);
                 return `<span style="color:${c.fg}">${v.toFixed(3)}</span>`;
               }
@@ -247,7 +247,7 @@
 					title: 'Δ Career', field: 'delta', width: 90, sorter: 'number',
 					formatter(cell) {
 						const v = cell.getValue();
-						if (v == null) return '<span style="color:#334155">—</span>';
+						if (v == null) return '<span style="color:#334155">-</span>';
 						const color = v > 0.075 ? '#94a3b8' : v < -0.075 ? '#34d399' : '#f87171';
 						return `<span style="color:${color};font-weight:600">${v > 0 ? '+' : ''}${v.toFixed(3)}</span>`;
 					},

@@ -7,6 +7,7 @@ from pathlib import Path
 from math import prod
 import tempfile
 from threading import Thread
+from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import sync_playwright, expect
 
@@ -40,6 +41,19 @@ CATALOG['legs'][3]['quotes']['dk'] = quote(600, None, 'Missing under price')
 CATALOG['legs'][4]['quotes']['dk'] = quote(900, -1200, 'Stale prices')
 CATALOG['legs'][4]['quotes']['dk']['updated_at'] = (NOW - timedelta(minutes=20)).isoformat()
 
+ATTD_CATALOG = {'market': 'attd', 'sport': 'nfl', 'date': NOW.date().isoformat(),
+                'generated_at': NOW.isoformat(), 'books': BOOKS, 'max_age_minutes': 10,
+                'legs': [leg(101, 'saquon barkley', 'phi @ dal', -110),
+                         leg(102, 'aj brown', 'phi @ dal', 180),
+                         leg(103, 'derrick henry', 'bal @ cin', -125),
+                         leg(104, 'jahmyr gibbs', 'det @ gb', 120),
+                         leg(105, 'bijan robinson', 'atl @ tb', 140)]}
+for index, player in enumerate(ATTD_CATALOG['legs']):
+    player['market'] = 'Over 0.5 touchdowns'
+    player['start'] = (NOW + timedelta(days=3 + index, hours=3)).isoformat()
+    over = player['quotes']['fd']['over']
+    player['quotes']['dk'] = quote({-110: 110, -125: 105}.get(over, over + 20))
+
 
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *args):
@@ -54,8 +68,10 @@ try:
             '--disable-logging', f'--log-file={Path(tempfile.gettempdir()) / "parlay-table.log"}',
         ])
         page = browser.new_page(viewport={'width': 1440, 'height': 1080})
-        errors, posts = [], []
+        errors, posts, gets = [], [], []
         state = {'catalog': deepcopy(CATALOG), 'denied': False, 'hold_next': False, 'held': None, 'fail_next': False, 'legacy': False}
+        state.update(attd_catalog=deepcopy(ATTD_CATALOG), hold_catalog=None, held_catalog=None,
+                     wrong_catalog=False, wrong_quote=False)
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.route('https://**/*', lambda route: route.fulfill(
@@ -66,15 +82,27 @@ try:
             if state['denied']:
                 return route.fulfill(status=403, json={'error': 'Sign in'})
             if route.request.method == 'GET':
-                return route.fulfill(json=state['catalog'])
+                market = parse_qs(urlsplit(route.request.url).query).get('market', ['hr'])[0]
+                gets.append(market)
+                response = deepcopy(state['attd_catalog' if market == 'attd' else 'catalog'])
+                if state['wrong_catalog']:
+                    state['wrong_catalog'] = False
+                    response = deepcopy(CATALOG) | {'market': 'hr', 'sport': 'mlb'}
+                if state['hold_catalog'] == market:
+                    state['hold_catalog'] = None
+                    state['held_catalog'] = (route, response)
+                    return
+                return route.fulfill(json=response)
             payload = route.request.post_data_json
             posts.append(payload)
+            assert payload['market'] in ('hr', 'attd')
             assert len(payload['legs']) in (2, 3, 4)
             assert all(payload['legs'])
             if state['fail_next']:
                 state['fail_next'] = False
                 return route.fulfill(status=503, json={'error': 'Prices temporarily unavailable'})
-            selected = [next(leg for leg in state['catalog']['legs'] if leg['id'] == id) for id in payload['legs']]
+            catalog = state['attd_catalog' if payload['market'] == 'attd' else 'catalog']
+            selected = [next(leg for leg in catalog['legs'] if leg['id'] == id) for id in payload['legs']]
             references = [{'book': book, 'name': name, 'complete': True, 'same_as_betting_book': book == payload['betting_book'],
                            'probability': 0.02, 'fair_odds': 4900, 'raw_product_odds': 4800, 'ev': 2,
                            'legs': [dict(leg['quotes'][book], probability=0.2, fair_odds=400) for leg in selected]}
@@ -101,6 +129,11 @@ try:
             response = {'legs': selected, 'references': references, 'prices': prices,
                         'best_price': prices[0] if prices else None,
                         'offered_odds': payload['offered_odds'], 'max_age_minutes': 10}
+            if payload['market'] == 'attd':
+                response.update(market='attd', sport='nfl')
+            if state['wrong_quote']:
+                state['wrong_quote'] = False
+                response.update(market='hr', sport='mlb')
             if state['legacy']:
                 # Running older servers omit prices and only provide quotes within references.
                 del response['prices']
@@ -118,7 +151,7 @@ try:
             else:
                 route.fulfill(json=response)
 
-        page.route('**/api/parlays', respond)
+        page.route('**/api/parlays*', respond)
         page.goto(f'http://localhost:{server.server_port}/parlays.html')
         page.wait_for_function("!document.getElementById('calculator').hidden")
 
@@ -143,6 +176,7 @@ try:
             assert ids == [f'{index:024x}' for index in expected], ids
 
         count(0)
+        expect(page.locator('#parlay-market')).to_have_value('hr')
         assert page.locator('#catalog-rows tr').count() == 7
         order([6, 7, 3, 1, 2, 4, 5])
         assert page.locator('[data-key="average"]').get_attribute('aria-sort') == 'ascending'
@@ -296,7 +330,7 @@ try:
         assert '+700' in page.locator('#leg-inputs').inner_text()
         page.locator('#offered-odds').fill('+5000')
         calculated([1, 5, 4])
-        assert posts[-1] == {'legs': [f'{index:024x}' for index in (1, 5, 4)],
+        assert posts[-1] == {'market': 'hr', 'legs': [f'{index:024x}' for index in (1, 5, 4)],
                             'method': 'mult', 'betting_book': 'fd', 'offered_odds': 5000}
 
         # Refresh prices without losing selections, then remove a departed player.
@@ -425,12 +459,129 @@ try:
         assert abs(first_leg['y'] - second_leg['y']) < 1
         assert second_leg['x'] > first_leg['x']
         page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-two-legs-mobile.png'), full_page=True)
+
+        # Switching markets discards the old ticket, filters and quoted price, even mid-calculation.
+        page.set_viewport_size({'width': 1440, 'height': 1080})
+        page.locator('#player-search').fill('aaron')
+        page.locator('#game-filter').select_option('nyy @ bos')
+        state['hold_next'] = True
+        state['held'] = None
+        page.locator('#offered-odds').fill('+5000')
+        expect(page.locator('#calculate')).to_have_text('Calculating...')
+        page.wait_for_timeout(50)
+        assert state['held'] is not None
+        old_quote_route, old_quote = state['held']
+        assert posts[-1]['market'] == 'hr'
+        post_count = len(posts)
+        page.locator('#parlay-market').select_option('attd')
+        expect(row(101)).to_be_visible()
+        count(0)
+        assert page.locator('#results').is_hidden()
+        assert page.locator('#player-search').input_value() == ''
+        assert page.locator('#game-filter').input_value() == ''
+        assert page.locator('#offered-odds').input_value() == ''
+        assert page.locator('#catalog-rows tr[data-leg-row]').count() == 5
+        assert len(posts) == post_count
+        assert gets[-1] == 'attd'
+        assert page.evaluate('SPORT') == 'nfl'
+        assert any(word in page.locator('h1').inner_text().lower() for word in ('attd', 'touchdown'))
+        assert 'homer' not in page.locator('#catalog-help').inner_text().lower()
+        assert '1+ HR' not in page.locator('#catalog-help').inner_text()
+        # Football markets can be days away; each listed kickoff includes its date.
+        kickoff_date = page.evaluate("""start => ({
+            month: new Date(start).toLocaleDateString('en-US', {month: 'short', timeZone: 'America/New_York'}),
+            day: new Date(start).toLocaleDateString('en-US', {day: 'numeric', timeZone: 'America/New_York'})
+        })""", ATTD_CATALOG['legs'][0]['start'])
+        kickoff_text = row(101).locator('.catalog-player').inner_text()
+        assert kickoff_date['month'] in kickoff_text and kickoff_date['day'] in kickoff_text, kickoff_text
+
+        pick(101).click()
+        assert pick(102).is_disabled()  # Same matchup remains ineligible for touchdown tickets.
+        pick(103).click()
+        calculated([101, 103])
+        assert posts[-1]['market'] == 'attd'
+        assert posts[-1]['offered_odds'] is None
+        assert 'ATTD' in page.locator('#leg-inputs').inner_text()
+        assert 'ATTD' in page.locator('#result-selections').inner_text()
+        assert '1+ HR' not in page.locator('#results').inner_text()
+        assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+331'
+        assert page.locator('[data-ev-reference="circa"]').count() == 1
+        assert page.locator('[data-ev-reference="pn"]').count() == 1
+        old_quote_route.fulfill(json=old_quote)
+        page.wait_for_timeout(50)
+        calculated([101, 103])
+        assert 'Aaron Judge' not in page.locator('#results').inner_text()
+
+        pick(104).click()
+        calculated([101, 103, 104])
+        pick(105).click()
+        count(4)
+        calculated([101, 103, 104, 105])
+        assert posts[-1]['market'] == 'attd'
+        assert page.locator('#price-rows tr').first.get_attribute('data-price-book') == 'dk'
+        assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+2,586'
+
+        # Explicitly mismatched responses are rejected instead of mislabeling another market.
+        state['wrong_quote'] = True
+        page.evaluate('window.refreshParlays()')
+        assert page.locator('#results').is_hidden()
+        assert page.locator('#request-status').is_visible()
+        expect(page.locator('#parlay-market')).to_have_value('attd')
+        page.evaluate('window.refreshParlays()')
+        calculated([101, 103, 104, 105])
+        state['wrong_catalog'] = True
+        page.evaluate('window.refreshParlays()')
+        assert row(1).count() == 0
+        assert row(101).count() == 1
+        expect(page.locator('#parlay-market')).to_have_value('attd')
+        page.evaluate('window.refreshParlays()')
+        calculated([101, 103, 104, 105])
+
+        page.set_viewport_size({'width': 390, 'height': 844})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-attd-four-legs-mobile.png'), full_page=True)
+
+        # A slow catalog cannot prevent a later mode change or replace its newer slate.
+        state['hold_catalog'] = 'hr'
+        state['held_catalog'] = None
+        page.locator('#parlay-market').select_option('hr')
+        page.wait_for_timeout(50)
+        assert state['held_catalog'] is not None
+        old_catalog_route, old_catalog = state['held_catalog']
+        page.locator('#parlay-market').select_option('attd')
+        expect(row(101)).to_be_visible()
+        count(0)
+        old_catalog_route.fulfill(json=old_catalog)
+        page.wait_for_timeout(50)
+        expect(page.locator('#parlay-market')).to_have_value('attd')
+        assert row(1).count() == 0
+        assert page.locator('#catalog-rows tr[data-leg-row]').count() == 5
+        assert page.locator('#results').is_hidden()
+        page.locator('#parlay-market').select_option('hr')
+        expect(row(1)).to_be_visible()
+        assert page.evaluate('SPORT') == 'mlb'
+        count(0)
+
+        # The navigation link can open football directly, including on mobile.
+        page.goto(f'http://localhost:{server.server_port}/parlays.html?market=attd')
+        expect(page.locator('#parlay-market')).to_have_value('attd')
+        expect(row(101)).to_be_visible()
+        assert gets[-1] == 'attd'
+        assert row(1).count() == 0
+        pick(101).click()
+        pick(103).click()
+        count(2)
+        calculated([101, 103])
+        assert posts[-1]['market'] == 'attd'
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+
+        # ATTD has the same membership gate as the existing homer calculator.
         state['denied'] = True
         page.evaluate('window.refreshParlays()')
         assert page.locator('#calculator').is_hidden()
         assert page.locator('#access-panel').is_visible()
         assert not errors, errors
-        print('Legacy/current API totals, scroll stability during refresh, automatic 2-4 legs, prices, races/retry, limits, mobile and access checks passed.')
+        print('Homer/ATTD markets, switching/reset, direct links, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches, scroll, mobile and access checks passed.')
         browser.close()
 finally:
     server.shutdown()

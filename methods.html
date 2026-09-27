@@ -94,7 +94,7 @@
   <div class="wrap">
     <h1>Which devig method, for which bet?</h1>
     <p class="subtitle">
-      This app defaults to Multiplicative/Additive on main lines and Probit on player props — not out
+      This app defaults to Multiplicative/Additive on main lines and Probit on player props - not out
       of habit, but because the two line up with where each actually earns its keep. Below: the same
       bet, near pick'em vs. as a longshot prop.
     </p>
@@ -142,7 +142,7 @@
 
       <p class="foot-note">
         Y-axis: the fair American odds each method assigns once the vig is stripped out. The gray
-        dotted line is the raw quoted line with no devig at all — everything else measures how far it
+        dotted line is the raw quoted line with no devig at all - everything else measures how far it
         pulls the fair line, and by how much the methods disagree with each other.
       </p>
     </div>
@@ -151,7 +151,7 @@
       <h2>At these specific prices</h2>
       <p class="desc">
         The two ends of the spectrum you actually see day to day: a near-even mainline (-110) and a
-        longshot prop (+600, roughly a homer bet). Same vig slider above — drag it and watch the +600
+        longshot prop (+600, roughly a homer bet). Same vig slider above - drag it and watch the +600
         card spread out while -110 barely moves.
       </p>
       <div class="price-cards" id="price-cards"></div>
@@ -160,7 +160,7 @@
     <div class="card">
       <h2>How much do they actually disagree?</h2>
       <p class="desc">
-        Same slider, same data — this time zoomed into just the spread between the highest and lowest
+        Same slider, same data - this time zoomed into just the spread between the highest and lowest
         method estimate, in probability points, so the disagreement isn't dwarfed by a 0–100% axis.
       </p>
       <div class="chart-wrap">
@@ -171,10 +171,10 @@
     <div class="card">
       <h2>Why the correction isn't flat</h2>
       <p class="desc">
-        Mult/Additive assume probability itself is the right ruler — a flat markup, everywhere. Probit
+        Mult/Additive assume probability itself is the right ruler - a flat markup, everywhere. Probit
         assumes the vig lives in <em>z-score</em> space, where "how many standard deviations from the
         market's center" behaves linearly, and converts back through this curve. The curve is steep
-        near a coinflip and flat out at the tails — so the same underlying mispricing reads as a small
+        near a coinflip and flat out at the tails - so the same underlying mispricing reads as a small
         probability move near 50%, and a bigger one out where a homer prop lives.
       </p>
       <div class="chart-wrap">
@@ -182,9 +182,9 @@
       </div>
       <p class="foot-note">
         At -110, the tangent line (the flat, linear approximation Mult/Additive effectively use) sits
-        right on top of the actual curve — barely distinguishable. At +600, the curve has already bent
+        right on top of the actual curve - barely distinguishable. At +600, the curve has already bent
         well away from that same straight-line approximation. Probit reads the correction off the
-        actual curve; Mult/Additive read it off the tangent — fine near the middle, increasingly wrong
+        actual curve; Mult/Additive read it off the tangent - fine near the middle, increasingly wrong
         the further out you go.
       </p>
     </div>
@@ -241,7 +241,7 @@ function worstCase(pO, pU) { return Math.min(multMethod(pO,pU), addMethod(pO,pU)
 
 function impliedToAmerican(p) {
   // Additive in particular can drift to ~0 or even negative for a longshot prop under
-  // high vig (a documented real risk of that method, not just a display bug) — clamp so
+  // high vig (a documented real risk of that method, not just a display bug) - clamp so
   // a degenerate probability can't divide-by-zero into Infinity/NaN and blow up any axis
   // or loop downstream.
   p = Math.min(0.999, Math.max(0.001, p));
@@ -252,16 +252,16 @@ function fmtOdds(a) { return a > 0 ? `+${a}` : `${a}`; }
 
 const SERIES = [
   { key: "mult",   name: "Multiplicative", fn: multMethod, color: "#4f9cf9",
-    desc: "Splits the vig proportionally. The simplest baseline — most other methods are compared against it." },
+    desc: "Splits the vig proportionally. The simplest baseline - most other methods are compared against it." },
   { key: "add",    name: "Additive",       fn: addMethod,  color: "#ff9f45",
     desc: "Splits the vig equally between both sides. Nearly identical to Multiplicative near a coinflip." },
   { key: "power",  name: "Power",          fn: powerMethod, color: "#3dd68c",
-    desc: "Raises both sides to a shared exponent so they sum to 1 — built to correct favorite-longshot bias." },
+    desc: "Raises both sides to a shared exponent so they sum to 1 - built to correct favorite-longshot bias." },
   { key: "probit", name: "Probit",         fn: probitMethod, color: "#f5c542",
-    desc: "Assumes odds are normally distributed and shifts in z-score space — another favorite-longshot correction." },
+    desc: "Assumes odds are normally distributed and shifts in z-score space - another favorite-longshot correction." },
 ];
 const WORST = { key: "worst", name: "Worst-Case", color: "#9aa3b2",
-  desc: "The lowest of Mult/Add/Power at each point — the most conservative fair value, used as this app's default." };
+  desc: "The lowest of Mult/Add/Power at each point - the most conservative fair value, used as this app's default." };
 const ALL_METHODS = [...SERIES, WORST];
 
 // ---- render the "the methods" explainer grid ----
@@ -293,12 +293,12 @@ const rplotW = RW - RM.left - RM.right, rplotH = RH - RM.top - RM.bottom;
 const SW = 820, SH = 200, SM = { top: 12, right: 24, bottom: 30, left: 62 };
 const splotW = SW - SM.left - SM.right, splotH = SH - SM.top - SM.bottom;
 
-let mainlinesData = []; // [{p, mult, add, power, probit, worst}] — zoomed near pick'em, drives the "Main lines" panel
+let mainlinesData = []; // [{p, mult, add, power, probit, worst}] - zoomed near pick'em, drives the "Main lines" panel
 let propsData = [];     // same shape, zoomed on the longshot side, drives the "Player props" panel
-let currentSpreadData = []; // same shape, spanning the full odds spectrum — drives chart 2 + the table
+let currentSpreadData = []; // same shape, spanning the full odds spectrum - drives chart 2 + the table
 
 // Fair value for ONE named side is well-defined regardless of whether that side is the
-// favorite or the underdog — mult/add/power/probit are all complementary (fair(other side)
+// favorite or the underdog - mult/add/power/probit are all complementary (fair(other side)
 // = 1 - fair(this side)), so this same function works whichever end of the spectrum p sits at.
 function evalMethodsAt(p, T) {
   const pU = T - p;
@@ -324,7 +324,7 @@ function computeSeries(vigPct, lo = 0.5, hiCap = 0.97) {
   return pts;
 }
 
-// A specific named price (e.g. -110, +600) — used by the "at these specific prices" cards
+// A specific named price (e.g. -110, +600) - used by the "at these specific prices" cards
 // and the markers on chart 2. Uses whatever vig is on the slider right now.
 function evalAtAmericanOdds(americanOdds, vigPct) {
   const T = 1 + vigPct / 100;
@@ -342,7 +342,7 @@ function g(tag, attrs) {
 }
 
 // ================= Region panels: fair American odds, zoomed per bet type =================
-// One panel per region (main lines / player props) — each stays single-signed (all-favorite
+// One panel per region (main lines / player props) - each stays single-signed (all-favorite
 // or all-underdog) so the Y-axis never crosses the -100/+100 American-odds discontinuity.
 function renderRegionChart(svgEl, data, markerOdds, isFavoriteSide) {
   svgEl.innerHTML = "";
@@ -360,7 +360,7 @@ function renderRegionChart(svgEl, data, markerOdds, isFavoriteSide) {
 
   // gridlines at round-ish odds steps. Loop is capped at a fixed tick count (rather than
   // an open-ended `o += step` accumulator) so a degenerate span can never turn this into
-  // a runaway/hanging loop — worst case it just draws odd-looking gridlines, never freezes.
+  // a runaway/hanging loop - worst case it just draws odd-looking gridlines, never freezes.
   const span = yMax - yMin;
   const step = span > 1500 ? 500 : span > 600 ? 200 : span > 200 ? 100 : 50;
   const start = Math.ceil(yMin / step) * step;
@@ -412,17 +412,17 @@ function renderRegions() {
   const mlEnd = evalMethodsAt(americanToImplied(-110), T);
   const mlSpread = spreadAt(mlEnd);
   document.getElementById("verdict-mainlines").innerHTML =
-    `At <strong>-110</strong>, every method lands within <strong>${mlSpread.toFixed(2)} pts</strong> of each other — the extra complexity of Power/Probit buys nothing here, so Mult/Additive is the simplest correct choice.`;
+    `At <strong>-110</strong>, every method lands within <strong>${mlSpread.toFixed(2)} pts</strong> of each other - the extra complexity of Power/Probit buys nothing here, so Mult/Additive is the simplest correct choice.`;
 
   const propEnd = evalMethodsAt(americanToImplied(600), T);
   const propSpread = spreadAt(propEnd);
   document.getElementById("verdict-props").innerHTML =
-    `At <strong>+600</strong>, methods disagree by <strong>${propSpread.toFixed(2)} pts</strong> — Probit's favorite-longshot correction pulls noticeably below Mult/Additive, which is why it's the default here.`;
+    `At <strong>+600</strong>, methods disagree by <strong>${propSpread.toFixed(2)} pts</strong> - Probit's favorite-longshot correction pulls noticeably below Mult/Additive, which is why it's the default here.`;
 }
 
 // ================= Chart 2: disagreement spread (probability points) =================
 // Spans the FULL spectrum (longshot underdog on the left, through pick'em, to heavy
-// favorite on the right) — unlike chart 1, points here can't have a sign discontinuity,
+// favorite on the right) - unlike chart 1, points here can't have a sign discontinuity,
 // so one continuous curve can show both named prices (-110 and +600) at once.
 function spreadAt(d) { return (Math.max(d.mult, d.add, d.power, d.probit) - Math.min(d.mult, d.add, d.power, d.probit)) * 100; }
 
@@ -457,7 +457,7 @@ function renderSpreadChart() {
   yLab.textContent = "Spread (percentage points)";
   spreadSvg.appendChild(yLab);
   const xLab = g("text", { class: "axis-label", x: SM.left + splotW / 2, y: SH - 2, "text-anchor": "middle" });
-  xLab.textContent = "Raw quoted odds — underdog (left) to favorite (right)";
+  xLab.textContent = "Raw quoted odds - underdog (left) to favorite (right)";
   spreadSvg.appendChild(xLab);
 
   const areaPath = currentSpreadData.map((d, i) => `${i === 0 ? "M" : "L"}${xS(d.p).toFixed(2)},${yS(spreads[i]).toFixed(2)}`).join(" ")
@@ -653,7 +653,7 @@ document.getElementById("view-toggle").addEventListener("click", () => {
 });
 
 // ================= S-curve: why the correction isn't flat =================
-// Structural, not vig-dependent — this is about where -110 and +600 sit on the
+// Structural, not vig-dependent - this is about where -110 and +600 sit on the
 // probability<->z-score mapping itself, so it renders once and doesn't move with the slider.
 function renderSCurveChart() {
   const svgEl = document.getElementById("scurve-chart");

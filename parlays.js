@@ -1,21 +1,50 @@
 (() => {
   'use strict';
   PAGE = 'parlays';
-  SPORT = 'mlb';
+  let market = new URLSearchParams(window.location.search).get('market') === 'attd' ? 'attd' : 'hr';
+  const markets = {
+    hr: { sport: 'mlb', name: 'homer', label: '1+ HR', under: 'no HR', unit: 'home run' },
+    attd: { sport: 'nfl', name: 'ATTD', label: 'ATTD', under: 'no touchdown', unit: 'touchdown' },
+  };
+  const currentMarket = () => markets[market];
+  SPORT = currentMarket().sport;
   const $ = id => document.getElementById(id);
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const title = v => String(v).replace(/\b\w/g, c => c.toUpperCase());
   const odds = v => v === null || !Number.isFinite(Number(v)) ? '\u2014' : `${v >= 0 ? '+' : '-'}${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
   const pct = v => `${(v * 100).toFixed(3)}%`;
   const time = v => v ? new Date(v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET' : 'Unknown';
+  const gameTime = v => market === 'attd' && v ? new Date(v).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ' / ' + time(v) : time(v);
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
   const selections = ['', '', '', ''];
   const sort = { key: 'average', direction: 'asc' };
-  let catalog = null, result = null, refreshWork = null, quoteController = null, calculateTimer = null;
-  let authVersion = 0, inputVersion = 0, quoteBusy = false;
+  let catalog = null, result = null, refreshWork = null, refreshController = null, quoteController = null, calculateTimer = null;
+  let authVersion = 0, inputVersion = 0, marketVersion = 0, quoteBusy = false, sessionReady = false;
   const notice = (id, text) => { $(id).textContent = text; $(id).hidden = !text; };
   const legSlots = () => selections.map(id => catalog?.legs.find(leg => leg.id === id));
   const selectedLegs = () => legSlots().filter(Boolean);
+  function renderMarket() {
+    const config = currentMarket();
+    SPORT = config.sport;
+    document.title = `${market === 'attd' ? 'ATTD' : 'Homer'} parlay calculator | +EV Sharps`;
+    $('parlay-market').value = market;
+    $('market-title').textContent = `Build your ${config.name} parlay`;
+    $('market-eyebrow').textContent = `${config.sport.toUpperCase()} / FAIR ODDS`;
+    $('catalog-help').textContent = `Choose two to four players. Most likely first, by lowest average ${config.name} odds. Prices for ${config.label} are on top, ${config.under} below. Green marks the best current ${config.name} price outside Circa and Pinnacle. Click Avg or a book to sort.`;
+    $('empty-slate').textContent = `No upcoming ${config.name} markets are available${market === 'hr' ? ' for today' : ''}. Refresh when the next slate is posted.`;
+    $('catalog-wrap').setAttribute('aria-label', `Choose ${config.name} parlay players and compare prices`);
+    $('catalog-caption').textContent = `${config.name} players and sportsbook over/under prices`;
+    $('price-caption').textContent = `Estimated parlay prices from each book's current ${config.name} odds`;
+    $('reference-caption').textContent = `Devigged ${config.name} parlay prices`;
+    $('fair-methodology').textContent = `For fair odds, we remove the margin from each player's over/under 0.5 ${config.unit} market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.`;
+    $('independence-methodology').textContent = `These estimates assume independent outcomes across different matchups. ${market === 'hr' ? 'Same-game and doubleheader combinations' : 'Same-game combinations'} are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.`;
+    $('slate-date').textContent = market === 'attd' ? 'Upcoming NFL games' : "Today's slate";
+  }
+  function matchesMarket(data, requestedMarket) {
+    const config = markets[requestedMarket];
+    return data && (data.market === requestedMarket || (requestedMarket === 'hr' && data.market === undefined))
+      && (data.sport === undefined || data.sport === config.sport);
+  }
   function cancelCalculation() {
     inputVersion++;
     clearTimeout(calculateTimer);
@@ -35,7 +64,7 @@
   function selectionError() {
     const legs = selectedLegs();
     if (new Set(legs.map(leg => leg.player)).size !== legs.length) return 'Choose different players for every leg.';
-    if (new Set(legs.map(leg => matchup(leg.game))).size !== legs.length) return 'Choose players from separate matchups. Same-game and doubleheader combinations are not supported.';
+    if (new Set(legs.map(leg => matchup(leg.game))).size !== legs.length) return `Choose players from separate matchups. ${market === 'hr' ? 'Same-game and doubleheader combinations' : 'Same-game combinations'} are not supported.`;
     if (legs.some(leg => Date.parse(leg.start) <= Date.now())) return 'A selected game has started. Refresh and choose another player.';
     return '';
   }
@@ -137,14 +166,14 @@
       const offer = leg ? (book ? (price === null ? null : { book, price }) : bestOffer(leg)) : null;
       return `<div class="leg-card${leg ? ' is-filled' : ''}"><span class="leg-number" aria-hidden="true">${index + 1}</span>
         <div class="leg-copy"><strong>${leg ? esc(title(leg.player)) : `Leg ${index + 1}${index >= 2 ? ' (optional)' : ''}`}</strong>
-        <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(time(leg.start))}` : index >= 2 ? `Add a ${index === 2 ? 'third' : 'fourth'} player anytime` : 'Add a player from the table'}</small>
-        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>1+ HR${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
+        <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(gameTime(leg.start))}` : index >= 2 ? `Add a ${index === 2 ? 'third' : 'fourth'} player anytime` : 'Add a player from the table'}</small>
+        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>${currentMarket().label}${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
         ${leg ? `<button type="button" class="remove-leg" data-remove="${index}" aria-label="Remove ${esc(title(leg.player))}">&times;</button>` : ''}</div>`;
     }).join('');
   }
   function renderCatalogHead(books) {
     const heading = (key, label, name) => `<th scope="col" data-key="${esc(key)}" aria-sort="${sort.key === key ? sort.direction === 'asc' ? 'ascending' : 'descending' : 'none'}"><button type="button" data-sort="${esc(key)}" title="Sort by ${esc(name)}">${label}<span class="sort-arrow" aria-hidden="true">${sort.key === key ? sort.direction === 'asc' ? '&#9650;' : '&#9660;' : '&#8597;'}</span></button></th>`;
-    $('catalog-head').innerHTML = `<tr><th scope="col" class="catalog-pick">Pick</th>${heading('player', 'Player / Game', 'player')}${heading('average', 'Avg', 'average current homer odds (lowest = most likely)')}${books.map(book => heading(`book:${book}`, `${bookLogo(book)}${esc(bookLabel(book))}`, `${catalog.books[book]} homer price`)).join('')}</tr>`;
+    $('catalog-head').innerHTML = `<tr><th scope="col" class="catalog-pick">Pick</th>${heading('player', 'Player / Game', 'player')}${heading('average', 'Avg', `average current ${currentMarket().name} odds (lowest = most likely)`)}${books.map(book => heading(`book:${book}`, `${bookLogo(book)}${esc(bookLabel(book))}`, `${catalog.books[book]} ${currentMarket().name} price`)).join('')}</tr>`;
   }
   function renderCatalog() {
     const restoreScroll = rememberScroll();
@@ -186,7 +215,7 @@
       }).join('');
       return `<tr data-leg-row="${esc(leg.id)}" class="${selected >= 0 ? 'is-selected' : reason ? 'is-blocked' : ''}">
         <td class="catalog-pick"><button type="button" data-leg="${esc(leg.id)}" aria-label="${action} ${esc(title(leg.player))}${reason ? `: ${esc(reason)}` : ''}" aria-pressed="${selected >= 0}" ${reason ? 'disabled' : ''} title="${esc(reason || `${action} this player`)}">${selected >= 0 ? `&#10003; ${selected + 1}` : reason ? selections.every(Boolean) ? 'Full' : 'N/A' : '+ Add'}</button></td>
-        <th scope="row" class="catalog-player"><strong>${esc(title(leg.player))}</strong><small>${esc(leg.game.toUpperCase())} <span>${esc(time(leg.start))}</span></small></th><td class="catalog-average" title="Average current 1+ HR price across books">${esc(averagePrice)}</td>${prices}</tr>`;
+        <th scope="row" class="catalog-player"><strong>${esc(title(leg.player))}</strong><small>${esc(leg.game.toUpperCase())} <span>${esc(gameTime(leg.start))}</span></small></th><td class="catalog-average" title="Average current ${currentMarket().label} price across books">${esc(averagePrice)}</td>${prices}</tr>`;
     }).join('') || `<tr><td class="catalog-empty" colspan="${books.length + 3}">${catalog?.legs.length ? 'No players match. Try another player or game.' : 'No upcoming players available.'}</td></tr>`;
     restoreScroll();
   }
@@ -249,9 +278,9 @@
         const display = ev === null ? null : Number(ev.toFixed(1));
         return `<td data-ev-book="${ref.book}" class="parlay-ev${display > 0 ? ' positive' : display < 0 ? ' negative' : ''}" title="${esc(ref.probability === null ? `${ref.name} needs current over/under prices for every leg` : `EV at ${odds(price.odds)} against ${ref.name} fair odds of ${odds(ref.fairOdds)}`)}">${display === null ? '-' : `${display > 0 ? '+' : ''}${display.toFixed(1)}%`}</td>`;
       }).join('')}
-      ${price.legs.map(leg => `<td title="Updated ${esc(time(leg.updated_at))}">${esc(odds(leg.over))}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${count + 4}">No book has current homer prices for every selected leg. Try another player or refresh prices.</td></tr>`;
+      ${price.legs.map(leg => `<td title="Updated ${esc(time(leg.updated_at))}">${esc(odds(leg.over))}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${count + 4}">No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.</td></tr>`;
     $('result-method').textContent = $('method').selectedOptions[0].textContent;
-    $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} 1+ HR`).join(' + ');
+    $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} ${currentMarket().label}`).join(' + ');
     const evLabel = data.offered_odds === null ? 'EV at your price' : `EV at ${odds(data.offered_odds)}`;
     $('reference-head').innerHTML = `<tr><th scope="col">Reference book</th>${data.legs.map((leg, index) => `<th scope="col" title="${esc(title(leg.player))}">Leg ${index + 1} fair</th>`).join('')}<th scope="col">Fair parlay odds</th><th scope="col">Estimated hit chance</th><th scope="col">${esc(evLabel)}</th></tr>`;
     $('reference-rows').classList.toggle('four-legs', count === 4);
@@ -286,7 +315,7 @@
       headers: { ...(ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}), ...options.headers } });
     const data = await response.json();
     if ([401, 403].includes(response.status)) return { denied: true };
-    if (!response.ok) throw new Error(data.error || 'Unable to load homer prices. Try refreshing.');
+    if (!response.ok) throw new Error(data.error || `Unable to load ${currentMarket().name} prices. Try refreshing.`);
     return { data };
   }
   async function calculate() {
@@ -309,11 +338,12 @@
     try {
       const response = await request('/api/parlays', { method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          legs: selections.filter(Boolean), method: $('method').value, betting_book: $('betting-book').value || null,
+          market, legs: selections.filter(Boolean), method: $('method').value, betting_book: $('betting-book').value || null,
           offered_odds: value ? Number(value) : null,
         }) });
       if (version !== inputVersion || auth !== authVersion) return;
       if (response.denied) return accessDenied();
+      if (!matchesMarket(response.data, market)) throw new Error('The response does not match this parlay market. Refresh to try again.');
       renderResult(response.data);
       notice('request-status', '');
     } catch (error) {
@@ -334,16 +364,19 @@
   }
   function refresh() {
     if (refreshWork) return refreshWork;
-    const auth = authVersion;
+    const auth = authVersion, generation = marketVersion, requestedMarket = market;
+    const isCurrent = () => auth === authVersion && generation === marketVersion;
+    const controller = new AbortController();
+    refreshController = controller;
     $('refresh').disabled = true;
     refreshWork = (async () => {
-      const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
+      const timer = setTimeout(() => controller.abort(), 20000);
       try {
-        const response = await request('/api/parlays', { signal: controller.signal });
-        if (auth !== authVersion) return;
+        const response = await request(`/api/parlays${requestedMarket === 'attd' ? '?market=attd' : ''}`, { signal: controller.signal });
+        if (!isCurrent()) return;
         if (response.denied) return accessDenied();
         const data = response.data;
-        if (!Array.isArray(data.legs) || !data.books) throw new Error('Homer prices are unavailable. Try refreshing.');
+        if (!matchesMarket(data, requestedMarket) || !Array.isArray(data.legs) || !data.books) throw new Error(`${markets[requestedMarket].name} prices are unavailable. Try refreshing.`);
         cancelCalculation();
         catalog = data;
         let removed = false;
@@ -357,7 +390,7 @@
         [...new Set(data.legs.map(leg => leg.game))].sort().forEach(game => $('game-filter').add(new Option(game.toUpperCase(), game)));
         if ([...$('game-filter').options].some(option => option.value === game)) $('game-filter').value = game;
         renderSelections();
-        $('slate-date').textContent = new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        $('slate-date').textContent = market === 'attd' ? 'Upcoming NFL games' : new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
         $('updated').textContent = `Checked ${time(data.generated_at)}`;
         $('empty-slate').hidden = data.legs.length !== 0;
         $('access-panel').hidden = true;
@@ -365,20 +398,51 @@
         notice('request-status', removed ? 'A selected player is no longer available. Choose a replacement.' : '');
         if (validate()) await calculate();
         else { clearResult(); validate(); }
-        if (removed && result) notice('request-status', 'A selected player is no longer available. Review the remaining legs or choose a replacement.');
+        if (isCurrent() && removed && result) notice('request-status', 'A selected player is no longer available. Review the remaining legs or choose a replacement.');
       } catch (error) {
-        if (auth !== authVersion) return;
+        if (!isCurrent()) return;
         clearResult();
         validate();
         notice('request-status', error.name === 'AbortError' ? 'Price refresh timed out. Try again.' : error.message);
       } finally {
         clearTimeout(timer);
-        $('refresh').disabled = false;
-        refreshWork = null;
+        if (refreshController === controller) {
+          $('refresh').disabled = false;
+          refreshWork = null;
+          refreshController = null;
+        }
       }
     })();
     return refreshWork;
   }
+  $('parlay-market').addEventListener('change', () => {
+    const next = $('parlay-market').value;
+    if (!Object.hasOwn(markets, next) || next === market) return;
+    marketVersion++;
+    market = next;
+    refreshController?.abort();
+    refreshController = null;
+    refreshWork = null;
+    catalog = null;
+    selections.fill('');
+    clearResult();
+    $('player-search').value = '';
+    $('game-filter').replaceChildren(new Option('All games', ''));
+    $('betting-book').replaceChildren(new Option('No book selected', ''));
+    $('offered-odds').value = '';
+    $('calculator').hidden = true;
+    $('access-panel').hidden = true;
+    $('updated').textContent = 'Loading prices...';
+    sort.key = 'average'; sort.direction = 'asc';
+    renderMarket();
+    renderSelections();
+    notice('request-status', '');
+    const url = new URL(window.location.href);
+    if (market === 'attd') url.searchParams.set('market', 'attd');
+    else url.searchParams.delete('market');
+    history.replaceState(null, '', url);
+    if (sessionReady) refresh();
+  });
   $('parlay-form').addEventListener('submit', event => { event.preventDefault(); calculate(); });
   $('show-unavailable').addEventListener('click', () => {
     const show = $('show-unavailable').getAttribute('aria-expanded') !== 'true';
@@ -400,6 +464,7 @@
     const token = session?.access_token || '';
     if (token === ACCESS_TOKEN) return;
     ACCESS_TOKEN = token;
+    sessionReady = true;
     authVersion++;
     catalog = null;
     selections.fill('');
@@ -415,6 +480,7 @@
       const { data, error } = await SB.auth.getSession();
       if (error) throw error;
       ACCESS_TOKEN = data.session?.access_token || '';
+      sessionReady = true;
       $('account-link').textContent = ACCESS_TOKEN ? 'My account' : 'Sign in';
       SB.auth.onAuthStateChange((_event, session) => { queueMicrotask(() => sessionChanged(session)); });
       await refresh();
@@ -431,5 +497,6 @@
     }
   }, 10000);
   window.refreshParlays = refresh;
+  renderMarket();
   boot();
 })();

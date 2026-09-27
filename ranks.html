@@ -220,7 +220,7 @@
 		function pitcherCellFormatter(cell, playerField, eraField) {
 			const row = cell.getRow().getData();
 			const name = row[playerField];
-			if (!name) return `<span style="color:#4b5563">—</span>`;
+			if (!name) return `<span style="color:#4b5563">-</span>`;
 			return `
 			<div class="player-cell">
 				<span style="font-weight:500">${name}</span>

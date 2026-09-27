@@ -17,6 +17,8 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
 .eyebrow { font-size: 10px; font-weight: 700; color: #82d3ac; letter-spacing: 1.3px; margin: 0 0 8px; }
 .refresh { display: grid; justify-items: end; gap: 8px; font-size: 12px; min-width: 160px; }
 .refresh small { color: #a5b5bd; }
+.market-toolbar { margin: 0 0 20px; }
+.market-toolbar label { max-width: 290px; }
 .panel { border: 1px solid #354047; background: #1b2226; border-radius: 8px; margin-bottom: 22px; padding: 24px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .section-heading > span { font-size: 12px; color: #a4b3bd; }

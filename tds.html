@@ -13,6 +13,7 @@
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
+	<link href="nfl-defense.css" rel="stylesheet">
 	<style>
 		#table {
 			width: 100%;
@@ -73,7 +74,7 @@
 		<div id="preloads-modal" class="modal" style="display:none;">
             <div class="modal-content devig-panel">
                 <div class="modal-header">
-                    <h3>Preloads — Top Devigs</h3>
+                    <h3>Preloads - Top Devigs</h3>
                     <button id="close-preloads-modal">&times;</button>
                 </div>
 
@@ -543,6 +544,18 @@
 						<div>
 							<h3>Stats</h3>
 							<div>
+								<input id="custom_dvpRank" type="checkbox">
+								<label for="custom_dvpRank">Opponent vs position rank</label>
+							</div>
+							<div>
+								<input id="custom_dvpAllowed" type="checkbox">
+								<label for="custom_dvpAllowed">Allowed per game vs position</label>
+							</div>
+							<div>
+								<input id="custom_dvpGames" type="checkbox">
+								<label for="custom_dvpGames">Defense sample games</label>
+							</div>
+							<div>
 								<input id="custom_snaps" type="checkbox">
 								<label for="custom_snaps">Snap %</label>
 							</div>
@@ -576,7 +589,7 @@
 							</div>
 							<div>
 								<input id="custom_oppRank" type="checkbox">
-								<label for="custom_oppRank">Opp Rank</label>
+								<label for="custom_oppRank">Team red-zone rank</label>
 							</div>
 							<div>
 								<input id="custom_hitRate" type="checkbox">
@@ -637,10 +650,11 @@
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="nfl-usage.js"></script>
+	<script src="nfl-defense.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "tds";
-		DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE], ...NflUsage.keys])];
+		DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE], ...NflUsage.keys, ...NflDefense.defaultKeys])];
 		
 		parseURLParams();
 		SPORT = "nfl";
@@ -653,6 +667,7 @@
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
 		const fetchProps = createDataRefresh(() => API_BASE+`/api/tds`, async (data) => {
 			RES = data;
+			NflDefense.setFeed(data);
 			UPDATED[PAGE] = data["updated"];
 
 			const gameMenu = document.getElementById("game-options");
@@ -707,7 +722,7 @@
 
 		let loaded = false;
 		const TDS_DEFAULT_COL_ORDER = [
-			'ev', 'outlier', 'book', 'player', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
+			'ev', 'outlier', 'book', 'player', 'prop', 'fairVal', 'implied', 'kelly', 'opp', ...NflDefense.keys, 'oppRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_px', 'bookOdds_nv', 'bookOdds_poly',
@@ -773,7 +788,8 @@
 					responsive: 0, visible: MOBILE ? false : true
 				}] },
 				{ key: 'opp', label: 'Opp', cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
-				{ key: 'oppRank', label: 'RZ TD% Allowed', cols: [{ title: "RZ TD%<br>Allowed", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
+				...NflDefense.items(),
+				{ key: 'oppRank', label: 'Team red-zone TD% rank', cols: [{ title: "Team RZ<br>Rank", field: "oppRank", formatter: rankingFormatter, formatterParams: {key: "opp-rz-scoring-pct"}, width: 55 }] },
 				{ key: 'bookOdds_circa', label: 'Circa', cols: [{ title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_fd', label: 'FD', cols: [{ title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_dk', label: 'DK', cols: [{ title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk", width: 75, sorter: "number", responsive: 6, formatter: evOddsFormatter }] },
@@ -802,6 +818,10 @@
 			];
 		}
 
+		function getTdsColumnOrder(savedOrder) {
+			return NflDefense.columnOrder(savedOrder, NflUsage.columnOrder(savedOrder, TDS_DEFAULT_COL_ORDER, snapShareColumnOrder(savedOrder, TDS_DEFAULT_COL_ORDER)));
+		}
+
 		function buildTdsColumns(savedOrder) {
 			return buildColumnsFromOrder(
 				savedOrder, TDS_DEFAULT_COL_ORDER, getTdsColumnItems(), null,
@@ -810,7 +830,7 @@
 		}
 
 		function openColReorder() {
-			const savedOrder = NflUsage.columnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER));
+			const savedOrder = getTdsColumnOrder(CURR_USER?.metadata?.['tds-order']);
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
@@ -826,6 +846,7 @@
 
 		function renderTable(data) {
 			NflUsage.migrateProfile(CURR_USER, PAGE);
+			NflDefense.migrateProfile(CURR_USER, PAGE);
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,
 				placeholder:"Data Loading...",
@@ -848,7 +869,7 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildTdsColumns(NflUsage.columnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER, snapShareColumnOrder(CURR_USER?.metadata?.['tds-order'], TDS_DEFAULT_COL_ORDER)))
+				columns: buildTdsColumns(getTdsColumnOrder(CURR_USER?.metadata?.['tds-order']))
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
@@ -862,6 +883,7 @@
 
 			TABLE.on("dataLoaded", function(data) {
 				NflUsage.migrateProfile(CURR_USER, PAGE);
+				NflDefense.migrateProfile(CURR_USER, PAGE);
 				showHideUserTable(loaded);
 				if (!loaded) {
 					changeFilter();
@@ -874,7 +896,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "dvpRank", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 
@@ -882,7 +904,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "bookOdds.kal", "bookOdds.nv", "bookOdds.px", "logs", "opp", "snaps", "usage.looks.tot", "usage.targets.team_share"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "bookOdds.kal", "bookOdds.nv", "bookOdds.px", "logs", "opp", "dvpRank", "snaps", "usage.looks.tot", "usage.targets.team_share"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

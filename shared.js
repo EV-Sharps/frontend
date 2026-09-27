@@ -184,6 +184,7 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
+			{ label: "ATTD Parlays", value: "parlays?market=attd" },
 			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
 			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
@@ -283,6 +284,7 @@ function buildPagePicker() {
 	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
 	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
 	else if (PAGE === "nfl_tracker" && SPORT === "ncaaf") currentVal = "nfl_tracker?sport=ncaaf";
+	else if (PAGE === "parlays" && SPORT === "nfl") currentVal = "parlays?market=attd";
 
 	// Active tab: favorites if any saved, else current sport
 	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", ncaaf: "nfl", nhl: "nhl", ncaab: "nba" };
@@ -323,7 +325,7 @@ function buildPagePicker() {
 	document.body.appendChild(panel);
 
 	function makeRow(page) {
-		const isCurrent = page.value === currentVal;
+		const isCurrent = page.value === (PAGE === "parlays" ? SPORT === "nfl" ? "parlays?market=attd" : "parlays" : currentVal);
 		const isStarred = getPageFavorites().includes(page.value);
 		return `<button class="pp-page-btn${isCurrent ? " current-page" : ""}${page.sharp ? " pp-sharp" : ""}" onclick="changePage('${page.value}');closePicker()">
 			<span class="pp-label">${page.label}</span>
@@ -418,6 +420,8 @@ function changePage(page) {
 	} else if (page.includes("movement")) {
 		let sport = !page.includes("sport=") ? "atgs" : page.split("?sport=")[1];
 		window.location.href = `./movement${HTML}?sport=${sport}`;
+	} else if (page.startsWith("parlays?")) {
+		window.location.href = `./parlays${HTML}?${page.split("?")[1]}`;
 	} else {
 		window.location.href = `./${page}${HTML}`;
 	}
@@ -542,10 +546,10 @@ function resolveLink(url) {
 	return link;
 }
 
-// Display-only conversion — EV/fairVal comparisons everywhere else stay in American odds.
+// Display-only conversion - EV/fairVal comparisons everywhere else stay in American odds.
 // Named distinctly from the existing americanToDecimal() (used for probability/EV math
 // further down this file) since duplicate `function` declarations in the same scope
-// silently overwrite each other — that collision was why toFixed(2) wasn't taking effect.
+// silently overwrite each other - that collision was why toFixed(2) wasn't taking effect.
 function oddsAmericanToDecimal(american) {
 	const n = parseInt(american, 10);
 	if (isNaN(n)) return american;
@@ -1089,7 +1093,7 @@ const pitchMap = {
 
 // Fixed, non-cycled color per pitch code so the same pitch reads the same
 // color everywhere on the site (top_pitches.html's chips/legend, the HRs
-// Today table on charts.html, etc.) — not just within one page.
+// Today table on charts.html, etc.) - not just within one page.
 const PITCH_COLORS = {
 	FF: '#ef4444', SI: '#f97316', FC: '#b45309', SL: '#eab308', ST: '#f472b6',
 	SV: '#c084fc', CU: '#3b82f6', KC: '#60a5fa', CH: '#22c55e', CS: '#4ade80',
@@ -2781,7 +2785,7 @@ function feedArsenalPreset(arsenal) {
 }
 
 function renderFeedArsenal(pitcher, throws) {
-	// Renders into #feed-arsenal-content, a dedicated child of #feed-arsenal —
+	// Renders into #feed-arsenal-content, a dedicated child of #feed-arsenal -
 	// #feed-arsenal itself also holds #feed-toggle as a sibling (kept there so
 	// it shares #feed-arsenal's width), which an innerHTML overwrite directly
 	// on #feed-arsenal would wipe out on every re-render.
@@ -3189,9 +3193,9 @@ function loadWeights() {
 
 	METHOD = METHOD || CURR_USER.metadata[`${PAGE}-method`] || "";
 	// loadHeatmapData() needs TABLE to already have real rows (it reads off TABLE.getData()
-	// to know which props to fetch) — this fires on the table's dataLoaded event, so it's
+	// to know which props to fetch) - this fires on the table's dataLoaded event, so it's
 	// the reliable time to call it. Keep it outside the METHOD check below, which only
-	// gates syncing the method-select UI — METHOD defaults to "" (Worst-Case), and skipping
+	// gates syncing the method-select UI - METHOD defaults to "" (Worst-Case), and skipping
 	// the heatmap fetch whenever no explicit method is set left ROI coloring permanently off
 	// for anyone on the default method.
 	loadHeatmapData();
@@ -3612,7 +3616,7 @@ function computeOutlierFromBookOddsLow(rowData) {
 
   if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0, refBook: null, refValue: null };
 
-  // Find the best (lowest implied probability) — our reference
+  // Find the best (lowest implied probability) - our reference
   let best = entries[0];
   for (const e of entries) if (e[2] < best[2]) best = e; // compare by implied prob
   const [refBook, refAmerican, refP] = best;
@@ -4399,7 +4403,7 @@ function hideUsername() {
 	document.getElementById("auth-buttons").style.display = "none";
 }
 
-// Heatmap files are split per-prop server-side (results.py) — a page only ever colors
+// Heatmap files are split per-prop server-side (results.py) - a page only ever colors
 // rows for whichever prop(s) are actually loaded into TABLE, so fetch just those slices
 // instead of the whole sport/method file (which covers every prop, book and dev combo).
 async function loadHeatmapData(_retriesLeft = 10) {
@@ -4415,7 +4419,7 @@ async function loadHeatmapData(_retriesLeft = 10) {
 	if (!props.length) {
 		// Reading TABLE.getData() for props only works once the table has real rows, but
 		// this gets called (via renderFilters()) before the page's initial data fetch has
-		// resolved — TABLE may not even exist yet. Retry instead of silently giving up, so
+		// resolved - TABLE may not even exist yet. Retry instead of silently giving up, so
 		// ROI coloring doesn't depend on some other code path calling this again later.
 		if (_retriesLeft > 0) setTimeout(() => loadHeatmapData(_retriesLeft - 1), 300);
 		return;
@@ -4484,7 +4488,7 @@ function interpolateColor(color1, color2, t) {
 // evIdx -> oddsIdx -> [wins, losses, profitSum], at a finer resolution (ev step 1,
 // odds step per HEATMAP.grid.oddsStep) than this function displays at (ev step 1,
 // odds step 100). Since wins/losses/profit are additive, the display bin's stats are
-// just the sum of the fine odds-bins it covers — no raw per-bet data needed.
+// just the sum of the fine odds-bins it covers - no raw per-bet data needed.
 function getRowROI(rowData) {
 	try {
 		if (typeof HEATMAP === 'undefined' || !HEATMAP || !HEATMAP.xy || !HEATMAP.grid) return null;
@@ -4509,7 +4513,7 @@ function getRowROI(rowData) {
 		// Same acceptance window the old per-bet implementation used.
 		if (ev < -5 || ev > 30 || odds < 100 || odds > 3000) return null;
 		// Server only stores bins for ev >= 0 (negative-EV bets are filtered out at write
-		// time) — don't clamp a negative ev into bin 0, that would misattribute a
+		// time) - don't clamp a negative ev into bin 0, that would misattribute a
 		// negative-EV row's ROI to real ev-in-[0,1) history.
 		if (ev < g.evMin) return null;
 
@@ -4544,7 +4548,7 @@ function getRowROI(rowData) {
 const HELP_ITEMS = [
 	{
 		title: "Expected Value (EV%)",
-		desc: "Your edge over the market. Calculated by comparing the best available odds to the fair value from your chosen devig books. Green = positive edge — start here.",
+		desc: "Your edge over the market. Calculated by comparing the best available odds to the fair value from your chosen devig books. Green = positive edge - start here.",
 		getEl: () => colHeader("ev")
 	},
 	{
@@ -4584,7 +4588,7 @@ const HELP_ITEMS = [
 	},
 	{
 		title: "Exclude Books",
-		desc: "Remove books from best book entirely — for this page or all pages. Use this if you don't have an account at a book.",
+		desc: "Remove books from best book entirely - for this page or all pages. Use this if you don't have an account at a book.",
 		getEl: () => document.getElementById("exclude-dd")
 	},
 	{
@@ -4723,7 +4727,7 @@ function parseURLParams() {
 	DERBY = URLParams.get("derby");
 	STREAM = URLParams.get("stream");
 	// Hides #username via a CSS !important rule (see style.css) rather than
-	// setting style.display here directly — auth.js sets .loggedIn/.loggedOut
+	// setting style.display here directly - auth.js sets .loggedIn/.loggedOut
 	// elements' display via JS itself once the session resolves, which would
 	// silently undo a plain inline-style hide applied before that runs.
 	document.body?.classList.toggle("stream-mode", STREAM != null);

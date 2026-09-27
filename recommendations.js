@@ -12,16 +12,16 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[c]);
   const numeric = value => value !== null && value !== '' && Number.isFinite(Number(value));
-  const pct = value => numeric(value) ? `${Number(value).toFixed(1)}%` : '—';
-  const odds = value => numeric(value) ? oddsDisplay(`${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}`) : '—';
-  const probabilityLine = value => numeric(value) ? odds(impliedToAmerican(Number(value))) : '—';
+  const pct = value => numeric(value) ? `${Number(value).toFixed(1)}%` : '-';
+  const odds = value => numeric(value) ? oddsDisplay(`${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}`) : '-';
+  const probabilityLine = value => numeric(value) ? odds(impliedToAmerican(Number(value))) : '-';
   function referenceQuote(pick, book) {
     const pair = pick.reference_odds?.[book];
     if (!Array.isArray(pair)) return null;
-    const price = value => numeric(value) && Math.abs(Number(value)) >= 100 ? odds(value) : '—';
+    const price = value => numeric(value) && Math.abs(Number(value)) >= 100 ? odds(value) : '-';
     return [price(pair[0]), price(pair[1])].join(' / ');
   }
-  const edge = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${pct(value)}` : '—';
+  const edge = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${pct(value)}` : '-';
   const dollars = value => numeric(value) ? `$${Math.round(Number(value)).toLocaleString()}` : 'Unknown';
   const bookName = book => books[book] || String(book || '').toUpperCase();
   function bookLogo(book) {
@@ -106,14 +106,14 @@
     const history = pick.history ? `<p>Saved logs: <strong>${esc(pick.history.hits)}/${esc(pick.history.games)}</strong> hits at this line. Historical context only.</p>` : '';
     const heading = pick.player ? title(pick.player) : title(pick.selection);
     const line = pick.main ? (pick.prop === 'ml' ? 'ML' : title(pick.prop.replaceAll('_', ' ')))
-      : numeric(pick.handicap) ? `${pick.under ? 'U' : 'O'}${pick.handicap}` : '—';
+      : numeric(pick.handicap) ? `${pick.under ? 'U' : 'O'}${pick.handicap}` : '-';
     row.innerHTML = `<td class="rec-rank-cell">${index + 1}</td>
       <td class="rec-ev-cell" data-label="EV"><strong class="rec-value">${esc(edge(pick.ev))}</strong><small title="Conservative estimated EV">Floor ${esc(edge(pick.floor_ev))}</small></td>
       <td class="rec-selection-cell"><strong>${esc(heading)}</strong><small>${esc(pick.main ? 'Main line' : title(propLabel(pick.prop)))}</small></td>
       <td class="rec-line-cell" data-label="Line"><strong>${esc(line)}</strong></td>
       <td class="rec-book-cell">${link ? `<a class="rec-offer" href="${esc(link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(selectionLabel(pick))} at ${esc(bookName(pick.book))}">${offer}</a>` : `<span class="rec-offer">${offer}</span>`}</td>
       <td class="rec-fair-cell" data-label="Fair / Min."><span title="Fair odds">FV <strong>${esc(odds(pick.fair_odds))}</strong></span><small title="Minimum acceptable odds">Min ${esc(odds(pick.minimum_odds))}</small></td>
-      <td class="rec-liquidity-cell" data-label="Liquidity"><strong title="${numeric(pick.liquidity) ? 'Recorded liquidity on this side' : 'Liquidity not provided'}">${numeric(pick.liquidity) ? esc(dollars(pick.liquidity)) : '—'}</strong></td>
+      <td class="rec-liquidity-cell" data-label="Liquidity"><strong title="${numeric(pick.liquidity) ? 'Recorded liquidity on this side' : 'Liquidity not provided'}">${numeric(pick.liquidity) ? esc(dollars(pick.liquidity)) : '-'}</strong></td>
       <td class="rec-game-cell"><span class="rec-match"><span class="rec-sport">${esc(String(pick.sport).toUpperCase())}</span>${esc(String(pick.game).toUpperCase())}</span><small>${esc(timeLabel(pick.start, report.criteria.timezone))}</small></td>
       <td class="rec-reference-cell"><span class="rec-reference-logos">${referenceLogos}</span><small>${esc(pick.reference_groups)} groups</small></td>
       <td class="rec-details-cell"><button class="rec-toggle" type="button" aria-expanded="false" aria-controls="${detail.id}" aria-label="Qualification details for ${esc(selectionLabel(pick))}">Details <span aria-hidden="true">⌄</span></button></td>`;

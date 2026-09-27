@@ -382,7 +382,7 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
       ${logo ? `<img class="gt-team-logo" src="${escape(logo)}" alt="" data-abbr="${escape(abbrev(team))}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="gt-team-monogram">${escape(abbrev(team))}</span>`}
       <div class="gt-team-name">${escape(name)}<small>${escape(abbrev(team))} <span aria-hidden="true">·</span> ${side.toUpperCase()}</small></div>
       <span>${possession === side ? '<span class="gt-possession"><i class="gt-football" aria-hidden="true"></i> BALL</span>' : ''}</span>
-      <span class="gt-score${score === null ? ' is-dim' : ''}" aria-label="${escape(abbrev(team))} score ${score ?? 'not started'}">${score ?? '—'}</span>
+      <span class="gt-score${score === null ? ' is-dim' : ''}" aria-label="${escape(abbrev(team))} score ${score ?? 'not started'}">${score ?? '-'}</span>
     </div>`;
   }
 
@@ -415,7 +415,7 @@ SPORT = new URLSearchParams(window.location.search).get('sport') === 'ncaaf' ? '
           ${x !== null ? `<i class="gt-line los" style="left:${x}%"></i><i class="gt-ball" style="left:${x}%"></i>` : ''}
         </div><div class="gt-endzone">${escape(abbrev(game.home))}</div>
         ${x === null ? `<span class="gt-field-unknown">${live ? 'Field position unavailable' : status.state === 'post' ? 'Final' : 'Pregame'}</span>` : ''}</div>
-        <div class="gt-field-caption"><span>${live ? direction : status.state === 'post' ? 'Final score' : 'Waiting for kickoff'}</span><span>${x !== null ? escape(s.possession_text || '') : '—'}</span></div>
+        <div class="gt-field-caption"><span>${live ? direction : status.state === 'post' ? 'Final score' : 'Waiting for kickoff'}</span><span>${x !== null ? escape(s.possession_text || '') : '-'}</span></div>
       </div>
       <section class="gt-last-play"><div class="gt-play-heading"><h3>LAST PLAY</h3><span>${escape(playClock)}</span></div><p class="gt-play-text">${escape(playText)}</p></section>
       <div class="gt-game-foot"><span class="gt-game-age"></span><div class="gt-game-actions"><button type="button" class="gt-touchdowns" data-touchdowns="${escape(game.id)}" aria-haspopup="dialog" aria-controls="touchdown-dialog" aria-label="Touchdowns for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Touchdowns${tdCount === null ? '' : ` <span>${tdCount}</span>`}</button><button type="button" class="gt-touchdowns" data-stats="${escape(game.id)}" aria-haspopup="dialog" aria-controls="stats-dialog" aria-label="Stats for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Stats</button>${url ? `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">Game details ↗</a>` : '<span>ESPN</span>'}</div></div>`;

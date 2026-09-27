@@ -560,7 +560,7 @@
     Plotly.newPlot('wrap-samplesize', traces, layout, { displayModeBar: false, responsive: true });
   }
 
-  /* ── Flip Rates: Chart A — Histogram ── */
+  /* ── Flip Rates: Chart A - Histogram ── */
   function renderFlipHist() {
     const fr = DATA.flip_rates;
     const rates = fr.batters.map(b => b.flip_rate);
@@ -603,7 +603,7 @@
     Plotly.newPlot('wrap-flip-hist', [bars], layout, CONF);
   }
 
-  /* ── Flip Rates: Chart B — Consistency Breakdown ── */
+  /* ── Flip Rates: Chart B - Consistency Breakdown ── */
   function renderFlipBreakdown() {
     const fr = DATA.flip_rates;
 
@@ -628,7 +628,7 @@
     Plotly.newPlot('wrap-flip-breakdown', [bars], layout, CONF);
   }
 
-  /* ── Flip Rates: Chart C — Per-Batter Career Timeline ── */
+  /* ── Flip Rates: Chart C - Per-Batter Career Timeline ── */
   function buildFlipBatterSelector() {
     const sel = document.getElementById('flipbatter-selector');
     const sorted = [...DATA.flip_rates.batters].sort((a, b) => b.n_consec_pairs - a.n_consec_pairs);

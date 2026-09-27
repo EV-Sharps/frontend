@@ -218,7 +218,7 @@
 	let PITCH_MODE = "top3"; // "top3" | "arsenal" | "all"
 	// "top3": SP's 3 most-used pitches (vs this batter's side) only.
 	// "arsenal": every pitch type the SP actually throws (vs this batter's side).
-	// "all": unrestricted — every pitch type this batter has ever faced from
+	// "all": unrestricted - every pitch type this batter has ever faced from
 	//   same-handed pitchers, including ones today's SP doesn't even throw.
 	let STAT_MODE = "stats"; // "stats" | "bbe"
 	let WINDOW_MODE = "season"; // "season" | "L10" | "L20"
@@ -248,13 +248,13 @@
 	}
 
 	// Which side of the batter's data, and which side of the SP's arsenal, to
-	// read — depends on the hand-mode toggle, not just the real matchup:
-	//   pitcher:  the real matchup (default) — batter's actual side vs today's
+	// read - depends on the hand-mode toggle, not just the real matchup:
+	//   pitcher:  the real matchup (default) - batter's actual side vs today's
 	//             SP's actual throwing hand.
-	//   opposite: flips both — batter's real split vs the OTHER pitcher hand,
+	//   opposite: flips both - batter's real split vs the OTHER pitcher hand,
 	//             and the SP's real split vs the OTHER batter hand. A "what if"
 	//             comparison, not what's actually happening today.
-	//   all:      ignore handedness entirely — both sides' combined ("both") data.
+	//   all:      ignore handedness entirely - both sides' combined ("both") data.
 	function resolveHandSides(pitcherHand, batterHandRaw, handMode) {
 		if (handMode === "all") return { pSide: "both", bSide: "both" };
 		// Switch hitters bat opposite the pitcher's throwing hand; everyone
@@ -276,7 +276,7 @@
 	// Weighted (by pitch count) blend of a batter's stat lines across the SP's
 	// top-3 pitches into a single summary row. Counts (n, home_run) sum; rates
 	// (and their _pct companions, for heatmap coloring) are n-weighted averages.
-	// Matches what the backend's _compute_pitch_stats() actually sends now —
+	// Matches what the backend's _compute_pitch_stats() actually sends now -
 	// woba/k_rate/whiff_rate/avg_la/gb_rate were dropped there since this page
 	// doesn't display them; keep these two lists in sync.
 	const RATE_FIELDS = ["ba", "slg", "iso", "hr_rate", "avg_ev", "brl_rate", "hh_rate", "fb_rate"];
@@ -301,7 +301,7 @@
 	// Heatmap coloring used to come from server-computed percentiles, but those
 	// were ~1M _pct keys (~20MB) for a leaderboard that's arguably more useful
 	// ranked against today's slate anyway. Computed here instead, against
-	// whatever's currently in _allRows — same pct_rank_mid rank method the
+	// whatever's currently in _allRows - same pct_rank_mid rank method the
 	// backend used (bisect-based: less + half of ties, over n).
 	const PCT_FIELDS = [...RATE_FIELDS, "ops"];
 
@@ -370,7 +370,7 @@
 	// (by usage), his full actual arsenal, or every pitch type the batter has
 	// ever faced from same-handed pitchers regardless of what the SP throws.
 	// window picks which trailing window to read off each player's "windows"
-	// bundle (season/L10/L20) — each window has the same {pitch, bbe_l, bbe_r}
+	// bundle (season/L10/L20) - each window has the same {pitch, bbe_l, bbe_r}
 	// shape season always did.
 	function buildRows(allData, pitchMode, window) {
 		const rows = [];
@@ -384,7 +384,7 @@
 			if (!pw) return;
 			transformPitcher(pw);
 			// topPitches[side] = pitcher's pitches ranked by usage AGAINST that
-			// batter-handedness (pitch_table_l = vs LHB, pitch_table_r = vs RHB) —
+			// batter-handedness (pitch_table_l = vs LHB, pitch_table_r = vs RHB) -
 			// this is a platoon split, not indexed by the pitcher's own hand.
 			const topPitches = getTopPitches(pw);
 			const pitcherHand = (pitcher.pitch_hand || "r").toLowerCase() === "l" ? "l" : "r";
@@ -444,7 +444,7 @@
 	// Real BA/SLG/OBP/OPS/HR from actual PA outcomes in the raw batted-ball-event
 	// log (walks/HBP/sac flies are real events here, unlike the per-pitch-type
 	// aggregate). EV is a simple mean. Brl%/HH%/FB% are intentionally NOT derived
-	// here — those need exact Statcast EV/LA thresholds this data doesn't carry.
+	// here - those need exact Statcast EV/LA thresholds this data doesn't carry.
 	const HIT_TOTAL_BASES = { single: 1, double: 2, triple: 3, home_run: 4 };
 
 	function aggregateBBE(events) {
@@ -550,7 +550,7 @@
 		const v = cell.getValue();
 		const threshold = STAT_MODE === 'bbe' ? 5 : 15;
 		const low = v != null && v < threshold;
-		return `<span class="n-cell${low ? ' low-n' : ''}" title="${low ? 'Small sample - treat as noisy' : ''}">${v ?? '—'}</span>`;
+		return `<span class="n-cell${low ? ' low-n' : ''}" title="${low ? 'Small sample - treat as noisy' : ''}">${v ?? '-'}</span>`;
 	}
 
 	function renderTable(rows) {
@@ -583,7 +583,7 @@
 					formatter: cell => `<div class="top3-cell">${(cell.getValue() || []).map(pitchChip).join('')}</div>`
 				},
 				{ title: 'N', field: 'n', width: 50, sorter: 'number', formatter: nFormatter },
-				//{ title: 'PA', field: 'savant.pa', width: 50, sorter: 'number', headerTooltip: 'Season plate appearances (not matchup-specific)', formatter: cell => cell.getValue() ?? '—' },
+				//{ title: 'PA', field: 'savant.pa', width: 50, sorter: 'number', headerTooltip: 'Season plate appearances (not matchup-specific)', formatter: cell => cell.getValue() ?? '-' },
 				{ title: 'HR', field: 'home_run', width: 45, sorter: 'number', formatter: bgStatFormatter },
 				{ title: 'HR%', field: 'hr_rate', width: 55, sorter: 'number', formatter: bgStatFormatter },
 				{ title: 'BA', field: 'ba', width: 55, sorter: 'number', formatter: bgStatFormatter },
@@ -592,7 +592,7 @@
 					title: 'OPS', field: 'ops', width: 55, sorter: 'number', formatter: bgStatFormatter,
 					headerTooltip: () => STAT_MODE === 'bbe'
 						? 'True OPS (OBP + SLG), computed from real PA outcomes in the BBE log'
-						: 'BA + SLG — no OBP available per pitch type, so this is an approximation, not true OPS'
+						: 'BA + SLG - no OBP available per pitch type, so this is an approximation, not true OPS'
 				},
 				{ title: 'ISO', field: 'iso', width: 55, sorter: 'number', formatter: bgStatFormatter },
 				
@@ -627,7 +627,7 @@
 	function applyRowFilters(r) {
 		const minN = parseInt(document.getElementById('min-n').value, 10) || 0;
 		const game = document.getElementById('game-select').value;
-		// "Today's Starters" = has an active HR prop (bookOdds) — a far more
+		// "Today's Starters" = has an active HR prop (bookOdds) - a far more
 		// reliable signal than lineup-name matching, which missed real starters
 		// due to name-format mismatches between the lineup scrape and Savant IDs.
 		const hasBookOdds = Object.keys(r.bookOdds || {}).length > 0;
@@ -636,7 +636,7 @@
 	}
 
 	// applyFilterBuilder() (shared.js) calls changeFilter() if it exists to
-	// re-run the page's filtering after Apply is clicked — this page's own
+	// re-run the page's filtering after Apply is clicked - this page's own
 	// refresh function is applyFilters(), so alias it under that expected name.
 	function changeFilter() { applyFilters(); }
 
@@ -731,7 +731,7 @@
 		const minNLabel = document.querySelector('label[for="min-n"]');
 		if (minNLabel) minNLabel.textContent = STAT_MODE === 'bbe' ? 'Min PA' : 'Min Pitches';
 
-		// BBE-count windows (BBE5/10/20) only mean anything in BBE stat-mode —
+		// BBE-count windows (BBE5/10/20) only mean anything in BBE stat-mode -
 		// in Stats mode they're identical to Season, so hide them there.
 		document.querySelectorAll('#window-mode-toggle .bbe-window').forEach(btn => {
 			btn.style.display = STAT_MODE === 'bbe' ? '' : 'none';
@@ -773,7 +773,7 @@
 		if (BBE_LOADED) return Promise.resolve();
 		BBE_LOADED = true;
 		// This fetch is the reason the table looked frozen on the first click
-		// into BBE mode — show a loading placeholder instead of just sitting on
+		// into BBE mode - show a loading placeholder instead of just sitting on
 		// stale rows until it resolves.
 		if (TABLE) {
 			TABLE.options.placeholder = 'Loading BBE stats...';
@@ -916,7 +916,7 @@
 	window.addEventListener("resize", () => { MOBILE = window.innerWidth <= 600; });
 
 	// Not in auth.js's PAGE dispatcher (this page fetches its own data directly),
-	// so renderFilters()'s usual initFilterBuilderUI() call never runs here —
+	// so renderFilters()'s usual initFilterBuilderUI() call never runs here -
 	// call it directly instead of the full renderFilters(), since this page has
 	// no book-select/dev-picker for that function's other calls to touch.
 	initFilterBuilderUI();

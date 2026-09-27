@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Homer parlay calculator | +EV Sharps</title>
-  <meta name="description" content="Build a two- to four-player homer parlay, compare estimated prices across books and check fair odds using Circa and Pinnacle.">
+  <title>Homer and ATTD parlay calculator | +EV Sharps</title>
+  <meta name="description" content="Build a two- to four-player home run or anytime touchdown parlay, compare estimated prices across books and check fair odds using Circa and Pinnacle.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="parlays.css">
   <link rel="icon" href="logos/icon2.png">
@@ -19,10 +19,11 @@
   </header>
   <main class="parlay-main">
     <div class="intro">
-      <div><p class="eyebrow">MLB / FAIR ODDS</p><h1>Build your homer parlay</h1>
+      <div><p id="market-eyebrow" class="eyebrow">MLB / FAIR ODDS</p><h1 id="market-title">Build your homer parlay</h1>
       <p>Pick two players from different games to compare parlay prices automatically. Add a third or fourth leg if you like.</p></div>
       <div class="refresh"><span id="slate-date">Today's slate</span><small id="updated">Loading prices...</small><button type="button" id="refresh">Refresh prices</button></div>
     </div>
+    <div class="market-toolbar"><label for="parlay-market">Parlay market<select id="parlay-market"><option value="hr">Home runs (MLB)</option><option value="attd">Anytime touchdowns (NFL)</option></select></label></div>
     <p id="request-status" class="notice" role="status" hidden></p>
     <section id="access-panel" class="panel empty" hidden><h2>Sign in to build your parlay</h2><p>Included with Analyst and Sharp.</p><a id="access-login" href="profile">Sign in</a> <a id="access-pricing" href="pricing">View plans</a></section>
     <div id="calculator" hidden>
@@ -37,7 +38,7 @@
         <p id="catalog-help" class="muted">Choose two to four players. Most likely first, by lowest average homer odds. Prices for 1+ HR are on top, no HR below. Green marks the best current homer price outside Circa and Pinnacle. Click Avg or a book to sort.</p>
         <p id="empty-slate" class="notice" hidden>No upcoming homer markets are available for today. Refresh when the next slate is posted.</p>
         <div id="catalog-wrap" class="catalog-wrap" role="region" aria-label="Choose homer parlay players and compare prices" aria-describedby="catalog-help" tabindex="0">
-          <table class="catalog-table"><caption class="sr-only">Homer players and sportsbook over/under prices</caption><thead id="catalog-head"></thead><tbody id="catalog-rows"></tbody></table>
+          <table class="catalog-table"><caption id="catalog-caption" class="sr-only">Homer players and sportsbook over/under prices</caption><thead id="catalog-head"></thead><tbody id="catalog-rows"></tbody></table>
         </div>
         <div class="settings">
           <label>Devig method<select id="method"><option value="power">Power</option><option value="mult">Multiplicative</option><option value="probit">Probit</option><option value="conservative">Lowest probability of all three</option></select></label>
@@ -52,13 +53,13 @@
         <div class="section-heading"><div><p class="eyebrow">BEST ESTIMATED PRICE</p><h2 id="best-parlay-price"></h2></div><span id="price-count"></span></div>
         <p id="result-selections"></p>
         <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, best first" tabindex="0">
-          <table><caption class="sr-only">Estimated parlay prices from each book's current homer odds</caption><thead id="price-head"></thead><tbody id="price-rows"></tbody></table>
+          <table><caption id="price-caption" class="sr-only">Estimated parlay prices from each book's current homer odds</caption><thead id="price-head"></thead><tbody id="price-rows"></tbody></table>
         </div>
         <p class="muted">Totals multiply each book's current prices for every selected leg. EV compares each total with Circa and Pinnacle fair odds using your selected devig method. Final betslip prices may differ.</p>
         <div class="results">
           <div class="section-heading"><div><p class="eyebrow">REFERENCE COMPARISON</p><h2>Fair parlay odds</h2></div><span id="result-method"></span></div>
           <div class="table-wrap" role="region" aria-label="Fair parlay odds by reference book" tabindex="0">
-            <table><caption class="sr-only">Devigged homer parlay prices</caption><thead id="reference-head"></thead><tbody id="reference-rows"></tbody></table>
+            <table><caption id="reference-caption" class="sr-only">Devigged homer parlay prices</caption><thead id="reference-head"></thead><tbody id="reference-rows"></tbody></table>
           </div>
           <button type="button" id="show-unavailable" aria-expanded="false" aria-controls="reference-rows" hidden>Show unavailable books</button>
           <p id="result-status" class="muted"></p>
@@ -66,11 +67,11 @@
         </div>
       </section>
       <details class="panel methodology"><summary>How the fair price is calculated</summary>
-        <p>Estimated book prices multiply the decimal homer odds for all two to four legs at that book, then convert the total to American odds. The highest total appears first. A book needs a current over price for every leg; prices from different books are never mixed into one parlay.</p>
-        <p>For fair odds, we remove the margin from each player's over/under 0.5 home run market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.</p>
+        <p>Estimated book prices multiply the decimal odds for all two to four legs at that book, then convert the total to American odds. The highest total appears first. A book needs a current over price for every leg; prices from different books are never mixed into one parlay.</p>
+        <p id="fair-methodology">For fair odds, we remove the margin from each player's over/under 0.5 home run market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.</p>
         <p>Power, multiplicative and probit remove the margin differently. The lowest-probability option takes the smallest of those estimates for each leg; it is a sensitivity check, not a confidence bound.</p>
         <p>Every leg must have both prices at the same reference book to calculate fair odds. Missing unders are never inferred. Quotes older than 10 minutes are excluded; timestamps describe the book's feed update, not a guaranteed update of every selection.</p>
-        <p>These estimates assume independent outcomes across different matchups. Same-game and doubleheader combinations are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.</p>
+        <p id="independence-methodology">These estimates assume independent outcomes across different matchups. Same-game and doubleheader combinations are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.</p>
       </details>
     </div>
   </main>

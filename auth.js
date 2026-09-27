@@ -311,7 +311,7 @@ async function saveOddsFormat() {
 	const odds_format = document.querySelector("#odds-format-select").value;
 	const status = document.querySelector("#odds-format-save-status");
 	if (!CURR_USER) {
-		// Not signed in — for local testing only, since there's no profile row to persist to.
+		// Not signed in - for local testing only, since there's no profile row to persist to.
 		try { localStorage.setItem("odds_format", odds_format); } catch (e) {}
 		status.textContent = "✅ Saved locally (not signed in)";
 		setTimeout(() => status.textContent = "", 3000);

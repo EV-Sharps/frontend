@@ -487,7 +487,7 @@
 			//RES = bets;
 			initDevPicker(RES["xy"][cfg.prop][cfg.bookLabel]);
 
-			// Server ships pre-binned bets — evIdx -> oddsIdx -> [wins, losses, profitSum] —
+			// Server ships pre-binned bets - evIdx -> oddsIdx -> [wins, losses, profitSum] -
 			// at a fine grid (RES.grid) instead of one row per historical bet, so we fold
 			// each fine bin into whichever display bin (cfg.evStep/oddsStep, user-selectable)
 			// its midpoint falls into, rather than filtering/binning raw bets.
@@ -651,7 +651,7 @@
 					zerolinecolor: '#2a2e39'
 				},
 				title: {
-					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap — ${cfg.sizing === 'kelly' ? 'Kelly' : 'Unit'} sizing (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
+					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap - ${cfg.sizing === 'kelly' ? 'Kelly' : 'Unit'} sizing (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
 				},
 				annotations,
 				margin: { l: 80, r: 20, t: 40, b: MOBILE ? 160 : 90 },
@@ -691,7 +691,7 @@
                             const line = `${(bet.ev||'').toFixed ? bet.ev.toFixed(2) : bet.ev}% • ${bet.odds} • ${(title(bet.player) || '')}`;
                             if (bet.hit) hits.push(line); else losses.push(line);
                         }
-                        let html = `<div style="font-weight:600;margin-bottom:6px;">${pt.y} — ${pt.x} (${betsList.length} bets)</div>`;
+                        let html = `<div style="font-weight:600;margin-bottom:6px;">${pt.y} - ${pt.x} (${betsList.length} bets)</div>`;
                         if (hits.length) {
                             html += `<div style="color:#22c55e;font-weight:600;margin-bottom:4px;">Hits (${hits.length})</div><div style="margin-bottom:6px;">`;
                             html += hits.slice(0,50).map(h => `<div style="margin:2px 0;">${h}</div>`).join('');

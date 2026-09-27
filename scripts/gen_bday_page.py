@@ -58,7 +58,7 @@ min_year = min(int(e["year"]) for e in entries)
 max_year = max(int(e["year"]) for e in entries)
 
 # waffle-grid data (one cell per individual birthday game) for the rarity
-# section — same entries as day_groups, in that same calendar-day-from-today
+# section - same entries as day_groups, in that same calendar-day-from-today
 # order, reshaped to what buildRarityWaffle() in the page's own script
 # expects. Rendered client-side (not templated server-side) so the
 # tooltip/hover logic has real per-cell data to read off dataset attrs.
@@ -412,7 +412,7 @@ html = f"""<!doctype html>
   renderWaffle(WAFFLE_DATA);
 
   // Tooltip listeners live on the grid container itself (event delegation via
-  // closest('.cell')), not on individual cells — so they keep working across
+  // closest('.cell')), not on individual cells - so they keep working across
   // renderWaffle() re-renders that replace all of the grid's children, and
   // only need to be wired up once here.
   (function initWaffleTooltip() {{

@@ -172,7 +172,7 @@
 		let YBY = {};
 		let currentYear = new Date().getFullYear();
 
-		// Per-year highlight control ('all' | 'l5' | 'l10') — only meaningful for the
+		// Per-year highlight control ('all' | 'l5' | 'l10') - only meaningful for the
 		// plotGraph() charts, which draw one trace per year; hidden for weather/monthly.
 		let YEAR_HIGHLIGHT = 'all';
 		let LAST_PLOT_YEARS = [];
@@ -204,7 +204,7 @@
 			const visible = [], opacity = [], width = [];
 			LAST_PLOT_YEARS.forEach(year => {
 				const isCurrent = year === currYear;
-				// Same dimming as "All Years" for whatever's visible — highlight mode only
+				// Same dimming as "All Years" for whatever's visible - highlight mode only
 				// changes which years are hidden, not how the current year stands out.
 				visible.push(highlightSet && !highlightSet.has(year) ? 'legendonly' : true);
 				opacity.push(isCurrent ? 1 : 0.35);
@@ -398,7 +398,7 @@
 
 			const layout = {
 				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
-				title: { text: 'Early Season Weather Effect — Avg HR/G by Calendar Day (all years)', font: { size: 14 } },
+				title: { text: 'Early Season Weather Effect - Avg HR/G by Calendar Day (all years)', font: { size: 14 } },
 				font: { color: '#e8e6e3' },
 				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
 				xaxis: { showgrid: false, type: 'date', tickformat: '%b %d', dtick: 'M1' },
@@ -479,7 +479,7 @@
 				plot_bgcolor: "#0f0f11",
 				paper_bgcolor: "#0f0f11",
 				title: {
-					text: `MLB ${label} by Month — Avg across last 10 seasons<br><span style="font-size:12px;color:#a1a1aa">April is ~${diffPct}% below peak.</span>`,
+					text: `MLB ${label} by Month - Avg across last 10 seasons<br><span style="font-size:12px;color:#a1a1aa">April is ~${diffPct}% below peak.</span>`,
 					font: { size: 15, color: "#f4f4f5" },
 					x: 0.5
 				},

@@ -3136,6 +3136,13 @@ button#logout:hover {
 .snap-history-bar { flex: 1; min-height: 1px; background: #64748b; border-radius: 1px 1px 0 0; }
 .snap-history-bar.latest { background: var(--accent, #77c3ff); }
 .snap-history-bar.missing { opacity: 0.25; }
+/* NFL usage stays within the regular stacked and compact row heights. */
+#table .nfl-usage-summary { display: inline-flex; flex: none; flex-direction: column; line-height: 1; }
+#table .nfl-usage-summary small { font-size: 9px; opacity: .65; }
+#table.stacked-odds .nfl-usage-cell { padding-top: 2px; padding-bottom: 2px; }
+#table:not(.stacked-odds) .nfl-usage-cell .snap-share { flex-direction: row; justify-content: center; gap: 4px; width: 100%; }
+#table:not(.stacked-odds) .nfl-usage-summary { flex-direction: row; align-items: baseline; gap: 2px; font-size: 11px; line-height: 1; }
+#table:not(.stacked-odds) .nfl-usage-cell .snap-history { flex: 0 1 24px; min-width: 16px; height: 12px; gap: 2px; }
 .snap-share-pill { justify-content: center; gap: 3px; }
 .snap-share-pill strong { font-size: 0.8rem; }
 .snap-share-pill > span:last-child { font-size: 0.65rem; text-align: center; opacity: 0.85; }

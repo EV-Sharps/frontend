@@ -10,6 +10,7 @@ async function run() {
 	const status = { setAttribute() {}, hidden: true };
 	const context = vm.createContext({
 		PAGE: 'nfl', SPORT: 'nfl', CURR_USER: { metadata: {} }, CURR_SESSION: { user: { id: 'test' } },
+		BOOK_FEE_FUNCTIONS: { px: () => '+194/-204' },
 		document: { querySelectorAll: () => [], getElementById: () => status },
 		console: { error() {} }, setTimeout: () => 1, clearTimeout() {},
 		cacheProfile: profile => cached.push(JSON.parse(JSON.stringify(profile))),
@@ -22,6 +23,38 @@ async function run() {
 	const source = fs.readFileSync(path.join(__dirname, '../shared.js'), 'utf8');
 	vm.runInContext(source.slice(source.indexOf('function _normPlayer'), source.indexOf('const evFormatter')), context);
 	const event = { stopPropagation() {} };
+	const plain = value => JSON.parse(JSON.stringify(value));
+	const quotedRow = { player: 'quoted player', sport: 'nfl', prop: 'rec_yd', book: 'fd', line: 125,
+		handicap: 49.5, under: false, game: 'buf @ mia', bookOdds: { fd: '+125/-145', dk: '+135/-155' } };
+	assert.deepEqual(plain(context.watchlistQuote(quotedRow)),
+		{ book: 'fd', odds: 125, handicap: 49.5, under: false, game: 'buf @ mia' },
+		'The snapshot follows the displayed book, not another book with a higher price');
+	assert.deepEqual(plain(context.watchlistQuote({ ...quotedRow, line: '-145', under: true })),
+		{ book: 'fd', odds: -145, handicap: 49.5, under: true, game: 'buf @ mia' });
+	assert.equal(context.watchlistQuote({ ...quotedRow, handicap: 0 }).handicap, 0, 'Zero is a valid line');
+	assert.equal(context.watchlistQuote({ ...quotedRow, handicap: '49.5' }).handicap, 49.5);
+	for (const row of [null, {}, { ...quotedRow, blurred: true }, { ...quotedRow, book: '' },
+		{ ...quotedRow, line: 'not odds' }, { ...quotedRow, line: Infinity },
+		{ ...quotedRow, line: 0 }, { ...quotedRow, line: true }, { ...quotedRow, line: 50 }]) {
+		assert.equal(context.watchlistQuote(row), null, 'Unavailable or malformed prices must not become saved quotes');
+	}
+	for (const handicap of [null, undefined, 'bad line']) {
+		const quote = context.watchlistQuote({ ...quotedRow, handicap });
+		assert.equal(quote.odds, 125);
+		assert.equal(quote.handicap, undefined, 'An unknown line is omitted, never coerced to zero');
+	}
+	const exchange = { ...quotedRow, book: 'px', line: 200, bookOdds: { px: '+200/-200' } };
+	assert.equal(context.watchlistQuote(exchange).odds, 194, 'Fee-adjusted table prices are captured');
+	assert.equal(context.watchlistQuote({ ...exchange, under: true }).odds, -204, 'Exchange under fee uses the under price');
+	assert.equal(context.watchlistQuote(exchange, 'nfl', false).odds, 200, 'Raw card prices are captured when fees are not applied');
+	assert.equal(context.watchlistQuote({ ...quotedRow, outlierBook: 'dk', outlierLine: 135 }, 'outliers').book, 'dk');
+	assert.equal(context.watchlistQuote({ ...quotedRow, outlierBook: 'dk', outlierLine: 135 }, 'outliers').odds, 135);
+	const tableStar = { dataset: { page: 'nfl', quote: JSON.stringify({ book: 'fd', odds: 110 }) },
+		watchlistRow: { getData: () => quotedRow } };
+	assert.equal(context.watchlistQuoteFromStar(tableStar).odds, 125, 'A table star reads its current row at click time');
+	assert.equal(context.watchlistQuoteFromStar({ dataset: { quote: '{bad json' } }), null);
+	assert.equal(context.watchlistQuoteFromStar({ dataset: { quote: JSON.stringify({ book: 'fd', odds: 110 }) } }).odds, 110,
+		'A serialized card star retains its displayed quote');
 
 	await Promise.all([
 		context.toggleWatchlist(event, ' First Player ', 'nfl', 'buf'),
@@ -120,11 +153,32 @@ async function run() {
 	await context.toggleWatchlist(event, 'old homer', 'mlb', '', 'dingers', 'hr');
 	assert.equal(context.isWatchlisted('old homer', 'mlb', 'dingers', 'hr'), false, 'A legacy homer favorite can still be removed');
 
+	// The queue captures values at click time, independently from mutable live rows and other stars.
+	const untouchedBets = JSON.stringify(context.CURR_USER.metadata.bets);
+	const firstQuote = context.watchlistQuote(quotedRow);
+	const secondQuote = context.watchlistQuote({ ...quotedRow, book: 'dk', line: -155, handicap: 59.5, under: true });
+	const firstSave = context.toggleWatchlist(event, 'quoted player', 'nfl', 'buf', 'nfl', 'rec_yd', firstQuote);
+	const secondSave = context.toggleWatchlist(event, 'quoted player', 'nfl', 'buf', 'nfl', 'rec', secondQuote);
+	firstQuote.odds = 900;
+	firstQuote.handicap = 99.5;
+	secondQuote.book = 'pn';
+	quotedRow.line = 700;
+	assert.deepEqual(await Promise.all([firstSave, secondSave]), [true, true]);
+	const savedQuotes = context.CURR_USER.metadata.watchlist.filter(w => w.player === 'quoted player');
+	assert.deepEqual(plain(savedQuotes.map(w => w.quote)), [
+		{ book: 'fd', odds: 125, handicap: 49.5, under: false, game: 'buf @ mia' },
+		{ book: 'dk', odds: -155, handicap: 59.5, under: true, game: 'buf @ mia' },
+	]);
+	assert.equal(JSON.stringify(context.CURR_USER.metadata.bets), untouchedBets, 'Starring never adds or changes a bet');
+	await context.toggleWatchlist(event, 'without price', 'nfl', 'buf', 'nfl', 'rec', null);
+	assert.equal(context.CURR_USER.metadata.watchlist.at(-1).quote ?? null, null, 'A favorite can still be saved without an available quote');
+	assert.deepEqual(plain(saves.at(-1).watchlist.find(w => w.player === 'quoted player' && w.prop === 'rec_yd').quote), plain(savedQuotes[0].quote));
+
 	const count = saves.length;
 	await context.toggleWatchlist(event, '');
 	context.CURR_SESSION = null;
 	await context.toggleWatchlist(event, 'signed out');
 	assert.equal(saves.length, count, 'Blank players and signed-out clicks do not write');
-	console.log('Watchlist prop/page isolation, persistence, concurrent saves, sport identity, legacy entries, errors and retry passed.');
+	console.log('Watchlist quote snapshots, fees, validation, prop/page isolation, concurrent saves, legacy entries, errors and retry passed.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

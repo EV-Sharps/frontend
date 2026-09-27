@@ -1,13 +1,6 @@
 /* Weekly NFL usage columns shared by the touchdown and player-prop tables. */
 (function (root) {
 	"use strict";
-	if (root.document && !root.document.getElementById("nfl-usage-style")) {
-		const style = root.document.createElement("style");
-		style.id = "nfl-usage-style";
-		// The site's base cell height is 24px; allow the week and history to fit.
-		style.textContent = ".tabulator-row .tabulator-cell.nfl-usage-cell { height: auto; min-height: 52px; }";
-		root.document.head.appendChild(style);
-	}
 	const specs = [
 		{ key: "usage_snaps_tot", metric: "snaps", stat: "tot", label: "Snaps", title: "Snaps", description: "Offensive snap count." },
 		{ key: "usage_targets_tot", metric: "targets", stat: "tot", label: "Targets", title: "Targets", description: "All-game receiving targets." },
@@ -64,7 +57,7 @@
 			? `<span class="snap-history" aria-hidden="true">${values.slice(-5).map(item =>
 				`<span class="snap-history-bar${item.week === last?.week ? " latest" : ""}${item.value == null ? " missing" : ""}" style="height:${item.value == null ? 0 : 100 * item.value / max}%"></span>`
 			).join("")}</span>` : "";
-		return `<span class="snap-share${row?.blurred ? " blurred" : ""}"${row?.blurred ? "" : ` title="${escape(description)}"`}><span style="display:inline-flex;flex-direction:column;line-height:1.25"><strong>${valueLabel(last?.value, spec)}</strong>${last ? `<small style="font-size:9px;opacity:.65">W${last.week}</small>` : ""}</span>${bars}</span>`;
+		return `<span class="snap-share${row?.blurred ? " blurred" : ""}"${row?.blurred ? "" : ` title="${escape(description)}"`}><span class="nfl-usage-summary"><strong>${valueLabel(last?.value, spec)}</strong>${last ? `<small>W${last.week}</small>` : ""}</span>${bars}</span>`;
 	}
 
 	function sortRows(first, second, spec, direction) {

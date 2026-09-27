@@ -625,7 +625,8 @@ function updateExistingCard(card, rowData) {
 	} else if (PAGE.includes("ncaa")) {
 		teamImg = gameImg;
 	}
-	const _starSpan = createWatchlistStar(rowData)?.outerHTML || "";
+	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
+		{ quotePage: "", applyFees: false })?.outerHTML || "";
 	const snapsPill = ["tds", "tds2", "nfl"].includes(PAGE)
 		? `<div class="metric-pill snap-share-pill">${renderSnapShare(rowData.snaps, rowData.blurred)}<span>Snap %<br>Last game</span></div>` : "";
 

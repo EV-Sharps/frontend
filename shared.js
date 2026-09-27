@@ -734,6 +734,53 @@ function watchlistProp(entry) {
 	return (entry.prop || legacyProp || "").toLowerCase().trim();
 }
 
+function watchlistQuoteNumber(value) {
+	if (typeof value !== "number" && typeof value !== "string") return null;
+	if (!/^[+-]?\d+(?:\.\d+)?$/.test(String(value).trim())) return null;
+	const number = Number(value);
+	return Number.isFinite(number) ? number : null;
+}
+
+function sanitizeWatchlistQuote(quote) {
+	if (!quote || typeof quote !== "object") return null;
+	const book = typeof quote.book === "string" ? quote.book.trim().toLowerCase() : "";
+	const odds = watchlistQuoteNumber(quote.odds);
+	if (!/^[a-z0-9_-]+$/.test(book) || odds == null || Math.abs(odds) < 100) return null;
+	const result = { book, odds, under: quote.under === true };
+	const handicap = watchlistQuoteNumber(quote.handicap);
+	if (handicap != null) result.handicap = handicap;
+	if (typeof quote.game === "string" && quote.game.trim()) result.game = quote.game.trim();
+	return result;
+}
+
+// Use the same price as Best Book, including its selected side and exchange fee.
+function displayedBestBookQuote(data, page = PAGE, applyFees = true) {
+	const outlier = ["outliers", "atgs2", "tds2"].includes(page);
+	const book = outlier ? data.outlierBook : data.book;
+	let line = outlier ? data.outlierLine : data.line;
+	const feeFn = applyFees && typeof BOOK_FEE_FUNCTIONS !== "undefined" && BOOK_FEE_FUNCTIONS[book];
+	if (line != null && feeFn && data.bookOdds?.[book]) {
+		const feeParts = String(feeFn(data.bookOdds[book])).split("/");
+		const feePick = data.under && feeParts.length > 1 ? feeParts[1] : feeParts[0];
+		const feeNum = parseInt(feePick.replace("+", ""), 10);
+		if (!isNaN(feeNum)) line = feeNum;
+	}
+	return { book, line };
+}
+
+function watchlistQuote(data, page = PAGE, applyFees = true) {
+	if (!data || data.blurred) return null;
+	const { book, line } = displayedBestBookQuote(data, page, applyFees);
+	return sanitizeWatchlistQuote({ book, odds: line, handicap: data.handicap,
+		under: data.under, game: data.game });
+}
+
+function watchlistQuoteFromStar(star) {
+	if (star.watchlistRow) return watchlistQuote(star.watchlistRow.getData(), star.dataset.page);
+	try { return sanitizeWatchlistQuote(JSON.parse(star.dataset.quote || "null")); }
+	catch { return null; }
+}
+
 function watchlistMatches(entry, player, sport, page, prop = "") {
 	return _normPlayer(entry.player ?? entry) === _normPlayer(player)
 		&& (!entry.sport || !sport || watchlistSport(entry.sport) === watchlistSport(sport))
@@ -785,7 +832,7 @@ function refreshWatchlistStars() {
 	document.querySelectorAll('.watchlist-star[data-player]').forEach(updateWatchlistStar);
 }
 
-function createWatchlistStar(data) {
+function createWatchlistStar(data, { row = null, quotePage = PAGE, applyFees = true } = {}) {
 	const player = _normPlayer(data.player);
 	if (!player || data.prop === "separator") return null;
 	const star = document.createElement("button");
@@ -796,7 +843,9 @@ function createWatchlistStar(data) {
 	star.dataset.team = data.team || "";
 	star.dataset.page = PAGE;
 	star.dataset.prop = watchlistProp({ page: PAGE, prop: data.prop });
-	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team, this.dataset.page, this.dataset.prop)");
+	star.dataset.quote = JSON.stringify(watchlistQuote(data, quotePage, applyFees));
+	star.watchlistRow = row;
+	star.setAttribute("onclick", "toggleWatchlist(event, this.dataset.player, this.dataset.sport, this.dataset.team, this.dataset.page, this.dataset.prop, watchlistQuoteFromStar(this))");
 	updateWatchlistStar(star);
 	return star;
 }
@@ -805,7 +854,7 @@ function watchlistColumn() {
 	return {
 		title: "", field: "_watchlist", width: 30, minWidth: 30, maxWidth: 30,
 		headerSort: false, frozen: true, responsive: 0, hozAlign: "center",
-		formatter: cell => createWatchlistStar(cell.getRow().getData()) || ""
+		formatter: cell => createWatchlistStar(cell.getRow().getData(), { row: cell.getRow() }) || ""
 	};
 }
 
@@ -840,7 +889,7 @@ function showWatchlistError() {
 	watchlistStatusTimer = setTimeout(() => { status.hidden = true; }, 5000);
 }
 
-function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE, prop = "") {
+function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE, prop = "", quote = null) {
 	e?.stopPropagation();
 	const p = _normPlayer(player);
 	sport = watchlistSport(sport);
@@ -849,6 +898,8 @@ function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE, prop 
 	const key = JSON.stringify([page, sport || "", p, prop]);
 	if (pendingWatchlistPlayers.has(key)) return Promise.resolve(false);
 	const userId = CURR_SESSION.user.id;
+	// Copy now: an odds refresh while another star is saving must not change this price.
+	const savedQuote = sanitizeWatchlistQuote(quote);
 	pendingWatchlistPlayers.add(key);
 	refreshWatchlistStars();
 	// Serialize changes so quickly starring two props cannot overwrite either save.
@@ -858,7 +909,8 @@ function toggleWatchlist(e, player, sport = SPORT, team = "", page = PAGE, prop 
 			const watchlist = [...(CURR_USER.metadata?.watchlist || [])];
 			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, page, prop));
 			if (idx >= 0) watchlist.splice(idx, 1);
-			else watchlist.push({ player: p, sport, team, page, prop, dt: new Date().toISOString().slice(0, 10) });
+			else watchlist.push({ player: p, sport, team, page, prop,
+				...(savedQuote ? { quote: savedQuote } : {}), dt: new Date().toISOString().slice(0, 10) });
 			const metadata = { ...(CURR_USER.metadata || {}), watchlist };
 			const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
 			if (error) throw error;
@@ -1912,27 +1964,11 @@ const hedgeBookFormatter = function(cell) {
 
 const bestBookFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	const book = ["outliers", "atgs2", "tds2"].includes(PAGE) ? data.outlierBook : data.book;
+	const quote = displayedBestBookQuote(data);
+	const book = quote.book;
 	let cls = data.blurred ? "blurred" : "";
-	let line = data.line;
+	let line = quote.line;
 	if (line == null) return "";
-	if (["outliers", "atgs2", "tds2"].includes(PAGE)) {
-		line = data.outlierLine;
-	}
-
-	// Some books (kal, px) are stored fee-free (used for display/devig everywhere else); when
-	// one of them is the best/bet-target book, apply its fee on the fly for display here --
-	// derived straight from bookOdds rather than trusting data.line to already reflect it,
-	// since this formatter is also used on pages/rows that never pass through highestOver().
-	const feeFn = BOOK_FEE_FUNCTIONS[book];
-	if (feeFn && data.bookOdds && data.bookOdds[book]) {
-		const feeParts = feeFn(data.bookOdds[book]).split("/");
-		const feePick = data.under && feeParts.length > 1 ? feeParts[1] : feeParts[0];
-		const feeNum = parseInt(feePick.replace("+", ""), 10);
-		if (!isNaN(feeNum)) {
-			line = feeNum;
-		}
-	}
 
 	if (parseInt(line || 0) > 0) {
 		line = `+${line}`;

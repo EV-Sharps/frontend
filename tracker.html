@@ -195,13 +195,15 @@
 
 	.manual-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 	.manual-row input, .manual-row select {
-		flex: 1; padding: 0.4rem 0.5rem;
+		flex: 1; min-width: 0; padding: 0.4rem 0.5rem;
 		background: var(--bg-secondary, #1e2130);
 		border: 1px solid var(--border, #374151);
 		border-radius: 5px; color: var(--text, #e5e7eb); font-size: 0.85rem;
 	}
 	.manual-row input:focus, .manual-row select:focus { outline: none; border-color: #3b82f6; }
 	.manual-row input::placeholder { color: var(--text-muted, #6b7280); }
+	#abt-error { color: #ef4444; font-size: 0.8rem; margin-bottom: 0.75rem; }
+	#watchlist-table .wl-edit .book-img { display: block; flex: none; width: 14px; height: 14px; margin: 0; object-fit: contain; }
 
 	.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 	.modal-actions button {
@@ -321,7 +323,7 @@
 						<option value="probit">Probit</option>
 					</select>
 				</label>
-				<button onclick="addAllWatchlistToBets()" style="font-size:0.7rem;padding:2px 8px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;color:var(--text-muted,#9ca3af);cursor:pointer;" title="Add all watchlist players to bets using best available odds">Add All to Bets</button>
+				<button onclick="addAllWatchlistToBets()" style="font-size:0.7rem;padding:2px 8px;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;color:var(--text-muted,#9ca3af);cursor:pointer;" title="Add all watchlist players to bets using saved odds when available">Add All to Bets</button>
 				<button onclick="clearAllBets()" style="flex-shrink:0;padding:0.35rem 0.65rem;background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:6px;color:#ef4444;cursor:pointer;font-size:0.78rem;" title="Clear all bets">Clear All Bets</button>
 				<button id="tracker-customize-btn" onclick="openCustomize()">⚙️</button>
 			</div>
@@ -409,14 +411,18 @@
 			<button class="modal-close" onclick="closeAddBet()">×</button>
 			<h3 id="abt-player"></h3>
 			<div class="meta" id="abt-meta"></div>
+			<div class="manual-row">
+				<select id="abt-side" aria-label="Side"><option value="over">Over</option><option value="under">Under</option></select>
+				<input type="number" step="any" id="abt-line" aria-label="Line" placeholder="Line">
+			</div>
 
 			<div class="odds-grid-label">Pick odds from book</div>
 			<div class="odds-grid" id="abt-odds-grid"></div>
 
 			<div class="divider">or enter manually</div>
 			<div class="manual-row">
-				<input type="number" id="abt-manual-odds" placeholder="Odds (e.g. +755)">
-				<select id="abt-manual-book">
+				<input type="number" id="abt-manual-odds" aria-label="American odds" placeholder="Odds (e.g. +755)">
+				<select id="abt-manual-book" aria-label="Book">
 					<option value="">Book</option>
 					<option value="circa">Circa</option>
 					<option value="fd">FanDuel</option>
@@ -441,6 +447,7 @@
 				</select>
 			</div>
 
+			<div id="abt-error" role="alert" hidden></div>
 			<div class="modal-actions">
 				<button id="add-bet-remove" style="display:none" onclick="removeBet()">Remove</button>
 				<button id="add-bet-cancel" onclick="closeAddBet()">Cancel</button>
@@ -472,6 +479,8 @@
 			
 		];
 		let _addBetRow = null;  // row being added/edited in modal
+		let _addBetMode = "bet";
+		let _savingBet = false;
 			let WATCHLIST_TABLE = null;
 
 		// ── Metadata ─────────────────────────────────────────────────────
@@ -509,21 +518,32 @@
 
 		// ── Matching ─────────────────────────────────────────────────────
 		function findBet(row) {
-			const rPlayer = (row.player || "").toLowerCase().trim();
-			return BETS.find(b => {
-				const bPlayer = (b.player || "").toLowerCase().trim();
-				return rPlayer.includes(bPlayer) || bPlayer.includes(rPlayer);
-			});
+			return BETS.find(b => trackerBetMatches(b, row));
+		}
+
+		function trackerBetMatches(bet, row) {
+			const player = (row.player || "").toLowerCase().trim();
+			const savedPlayer = (bet.player || "").toLowerCase().trim();
+			if (!player || !savedPlayer || !(player === savedPlayer || player.includes(savedPlayer) || savedPlayer.includes(player))) return false;
+			if (watchlistSport(bet.sport || "mlb") !== watchlistSport(row.sport || "mlb")) return false;
+			if (watchlistProp(bet) !== watchlistProp({ prop: row.prop, page: row.watchlistPage || row.page || "dingers" })) return false;
+			if (bet.page && row.watchlistPage && bet.page !== row.watchlistPage) return false;
+			return trackerQuoteMatches(bet, row);
+		}
+
+		function trackerQuoteMatches(quote, row) {
+			return (!quote.game || quote.game === row.game)
+				&& (quote.handicap == null || quote.handicap === "" || (row.handicap != null && row.handicap !== "" && Number(quote.handicap) === Number(row.handicap)))
+				&& (typeof quote.under !== "boolean" || quote.under === !!row.under);
 		}
 
 		function bettedRows() {
-			return ALL_ROWS
-				.map(row => {
-					const bet = findBet(row);
-					if (!bet) return null;
-					return { ...row, _bet: bet, _betOdds: bet.odds, _betBook: bet.book };
-				})
-				.filter(Boolean);
+			return BETS.map(bet => {
+				const row = ALL_ROWS.find(row => trackerBetMatches(bet, row));
+				return { team: "", bpp: "", prop: watchlistProp(bet), sport: bet.sport || "mlb",
+					...bet, line: bet.odds, ...(row || {}), watchlistPage: bet.page,
+					_bet: bet, _betOdds: bet.odds, _betBook: bet.book };
+			});
 		}
 
 		// ── Fetch ─────────────────────────────────────────────────────────
@@ -651,17 +671,22 @@
 		}
 
 		// ── Table ─────────────────────────────────────────────────────────
-		function _isWatchlisted(player, sport = "mlb") {
-			return isWatchlisted(player, sport, "dingers", "hr");
+		function _isWatchlisted(player, sport = "mlb", page = "dingers", prop = "hr") {
+			return isWatchlisted(player, sport, page, prop);
 		}
 
-		async function toggleWatchlistTracker(player, sport = "mlb") {
+		async function toggleWatchlistTracker(player, sport = "mlb", row = null) {
 			if (!CURR_USER) return
 			const p = (player || "").toLowerCase().trim();
+			const page = row?.watchlistPage || row?.page || "dingers";
+			const prop = row?.prop || "hr";
 			let watchlist = [...(CURR_USER.metadata?.watchlist || [])];
-			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, "dingers", "hr"));
+			const idx = watchlist.findIndex(w => watchlistMatches(w, p, sport, page, prop));
 			if (idx >= 0) watchlist.splice(idx, 1);
-			else watchlist.push({ player: p, sport, page: "dingers", prop: "hr", dt: new Date().toISOString().slice(0, 10) });
+			else {
+				const quote = row ? trackerStartingQuote(row) : null;
+				watchlist.push({ player: p, sport, page, prop, dt: new Date().toISOString().slice(0, 10), ...(quote ? { quote } : {}) });
+			}
 			CURR_USER.metadata = { ...(CURR_USER.metadata || {}), watchlist };
 
 			if (!CURR_SESSION) {
@@ -681,13 +706,15 @@
 				width: 30,
 				headerSort: false,
 				formatter: function(cell) {
-					const player = cell.getRow().getData().player || "";
-					const on = _isWatchlisted(player);
+					const data = cell.getRow().getData();
+					const player = data.player || "";
+					const on = _isWatchlisted(player, data.sport || "mlb", data.watchlistPage || data.page || "dingers", data.prop || "hr");
 					return `<span class="wl-star" style="cursor:pointer;font-size:1rem;color:${on ? '#f59e0b' : '#6b7280'};line-height:1" title="${on ? 'Remove from watchlist' : 'Add to watchlist'}">${on ? '★' : '☆'}</span>`;
 				},
 				cellClick: function(e, cell) {
 					e.stopPropagation();
-					toggleWatchlistTracker(cell.getRow().getData().player).then(() => {
+					const data = cell.getRow().getData();
+					toggleWatchlistTracker(data.player, data.sport || "mlb", data).then(() => {
 						if (TABLE) TABLE.redraw(true);
 						if (WATCHLIST_TABLE) WATCHLIST_TABLE.redraw(true);
 					});
@@ -724,6 +751,8 @@
 						},
 						cellClick: function(e, cell) {
 							e.stopPropagation();
+							if (_savingBet) return;
+							_addBetMode = "bet";
 							_addBetRow = cell.getRow().getData();
 							removeBet();
 						}
@@ -809,6 +838,7 @@
 						field: "handicap",
 						formatter: function(cell) {
 							const d = cell.getRow().getData();
+							if (cell.getValue() == null || cell.getValue() === "") return "-";
 							return `${d.under ? "u" : "o"}${cell.getValue()}`;
 						},
 						width: 60
@@ -887,18 +917,65 @@
 			const watchlist = CURR_USER?.metadata?.watchlist || [];
 			return watchlist.map(w => {
 				const p = (w.player ?? w).toLowerCase().trim();
-				const sport = w.sport || "mlb";
+				const sport = watchlistSport(w.sport) || "mlb";
 				const prop = watchlistProp(w);
+				const quote = sanitizeWatchlistQuote(w.quote);
 				const row = ALL_ROWS.find(r => {
 					const rp = (r.player || "").toLowerCase().trim();
-					return rp && (r.sport || "mlb") === sport
+					return rp && (watchlistSport(r.sport) || "mlb") === sport
 						&& watchlistProp({ prop: r.prop, page: "dingers" }) === prop
-						&& (rp === p || rp.includes(p) || p.includes(rp));
+						&& (rp === p || rp.includes(p) || p.includes(rp))
+						&& (!quote || trackerQuoteMatches(quote, r));
 				});
 				const sourcePage = watchlistPage(w);
 				return { ...(row || { player: w.player ?? w, team: w.team || "", game: "" }),
-					sport, prop, watchlistPage: sourcePage, watchlistPlayer: p };
+					...(quote ? { ...quote, line: quote.odds } : {}),
+					sport, prop, watchlistPage: sourcePage, watchlistPlayer: p,
+					_watchlistQuote: quote, _watchlistEntry: w };
 			});
+		}
+
+		function trackerBookOdds(row, book, under = !!row.under) {
+			const raw = row.bookOdds?.[book];
+			if (raw == null || raw === "" || row.blurred) return null;
+			const sides = String(raw).split("/");
+			if (under && (sides.length < 2 || !sides[1].trim())) return null;
+			const odds = Number((sides.length > 1 ? sides[under ? 1 : 0] : sides[0])?.trim());
+			return Number.isFinite(odds) && Math.abs(odds) >= 100 ? odds : null;
+		}
+
+		function trackerStartingQuote(row) {
+			if (row._watchlistQuote) return row._watchlistQuote;
+			const displayed = watchlistQuote(row, row.watchlistPage || row.page || "dingers");
+			if (displayed?.odds != null && displayed.book) return displayed;
+			if (row.blurred) return null;
+			let best = null;
+			for (const book of ["circa", ...ALL_BOOK_KEYS]) {
+				const odds = trackerBookOdds(row, book);
+				if (odds != null && (!best || odds > best.odds)) best = { book, odds };
+			}
+			return best ? sanitizeWatchlistQuote({ ...best, handicap: row.handicap, under: !!row.under, game: row.game }) : displayed;
+		}
+
+		function watchlistOddsFormatter(cell, params, rendered) {
+			const row = cell.getRow().getData();
+			const quote = row._watchlistQuote;
+			if (!quote) return bestBookFormatter(cell, params, rendered);
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "wl-edit";
+			button.title = "Edit saved line, book and odds";
+			button.style.cssText = "display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:transparent;color:inherit;cursor:pointer";
+			if (quote.book) {
+				const logo = document.createElement("img");
+				logo.className = "book-img";
+				logo.src = `logos/${quote.book.replace("kambi", "parx").replace("hr_az", "hr").replace("hr_oh", "hr")}.png`;
+				logo.alt = quote.book;
+				button.appendChild(logo);
+			}
+			button.appendChild(document.createTextNode(quote.odds == null ? "Edit" : oddsDisplay(`${quote.odds > 0 ? "+" : ""}${quote.odds}`)));
+			button.addEventListener("click", event => { event.stopPropagation(); openWatchlistEdit(row); });
+			return button;
 		}
 
 		function addAllWatchlistToBets() {
@@ -906,16 +983,11 @@
 			const rows = watchlistedRows();
 			let added = 0;
 			for (const row of rows) {
-				if (!row.bookOdds) continue;
 				if (findBet(row)) continue;
-				let bestOdds = null, bestBook = null;
-				ALL_BOOK_KEYS.forEach(k => {
-					const o = row.bookOdds[k];
-					if (o == null) return;
-					if (bestOdds === null || Number(o) > Number(bestOdds)) { bestOdds = Number(o); bestBook = k; }
-				});
-				if (!bestOdds || !bestBook) continue;
-				BETS.push({ dt: today, game: row.game || "", player: row.player || "", odds: bestOdds, book: bestBook });
+				const quote = trackerStartingQuote(row);
+				if (quote?.odds == null || !quote.book) continue;
+				BETS.push({ dt: today, game: row.game || "", player: row.player || "", sport: row.sport || "mlb",
+					page: row.watchlistPage || "dingers", prop: row.prop || "hr", ...quote });
 				added++;
 			}
 			if (added > 0) { persistBets(); refreshTable(); }
@@ -962,14 +1034,12 @@
 						width: 55,
 						headerSort: false,
 						formatter: function(cell) {
-							return cell.getRow().getData().bookOdds
-								? `<span style="color:#3b82f6;cursor:pointer;font-size:0.8rem;font-weight:600">+ Bet</span>`
-								: "";
+							return `<span class="wl-add-bet" style="color:#3b82f6;cursor:pointer;font-size:0.8rem;font-weight:600">+ Bet</span>`;
 						},
 						cellClick: function(e, cell) {
 							e.stopPropagation();
 							const d = cell.getRow().getData();
-							if (d.bookOdds) openAddBet(d);
+							openAddBet(d);
 						}
 					},
 					{
@@ -1016,7 +1086,7 @@
 						width: 60,
 						formatter: function(cell) {
 							const d = cell.getRow().getData();
-							if (!d.handicap) return "-";
+							if (d.handicap == null || d.handicap === "") return "-";
 							return `${d.under ? "u" : "o"}${cell.getValue()}`;
 						}
 					},
@@ -1052,8 +1122,8 @@
 						field: "_wlEV",
 						width: MOBILE ? 55 : 70,
 						sorter: function(a, b, aRow, bRow) {
-							const evA = calcEV(getFairProb(aRow.getData()), getBestMarketOdds(aRow.getData())) ?? -999;
-							const evB = calcEV(getFairProb(bRow.getData()), getBestMarketOdds(bRow.getData())) ?? -999;
+							const evA = calcEV(getFairProb(aRow.getData()), aRow.getData().line) ?? -999;
+							const evB = calcEV(getFairProb(bRow.getData()), bRow.getData().line) ?? -999;
 							return evA - evB;
 						},
 						formatter: function(cell) {
@@ -1062,11 +1132,12 @@
 						}
 					},
 					{
-						title: "Best<br>Book",
+						title: "Saved<br>Odds",
 						field: "book",
 						width: 75,
-						formatter: bestBookFormatter,
-						formatterParams: { book: BOOK }
+						formatter: watchlistOddsFormatter,
+						formatterParams: { book: BOOK },
+						cellClick: function(e, cell) { e.stopPropagation(); openWatchlistEdit(cell.getRow().getData()); }
 					},
 					{ title: "Circa", field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter },
 					{ title: "FD",    field: "bookOdds.fd",    width: 60, sorter: "number", formatter: evOddsFormatter },
@@ -1086,9 +1157,9 @@
 			});
 
 			WATCHLIST_TABLE.on("rowClick", function(e, row) {
-				if (e.target.closest('.wl-star') || e.target.closest('.wl-remove')) return;
+				if (e.target.closest('.wl-star, .wl-remove, .wl-add-bet, .wl-edit')) return;
 				const d = row.getData();
-				if (d.bookOdds) openAddBet(d);
+				openWatchlistEdit(d);
 			});
 			// Wire wl-devig dropdown
 			setTimeout(() => {
@@ -1244,93 +1315,143 @@
 		});
 
 		// ── Add/Edit bet modal ────────────────────────────────────────────
-		const BOOK_KEYS = ["circa","fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv"];
+		const BOOK_KEYS = ["circa", ...ALL_BOOK_KEYS];
 
 		function openAddBet(row) {
+			openTrackerEditor(row, "bet");
+		}
+
+		function openWatchlistEdit(row) {
+			openTrackerEditor(row, "watchlist");
+		}
+
+		function openTrackerEditor(row, mode) {
+			if (_savingBet) return;
 			_addBetRow = row;
-			const existing = findBet(row);
+			_addBetMode = mode;
+			const existing = mode === "bet" ? findBet(row) : null;
+			const initial = existing || trackerStartingQuote(row) || {};
 
 			const player = row.player ? row.player.split(' ').map(w => w[0].toUpperCase()+w.slice(1)).join(' ') : "";
-			const ou = row.under ? "u" : "o";
 			document.getElementById("abt-player").textContent = player;
-			document.getElementById("abt-meta").textContent = `${row.game || ""} · ${ou}${row.handicap || ""}`;
+			document.getElementById("abt-meta").textContent = `${row.game || ""} · ${convertProp(row.prop || "hr")} · ${mode === "watchlist" ? "Edit watchlist" : existing ? "Edit bet" : "Add bet"}`;
+			document.getElementById("abt-line").value = initial.handicap ?? row.handicap ?? "";
+			document.getElementById("abt-side").value = (initial.under ?? row.under) ? "under" : "over";
+			document.getElementById("abt-manual-odds").value = initial.odds ?? "";
+			const bookSelect = document.getElementById("abt-manual-book");
+			if (initial.book && !Array.from(bookSelect.options).some(option => option.value === initial.book)) {
+				const option = document.createElement("option");
+				option.value = initial.book;
+				option.textContent = initial.book.toUpperCase();
+				bookSelect.appendChild(option);
+			}
+			bookSelect.value = initial.book || "";
+			document.getElementById("abt-error").hidden = true;
+			document.getElementById("add-bet-save").textContent = mode === "watchlist" ? "Save Watchlist" : "Save Bet";
+			document.getElementById("add-bet-remove").style.display = existing ? "" : "none";
+			renderTrackerOddsChoices();
+			document.getElementById("add-bet-backdrop").classList.add("open");
+		}
 
-			// Book odds chips
+		function renderTrackerOddsChoices() {
+			if (!_addBetRow) return;
 			const grid = document.getElementById("abt-odds-grid");
 			grid.innerHTML = "";
-			const bookOdds = row.bookOdds || {};
+			const line = document.getElementById("abt-line").value;
+			if (line === "" || Number(line) !== Number(_addBetRow.handicap)) return;
+			const under = document.getElementById("abt-side").value === "under";
 			BOOK_KEYS.forEach(bk => {
-				const val = bookOdds[bk];
+				// A scalar quote only describes the source row's side.
+				if (under !== !!_addBetRow.under && !String(_addBetRow.bookOdds?.[bk] ?? "").includes("/")) return;
+				const val = trackerBookOdds(_addBetRow, bk, under);
 				if (val == null) return;
-				const chip = document.createElement("div");
-				chip.className = "odds-chip" + (existing?.book === bk ? " selected" : "");
+				const chip = document.createElement("button");
+				chip.type = "button";
+				chip.className = "odds-chip";
 				chip.dataset.book = bk;
 				chip.dataset.odds = val;
 				chip.innerHTML = `<span>${val > 0 ? "+" : ""}${val}</span><span class="chip-book">${bk.toUpperCase()}</span>`;
 				chip.addEventListener("click", function() {
 					grid.querySelectorAll(".odds-chip").forEach(c => c.classList.remove("selected"));
 					chip.classList.add("selected");
-					document.getElementById("abt-manual-odds").value = "";
-					document.getElementById("abt-manual-book").value = "";  // resets select to "Book"
+					document.getElementById("abt-manual-odds").value = val;
+					document.getElementById("abt-manual-book").value = bk;
 				});
 				grid.appendChild(chip);
 			});
-
-			// Pre-fill manual if existing bet isn't from a known book chip
-			document.getElementById("abt-manual-odds").value = existing && !BOOK_KEYS.includes(existing.book) ? existing.odds : "";
-			document.getElementById("abt-manual-book").value = existing && !BOOK_KEYS.includes(existing.book) ? existing.book : "";
-
-			document.getElementById("add-bet-remove").style.display = existing ? "" : "none";
-			document.getElementById("add-bet-backdrop").classList.add("open");
 		}
 
 		function closeAddBet() {
+			if (_savingBet) return;
 			document.getElementById("add-bet-backdrop").classList.remove("open");
 			_addBetRow = null;
 		}
 
-		function saveBet() {
-			if (!_addBetRow) return;
-
-			const selectedChip = document.getElementById("abt-odds-grid").querySelector(".odds-chip.selected");
-			const manualOdds = document.getElementById("abt-manual-odds").value;
-			const manualBook = document.getElementById("abt-manual-book").value.trim().toLowerCase();
-			let odds, book;
-			if (manualOdds) {
-				odds = Number(manualOdds);
-				book = manualBook || selectedChip?.dataset.book;
-			} else if (selectedChip) {
-				odds = Number(selectedChip.dataset.odds.split("/")[0]);
-				book = selectedChip.dataset.book;
+		async function saveBet() {
+			if (!_addBetRow || _savingBet) return;
+			const row = _addBetRow;
+			const odds = Number(document.getElementById("abt-manual-odds").value);
+			const book = document.getElementById("abt-manual-book").value;
+			const rawLine = document.getElementById("abt-line").value;
+			const quote = sanitizeWatchlistQuote({ odds, book,
+				...(rawLine !== "" ? { handicap: Number(rawLine) } : {}),
+				under: document.getElementById("abt-side").value === "under", game: row.game });
+			const errorBox = document.getElementById("abt-error");
+			if (!quote?.book || quote.odds == null || (rawLine !== "" && !Number.isFinite(Number(rawLine)))) {
+				errorBox.textContent = "Choose a book and enter valid American odds (at least +100 or -100).";
+				errorBox.hidden = false;
+				return;
 			}
-			if (!odds || !book) return;
-
-			// Remove existing bet for same player then add new
-			const rPlayer = (_addBetRow.player || "").toLowerCase().trim();
-			BETS = BETS.filter(b => {
-				const bp = (b.player || "").toLowerCase().trim();
-				return !rPlayer.includes(bp) && !bp.includes(rPlayer);
-			});
-			BETS.push({
-				dt: new Date().toISOString().slice(0, 10),
-				game: _addBetRow.game || "",
-				player: _addBetRow.player || "",
-				odds,
-				book
-			});
-
-			closeAddBet();
-			refreshTable();
-			persistBets();
+			_savingBet = true;
+			const save = document.getElementById("add-bet-save");
+			save.disabled = true;
+			errorBox.hidden = true;
+			let succeeded = false;
+			try {
+				if (!CURR_USER) throw new Error("Sign in to save your changes.");
+				const user = CURR_USER;
+				const userId = CURR_SESSION?.user?.id;
+				const metadata = { ...(CURR_USER.metadata || {}) };
+				if (_addBetMode === "watchlist") {
+					let found = false;
+					metadata.watchlist = (metadata.watchlist || []).map(entry => {
+						if (!watchlistMatches(entry, row.watchlistPlayer, row.sport, row.watchlistPage, row.prop)) return entry;
+						found = true;
+						return { ...(typeof entry === "object" ? entry : { player: entry }), quote };
+					});
+					if (!found) throw new Error("This play is no longer in your watchlist.");
+				} else {
+					const existing = findBet(row);
+					metadata.bets = BETS.filter(bet => bet !== existing);
+					metadata.bets.push({ dt: new Date().toISOString().slice(0, 10),
+						player: row.player || "", sport: row.sport || "mlb",
+						page: row.watchlistPage || row.page || "dingers", prop: row.prop || "hr", ...quote });
+				}
+				if (userId) {
+					const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
+					if (error) throw new Error("Could not save changes. Please try again.");
+				}
+				if (CURR_USER !== user || CURR_SESSION?.user?.id !== userId) throw new Error("Your session changed. Please sign in and try again.");
+				CURR_USER.metadata = metadata;
+				if (_addBetMode === "bet") BETS = metadata.bets;
+				cacheProfile(CURR_USER);
+				refreshWatchlist();
+				refreshTable();
+				succeeded = true;
+			} catch (error) {
+				errorBox.textContent = error.message || "Could not save changes. Please try again.";
+				errorBox.hidden = false;
+			} finally {
+				_savingBet = false;
+				save.disabled = false;
+			}
+			if (succeeded) closeAddBet();
 		}
 
 		function removeBet() {
-			if (!_addBetRow) return;
-			const rPlayer = (_addBetRow.player || "").toLowerCase().trim();
-			BETS = BETS.filter(b => {
-				const bp = (b.player || "").toLowerCase().trim();
-				return !rPlayer.includes(bp) && !bp.includes(rPlayer);
-			});
+			if (!_addBetRow || _savingBet || _addBetMode !== "bet") return;
+			const existing = findBet(_addBetRow);
+			BETS = BETS.filter(bet => bet !== existing);
 			closeAddBet();
 			refreshTable();
 			persistBets();
@@ -1340,6 +1461,8 @@
 		document.getElementById("abt-manual-odds").addEventListener("input", function() {
 			document.getElementById("abt-odds-grid").querySelectorAll(".odds-chip").forEach(c => c.classList.remove("selected"));
 		});
+		document.getElementById("abt-side").addEventListener("change", renderTrackerOddsChoices);
+		document.getElementById("abt-line").addEventListener("input", renderTrackerOddsChoices);
 
 		// Close backdrop click
 		document.getElementById("add-bet-backdrop").addEventListener("click", function(e) {

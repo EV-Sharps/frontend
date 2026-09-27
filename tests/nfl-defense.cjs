@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const D = require('../nfl-defense.js');
+const shared = require('node:fs').readFileSync(require.resolve('../shared.js'), 'utf8');
+globalThis.addSuffix = require('node:vm').runInNewContext(`(${shared.match(/function addSuffix\(num\) \{[\s\S]*?\n\}/)[0]})`);
 
 function fixture() {
   const row = {opp:'lac',pos:'TE',prop:'rec_yd',dvpAllowed:64.5,dvpRank:27,dvpGames:2};
@@ -16,7 +18,7 @@ function fixture() {
 
 test('rank is compact and keeps position and sample in its details', () => {
   const {row}=fixture();
-  assert.match(D.render(row,'dvpRank'), /#27.*\/32/);
+  assert.match(D.render(row,'dvpRank'), /<strong>27th<\/strong>/);
   assert.doesNotMatch(D.render(row,'dvpRank'), /<small>|TE · 2 games/);
   assert.match(D.render(row,'dvpAllowed'), /64.5<\/strong><small>rec yd\/g/);
   assert.match(D.description(row), /all opposing players/);
@@ -30,8 +32,8 @@ test('rank delegates colors to the shared opponent rank palette', () => {
   const ranks=[];
   globalThis.getTDsOppRankColor=rank=>{ranks.push(rank);return '#33cc66';};
   try {
-    assert.match(D.render(row,'dvpRank'), /<strong style="color:#33cc66">#27/);
-    assert.match(D.render({...row,under:true},'dvpRank'), /<strong style="color:#33cc66">#27/);
+    assert.match(D.render(row,'dvpRank'), /<strong style="color:#33cc66">27th<\/strong>/);
+    assert.match(D.render({...row,under:true},'dvpRank'), /<strong style="color:#33cc66">27th<\/strong>/);
     D.render(row,'dvpAllowed');
     D.render({...row,blurred:true},'dvpRank');
     assert.deepEqual(ranks,[27,27]);
@@ -70,7 +72,7 @@ test('prepared shared lookup fallback resolves aliases and does not invent unsup
     {opp:'lac',pos:'TE',prop:'rec_yd',dvpAllowed:null}];
   D.setFeed(feed);
   assert.equal(feed.data[0].dvpAllowed,24);
-  assert.match(D.render(feed.data[0],'dvpRank'), /#30.*\/31/);
+  assert.match(D.render(feed.data[0],'dvpRank'), /<strong>30th<\/strong>/);
   assert.equal(feed.data[1].dvpAllowed,undefined);
   assert.equal(feed.data[2].dvpAllowed,0);
   assert.equal(feed.data[3].dvpAllowed,undefined);

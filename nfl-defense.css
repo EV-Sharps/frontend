@@ -7,7 +7,6 @@
 }
 .nfl-defense-value strong { font-size: 13px; font-variant-numeric: tabular-nums; }
 .nfl-defense-value small { font-size: 10px; opacity: .75; white-space: nowrap; }
-.nfl-defense-total { font-size: 10px; font-weight: normal; opacity: .65; }
 .nfl-defense-context small { color: #e5bc79; opacity: 1; }
 .nfl-defense-value:hover { background: rgba(128, 155, 175, .12); }
 .nfl-defense-value:focus-visible { outline: 2px solid #91bfd8; outline-offset: 1px; }

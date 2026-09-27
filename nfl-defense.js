@@ -77,10 +77,10 @@
 	function render(row, key) {
 		const number = value(row, key);
 		if (number == null) return '<span class="nfl-defense-empty">-</span>';
-		const {context, teams, stat} = info(row);
+		const {context, stat} = info(row);
 		let main, caption;
 		if (key === "dvpRank") {
-			main = `#${number}${teams ? `<span class="nfl-defense-total">/${teams}</span>` : ""}`;
+			main = root.addSuffix(number);
 		} else if (key === "dvpAllowed") {
 			main = format(number);
 			caption = context ? "TD context" : escape(stat[1]);
@@ -103,7 +103,7 @@
 
 	function items() {
 		return [
-			["dvpRank", "Opponent vs position rank", "Vs position<br>Rank", 105],
+			["dvpRank", "Opponent vs position rank", "Vs position<br>Rank", 60],
 			["dvpAllowed", "Allowed per game vs position", "Allowed<br>/ game", 112],
 			["dvpGames", "Defense sample games", "Sample<br>Games", 70]
 		].map(([key, label, title, width]) => ({key, label, cols: [{

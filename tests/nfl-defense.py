@@ -76,9 +76,10 @@ try:
                 assert page.evaluate('key => TABLE.getColumn(key).isVisible()', key)
             assert not page.evaluate("TABLE.getColumn('dvpGames').isVisible()")
             rank = page.evaluate("TABLE.getRow(1).getCell('dvpRank').getElement().textContent")
-            assert rank == '#27/32', rank
+            assert rank == '27th', rank
             assert page.evaluate("TABLE.getRow(1).getCell('dvpRank').getElement().querySelector('small')") is None
-            for row_id, color in ((1, 'rgb(0, 255, 102)'), (2, 'rgb(255, 0, 0)')):
+            for row_id, ordinal, color in ((1, '27th', 'rgb(0, 255, 102)'), (2, '1st', 'rgb(255, 0, 0)')):
+                assert page.evaluate("id => TABLE.getRow(id).getCell('dvpRank').getElement().textContent", row_id) == ordinal
                 assert page.evaluate("id => getComputedStyle(TABLE.getRow(id).getCell('dvpRank').getElement().querySelector('strong')).color", row_id) == color
             assert page.evaluate("TABLE.getRow(2).getCell('dvpAllowed').getElement().querySelector('strong').textContent") == '0'
             assert page.evaluate("TABLE.getRow(3).getCell('dvpAllowed').getElement().textContent") == '-'
@@ -171,12 +172,12 @@ try:
                 height:c.getElement().getBoundingClientRect().height,html:c.getElement().innerHTML}))})''')
             assert compact_size['height'] <= 25, compact_size
 
-            # A refreshed feed drops old tooltip metadata rather than showing a stale denominator.
+            # A refreshed feed drops old ranked-team metadata from the tooltip.
             page.evaluate('''async () => {
                 NflDefense.setFeed({data:[]});
                 await TABLE.replaceData(defenseRows);
             }''')
-            assert '/32' not in page.evaluate("TABLE.getRow(1).getCell('dvpRank').getElement().textContent")
+            assert 'of 32' not in page.evaluate("TABLE.getRow(1).getCell('dvpRank').getElement().querySelector('button').title")
             assert not errors, errors
             print(f'{name}: actual columns, sorting, zero/missing/locked rows, mobile/keyboard details, saved preferences and refresh passed.', flush=True)
             page.close()

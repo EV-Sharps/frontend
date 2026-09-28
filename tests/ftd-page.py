@@ -59,7 +59,7 @@ try:
             page.goto(f"http://localhost:{server.server_port}/ftd.html?view={view}")
             row_count = "document.querySelectorAll('#card-container .data-card').length" if view == "mobile" else "TABLE.getData('active').length"
             page.wait_for_function(f"document.getElementById('data-status')?.hidden === true && {row_count} === 2")
-            assert page.title() == "First / Last Touchdown"
+            assert page.title() == "NFL First / Last Touchdown | +EV Sharps"
             assert any("/api/ftd" in url for url in requests), requests
             assert not any("/api/tds" in url for url in requests), requests
             assert page.evaluate("PAGE === 'ftd' && SPORT === 'nfl'")

@@ -80,7 +80,7 @@ try:
             page.goto(url, wait_until="load")
             page.wait_for_function("document.getElementById('data-status')?.hidden === true")
             assert any("/api/fgs" in request for request in requests), requests
-            assert page.title() == "First / Last Goalscorer"
+            assert page.title() == "NHL First / Last Goalscorer | +EV Sharps"
             assert page.evaluate("PAGE") == "fgs"
             assert page.evaluate("SPORT") == "nhl"
             assert page.evaluate("RES.data.length") == 3

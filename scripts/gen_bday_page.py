@@ -123,7 +123,7 @@ html = f"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Birthday Homers: How Uncommon Are They?</title>
+<title>Birthday Homers: How Uncommon Are They? | +EV Sharps</title>
 <style>
   :root {{
     color-scheme: light dark;

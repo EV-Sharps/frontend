@@ -3098,7 +3098,9 @@ button#logout:hover {
 		bottom: 3px;
 		right: 3px;
 	}
-	#table.stacked-odds .player-cell .pos { top: 1px; }
+	#table.stacked-odds .player-cell .pos {
+		top: 3px; right: 3px;
+	}
 	#table.stacked-odds .tabulator-cell .book-img { vertical-align: middle; object-fit: contain; }
 	#table.stacked-odds .tabulator-col-title { text-align: center; }
 	#table.stacked-odds .tabulator-col[tabulator-field="player"] .tabulator-col-title { text-align: left; }

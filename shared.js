@@ -184,10 +184,10 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
-			{ label: "First / Last TD", value: "ftd" },
-			{ label: "ATTD Parlays", value: "parlays?market=attd" },
-			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
+			{ label: "First / Last TD", value: "ftd" },
+			{ label: "🏈🏈 2+TD", value: "tds2"},
+			{ label: "ATTD Parlays", value: "parlays?market=attd" },
 			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
 			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker" },

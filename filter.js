@@ -1552,7 +1552,7 @@ function changeFilter(render = true) {
 		if (book) {
 			ex = ex.filter(b => b !== book);
 		}
-		const highest = highestOver(bookOdds, ex, boost, book, row.under);
+		const highest = highestOver(bookOdds, ex, boost, book, row.under, row);
 		if (!isFinite(highest.value)) {
 			row["ev"] = null;
 			row["fairVal"] = "";

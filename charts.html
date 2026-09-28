@@ -1210,7 +1210,7 @@
 			// on the fly so the "Best Over" header reflects what you'd really pay.
 			const feeFn = BOOK_FEE_FUNCTIONS[best.book];
 			if (feeFn) {
-				const feeStr = feeFn(bookOdds[best.book]);
+				const feeStr = feeFn(bookOdds[best.book], rowData);
 				const feeToken = feeStr.includes('/') ? feeStr.split('/')[legIndex] : feeStr;
 				const feePrice = parseInt(feeToken, 10);
 				const feeImplied = americanToImplied(feePrice);

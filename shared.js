@@ -764,7 +764,7 @@ function displayedBestBookQuote(data, page = PAGE, applyFees = true) {
 	let line = outlier ? data.outlierLine : data.line;
 	const feeFn = applyFees && typeof BOOK_FEE_FUNCTIONS !== "undefined" && BOOK_FEE_FUNCTIONS[book];
 	if (line != null && feeFn && data.bookOdds?.[book]) {
-		const feeParts = String(feeFn(data.bookOdds[book])).split("/");
+		const feeParts = String(feeFn(data.bookOdds[book], data, page)).split("/");
 		const feePick = data.under && feeParts.length > 1 ? feeParts[1] : feeParts[0];
 		const feeNum = parseInt(feePick.replace("+", ""), 10);
 		if (!isNaN(feeNum)) line = feeNum;
@@ -4124,27 +4124,37 @@ function round1(n) { return Math.round(n * 10) / 10; }
 // pre-computed "kal_fee" field stored anywhere, so nothing needs to guard against it showing
 // up as a phantom 20th book in a generic bookOdds iteration).
 //
-// KALSHI_FEE_RATE = 0.035, HALF the generally-published 0.07 -- verified against a real order
-// ticket (Fernando Tatis Jr. 1+ HR, Yes 15c, $100 position, screenshot showed max payout
-// $647.40 = $547 profit = "+547"). Solving fee = dollars - C*P where C = payout/$1 gives an
-// implied rate of 0.03501 against the fee = rate*C*P*(1-P) formula -- a clean, near-exact 2.0x
-// ratio to the published 0.07, not rounding noise. Likely a reduced rate for this sports/
-// event-contract category rather than Kalshi's general formula. Re-derive from a fresh order
-// ticket if this ever needs re-validating.
+// Kalshi's series API (verified 2026-09-28) gives NFL props (KXNFLTD, KXNFLREC,
+// passing/rushing/receiving yards, attempts, etc.) a fee_multiplier of 1, while
+// KXMLBHR uses 0.5. The taker formula is multiplier * 0.07 * C * P * (1-P):
+// https://kalshi.com/docs/kalshi-fee-schedule.pdf
+// Keep the existing reduced rate outside NFL markets; do not apply the homer discount
+// to football. Row context also identifies NFL props outside their dedicated page.
 const KALSHI_FEE_RATE = 0.035;
+
+function kalshiFeeRate(data = {}, page = PAGE) {
+	const link = String(data.links?.kal || "").toLowerCase();
+	if (/\/kxnfl[a-z0-9]*(?:[/-]|$)/.test(link)) return 0.07;
+	if (/\/kxmlbhr(?:[/-]|$)/.test(link)) return KALSHI_FEE_RATE;
+	const sport = String(data.sport || (typeof SPORT !== "undefined" ? SPORT : "") || "").toLowerCase();
+	const prop = String(data.prop || "").toLowerCase();
+	return sport === "nfl" || ["nfl", "tds", "tds2"].includes(page) || ["attd", "ftd"].includes(prop)
+		? 0.07 : KALSHI_FEE_RATE;
+}
 
 function kalshiCentsFromFeeFreeAmerican(odds) {
 	if (odds > 0) return 10000 / (odds + 100);
 	return 100 * (-odds) / (100 - odds);
 }
 
-function addKalshiFee(ou) {
+function addKalshiFee(ou, data = {}, page = PAGE) {
+	const rate = kalshiFeeRate(data, page);
 	const addOne = (oddsStr) => {
 		const odds = parseInt(oddsStr, 10);
 		if (isNaN(odds)) return oddsStr;
 		const cents = kalshiCentsFromFeeFreeAmerican(odds);
 		if (cents == null || cents <= 0 || cents >= 100) return oddsStr;
-		const f = KALSHI_FEE_RATE * cents * (100 - cents) / 100;
+		const f = rate * cents * (100 - cents) / 100;
 		const cost = cents + f;
 		const profit = 100 - cost;
 		if (cost <= 0 || profit <= 0) return oddsStr;
@@ -4198,7 +4208,7 @@ const BOOK_FEE_FUNCTIONS = {
 	//px: addPXFee,
 };
 
-function highestOver(bookOdds, excluded, boost, book, under) {
+function highestOver(bookOdds, excluded, boost, book, under, data = {}) {
 	if (!boost) {
 		boost = 0;
 	}
@@ -4221,7 +4231,10 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		)
 		.reduce(
 		  (max, [key, value]) => {
-			const parsed = parseSide(value);
+			// Compare the actual fee-inclusive betting prices, keeping bookOdds raw
+			// for the book columns and devig calculations.
+			const feeFn = BOOK_FEE_FUNCTIONS[key];
+			const parsed = parseSide(feeFn ? feeFn(value, data) : value);
 			if (!parsed) return max;
 
 			// apply your profit boost (works for +/- American)
@@ -4231,18 +4244,6 @@ function highestOver(bookOdds, excluded, boost, book, under) {
 		  },
 		  { book: null, value: -Infinity, raw: null }
 	);
-
-	// Some books (kal, px) are stored fee-free -- used for display/devig everywhere else --
-	// so when one of them wins as the actual best/bet-target price, apply its fee on the fly
-	// so the number shown and used for EV here reflects what you'd really pay.
-	const feeFn = BOOK_FEE_FUNCTIONS[best.book];
-	if (feeFn) {
-		const feeParsed = parseSide(feeFn(bookOdds[best.book]));
-		if (feeParsed) {
-			best.value = applyProfitBoost(feeParsed.num, boost);
-			best.raw = feeParsed.pick;
-		}
-	}
 
 	return best;
 }

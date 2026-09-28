@@ -1063,11 +1063,11 @@ const AVAILABLE_PROPS = {
 		"main", "ml", "props"
 	],
 	nfl: [
-		"attd",
+		"attd", "ftd", "ltd",
 		"main", "props"
 	],
 	nhl: [
-		"atgs", "pts", "ast", "sog", "sv", "bs",
+		"atgs", "fgs", "lgs", "pts", "ast", "sog", "sv", "bs",
 		"main", "ml", "props"
 	]
 }
@@ -1204,9 +1204,9 @@ if (devigDisplay) {
 function getSportFromLabel(label) {
 	if (["nba-pts", "nba-ast", "reb", "3ptm", "dd"].includes(label)) {
 		return "nba";
-	} else if (["atgs", "nhl-pts", "nhl-ast", "sog"].includes(label)) {
+	} else if (["atgs", "fgs", "lgs", "nhl-pts", "nhl-ast", "sog"].includes(label)) {
 		return "nhl";
-	} else if (["attd"].includes(label)) {
+	} else if (["attd", "ftd", "ltd"].includes(label)) {
 		return "nfl";
 	}
 }

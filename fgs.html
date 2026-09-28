@@ -4,7 +4,7 @@
 	<meta name="google" content="notranslate">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🏒 Goals</title>
+	<title>First / Last Goalscorer</title>
 
 	<!--
 	<script type="text/javascript" src="test.js"></script>
@@ -14,6 +14,9 @@
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
 	<style>
+		#card-modal-inner .player-prop-row {
+			padding-right: 48px;
+		}
 		#table {
 			width: 100%;
 		}
@@ -623,7 +626,7 @@
 	</div>
 	<div id="card-modal-overlay">
 		<div id="card-modal-inner">
-			<button id="card-modal-close" onclick="closeCardModal()" title="Close">&times;</button>
+			<button id="card-modal-close" type="button" onclick="closeCardModal()" title="Close" aria-label="Close player card">&times;</button>
 		</div>
 	</div>
 	<script src="record-summary.js"></script>
@@ -636,7 +639,7 @@
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "atgs";
+		PAGE = "fgs";
 
 		parseURLParams();
 		SPORT = "nhl";
@@ -651,13 +654,27 @@
 			MOBILE = window.innerWidth <= 600;
 		});
 
-		function buildATGSSeasonRecord() {
-			return buildSeasonRecord('atgs', SEASON_RECORD);
+		function buildFGSSeasonRecord() {
+			if (!SEASON_RECORD) return null;
+			const record = {};
+			for (const [method, books] of Object.entries(SEASON_RECORD)) {
+				for (const [book, devigs] of Object.entries(books || {})) {
+					const entries = Object.entries(devigs).filter(([key]) => /^(fgs|lgs)-/.test(key));
+					if (!entries.length) continue;
+					(record[method] ||= {})[book] = Object.fromEntries(entries);
+				}
+			}
+			return Object.keys(record).length ? record : null;
 		}
 
 		let resolveTableReady;
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
-		const fetchProps = createDataRefresh(() => API_BASE+`/api/atgs`, async (data) => {
+		const fetchProps = createDataRefresh(() => API_BASE+`/api/fgs`, async (data) => {
+			const scorerProps = ["fgs", "lgs"];
+			const rows = (data.data || []).filter(row => scorerProps.includes(row.prop));
+			const props = [...new Set([...(data.props || []), ...rows.map(row => row.prop)])]
+				.filter(prop => scorerProps.includes(prop));
+			data = { ...data, props, data: rows };
 			RES = data;
 			UPDATED[PAGE] = data["updated"];
 
@@ -694,7 +711,7 @@
 				return;
 			}
 
-			addRecordSummaryButtons(null, buildATGSSeasonRecord);
+			addRecordSummaryButtons(null, buildFGSSeasonRecord() ? buildFGSSeasonRecord : null);
 
 			updateHeaders();
 			await changeFilter();
@@ -704,9 +721,6 @@
 			if (IMP != undefined) {
 				implied();
 			}
-			if (DUE != undefined) {
-				due();
-			}
 			if (!CSV_DOWNLOADED && CSV != undefined) {
 				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
 				CSV_DOWNLOADED = true;
@@ -714,17 +728,17 @@
 		}, refreshDataTimestamps);
 
 		let loaded = false;
-		const ATGS_DEFAULT_COL_ORDER = [
+		const FGS_DEFAULT_COL_ORDER = [
 			'ev', 'outlier', 'book', 'player', 'teamTotal', 'ppLine', 'handicap', 'prop',
 			'fairVal', 'implied', 'kelly', 'opp', 'goalie', 'oppRank', 'dvpRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_b365', 'bookOdds_dk', 'bookOdds_mgm',
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol',
 			'bookOdds_pn', 'bookOdds_kal', 'bookOdds_poly', 'bookOdds_px', 'bookOdds_nv',
-			'hitRate', 'hitRateLYR', 'hitRateCareer', 'logs', 'due_grp'
+			'hitRate', 'hitRateLYR', 'hitRateCareer', 'logs'
 		];
 
-		function getAtgsColumnItems() {
+		function getFgsColumnItems() {
 			return [
 				{ key: "ev",             label: "Expected Value",    cols: [{ title: "Expected<br>Value", field: "ev", width: MOBILE ? 55 : 60, sorter: "number", formatter: evFormatter, responsive: 0 }] },
 				{ key: "outlier",        label: "Delta vs Avg",      cols: [{ title: "Delta vs Avg", field: "outlier", width: MOBILE ? 40 : 60, sorter: "number", mutator: function(value, rowData) { const s = computeOutlierFromBookOdds(rowData); rowData.outlierBook = s.book; rowData.outlierPct = s.pct; return s.pct; }, formatter: function(cell) { const row = cell.getRow().getData(); return row.outlierPct.toFixed(1) + "%"; }, responsive: 0, visible: false }] },
@@ -732,7 +746,7 @@
 				{ key: "player",         label: "Player",            cols: [{ title: "Player (L5 TOI/g)", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140, formatterParams: { sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true }] },
 				{ key: "teamTotal", label: "Est. Team Goals", cols: [getNhlTeamTotalColumn()] },
 				{ key: "ppLine",         label: "PP Line",           cols: [{ title: "PP Line", field: "ppLine", width: 50 }] },
-				{ key: "handicap",       label: "Line",              cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); const prop = data.prop; if (["attd","2+td","3+td","ftd","ltd"].includes(prop)) return ""; let ou = data.under ? "u" : "o"; return ou + cell.getValue(); }, headerFilter: "list", headerFilterParams: {valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(hv, rv) { return hv === "All" ? true : rv === hv; }, width: 60 }] },
+				{ key: "handicap",       label: "Line",              cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); const prop = data.prop; if (["fgs", "lgs"].includes(prop)) return ""; let ou = data.under ? "u" : "o"; return ou + cell.getValue(); }, headerFilter: "list", headerFilterParams: {valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(hv, rv) { return hv === "All" ? true : rv === hv; }, width: 60 }] },
 				{ key: "prop",           label: "Prop",              cols: [{ title: "Prop", field: "prop", formatter: function(cell) { return cell.getValue(); }, headerFilter: "list", headerFilterParams: {valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(hv, rv) { return hv === "All" ? true : rv === hv; }, width: 50 }] },
 				{ key: "fairVal",        label: "Fair Value",        cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: "implied",        label: "Implied",           cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
@@ -765,29 +779,28 @@
 				{ key: "hitRateLYR",     label: "Last Year Hit Rate", cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateCareer",  label: "Career Hit Rate",   cols: [{ title: "Career</br>Hit Rate", field: "hitRateCareer", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "logs",           label: "Game Logs",         cols: [{ title: "Game Logs<br> Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams: {type: "bar"}, responsive: 3, visible: MOBILE ? false : true }] },
-				{ key: "due_grp",        label: "Last Goal (Due)",   cols: [{ title: "Last Goal (Due)", columns: [{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},{title: "Z", field: "due.g.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"}] }] }
 			];
 		}
 
-		function buildAtgsColumns(savedOrder) {
+		function buildFgsColumns(savedOrder) {
 			return buildColumnsFromOrder(
-				savedOrder, ATGS_DEFAULT_COL_ORDER, getAtgsColumnItems(), null,
+				savedOrder, FGS_DEFAULT_COL_ORDER, getFgsColumnItems(), null,
 				[{ field: "game", visible: false }]
 			);
 		}
 
 		function openColReorder() {
-			const savedOrder = CURR_USER?.metadata?.['atgs-order'] || ATGS_DEFAULT_COL_ORDER;
+			const savedOrder = CURR_USER?.metadata?.['fgs-order'] || FGS_DEFAULT_COL_ORDER;
 			const isVisible = meta => {
 				const fields = [];
 				(function collect(cols) { for (const c of cols) { if (c.columns) collect(c.columns); else if (c.field) fields.push(c.field); } })(meta.cols);
 				return fields.some(f => TABLE.getColumn(f)?.isVisible());
 			};
-			openColReorderModal(getAtgsColumnItems(), ATGS_DEFAULT_COL_ORDER, savedOrder, isVisible);
+			openColReorderModal(getFgsColumnItems(), FGS_DEFAULT_COL_ORDER, savedOrder, isVisible);
 		}
 		function closeColReorder() { closeColReorderModal(); }
 		async function saveColReorder() {
-			await saveColReorderModal('atgs-order', buildAtgsColumns, () => showHideUserTable(true));
+			await saveColReorderModal('fgs-order', buildFgsColumns, () => showHideUserTable(true));
 		}
 
 		function renderTable(data) {
@@ -813,23 +826,18 @@
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildAtgsColumns(CURR_USER?.metadata?.["atgs-order"])
+				columns: buildFgsColumns(CURR_USER?.metadata?.["fgs-order"])
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
-				if (e.shiftKey || e.ctrlKey) {
-					showCardModal(row.getData());
-					return;
-				}
+				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
 				rowClick(row);
 			});
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
 				if (!loaded) {
-					TABLE.setHeaderFilterValue("handicap", "0.5");
-					TABLE.setHeaderFilterValue("prop", "atgs");
 					changeFilter();
 				}
 				loaded = true;
@@ -848,13 +856,13 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
 			]);
 			TABLE.setFilter([
-				{field: "prop", type: "=", value: "atgs"},
+				{field: "prop", type: "=", value: "fgs"},
 				{field: "under", type:"=", value: false}
 			]);
 
@@ -878,25 +886,8 @@
 				tweet.push(`${currentRank}. ${title(row.player)}: ${row["fairVal"] < 0 ? row["fairVal"] : `+${row["fairVal"]}`} (${Math.round(row["implied"], 1)}%)`);
 			}
 			const today = new Date();
-			let header = `🏒 Anytime Goalscorer Odds: Circa/Pinny's top 10 Implied (${today.getMonth()+1}/${today.getDate()})`; 
+			let header = `🏒 First Goalscorer Odds: Circa/Pinny's top 10 Implied (${today.getMonth()+1}/${today.getDate()})`; 
 			console.log(header+"\n\n"+tweet.join("\n"));
-		}
-
-		function due() {
-			TABLE.getColumns().map(c => {
-				c.hide()
-			});
-			[`ev`, "fairVal", "implied", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.espn", "bookOdds.pn", "hitRate", "hitRateLYR", "hitRateCareer", "logs", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
-			document.querySelector("#table").style.width = "max-content";
-
-			TABLE.setSort([
-				{column: "due.g.z_median", dir: "desc"}
-			]);
-			TABLE.setFilter([
-				{field: "prop", type: "=", value: "atgs"},
-				{field: "under", type:"=", value: false},
-				{field: "handicap", type:"=", value: 0.5},
-			]);
 		}
 
 		function pretty_() {
@@ -918,6 +909,10 @@
 			console.log(out);
 		}
 
+		function rowClick(row) {
+			showCardModal(row.getData());
+		}
+
 		function closeCardModal() {
 			document.getElementById('card-modal-overlay').classList.remove('open');
 		}
@@ -934,7 +929,8 @@
 				"bookOdds.circa", "bookOdds.fd", "bookOdds.b365", "bookOdds.dk",
 				"bookOdds.mgm", "bookOdds.espn", "bookOdds.cz", "bookOdds.fn",
 				"bookOdds.br", "bookOdds.hr", "bookOdds.bv", "bookOdds.re",
-				"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn"
+				"bookOdds.fl", "bookOdds.kambi", "bookOdds.bol", "bookOdds.pn",
+				"bookOdds.kal", "bookOdds.poly", "bookOdds.px", "bookOdds.nv"
 			];
 			
 			const circaCol = TABLE.getColumn("bookOdds.circa");

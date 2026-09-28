@@ -17,7 +17,7 @@ function resolveOppRankValue(data) {
 		const key = keys[data.prop];
 		return (key && value[key]) ? value[key]["rank"] : null;
 	}
-	if (["tds", "tds2"].includes(PAGE)) {
+	if (["tds", "tds2", "ftd"].includes(PAGE)) {
 		if (data.player?.includes("d/st")) return null;
 		return value["opp-rz-scoring-pct"]?.rank ?? null;
 	}
@@ -292,7 +292,7 @@ function renderCardSnapShare(rowData) {
 
 function cardHitRates(rowData) {
 	const rates = { ...rowData.hitRates };
-	if (!["nfl", "tds", "tds2"].includes(PAGE)) return rates;
+	if (!["nfl", "tds", "tds2", "ftd"].includes(PAGE)) return rates;
 	const number = value => {
 		if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") return null;
 		const parsed = Number(value);
@@ -637,7 +637,7 @@ function updateExistingCard(card, rowData) {
 
 	const evContent = evCardFormatter(rowData);
 	const sport = rowData.sport || SPORT || "nba";
-	const avgMin = PAGE == "nhl" ? rowData.avgTOI : rowData.avgMin;
+	const avgMin = ["nhl", "atgs", "atgs2", "fgs"].includes(PAGE) ? rowData.avgTOI : rowData.avgMin;
 	let team = rowData.teamId || rowData.team;
 	let teamImg = getTeamImg(sport, team);
 	let player = title(rowData.player);
@@ -665,7 +665,7 @@ function updateExistingCard(card, rowData) {
 	}
 	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
 		{ quotePage: "", applyFees: false })?.outerHTML || "";
-	const snapsPill = ["tds", "tds2", "nfl"].includes(PAGE)
+	const snapsPill = ["tds", "tds2", "ftd", "nfl"].includes(PAGE)
 		? renderCardSnapShare(rowData) : "";
 
 	const playerRowContent = `

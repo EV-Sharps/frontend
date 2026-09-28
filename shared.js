@@ -184,6 +184,7 @@ const PAGE_SECTIONS = [
 		key: "nfl", label: "🏈 NFL",
 		pages: [
 			{ label: "🏈 TDs", value: "tds"},
+			{ label: "First / Last TD", value: "ftd" },
 			{ label: "ATTD Parlays", value: "parlays?market=attd" },
 			{ label: "🏈🏈 2+TD", value: "tds2"},
 			{ label: "🏈 Props", value: "nfl", sharp: true },
@@ -203,6 +204,7 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "🏒 Goals", value: "atgs" },
 			{ label: "🏒 2+ Goals", value: "atgs2" },
+			{ label: "First Goals", value: "fgs" },
 			{ label: "🏒 Props", value: "nhl", sharp: true },
 			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
@@ -263,9 +265,12 @@ function togglePageFav(value) {
 	}
 }
 
-setTimeout(() => {
-	buildPagePicker();
-}, 200);
+// Wait for each page's inline setup to set PAGE and SPORT before choosing its tab.
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", buildPagePicker, { once: true });
+} else {
+	setTimeout(buildPagePicker, 0);
+}
 
 function buildPagePicker() {
 	const selectEl = document.getElementById("page-select");
@@ -612,6 +617,23 @@ function ensureRecordColumnControl() {
 	const control = document.createElement('div');
 	control.innerHTML = '<input id="custom_roiRecord" type="checkbox"><label for="custom_roiRecord">Record (Stacked)</label>';
 	evControl.after(control);
+}
+
+function ensureLineColumnControl() {
+	if (!TABLE) return;
+	const column = TABLE.getColumns().find(col => col.getField() === 'handicap');
+	const items = document.getElementById('items');
+	if (!column || !items) return;
+	let checkbox = items.querySelector('#custom_handicap');
+	if (!checkbox) {
+		const control = document.createElement('div');
+		control.innerHTML = '<input id="custom_handicap" type="checkbox"><label for="custom_handicap">Line</label>';
+		const playerControl = items.querySelector('#custom_player')?.parentElement;
+		if (playerControl) playerControl.after(control);
+		else items.appendChild(control);
+		checkbox = control.querySelector('input');
+	}
+	checkbox.checked = column.isVisible();
 }
 
 const oddsTableViewStates = new WeakMap();
@@ -1094,7 +1116,7 @@ function snapShareColumnOrder(savedOrder, defaultOrder) {
 
 const percentFormatter = function(cell, params, rendered) {
 	if (!cell.getValue()) {
-		if (["tds", "tds2", "nfl"].includes(PAGE) && cell.getRow().getData().logs.length != 0) {
+		if (["tds", "tds2", "ftd", "fgs", "nfl"].includes(PAGE) && cell.getRow().getData().logs?.length > 0) {
 			return "0%";
 		}
 		return "";
@@ -1622,7 +1644,7 @@ const oppFormatter = function(cell, params, rendered) {
 	let pitcher = "";
 	if (PAGE == "preview") {
 		pitcher = cell.getValue().toUpperCase();
-	} else if (["tds", "tds2", "nfl"].includes(PAGE)) {
+	} else if (["tds", "tds2", "ftd", "nfl"].includes(PAGE)) {
 		pitcher = data.opp.toUpperCase();
 	} else if (data.pitcher) {
 		pitcher = MOBILE || params.lastName ? title(data.pitcher).split(" ")[1] : title(data.pitcher);
@@ -1818,7 +1840,7 @@ const rankingFormatter = function(cell, params, rendered) {
 			}
 			value = value[key]["rank"];
 			color = getTDsOppRankColor(value);
-		} else if (PAGE == "tds") {
+		} else if (["tds", "ftd"].includes(PAGE)) {
 			if (value[params.key] === undefined || data.player.includes("d/st")) {
 				return "";
 			}
@@ -2389,14 +2411,14 @@ const basePlayerFormatter = function(cell, params, rendered) {
 		bats = data.pitch_hand;
 	} else if (["pts", "nba", "threes", "kotc"].includes(PAGE)) {
 		bats = data.avgMin;
-	} else if (PAGE == "atgs") {
+	} else if (["atgs", "fgs"].includes(PAGE)) {
 		bats = data.avgTOI;
-	} else if (["tds", "tds2", "nfl", "ncaaf"].includes(PAGE)) {
+	} else if (["tds", "tds2", "ftd", "nfl", "ncaaf"].includes(PAGE)) {
 		bats = data.pos;
 	}
 
 	let pos = "";
-	if (["nba", "threes", "atgs", "kotc"].includes(PAGE)) {
+	if (["nba", "threes", "atgs", "fgs", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	let lineupCircles = "";
@@ -2445,6 +2467,18 @@ function getGoalieColor(key, val) {
 	}
 
 	return "";
+}
+
+function getNhlTeamTotalColumn() {
+	return {
+		title: "Est. Team<br>Goals", field: "teamTotal", width: 78,
+		sorter: "number", sorterParams: {alignEmptyValues: "bottom"}, responsive: 0,
+		headerTooltip: "Estimated full-game goals for the player's team. Over/under odds are devigged and fitted to a Poisson model; the median across books is shown.",
+		formatter: function(cell) {
+			const value = cell.getValue();
+			return value == null || value === "" || !Number.isFinite(Number(value)) ? "—" : Number(value).toFixed(2);
+		}
+	};
 }
 
 const goalieFormatter = function(cell, params, rendered) {
@@ -3153,8 +3187,10 @@ const DEFAULT_SHARED = [
 const DEFAULT_FIELDS = {
 	dingers: [...DEFAULT_SHARED],
 	tds: [...DEFAULT_SHARED, "oppRank", "snaps"],
+	ftd: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	tds2: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
+	fgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine", "teamTotal"],
 	nfl: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", "oppRank", "snaps", ...getPropHitRateColumnItems().map(item => item.key)],
 	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
@@ -3288,6 +3324,7 @@ function loadWeights() {
 
 function showHideUserTable(loaded) {
 	initKellyToggle();
+	ensureLineColumnControl();
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
 		if (!loaded && typeof parseWeightKey === 'function') {
 			loadWeights();
@@ -3296,6 +3333,10 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		if (["nhl", "atgs", "fgs"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-team-total-version`]) {
+			allowed.add("teamTotal");
+		}
+
 		if (["mlb", "nfl"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-hit-rates-version`]) {
 			getPropHitRateColumnItems().forEach(item => allowed.add(item.key));
 		}
@@ -3310,13 +3351,17 @@ function showHideUserTable(loaded) {
 			// These columns could not be customized in older saved layouts.
 			["handicap", "prop", "opp"].forEach(field => allowed.add(field));
 		}
+		if (!customColumns && !CURR_USER.metadata[`${PAGE}-line-column-version`]) {
+			// Line was always visible before these pages offered its toggle.
+			allowed.add('handicap');
+		}
 		const defs = TABLE.getColumnDefinitions();
 		const nestedFields = getNestedFields(defs);
 
 		nestedFields.forEach(field => {
 			if (field === "_watchlist") return;
 			const metaKey = field.replace(/\./g, "_");
-			const keepVisible = !customColumns && ["opp", "handicap", "prop"].includes(metaKey);
+			const keepVisible = !customColumns && ["opp", "prop"].includes(metaKey);
 			if (!allowed.has(metaKey) && !keepVisible && !metaKey.includes("due")) {
 				TABLE.getColumn(field)?.hide();
 			} else {
@@ -3370,6 +3415,7 @@ function openOverlay() {
 			if (checkbox) checkbox.checked = TABLE.getColumn(item.cols[0].field)?.isVisible() ?? false;
 		});
 	}
+	ensureLineColumnControl();
 	syncOddsSummaryColumns();
 
 	const currentFavorites = new Set(getFavoriteDevigs());
@@ -4138,7 +4184,7 @@ function kalshiFeeRate(data = {}, page = PAGE) {
 	if (/\/kxmlbhr(?:[/-]|$)/.test(link)) return KALSHI_FEE_RATE;
 	const sport = String(data.sport || (typeof SPORT !== "undefined" ? SPORT : "") || "").toLowerCase();
 	const prop = String(data.prop || "").toLowerCase();
-	return sport === "nfl" || ["nfl", "tds", "tds2"].includes(page) || ["attd", "ftd"].includes(prop)
+	return sport === "nfl" || ["nfl", "tds", "tds2", "ftd"].includes(page) || ["attd", "ftd"].includes(prop)
 		? 0.07 : KALSHI_FEE_RATE;
 }
 
@@ -4778,7 +4824,7 @@ function parseURLParams() {
 	document.body?.classList.toggle("stream-mode", STREAM != null);
 
 	function defaultOU() {
-		if (["atgs", "tds", "tds2", "dingers"].includes(PAGE)) return "o";
+		if (["atgs", "fgs", "tds", "tds2", "ftd", "dingers"].includes(PAGE)) return "o";
 		return "ou";
 	}
 	OU = URLParams.get("ou") || defaultOU();
@@ -4923,7 +4969,7 @@ async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	const newOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
 	if (CURR_USER?.metadata) {
 		CURR_USER.metadata[storageKey] = newOrder;
-		if (["tds-order", "tds2-order", "nfl-order"].includes(storageKey)) {
+		if (["tds-order", "tds2-order", "ftd-order", "nfl-order"].includes(storageKey)) {
 			CURR_USER.metadata[`${PAGE}-snaps-order-version`] = 1;
 		}
 		await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);

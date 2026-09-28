@@ -324,7 +324,9 @@ function getTopDevigs(bookArg = null) {
 			const parts = devigKey.split("-vs-");
 			const prop = parts[0] || devigKey;
 			
-			if (PAGE == "atgs" && !["atgs", "fgs", "lgs"].includes(prop)) continue;
+			if (PAGE == "atgs" && prop !== "atgs") continue;
+			if (PAGE == "fgs" && !["fgs", "lgs"].includes(prop)) continue;
+			if (PAGE == "ftd" && !["ftd", "ltd"].includes(prop)) continue;
 			if (PAGE == "tds" && prop !== "attd") continue;
 
 			list.push({
@@ -361,7 +363,7 @@ function openPreloadsWindow(limit = 0) {
 		container.innerHTML = `<div style="padding:1rem;color:#900">${top.error}</div>`;
 		return;
 	}
-	renderPreloadsList(container, top || []);
+	renderPreloadsList(container, top || [], ({ tds: "attd", ftd: "ftd", fgs: "fgs" })[PAGE] || "atgs");
 }
 
 // close preloads and return to devig modal

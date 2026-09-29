@@ -2471,12 +2471,12 @@ function getGoalieColor(key, val) {
 
 function getNhlTeamTotalColumn() {
 	return {
-		title: "Est. Team<br>Goals", field: "teamTotal", width: 78,
+		title: "Est. Team<br>Goals", field: "teamTotal", width: 60,
 		sorter: "number", sorterParams: {alignEmptyValues: "bottom"}, responsive: 0,
 		headerTooltip: "Estimated full-game goals for the player's team. Over/under odds are devigged and fitted to a Poisson model; the median across books is shown.",
 		formatter: function(cell) {
 			const value = cell.getValue();
-			return value == null || value === "" || !Number.isFinite(Number(value)) ? "—" : Number(value).toFixed(2);
+			return value == null || value === "" || !Number.isFinite(Number(value)) ? "-" : Number(value).toFixed(2);
 		}
 	};
 }

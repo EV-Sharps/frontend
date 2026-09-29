@@ -773,7 +773,7 @@ function getDevigDisplayName(devigKey) {
 	return names[devigKey] || parseWeightKey(devigKey);
 }
 
-const MAX_FAVORITES = 7;
+const MAX_FAVORITES = 15;
 
 function toggleFavorite(devigKey) {
 	let favorites = getFavoriteDevigs();

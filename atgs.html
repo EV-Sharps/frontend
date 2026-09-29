@@ -730,13 +730,13 @@
 				{ key: "outlier",        label: "Delta vs Avg",      cols: [{ title: "Delta vs Avg", field: "outlier", width: MOBILE ? 40 : 60, sorter: "number", mutator: function(value, rowData) { const s = computeOutlierFromBookOdds(rowData); rowData.outlierBook = s.book; rowData.outlierPct = s.pct; return s.pct; }, formatter: function(cell) { const row = cell.getRow().getData(); return row.outlierPct.toFixed(1) + "%"; }, responsive: 0, visible: false }] },
 				{ key: "book",           label: "Best Book",         cols: [{ title: "Best Book<br><br><button id='toggle-bookodds-btn' onclick='event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();'><span id='book-odds-toggle'>-</span> Hide Odds</button>", field: "book", vertAlign: "bottom", width: MOBILE ? 75 : 75, formatter: bestBookFormatter, formatterParams: {book: BOOK}, responsive: 0, titleFormatter: "html" }] },
 				{ key: "player",         label: "Player",            cols: [{ title: "Player (L5 TOI/g)", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140, formatterParams: { sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true }] },
-				{ key: "teamTotal", label: "Est. Team Goals", cols: [getNhlTeamTotalColumn()] },
-				{ key: "ppLine",         label: "PP Line",           cols: [{ title: "PP Line", field: "ppLine", width: 50 }] },
 				{ key: "handicap",       label: "Line",              cols: [{ title: "Line", field: "handicap", formatter: function(cell) { const data = cell.getRow().getData(); const prop = data.prop; if (["attd","2+td","3+td","ftd","ltd"].includes(prop)) return ""; let ou = data.under ? "u" : "o"; return ou + cell.getValue(); }, headerFilter: "list", headerFilterParams: {valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(hv, rv) { return hv === "All" ? true : rv === hv; }, width: 60 }] },
 				{ key: "prop",           label: "Prop",              cols: [{ title: "Prop", field: "prop", formatter: function(cell) { return cell.getValue(); }, headerFilter: "list", headerFilterParams: {valuesLookup: true, clearable: true, placeholder: "All Props", sort: "asc"}, headerFilterFunc: function(hv, rv) { return hv === "All" ? true : rv === hv; }, width: 50 }] },
 				{ key: "fairVal",        label: "Fair Value",        cols: [{ title: "Fair<br>Value", field: "fairVal", width: MOBILE ? 40 : 60, sorter: "number", formatter: plusMinusFormatter, responsive: 0 }] },
 				{ key: "implied",        label: "Implied",           cols: [{ title: "Implied", field: "implied", width: MOBILE ? 40 : 60, sorter: "number", formatter: impliedFormatter, responsive: 0, visible: MOBILE ? false : true }] },
 				{ key: "kelly",          label: "Quarter Kelly",     cols: [{ title: "1/4 Kelly", field: "kelly", width: MOBILE ? 40 : 60, sorter: "number", formatter: function(cell) { return formatKellyValue(cell.getValue()); }, responsive: 0, visible: MOBILE ? false : true }] },
+				{ key: "teamTotal", label: "Est. Team Goals", cols: [getNhlTeamTotalColumn()] },
+				{ key: "ppLine",         label: "PP Line",           cols: [{ title: "PP Line", field: "ppLine", width: 50 }] },
 				{ key: "opp",            label: "Opponent",          cols: [{ title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80 }] },
 				{ key: "goalie",         label: "Goalie",            cols: [{ title: "Goalie<br>GSAA<br>SV%", field: "goalie", formatter: goalieFormatter, width: 90, hozAlign: "left" }] },
 				{ key: "oppRank",        label: "Opp Rank",          cols: [{ title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50 }] },
@@ -848,7 +848,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "goalie", "bookOdds.espn", "bookOdds.circa", "bookOdds.kal", "bookOdds.nv", "bookOdds.fd", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median", "ppLine", "teamTotal"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

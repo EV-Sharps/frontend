@@ -400,19 +400,99 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     return null;
   }
 
+  function powerPlay(game) {
+    if (!hockey || game.status?.state !== 'in') return null;
+    const situation = game.situation || {};
+    if (requestFailed || game.freshness?.scoreboard_stale || situation.power_play_stale ||
+        /INTERMISSION|END_PERIOD|SUSPEND|DELAY/.test(game.status?.name || '') ||
+        age(situation.power_play_updated || game.freshness?.scoreboard_updated || snapshot?.scoreboard_updated) > 45) return null;
+    const teams = ['away', 'home'].filter(side => situation[`${side}_power_play`] === true);
+    if (teams.length === 1) return { side: teams[0], label: `${abbrev(game[teams[0]])} PP` };
+    if (situation.power_play === true) return { side: null, label: 'PP' };
+    return null;
+  }
+
+  function hockeySituationText(game) {
+    if (!hockey || game.status?.state !== 'in') return '';
+    const pp = powerPlay(game), situation = game.situation || {};
+    return [pp && !pp.side ? 'Power play' : '',
+      situation.empty_net === true && situation.home_goalie_pulled !== true && situation.away_goalie_pulled !== true ? 'Empty net' : '',
+    ].filter(Boolean).join(' / ');
+  }
+
   function teamRow(game, side, possession) {
     const team = game[side] || {};
     const logo = safeURL(team.logo, true);
     const score = game.status?.state === 'pre' ? null : number(team.score);
     const name = team.short_name || team.name || abbrev(team);
     const shots = game.status?.state === 'pre' ? null : number(team.shots_on_goal);
-    const hockeyState = game.status?.state === 'in' ? [game.situation?.[`${side}_power_play`] === true ? 'POWER PLAY' : '', game.situation?.[`${side}_goalie_pulled`] === true ? 'EMPTY NET' : ''].filter(Boolean) : [];
+    const pp = powerPlay(game);
+    const hockeyState = game.status?.state === 'in' ? [pp?.side === side ? 'POWER PLAY' : '', game.situation?.[`${side}_goalie_pulled`] === true ? 'EMPTY NET' : ''].filter(Boolean) : [];
     return `<div class="gt-team" data-team="${side}">
       ${logo ? `<img class="gt-team-logo" src="${escape(logo)}" alt="" data-abbr="${escape(abbrev(team))}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="gt-team-monogram">${escape(abbrev(team))}</span>`}
       <div class="gt-team-name">${escape(name)}<small>${escape(abbrev(team))} <span aria-hidden="true">·</span> ${side.toUpperCase()}${hockey && shots !== null ? ` / ${shots} SOG` : ''}</small></div>
-      <span class="gt-team-state">${hockey ? hockeyState.map(label => `<span class="gt-possession">${label}</span>`).join('') : possession === side ? '<span class="gt-possession"><i class="gt-football" aria-hidden="true"></i> BALL</span>' : ''}</span>
+      <span class="gt-team-state">${hockey ? hockeyState.map(label => `<span class="gt-possession${label === 'POWER PLAY' ? ' gt-team-pp' : ''}">${label}</span>`).join('') : possession === side ? '<span class="gt-possession"><i class="gt-football" aria-hidden="true"></i> BALL</span>' : ''}</span>
       <span class="gt-score${score === null ? ' is-dim' : ''}" aria-label="${escape(abbrev(team))} score ${score ?? 'not started'}">${score ?? '-'}</span>
     </div>`;
+  }
+
+  function onIcePlayers(players) {
+    return players.map(player => `<span class="gt-on-ice-player">${player.number != null && player.number !== '' ? `<span class="gt-on-ice-number">#${escape(player.number)}</span> ` : ''}${escape(player.name || 'Player not reported')}</span>`).join('');
+  }
+
+  function onIceHTML(game) {
+    if (!hockey || game.status?.state !== 'in') return '';
+    const report = game.on_ice;
+    const available = report?.available === true;
+    const players = value => (Array.isArray(value) ? value : []).filter(player => player && typeof player === 'object');
+    return `<section class="gt-on-ice" aria-label="On ice">
+      <h3>ON ICE</h3><p class="gt-on-ice-status"></p>
+      ${available ? `<div class="gt-on-ice-teams">${['away', 'home'].map(side => {
+        const team = report[side] || {};
+        const penaltyBox = players(team.penalty_box);
+        const penaltyIds = new Set(penaltyBox.filter(player => player.id != null).map(player => String(player.id)));
+        return `<div class="gt-on-ice-team" data-on-ice-team="${side}"><h4>${escape(abbrev(game[side]))}</h4>
+          ${[['forwards', 'F', 'Forwards'], ['defensemen', 'D', 'Defensemen'], ['goalies', 'G', 'Goalies']].map(([key, label, title]) => {
+            const group = players(team[key]).filter(player => player.id == null || !penaltyIds.has(String(player.id)));
+            return `<div class="gt-on-ice-group" data-on-ice-group="${key}"><span class="gt-on-ice-position" aria-label="${title}" title="${title}">${label}</span><div class="gt-on-ice-players">${group.length ? onIcePlayers(group) : '<span class="gt-on-ice-missing">Not reported</span>'}</div></div>`;
+          }).join('')}
+          ${penaltyBox.length ? `<div class="gt-on-ice-penalty"><span>Penalty box</span><div class="gt-on-ice-players">${onIcePlayers(penaltyBox)}</div></div>` : ''}</div>`;
+      }).join('')}</div>` : '<p class="gt-on-ice-empty">On-ice data unavailable from ESPN.</p>'}
+    </section>`;
+  }
+
+  function updateOnIceFreshness(entry) {
+    const section = entry.element.querySelector('.gt-on-ice');
+    if (!section) return;
+    const report = entry.game.on_ice;
+    const available = report?.available === true;
+    const seconds = age(report?.updated);
+    const period = number(report?.period);
+    const stale = available && (report.stale === true || requestFailed || seconds > 45);
+    section.classList.toggle('is-stale', stale);
+    section.querySelector('.gt-on-ice-status').textContent = [
+      stale ? 'Stale' : '',
+      available ? report.in_intermission === true ? 'Intermission · Last reported' : 'Latest reported' : '',
+      ['ESPN', available ? [period > 0 ? `P${period}` : '', report.clock].filter(Boolean).join(' / ') : ''].filter(Boolean).join(' '),
+      Number.isFinite(seconds) ? `Fetched ${elapsed(seconds)} ago` : available ? 'Fetch time not reported' : 'Awaiting a report',
+    ].filter(Boolean).join(' · ');
+  }
+
+  function updatePowerPlayFreshness(entry) {
+    const active = Boolean(powerPlay(entry.game));
+    entry.element.classList.toggle('is-power-play', active);
+    if (hockey) entry.element.querySelector('.gt-situation > span').textContent = hockeySituationText(entry.game);
+    if (active) return;
+    const badge = entry.element.querySelector('.gt-power-play');
+    if (badge) {
+      const kickoffLabel = document.createElement('span');
+      kickoffLabel.className = 'gt-kickoff';
+      kickoffLabel.textContent = kickoff(entry.game);
+      badge.replaceWith(kickoffLabel);
+      entry.element.querySelectorAll('.gt-team-pp').forEach(label => label.remove());
+      // A successful refresh must restore the badge even if the payload is unchanged.
+      entry.html = null;
+    }
   }
 
   function gameHTML(game) {
@@ -422,6 +502,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     const x = fieldPosition(game, side);
     const gain = x !== null && normalDown && distance !== null && distance > 0 ? Math.max(0, Math.min(100, x + (side === 'away' ? distance : -distance))) : null;
     const red = Boolean(side && normalDown && s.red_zone);
+    const pp = powerPlay(game);
     const live = status.state === 'in';
     const phase = status.detail || (live ? 'In progress' : status.state === 'post' ? 'Final' : 'Scheduled');
     const downText = normalDown ? (s.down_distance_text || `${['', '1st', '2nd', '3rd', '4th'][down]} & ${distance ?? '?'}`) : null;
@@ -432,11 +513,12 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     const playText = last?.text || (status.state === 'pre' ? 'The latest play will appear here once the game gets underway.' : 'Waiting for ESPN to report the latest play.');
     const url = safeURL(game.url);
     const tdCount = game.details ? touchdowns(game).length : null;
-    const hockeySituation = live && hockey ? [s.power_play === true && s.home_power_play !== true && s.away_power_play !== true ? 'Power play' : '', s.empty_net === true && s.home_goalie_pulled !== true && s.away_goalie_pulled !== true ? 'Empty net' : ''].filter(Boolean).join(' / ') : '';
+    const hockeySituation = hockeySituationText(game);
     return `<div class="gt-game-head"><span class="gt-phase ${live ? 'in' : ''}">${live ? '<i class="gt-live-dot" aria-hidden="true"></i>' : ''}${escape(phase)}</span>
-      ${red ? '<span class="gt-red-zone">RED ZONE</span>' : `<span class="gt-kickoff">${escape(kickoff(game))}</span>`}</div>
+      ${pp ? `<span class="gt-power-play" aria-label="${escape(pp.side ? `${abbrev(game[pp.side])} power play` : 'Power play')}">${escape(pp.label)}</span>` : red ? '<span class="gt-red-zone">RED ZONE</span>' : `<span class="gt-kickoff">${escape(kickoff(game))}</span>`}</div>
       <div class="gt-scoreboard">${teamRow(game, 'away', side)}${teamRow(game, 'home', side)}</div>
       <div class="gt-situation"><strong>${escape(situation)}</strong><span>${hockey ? escape(hockeySituation) : side ? escape(abbrev(game[side])) + ' ball' : ''}</span></div>
+      ${onIceHTML(game)}
       ${hockey ? '' : `<div class="gt-field-wrap"><div class="gt-field" role="img" aria-label="${escape(x === null ? 'Field position unavailable' : `${s.possession_text || 'Ball on field'}, ${abbrev(game[side])} possession`)}">
         <div class="gt-endzone">${escape(abbrev(game.away))}</div><div class="gt-field-yardage">
           ${red ? `<div class="gt-field-zone" style="${side === 'away' ? 'right' : 'left'}:0"></div>` : ''}
@@ -478,6 +560,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
       if (entry.html !== html) { entry.element.innerHTML = html; entry.html = html; }
       entry.element.setAttribute('aria-label', String(game.game || `${abbrev(game.away)} at ${abbrev(game.home)}`));
       entry.element.classList.toggle('is-red-zone', Boolean(offense(game) && game.situation?.down >= 1 && game.situation?.down <= 4 && game.situation?.red_zone));
+      entry.element.classList.toggle('is-power-play', Boolean(powerPlay(game)));
       entry.element.hidden = (filter !== 'all' && game.status?.state !== filter) || (selectedGames !== null && !selectedGames.has(id));
       if (!entry.element.hidden) visible++;
       // Do not replace unchanged cards on every poll (preserves keyboard focus).
@@ -509,6 +592,8 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
       const label = entry.element.querySelector('.gt-game-age');
       label.textContent = `${gameStale ? 'Delayed · ' : ''}Fetched ${elapsed(gameAge)} ago${detailsStale ? ' / Details delayed' : ''}`;
       label.classList.toggle('gt-game-stale', Boolean(gameStale || detailsStale));
+      updateOnIceFreshness(entry);
+      updatePowerPlayFreshness(entry);
     }
     updateTouchdownFreshness();
     updateStatsFreshness();

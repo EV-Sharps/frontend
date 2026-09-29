@@ -207,6 +207,7 @@ const PAGE_SECTIONS = [
 			{ label: "First Goals", value: "fgs" },
 			{ label: "🏒 Props", value: "nhl", sharp: true },
 			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
+			{ label: "🏒 NHL Game Tracker", value: "nfl_tracker?sport=nhl" },
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
@@ -288,7 +289,7 @@ function buildPagePicker() {
 	else if (PAGE === "bets" && SPORT === "nfl") currentVal = "bets?sport=nfl";
 	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
 	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
-	else if (PAGE === "nfl_tracker" && SPORT === "ncaaf") currentVal = "nfl_tracker?sport=ncaaf";
+	else if (PAGE === "nfl_tracker" && ["ncaaf", "nhl"].includes(SPORT)) currentVal = `nfl_tracker?sport=${SPORT}`;
 	else if (PAGE === "parlays" && SPORT === "nfl") currentVal = "parlays?market=attd";
 
 	// Active tab: favorites if any saved, else current sport

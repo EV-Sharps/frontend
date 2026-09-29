@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Football Game Tracker | +EV Sharps</title>
-  <meta name="description" content="Follow NFL and college football games: scores, possession, field position and the latest play in one place.">
+  <title>Game Tracker | +EV Sharps</title>
+  <meta name="description" content="Follow NFL, college football and NHL games: scores, game clocks, player stats and the latest play in one place.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nfl_tracker.css">
 </head>
@@ -15,14 +15,15 @@
   </header>
   <main class="gt-main">
     <section class="gt-intro" aria-labelledby="tracker-title">
-      <div><p class="gt-eyebrow"><span id="league-name">NFL</span> <span aria-hidden="true">•</span> EVERY SNAP, ONE SCREEN</p><h1 id="tracker-title">Game Tracker<span class="gt-title-dot">.</span></h1>
-        <p class="gt-lede">Who's got it. Where they are. What just happened.</p></div>
+      <div><p class="gt-eyebrow"><span id="league-name">NFL</span> <span aria-hidden="true">•</span> <span id="tracker-tagline">EVERY SNAP, ONE SCREEN</span></p><h1 id="tracker-title">Game Tracker<span class="gt-title-dot">.</span></h1>
+        <p id="tracker-lede" class="gt-lede">Who's got it. Where they are. What just happened.</p></div>
       <div class="gt-update-panel"><div id="connection" class="gt-connection">Connecting to the scoreboard</div>
         <p id="feed-age">Checking for the latest games…</p><button id="refresh" class="gt-refresh" type="button"><span aria-hidden="true">↻</span> Refresh now</button></div>
     </section>
-    <nav class="gt-leagues" aria-label="Football league">
+    <nav class="gt-leagues" aria-label="League">
       <a href="?sport=nfl" data-league="nfl" aria-current="page">NFL</a>
       <a href="?sport=ncaaf" data-league="ncaaf">College football</a>
+      <a href="?sport=nhl" data-league="nhl">NHL</a>
       <span id="league-coverage" hidden>FBS + FCS</span>
     </nav>
     <div id="request-status" class="gt-notice" role="status" hidden></div>
@@ -48,10 +49,10 @@
     </section>
     <div id="games" class="gt-grid" aria-label="NFL games" aria-busy="true"></div>
     <div id="empty-state" class="gt-empty" role="status">Loading today's games…</div>
-    <div class="gt-legend"><span><i class="gt-legend-los"></i> Ball / line of scrimmage</span><span><i class="gt-legend-gain"></i> First down</span><span>Fields show team ends, not stadium direction.</span></div>
+    <div id="football-legend" class="gt-legend"><span><i class="gt-legend-los"></i> Ball / line of scrimmage</span><span><i class="gt-legend-gain"></i> First down</span><span>Fields show team ends, not stadium direction.</span></div>
   </main>
   <dialog id="touchdown-dialog" class="gt-td-dialog" aria-labelledby="touchdown-title" aria-describedby="touchdown-game-status">
-    <div class="gt-td-header"><div><p class="gt-eyebrow">TOUCHDOWNS</p><h2 id="touchdown-title"></h2></div><button id="touchdown-close" class="gt-dialog-close" type="button" aria-label="Close touchdowns" autofocus>&times;</button></div>
+    <div class="gt-td-header"><div><p id="scoring-label" class="gt-eyebrow">TOUCHDOWNS</p><h2 id="touchdown-title"></h2></div><button id="touchdown-close" class="gt-dialog-close" type="button" aria-label="Close touchdowns" autofocus>&times;</button></div>
     <p id="touchdown-game-status" class="gt-td-game-status"></p>
     <div id="touchdown-feed-status" class="gt-td-feed-status" role="status"></div>
     <div id="touchdown-content" class="gt-td-content"></div>

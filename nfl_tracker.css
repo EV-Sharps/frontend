@@ -187,3 +187,6 @@ html.gt-dialog-open, html.gt-dialog-open body.nfl-tracker-page { overflow: hidde
   .gt-stats-filters label { flex-basis: 120px; }
   .gt-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; } .gt-footer { padding: 20px 18px; line-height: 1.8; }
 }
+
+/* Hockey badges use the same score card without a football field. */
+.gt-team-state { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }

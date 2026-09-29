@@ -591,11 +591,6 @@
 			if (IMP != undefined) {
 				implied();
 			}
-			if (SPORT == "nhl") {
-				["mgm", "espn", "cz", "br", "hr", "bol"].forEach(book => {
-					TABLE.hideColumn(`bookOdds.${book}`);
-				});
-			}
 		}, refreshDataTimestamps);
 
 		const LIVE_DEFAULT_COL_ORDER = ['ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_mgm', 'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_bol', 'bookOdds_b365', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_pn', 'bookOdds_circa', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px', 'bookOdds_poly', 'logs', 'hitRate', 'hitRateLYR'];
@@ -634,7 +629,7 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
+							if (["attd", "2+td", "3+td", "ftd", "ltd", "atgs", "fgs", "lgs"].includes(prop)) {
 								return "";
 							}
 							let ou = data.under ? "u" : "o";
@@ -662,7 +657,7 @@
 							const data = cell.getRow().getData();
 							let line = data.handicap;
 							let prop = cell.getValue();
-							if (["attd", "2+td", "3+td", "ftd", "ltd"].includes(prop)) {
+							if (["attd", "2+td", "3+td", "ftd", "ltd", "atgs", "fgs", "lgs"].includes(prop)) {
 								return prop;
 							}
 							//line = parseFloat(line) + 0.5;

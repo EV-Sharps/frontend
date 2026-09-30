@@ -1,217 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="google" content="notranslate">
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Odds Movement | +EV Sharps</title>
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<link href="tabulator.min.css" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Line movement | +EV Sharps</title>
+  <meta name="description" content="Search today's captured player and team markets, chart sportsbook prices and compare the largest changes in fair probability.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="movement.css">
+  <link rel="icon" href="logos/icon2.png">
 </head>
-<style type="text/css">
-	#table {
-		width: auto;
-	}
-	@media (max-width: 1350px) {
-		#table-container {
-			justify-content: normal;
-		}
-		#table-container, #table {
-			width: 100%;
-		}
-	}
-	@media (max-width: 600px) {
-		#table {
-			height: 85%;
-		}
-	}
-</style>
-<body>
-	<div id="app">
-		<header id="header">
-			<div id="title">
-				<h1>+EV Sharps</h1>
-			</div>
-			<div id="center-dropdown">
-				<div class="select-wrapper">
-					<select id="page-select"></select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-				<div class="select-wrapper">
-					<select id="sport-select">
-						<option value="mlb">MLB</option>
-						<option value="nfl">NFL</option>
-						<option value="nhl">NHL</option>
-					</select>
-					<svg class="select-arrow" viewBox="0 0 20 20">
-						<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
-					</svg>
-				</div>
-			</div>
-			<div id="auth-buttons">
-				<button class="discord-login loggedOut" onclick="loginWithDiscord()">
-					<img src="/logos/discord.png" alt="Discord logo">
-					<span class="btn-text">Sign in with Discord</span>
-				</button>
-				<button class="gsi-material-button loggedOut" onclick="loginWithGoogle()">
-				  <div class="gsi-material-button-state"></div>
-				  <div class="gsi-material-button-content-wrapper">
-				    <div class="gsi-material-button-icon">
-				      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
-				        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-				        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-				        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-				        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-				        <path fill="none" d="M0 0h48v48H0z"></path>
-				      </svg>
-				    </div>
-				    <span style="display: none;">Sign in with Google</span>
-				  </div>
-				</button>
-
-				<span id="username" class="loggedIn username"></span>
-				<button id="pricing" class="loggedOut" onclick="changePage('pricing')">Pricing</button>
-				<button id="hide-username" onclick="hideUsername()">Hide</button>
-				<button id="account" class="loggedIn" onclick="changePage('profile')">Profile</button>
-				<button id="upgrade" class="loggedIn" onclick="changePage('pricing')">Upgrade 🎯</button>
-				<button id="logout" class="loggedIn" onclick="logout()">Logout</button>
-			</div>
-		</header>
-		<main>
-			<div>
-				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
-
-				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
-			</div>
-			<div id="table-container">
-				<div class="loggedOut">
-					<div style="padding: 0.5rem;text-align: center;">
-						<a href="/pricing" class="upgrade-link">Upgrade</a> to sharp to see the full slate
-					</div>
-				</div>
-				<div id="table"></div>
-			</div>
-		</main>
-	</div>
-	<script type="text/javascript" src="shared.js"></script>
-	<script type="text/javascript" src="auth.js"></script>
-	<script type="text/javascript">
-		PAGE = "movement";
-		parseURLParams();
-		let sport_select = document.querySelector("#sport-select");
-		sport_select.value = SPORT;
-
-		sport_select.addEventListener("change", (e) => {
-			SPORT = e.target.value;
-			let url = new URL(window.location.href);
-			const params = new URLSearchParams(window.location.search);
-			params.set("sport", SPORT);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-			renderTable(RES[SPORT]);
-		});
-
-		function fetchPlays() {
-			let url = "/api/movement";
-			const params = new URLSearchParams();
-			params.set("sport", SPORT);
-			if (params.toString()) {
-				url += "?"+params.toString();
-			}
-			fetch(API_BASE+url, {
-				headers: { 
-					Authorization: `Bearer ${ACCESS_TOKEN}`
-				}
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				if (!RES[SPORT]?.length) {
-					renderTable([]);
-					TABLE.options.placeholder = "No Data.";
-					TABLE.redraw(true);
-					return;
-				}
-				renderTable(RES[SPORT]);
-				//TABLE.setData(data);
-				//TABLE.redraw(true);
-			}).catch(err => console.log(err));
-		}
-
-		function renderTable(data) {
-			TABLE = new Tabulator("#table", {
-				tooltipsHeader: true,
-    			placeholder:"Data Loading...",
-				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "",
-				autoResize: true,
-				data: data,
-				initialSort: [
-					{column: "dt", dir: "desc"},
-				],
-				columnDefaults: {
-					vertAlign: "middle",
-					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc"
-				},
-				groupToggleElement: "header",
-				columns: [
-					{title: "Datetime", field: "dt", formatter: timeAgoFormatter},
-					{
-						title: "Circa<br>+EV",
-						field: "ev",
-						width: MOBILE ? 55 : 60,
-						sorter: "number",
-						responsive: 0,
-						formatter: evFormatter
-					},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE ? 100 : 140,
-						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
-					},
-					{
-						title: "Best Book", field: "book",
-						vertAlign:"bottom", width: MOBILE ? 65 : 70,
-						formatter: evBookFormatter,
-						responsive: 0
-					},
-					{title: "Circa<br>Fair Val", field: "fv", width: 50},
-					{title: "Previous<br>Circa", field: "from"},
-					{title: "Trend", field: "trending",
-						formatter: function(cell) {
-							const data = cell.getRow().getData();
-							let trend = "";
-							let color = "";
-							if (data.from) {
-								if (parseInt(data.from.split("/")[0]) > parseInt(data.ou.split("/")[0])) {
-									trend = "📉";
-									color = "#33cc66";
-								} else {
-									trend = "📈";
-									color = "#e57373";
-								}
-							}
-							return `<div style='width:90%; background:${color}'>${trend}</div>`;
-						},
-						width: 40
-					},
-					{title: "Current<br>Circa", field: "ou"},
-				]
-			});
-		}
-	</script>
-	<script>handleSession();</script>
+<body class="movement-page">
+  <header class="movement-header">
+    <a class="brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Line movement</option></select></div>
+      <a id="account-link" href="profile">Sign in</a>
+    </nav>
+  </header>
+  <main class="movement-main">
+    <div class="movement-intro">
+      <div><p class="eyebrow">FOLLOW THE MARKET</p><h1>Line movement</h1><p>Find a player or team. See how their price moved, and where fair value is changing across the slate.</p></div>
+      <div class="refresh"><span id="slate-date">Today's captures</span><small id="updated">Loading movement...</small><button type="button" id="refresh">Refresh</button></div>
+    </div>
+    <p class="day-note" id="day-note">Today only · Resets at midnight Eastern · Captured before game time</p>
+    <p id="request-status" class="notice" role="status" hidden></p>
+    <section id="access-panel" class="panel empty" hidden><h2>Line movement is included with Sharp</h2><p id="access-message">Sign in to explore today's price history.</p><a id="access-login" href="profile">Sign in</a> <a id="access-pricing" href="pricing">View plans</a></section>
+    <div id="movement-content" hidden>
+      <section class="panel filters" aria-label="Filter the slate">
+        <label>Sport<select id="sport-select"><option value="mlb">MLB</option><option value="nfl">NFL</option><option value="nhl">NHL</option><option value="nba">NBA</option><option value="ncaaf">College football</option><option value="ncaab">College basketball</option><option value="wnba">WNBA</option><option value="soccer">Soccer</option></select></label>
+        <label class="search-label">Player or team<input id="player-search" type="search" autocomplete="off" placeholder="Search the slate"></label>
+        <div class="prop-field"><span id="prop-label">Props</span><details id="prop-picker"><summary id="prop-summary" aria-labelledby="prop-label prop-summary">All props</summary><div class="prop-menu"><button id="all-props" type="button">All props</button><div id="prop-options"></div></div></details></div>
+        <label>Side<select id="side-select"><option value="0">First side · Over / Yes</option><option value="1">Second side · Under / No</option><option value="2">Third side · three-way only</option></select></label>
+        <label>Fair value reference<select id="reference-select"><option value="consensus">Sportsbook consensus</option></select></label>
+        <label>Show movers<select id="direction-select"><option value="all">Largest moves, either way</option><option value="shortening">Shortening · more likely</option><option value="drifting">Drifting · less likely</option></select></label>
+      </section>
+      <section class="panel chart-panel" aria-labelledby="chart-title">
+        <div class="section-heading"><div><p class="eyebrow">PRICE HISTORY</p><h2 id="chart-title">Choose a selection from the slate</h2><p id="chart-subtitle" class="muted"></p></div><label class="chart-scale">Chart scale<select id="chart-scale"><option value="american">American odds</option><option value="probability">Probability</option></select></label></div>
+        <div id="selection-metrics" class="selection-metrics" hidden></div>
+        <p id="chart-status" class="muted" role="status">Loading today's selections...</p>
+        <div id="movement-chart" aria-label="Price history chart" hidden></div>
+        <fieldset id="book-picker" hidden><legend>Show sportsbook prices</legend><div id="book-options"></div></fieldset>
+        <p id="chart-footnote" class="muted" hidden>Bold green is fair value after removing the margin. Other lines are the books' quoted prices. Gaps mean no usable quote was captured.</p>
+      </section>
+      <section class="panel slate-panel" aria-labelledby="slate-title">
+        <div class="section-heading"><div><p class="eyebrow">ACROSS THE SLATE</p><h2 id="slate-title">Biggest fair value moves</h2></div><span id="catalog-count" role="status"></span></div>
+        <p class="muted slate-help">Ranked by change in fair probability from the first capture to the latest. A positive move means a shorter fair price; a negative move means a longer price. Select a row to chart its exact line.</p>
+        <p id="empty-slate" class="empty-state" role="status" hidden></p>
+        <div id="catalog-wrap" class="table-wrap" role="region" aria-label="Today's line movement selections" tabindex="0">
+          <table class="movement-table"><caption class="sr-only">Fair odds and probability changes for each exact player or team market</caption><thead><tr><th>Selection</th><th>First fair</th><th>Latest fair</th><th>Move</th><th>Captured (ET)</th><th class="chart-column"><span class="sr-only">Chart</span></th></tr></thead><tbody id="catalog-rows"></tbody></table>
+        </div>
+        <div class="pagination" id="pagination" hidden><button id="previous-page" type="button">Previous</button><span id="page-range"></span><button id="next-page" type="button">Next</button></div>
+      </section>
+      <details class="panel methodology"><summary>How to read these moves</summary>
+        <p>Fair value removes the sportsbook margin by dividing each side's implied probability by the sum of all sides at the same book. Both sides are required (all three for a three-way market); missing prices are never invented.</p>
+        <p>Sportsbook consensus averages fair probabilities from at least two sportsbooks that have valid paired prices at both endpoints. The same group is used through the chart, so a book entering or leaving the feed does not create a false move. Select one reference book to see its fair value alone.</p>
+        <p>Movement is measured in percentage points, not the numerical difference between American prices. The chart's American-odds axis spaces prices by probability, so crossing even money does not create an artificial jump. On the probability scale, book lines show implied probability including margin; the fair line excludes margin.</p>
+        <p id="capture-methodology">History starts with the first observed pre-game capture today, not a sportsbook's official opening price. New captures are recorded about every 30 minutes. Each handicap is tracked separately. History resets at midnight Eastern.</p>
+      </details>
+    </div>
+  </main>
+  <script src="plotly-3.0.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js"></script>
 </body>
 </html>

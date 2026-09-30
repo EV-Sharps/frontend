@@ -170,6 +170,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏀 All Props", value: "nba", sharp: true },
 			{ label: "🏆 Main", value: "main?sport=nba", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nba" },
+			{ label: "Line Movement", value: "movement?sport=nba", sharp: true },
 			{ label: "🏀 Live", value: "live?sport=nba", sharp: true },
 			{ label: "🏀 KOTC", value: "kotc" },
 			{ label: "📊 Results", value: "analysis?sport=nba" },
@@ -193,6 +194,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker" },
 			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
+			{ label: "Line Movement", value: "movement?sport=nfl", sharp: true },
 			{ label: "🏈 Preseason", value: "preseason", sharp: true },
 			{ label: "🔮 Futures", value: "nfl_futures" },
 			{ label: "🏈 CFB", value: "ncaaf", sharp: true },
@@ -211,6 +213,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
 			{ label: "ATGS Parlays", value: "parlays?market=atgs" },
+			{ label: "Line Movement", value: "movement?sport=nhl", sharp: true },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
 		]
 	},
@@ -608,7 +611,12 @@ const OPENING_PRICE_DESCRIPTION = 'Earliest captured price after at least four s
 
 function openingColumnVisible() {
 	const metadata = CURR_USER?.metadata;
-	return !metadata?.[PAGE] || !metadata[`${PAGE}-opening-column-version`] || metadata[PAGE].includes('openingPrice');
+	if (!metadata) return true;
+	if (metadata[PAGE]?.includes('openingPrice')) return true;
+	// Existing layouts opt in through Customize; a reorder includes hidden keys too.
+	if (metadata[PAGE] || metadata[`${PAGE}-opening-column-version`]) return false;
+	const orderKey = `${PAGE === 'preseason' ? 'main' : PAGE}-order`;
+	return !metadata[orderKey]?.length;
 }
 
 function openingPriceQuote(data) {
@@ -3452,6 +3460,11 @@ function showHideUserTable(loaded) {
 			loadWeights();
 		}
 		if (!CURR_USER.metadata[PAGE]) {
+			// Profiles with only a saved reorder can arrive after the table is built.
+			if (!openingColumnVisible()) {
+				TABLE.getColumns().find(col => col.getField() === 'openingPrice')?.hide();
+				ensureOpeningColumnControl();
+			}
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);

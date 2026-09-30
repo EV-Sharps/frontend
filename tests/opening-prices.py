@@ -111,6 +111,21 @@ try:
         assert page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
         page.evaluate("closeOverlay()")
 
+        # An existing reorder alone must not opt users into the new column,
+        # even when its full order already contains hidden Open.
+        page.evaluate("""() => {
+            ENABLE_AUTH = true;
+            CURR_USER = {metadata:{[`${PAGE}-order`]:['ev','book','openingPrice','player']}};
+            showHideUserTable(true);
+            openOverlay();
+        }""")
+        assert not page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
+        assert not page.locator('#custom_openingPrice').is_checked()
+        page.evaluate("TABLE.setColumns(buildNbaColumns(CURR_USER.metadata[`${PAGE}-order`]))")
+        assert not page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
+        page.evaluate("closeOverlay(); changeView('table'); changeView('compact')")
+        assert not page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
+
         page.evaluate("""() => {
             ENABLE_AUTH = true;
             CURR_USER = {metadata:{[PAGE]:['ev','player','book']}};
@@ -122,8 +137,7 @@ try:
             showHideUserTable(true);
             openOverlay();
         }""")
-        assert page.locator('#custom_openingPrice').is_checked(), "Older saved layouts get Open by default"
-        page.locator('#custom_openingPrice').uncheck()
+        assert not page.locator('#custom_openingPrice').is_checked(), "Older saved layouts keep Open hidden by default"
         page.evaluate("saveTableSettings()")
         assert page.evaluate("savedProfile[`${PAGE}-opening-column-version`]") == 1
         assert not page.evaluate("savedProfile[PAGE].includes('openingPrice')")
@@ -136,6 +150,11 @@ try:
         assert not page.locator('#custom_openingPrice').is_checked()
         assert not page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
         page.locator('#custom_openingPrice').check()
+        page.evaluate("saveTableSettings()")
+        assert page.evaluate("savedProfile[PAGE].includes('openingPrice')")
+        page.evaluate("TABLE.setColumns(buildNbaColumns(['ev','book','player'])); showHideUserTable(true); openOverlay()")
+        assert page.evaluate("TABLE.getColumn('openingPrice').isVisible()")
+        assert page.locator('#custom_openingPrice').is_checked()
         page.evaluate("openColReorder()")
         assert page.locator('#col-reorder-list [data-key="openingPrice"]').count() == 1
         page.evaluate("closeColReorder(); closeOverlay(); CURR_USER = null; ENABLE_AUTH = false")
@@ -153,7 +172,8 @@ try:
             page.evaluate("dir => TABLE.setSort('openingPrice', dir)", direction)
             assert page.evaluate("TABLE.getData('active').map(row => row.id)") == expected
         page.evaluate("initializeCards([openingFixture]); changeView('mobile')")
-        assert page.locator('#card-container .card-opening-price').inner_text() == 'Open +120'
+        assert page.locator('#card-container .card-opening-price, #card-container .opening-price').count() == 0
+        assert page.locator('#card-container .evbook-odds-large').inner_text() == '+150'
 
         # Real filter changes replace rows; captures must survive recalculated prices.
         page.evaluate("""async () => {

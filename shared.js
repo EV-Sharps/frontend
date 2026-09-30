@@ -4175,17 +4175,19 @@ function round1(n) { return Math.round(n * 10) / 10; }
 // passing/rushing/receiving yards, attempts, etc.) a fee_multiplier of 1, while
 // KXMLBHR uses 0.5. The taker formula is multiplier * 0.07 * C * P * (1-P):
 // https://kalshi.com/docs/kalshi-fee-schedule.pdf
-// Keep the existing reduced rate outside NFL markets; do not apply the homer discount
-// to football. Row context also identifies NFL props outside their dedicated page.
+// NFL and NHL markets use the full rate. Keep the existing reduced rate elsewhere;
+// row context also identifies football and hockey props outside their dedicated pages.
 const KALSHI_FEE_RATE = 0.035;
 
 function kalshiFeeRate(data = {}, page = PAGE) {
 	const link = String(data.links?.kal || "").toLowerCase();
-	if (/\/kxnfl[a-z0-9]*(?:[/-]|$)/.test(link)) return 0.07;
+	if (/\/kx(?:nfl|nhl)[a-z0-9]*(?:[/-]|$)/.test(link)) return 0.07;
 	if (/\/kxmlbhr(?:[/-]|$)/.test(link)) return KALSHI_FEE_RATE;
 	const sport = String(data.sport || (typeof SPORT !== "undefined" ? SPORT : "") || "").toLowerCase();
 	const prop = String(data.prop || "").toLowerCase();
-	return sport === "nfl" || ["nfl", "tds", "tds2", "ftd"].includes(page) || ["attd", "ftd"].includes(prop)
+	return ["nfl", "nhl"].includes(sport)
+		|| ["nfl", "tds", "tds2", "ftd", "nhl", "atgs", "atgs2", "fgs"].includes(page)
+		|| ["attd", "ftd", "atgs", "fgs", "lgs"].includes(prop)
 		? 0.07 : KALSHI_FEE_RATE;
 }
 

@@ -96,6 +96,53 @@ test('MLB home runs retain their reduced fee and legacy markets remain unchanged
 	assert.equal(load('main').addKalshiFee('+104/-108'), '100/-112');
 });
 
+test('NHL scorer and prop pages use the full fee on both sides, including missing row context', () => {
+	for (const page of ['atgs', 'atgs2', 'nhl', 'fgs']) {
+		assert.equal(load(page).addKalshiFee('+104/-108'), '-104/-116', page);
+		assert.equal(load('main').addKalshiFee('+456', {}, page), '425', page);
+	}
+	assert.equal(load('main', 'nhl').addKalshiFee('+456', { prop: 'sog' }), '425');
+	assert.equal(load('main', 'mlb').addKalshiFee('+456', { sport: 'NHL', prop: 'pts' }), '425');
+	for (const prop of ['atgs', 'fgs', 'lgs']) {
+		assert.equal(load('main').addKalshiFee('+456', { prop }), '425', prop);
+	}
+	assert.equal(load('main', 'nhl').addKalshiFee('+456', { sport: 'mlb', prop: 'hr' }), '440',
+		'Explicit MLB row context still retains its existing fee on a mixed page');
+});
+
+test('NHL market links carry the full fee onto mixed pages while homer links keep their discount', () => {
+	for (const kal of [
+		'https://kalshi.com/markets/kxnhlanygoal/nhl-goals/kxnhlanygoal-26oct01',
+		'https://kalshi.com/markets/KXNHLGOAL-26OCT01',
+	]) {
+		assert.equal(load('main', 'mlb').addKalshiFee('+104/-108', { links: { kal } }), '-104/-116');
+	}
+	assert.equal(load('nhl', 'nhl').addKalshiFee('+456', {
+		links: { kal: 'https://kalshi.com/markets/kxmlbhr/mlb-home-runs/kxmlbhr-26sep30' },
+	}), '440');
+});
+
+test('Hockey best-book and saved quotes use full fees without altering raw prices or charging twice', () => {
+	for (const page of ['atgs', 'atgs2', 'nhl']) {
+		const context = load(page, 'nhl');
+		const row = {
+			prop: page === 'nhl' ? 'sog' : 'atgs', handicap: 1.5, under: false,
+			book: 'kal', line: 456, outlierBook: 'kal', outlierLine: 456,
+			bookOdds: Object.freeze({ kal: '+456/-567', fd: '+430/-550' }),
+		};
+		const original = JSON.stringify(row);
+		assert.deepEqual(plain(context.highestOver(row.bookOdds, [], 0, '', false, row)),
+			{ book: 'fd', value: 430, raw: '+430' }, page);
+		assert.deepEqual(plain(context.highestOver(row.bookOdds, [], 0, 'kal', false, row)),
+			{ book: 'kal', value: 425, raw: '425' }, page);
+		assert.equal(context.displayedBestBookQuote(row).line, 425, page);
+		assert.equal(context.watchlistQuote(row).odds, 425, page);
+		assert.equal(context.displayedBestBookQuote({ ...row, line: 425, outlierLine: 425 }).line, 425, page);
+		assert.equal(context.watchlistQuote({ ...row, line: 425, outlierLine: 425 }, page, false).odds, 425, page);
+		assert.equal(JSON.stringify(row), original, page);
+	}
+});
+
 test('Empty and missing sides remain missing instead of manufacturing prices', () => {
 	const context = load('tds');
 	for (const [input, expected] of [['', ''], ['-', '-'], ['+104/', '-104/'], ['/-108', '/-116'], ['-/0', '-/0']]) {

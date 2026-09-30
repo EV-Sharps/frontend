@@ -16,6 +16,7 @@
   const bookName = key => bookNames[key] || title(key);
   const propName = key => propNames[key] || title(key);
   const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—';
+  const gameTime = value => value && Number.isFinite(Date.parse(value)) ? `${new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}, ${time(value)} ET` : '—';
   const easternDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
   const dayOf = (value = Date.now()) => { const parts = Object.fromEntries(easternDayFormat.formatToParts(new Date(value)).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
   const notice = (id, message) => { $(id).textContent = message; $(id).hidden = !message; };
@@ -36,7 +37,11 @@
     $('reference-select').value = key;
   }
   function sideName(row) { return row.side_labels?.[row.side] || `Side ${Number(row.side || 0) + 1}`; }
-  function marketName(row) { return `${propName(row.prop)} · ${title(sideName(row))}${row.handicap !== '' && row.handicap !== null && row.handicap !== undefined ? ` ${row.handicap}` : ''}`; }
+  function marketName(row) {
+    const hasLine = row.handicap !== '' && row.handicap !== null && row.handicap !== undefined;
+    const line = String(row.prop).includes('spread') && Number(row.side) === 1 && finite(row.handicap) ? -Number(row.handicap) : row.handicap;
+    return `${propName(row.prop)} · ${title(sideName(row))}${hasLine ? ` ${line}` : ''}`;
+  }
   function referenceName() { return $('reference-select').value === 'consensus' ? 'Sportsbook consensus' : bookName($('reference-select').value); }
   function rowStatus(row) {
     if (row.start && Date.parse(row.start) <= Date.now()) return 'started';
@@ -104,6 +109,8 @@
     day = current;
     cancelRequests(); clearTimeout(debounceTimer);
     offset = 0; selectedId = '';
+    $('reference-select').replaceChildren(new Option('Sportsbook consensus', 'consensus'));
+    syncURL();
     clearRows('A new day has begun. Waiting for today’s first captures.');
     clearChart('History resets at midnight Eastern. Today’s captures will appear here.');
     $('updated').textContent = 'Waiting for today’s captures';
@@ -151,7 +158,7 @@
   function renderRows() {
     if (!catalog) return;
     const rows = (catalog.rows || []).filter(row => $('direction-select').value === 'all' || finite(usableMove(row)));
-    $('catalog-rows').innerHTML = rows.map(row => `<tr data-id="${esc(row.id)}" class="${row.id === selectedId ? 'is-selected' : ''}"><td><strong>${esc(title(row.player || row.game))}</strong><small>${esc(marketName(row))}</small><small>${esc(String(row.game || '').toUpperCase())} · Start ${esc(time(row.start))} ET</small></td><td><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)}</small></td><td><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small></td><td class="${moveClass(row)}"><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></td><td>${esc(time(row.first_at))} → ${esc(time(row.last_at))}<small>${Number(row.point_count) || 0} captured points</small></td><td><button class="chart-row" type="button" aria-label="Chart ${esc(title(row.player || row.game))}, ${esc(marketName(row))}" aria-pressed="${row.id === selectedId}">Chart</button></td></tr>`).join('');
+    $('catalog-rows').innerHTML = rows.map(row => `<tr data-id="${esc(row.id)}" class="${row.id === selectedId ? 'is-selected' : ''}"><td><strong>${esc(title(row.player || row.game))}</strong><small>${esc(marketName(row))}</small><small>${esc(String(row.game || '').toUpperCase())} · ${esc(gameTime(row.start))}</small></td><td><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)}</small></td><td><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small></td><td class="${moveClass(row)}"><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></td><td>${esc(time(row.first_at))} → ${esc(time(row.last_at))}<small>${Number(row.point_count) || 0} captured points</small></td><td><button class="chart-row" type="button" aria-label="Chart ${esc(title(row.player || row.game))}, ${esc(marketName(row))}" aria-pressed="${row.id === selectedId}">Chart</button></td></tr>`).join('');
     $('catalog-wrap').hidden = rows.length === 0;
     const filtered = $('player-search').value.trim() || selectedProps.size || $('direction-select').value !== 'all' || $('side-select').value !== '0';
     notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another player, prop or side.' : 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.');
@@ -171,7 +178,7 @@
     if (!detail?.selection) return;
     const row = detail.selection;
     $('chart-title').textContent = title(row.player || row.game);
-    $('chart-subtitle').textContent = `${marketName(row)} · ${String(row.game || '').toUpperCase()} · ${referenceName()}`;
+    $('chart-subtitle').textContent = `${marketName(row)} · ${String(row.game || '').toUpperCase()} · ${gameTime(row.start)} · ${referenceName()}`;
     renderMetrics(row);
     const points = (detail.points || []).filter(point => dayOf(point.ts) === day);
     const books = [...new Set(points.flatMap(point => Object.keys(point.prices || {})))].sort();
@@ -204,9 +211,10 @@
     });
     $('chart-footnote').hidden = false;
     $('chart-footnote').textContent = `Bold green is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are quoted book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. Times are Eastern.`;
-    if (!traces.length) { $('movement-chart').hidden = true; notice('chart-status', 'Select a sportsbook above to display its captured prices.'); return; }
+    if (!traces.length) { $('movement-chart').hidden = true; notice('chart-status', 'Select a sportsbook to display its captured prices.'); return; }
     if (!window.Plotly) { notice('chart-status', 'The chart could not load. Refresh this page to try again.'); return; }
     const yValues = traces.flatMap(trace => trace.y).filter(finite);
+    if (!yValues.length) { $('movement-chart').hidden = true; notice('chart-status', 'No captured prices for this side at the selected books. Try another side or sportsbook.'); return; }
     const low = Math.max(.01, Math.min(...yValues) - 3), high = Math.min(99.99, Math.max(...yValues) + 3);
     const oddsTicks = [10000, 5000, 2500, 1500, 1000, 750, 500, 400, 300, 250, 200, 150, 125, 100, -125, -150, -200, -250, -300, -400, -500, -750, -1000, -1500, -2500, -5000, -10000];
     let ticks = oddsTicks.map(value => ({ p: implied(value) * 100, label: odds(value) })).filter(tick => tick.p >= low && tick.p <= high);
@@ -215,6 +223,7 @@
     $('movement-chart').hidden = false;
     const chartKey = `${SPORT}:${row.id}:${row.side}:${$('reference-select').value}:${day}:${probabilityScale}`;
     Plotly.react($('movement-chart'), traces, {
+      width: $('movement-chart').clientWidth, height: $('movement-chart').clientHeight,
       paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#b7c8d2', family: 'Inter, system-ui, sans-serif', size: 11 },
       margin: { l: 67, r: 20, t: 18, b: 66 }, showlegend: false, hovermode: 'closest', dragmode: 'pan', uirevision: chartKey,
       xaxis: { type: 'linear', tickvals: tickIndexes.map(index => x[index]), ticktext: tickIndexes.map(index => time(points[index].ts)), title: { text: 'Capture time · Eastern', standoff: 16 }, gridcolor: '#303b42', zeroline: false, ...(x.length === 1 ? { range: [x[0] - 900000, x[0] + 900000] } : {}) },
@@ -303,9 +312,18 @@
   });
   $('all-props').addEventListener('click', () => { selectedProps.clear(); $('prop-options').querySelectorAll('input').forEach(input => { input.checked = false; }); $('prop-summary').textContent = 'All props'; filterChanged(); });
   document.addEventListener('click', event => { if (!$('prop-picker').contains(event.target)) $('prop-picker').open = false; });
-  $('catalog-rows').addEventListener('click', event => { const row = event.target.closest('tr[data-id]'); if (row) loadDetail(row.dataset.id); });
+  $('catalog-rows').addEventListener('click', event => {
+    const row = event.target.closest('tr[data-id]');
+    if (row) { loadDetail(row.dataset.id); $('chart-title').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
   $('book-options').addEventListener('change', event => { if (!event.target.matches('input')) return; if (event.target.checked) hiddenBooks.delete(event.target.value); else hiddenBooks.add(event.target.value); renderChart(); });
   $('chart-scale').addEventListener('change', renderChart);
+  if (window.ResizeObserver) new ResizeObserver(() => {
+    const chart = $('movement-chart');
+    if (!chart.hidden && chart.data && window.Plotly && (chart._fullLayout?.width !== chart.clientWidth || chart._fullLayout?.height !== chart.clientHeight)) {
+      Plotly.relayout(chart, { width: chart.clientWidth, height: chart.clientHeight });
+    }
+  }).observe($('movement-chart'));
   $('refresh').addEventListener('click', () => { detail = null; refresh(); });
   $('previous-page').addEventListener('click', () => { offset = Math.max(0, offset - limit); refresh(); });
   $('next-page').addEventListener('click', () => { offset += limit; refresh(); });

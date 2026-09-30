@@ -221,6 +221,7 @@ const PAGE_SECTIONS = [
 		key: "other", label: "🌐 Other",
 		pages: [
 			{ label: "🎯 Recommendations", value: "recommendations", sharp: true },
+			{ label: "Line Movement / All Sports", value: "movement?sport=soccer", sharp: true },
 			{ label: "⚾ NCAA", value: "baseball_ncaa" },
 			{ label: "⚽ Soccer", value: "soccer" },
 			{ label: "🌍 World Cup", value: "cup", sharp: true },

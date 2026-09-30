@@ -689,6 +689,7 @@ function updateExistingCard(card, rowData) {
 		<div class="best-book-section">
 			<img class="book-img-large" src='logos/${book}.png' alt='${book}' title='${book}' />
 			<span class='evbook-odds-large'>${plusFormatter(rowData.line)}</span>
+			<span class="card-opening-price" style="font-size:0.75rem;">Open ${renderOpeningPrice(rowData)}</span>
 		</div>
 	`;
 

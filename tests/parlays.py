@@ -54,6 +54,17 @@ for index, player in enumerate(ATTD_CATALOG['legs']):
     over = player['quotes']['fd']['over']
     player['quotes']['dk'] = quote({-110: 110, -125: 105}.get(over, over + 20))
 
+ATGS_CATALOG = {'market': 'atgs', 'sport': 'nhl', 'date': NOW.date().isoformat(),
+                'generated_at': NOW.isoformat(), 'books': BOOKS, 'max_age_minutes': 10,
+                'legs': [leg(201, 'sidney crosby', 'pit @ phi', 200),
+                         leg(202, 'bryan rust', 'pit @ phi', 250),
+                         leg(203, 'auston matthews', 'tor @ mtl', 150),
+                         leg(204, 'connor mcdavid', 'edm @ van', 180),
+                         leg(205, 'nathan mackinnon', 'col @ la', 190)]}
+for player in ATGS_CATALOG['legs']:
+    player['market'] = 'Over 0.5 goals'
+    player['start'] = (NOW + timedelta(days=1, hours=3)).isoformat()
+
 
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *args):
@@ -70,7 +81,7 @@ try:
         page = browser.new_page(viewport={'width': 1440, 'height': 1080})
         errors, posts, gets = [], [], []
         state = {'catalog': deepcopy(CATALOG), 'denied': False, 'hold_next': False, 'held': None, 'fail_next': False, 'legacy': False}
-        state.update(attd_catalog=deepcopy(ATTD_CATALOG), hold_catalog=None, held_catalog=None,
+        state.update(attd_catalog=deepcopy(ATTD_CATALOG), atgs_catalog=deepcopy(ATGS_CATALOG), hold_catalog=None, held_catalog=None,
                      wrong_catalog=False, wrong_quote=False)
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -84,7 +95,7 @@ try:
             if route.request.method == 'GET':
                 market = parse_qs(urlsplit(route.request.url).query).get('market', ['hr'])[0]
                 gets.append(market)
-                response = deepcopy(state['attd_catalog' if market == 'attd' else 'catalog'])
+                response = deepcopy(state[f'{market}_catalog' if market != 'hr' else 'catalog'])
                 if state['wrong_catalog']:
                     state['wrong_catalog'] = False
                     response = deepcopy(CATALOG) | {'market': 'hr', 'sport': 'mlb'}
@@ -95,13 +106,13 @@ try:
                 return route.fulfill(json=response)
             payload = route.request.post_data_json
             posts.append(payload)
-            assert payload['market'] in ('hr', 'attd')
+            assert payload['market'] in ('hr', 'attd', 'atgs')
             assert len(payload['legs']) in (2, 3, 4)
             assert all(payload['legs'])
             if state['fail_next']:
                 state['fail_next'] = False
                 return route.fulfill(status=503, json={'error': 'Prices temporarily unavailable'})
-            catalog = state['attd_catalog' if payload['market'] == 'attd' else 'catalog']
+            catalog = state[f"{payload['market']}_catalog" if payload['market'] != 'hr' else 'catalog']
             selected = [next(leg for leg in catalog['legs'] if leg['id'] == id) for id in payload['legs']]
             references = [{'book': book, 'name': name, 'complete': True, 'same_as_betting_book': book == payload['betting_book'],
                            'probability': 0.02, 'fair_odds': 4900, 'raw_product_odds': 4800, 'ev': 2,
@@ -129,8 +140,8 @@ try:
             response = {'legs': selected, 'references': references, 'prices': prices,
                         'best_price': prices[0] if prices else None,
                         'offered_odds': payload['offered_odds'], 'max_age_minutes': 10}
-            if payload['market'] == 'attd':
-                response.update(market='attd', sport='nfl')
+            if payload['market'] != 'hr':
+                response.update(market=payload['market'], sport=catalog['sport'])
             if state['wrong_quote']:
                 state['wrong_quote'] = False
                 response.update(market='hr', sport='mlb')
@@ -575,13 +586,80 @@ try:
         assert posts[-1]['market'] == 'attd'
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
 
-        # ATTD has the same membership gate as the existing homer calculator.
+        # A new NHL ticket cannot inherit an in-flight NFL quote or its selections.
+        state['hold_next'] = True
+        state['held'] = None
+        page.locator('#offered-odds').fill('+5000')
+        expect(page.locator('#calculate')).to_have_text('Calculating...')
+        page.wait_for_timeout(50)
+        assert state['held'] is not None
+        football_route, football_response = state['held']
+        page.locator('#parlay-market').select_option('atgs')
+        expect(row(201)).to_be_visible()
+        count(0)
+        assert gets[-1] == 'atgs'
+        assert page.evaluate('SPORT') == 'nhl'
+        assert 'market=atgs' in page.url
+        assert page.locator('#offered-odds').input_value() == ''
+        assert row(101).count() == 0 and row(1).count() == 0
+        expect(page.locator('#market-title')).to_have_text('Build your ATGS parlay')
+        expect(page.locator('#slate-date')).to_have_text('Upcoming NHL games')
+        assert 'goal' in page.locator('#fair-methodology').text_content()
+        assert 'touchdown' not in page.locator('#catalog-help').inner_text()
+        assert '1+ Goal' in page.locator('#catalog-help').inner_text()
+        pick(201).click()
+        assert pick(202).is_disabled()
+        pick(203).click()
+        calculated([201, 203])
+        assert posts[-1]['market'] == 'atgs'
+        assert '1+ Goal' in page.locator('#leg-inputs').inner_text()
+        assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+950'
+        assert page.locator('[data-ev-reference="circa"]').count() == 1
+        assert page.locator('[data-ev-reference="pn"]').count() == 1
+        assert page.locator('#betting-book option[value="circa"], #betting-book option[value="pn"]').count() == 0
+        football_route.fulfill(json=football_response)
+        page.wait_for_timeout(50)
+        calculated([201, 203])
+        assert 'Barkley' not in page.locator('#results').inner_text()
+        pick(204).click()
+        calculated([201, 203, 204])
+        pick(205).click()
+        calculated([201, 203, 204, 205])
+        assert posts[-1]['market'] == 'atgs'
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        state['wrong_quote'] = True
+        page.evaluate('window.refreshParlays()')
+        assert page.locator('#results').is_hidden()
+        page.evaluate('window.refreshParlays()')
+        calculated([201, 203, 204, 205])
+
+        # NHL navigation places ATGS Parlays directly after Main Recap, and highlights it.
+        page.goto(f'http://localhost:{server.server_port}/parlays.html?market=atgs')
+        expect(row(201)).to_be_visible()
+        expect(page.locator('#parlay-market')).to_have_value('atgs')
+        assert gets[-1] == 'atgs'
+        assert page.title().startswith('ATGS parlay')
+        count(0)
+        page.locator('#page-picker-btn').click()
+        expect(page.locator('.pp-tab[data-key="nhl"]')).to_have_class('pp-tab active')
+        nav = page.locator('#page-picker-grid .pp-page-btn')
+        destinations = nav.evaluate_all("buttons => buttons.map(button => button.getAttribute('onclick'))")
+        recap = next(i for i, value in enumerate(destinations) if 'main_recap?sport=nhl' in value)
+        assert 'parlays?market=atgs' in destinations[recap + 1]
+        expect(nav.nth(recap + 1).locator('.pp-label')).to_have_text('ATGS Parlays')
+        assert 'current-page' in nav.nth(recap + 1).get_attribute('class')
+        page.locator('#page-picker-btn').click()
+        pick(201).click()
+        pick(203).click()
+        calculated([201, 203])
+
+        # NHL has the same membership gate as the existing calculators.
         state['denied'] = True
         page.evaluate('window.refreshParlays()')
         assert page.locator('#calculator').is_hidden()
         assert page.locator('#access-panel').is_visible()
         assert not errors, errors
-        print('Homer/ATTD markets, switching/reset, direct links, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches, scroll, mobile and access checks passed.')
+        print('Homer/ATTD/ATGS markets, NHL navigation order, switching/reset, direct links, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches, scroll, mobile and access checks passed.')
         browser.close()
 finally:
     server.shutdown()

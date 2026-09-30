@@ -1,11 +1,13 @@
 (() => {
   'use strict';
   PAGE = 'parlays';
-  let market = new URLSearchParams(window.location.search).get('market') === 'attd' ? 'attd' : 'hr';
   const markets = {
     hr: { sport: 'mlb', name: 'homer', label: '1+ HR', under: 'no HR', unit: 'home run' },
     attd: { sport: 'nfl', name: 'ATTD', label: 'ATTD', under: 'no touchdown', unit: 'touchdown' },
+    atgs: { sport: 'nhl', name: 'ATGS', label: '1+ Goal', under: 'no goal', unit: 'goal' },
   };
+  const requestedMarket = new URLSearchParams(window.location.search).get('market');
+  let market = Object.hasOwn(markets, requestedMarket) ? requestedMarket : 'hr';
   const currentMarket = () => markets[market];
   SPORT = currentMarket().sport;
   const $ = id => document.getElementById(id);
@@ -14,7 +16,7 @@
   const odds = v => v === null || !Number.isFinite(Number(v)) ? '\u2014' : `${v >= 0 ? '+' : '-'}${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
   const pct = v => `${(v * 100).toFixed(3)}%`;
   const time = v => v ? new Date(v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET' : 'Unknown';
-  const gameTime = v => market === 'attd' && v ? new Date(v).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ' / ' + time(v) : time(v);
+  const gameTime = v => market !== 'hr' && v ? new Date(v).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ' / ' + time(v) : time(v);
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
   const selections = ['', '', '', ''];
   const sort = { key: 'average', direction: 'asc' };
@@ -26,7 +28,7 @@
   function renderMarket() {
     const config = currentMarket();
     SPORT = config.sport;
-    document.title = `${market === 'attd' ? 'ATTD' : 'Homer'} parlay calculator | +EV Sharps`;
+    document.title = `${market === 'hr' ? 'Homer' : market.toUpperCase()} parlay calculator | +EV Sharps`;
     $('parlay-market').value = market;
     $('market-title').textContent = `Build your ${config.name} parlay`;
     $('market-eyebrow').textContent = `${config.sport.toUpperCase()} / FAIR ODDS`;
@@ -38,7 +40,7 @@
     $('reference-caption').textContent = `Devigged ${config.name} parlay prices`;
     $('fair-methodology').textContent = `For fair odds, we remove the margin from each player's over/under 0.5 ${config.unit} market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.`;
     $('independence-methodology').textContent = `These estimates assume independent outcomes across different matchups. ${market === 'hr' ? 'Same-game and doubleheader combinations' : 'Same-game combinations'} are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.`;
-    $('slate-date').textContent = market === 'attd' ? 'Upcoming NFL games' : "Today's slate";
+    $('slate-date').textContent = market !== 'hr' ? `Upcoming ${config.sport.toUpperCase()} games` : "Today's slate";
   }
   function matchesMarket(data, requestedMarket) {
     const config = markets[requestedMarket];
@@ -372,7 +374,7 @@
     refreshWork = (async () => {
       const timer = setTimeout(() => controller.abort(), 20000);
       try {
-        const response = await request(`/api/parlays${requestedMarket === 'attd' ? '?market=attd' : ''}`, { signal: controller.signal });
+        const response = await request(`/api/parlays${requestedMarket !== 'hr' ? `?market=${requestedMarket}` : ''}`, { signal: controller.signal });
         if (!isCurrent()) return;
         if (response.denied) return accessDenied();
         const data = response.data;
@@ -390,7 +392,7 @@
         [...new Set(data.legs.map(leg => leg.game))].sort().forEach(game => $('game-filter').add(new Option(game.toUpperCase(), game)));
         if ([...$('game-filter').options].some(option => option.value === game)) $('game-filter').value = game;
         renderSelections();
-        $('slate-date').textContent = market === 'attd' ? 'Upcoming NFL games' : new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        $('slate-date').textContent = market !== 'hr' ? `Upcoming ${currentMarket().sport.toUpperCase()} games` : new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
         $('updated').textContent = `Checked ${time(data.generated_at)}`;
         $('empty-slate').hidden = data.legs.length !== 0;
         $('access-panel').hidden = true;
@@ -438,7 +440,7 @@
     renderSelections();
     notice('request-status', '');
     const url = new URL(window.location.href);
-    if (market === 'attd') url.searchParams.set('market', 'attd');
+    if (market !== 'hr') url.searchParams.set('market', market);
     else url.searchParams.delete('market');
     history.replaceState(null, '', url);
     if (sessionReady) refresh();

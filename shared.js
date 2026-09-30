@@ -210,6 +210,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 NHL Game Tracker", value: "nfl_tracker?sport=nhl" },
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
+			{ label: "ATGS Parlays", value: "parlays?market=atgs" },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
 		]
 	},
@@ -291,6 +292,7 @@ function buildPagePicker() {
 	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
 	else if (PAGE === "nfl_tracker" && ["ncaaf", "nhl"].includes(SPORT)) currentVal = `nfl_tracker?sport=${SPORT}`;
 	else if (PAGE === "parlays" && SPORT === "nfl") currentVal = "parlays?market=attd";
+	else if (PAGE === "parlays" && SPORT === "nhl") currentVal = "parlays?market=atgs";
 
 	// Active tab: favorites if any saved, else current sport
 	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", ncaaf: "nfl", nhl: "nhl", ncaab: "nba" };
@@ -331,7 +333,7 @@ function buildPagePicker() {
 	document.body.appendChild(panel);
 
 	function makeRow(page) {
-		const isCurrent = page.value === (PAGE === "parlays" ? SPORT === "nfl" ? "parlays?market=attd" : "parlays" : currentVal);
+		const isCurrent = page.value === (PAGE === "parlays" ? SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : "parlays" : currentVal);
 		const isStarred = getPageFavorites().includes(page.value);
 		return `<button class="pp-page-btn${isCurrent ? " current-page" : ""}${page.sharp ? " pp-sharp" : ""}" onclick="changePage('${page.value}');closePicker()">
 			<span class="pp-label">${page.label}</span>
@@ -602,6 +604,79 @@ function recordColumnVisible() {
 	return metadata[PAGE].includes('roiRecord');
 }
 
+const OPENING_PRICE_DESCRIPTION = 'Earliest captured price after at least four sportsbooks quoted this selection and line. Same book as the current price, without boosts; not a verified sportsbook opener.';
+
+function openingColumnVisible() {
+	const metadata = CURR_USER?.metadata;
+	return !metadata?.[PAGE] || !metadata[`${PAGE}-opening-column-version`] || metadata[PAGE].includes('openingPrice');
+}
+
+function openingPriceQuote(data) {
+	if (!data || data.blurred) return null;
+	const { book } = displayedBestBookQuote(data, PAGE, false);
+	if (!book || (book === 'circa' && data.circa_blurred)) return null;
+	// The backend can supply an explicit index when it projects a multiway market.
+	const side = data.openingSide ?? data.ouIdx ?? (data.under ? 1 : 0);
+	if (!Number.isInteger(side) || side < 0) return null;
+	const checkpoint = data.opening?.[side];
+	const price = checkpoint?.books?.[book];
+	if (typeof price !== 'number' || !Number.isFinite(price) || Math.abs(price) < 100) return null;
+	return { book, price, checkpoint };
+}
+
+function renderOpeningPrice(data) {
+	const quote = openingPriceQuote(data);
+	if (!quote) return '-';
+	const display = price => oddsDisplay(price > 0 ? `+${price}` : String(price));
+	const time = value => {
+		const date = new Date(value);
+		return value && !isNaN(date) ? date.toLocaleString(undefined, { timeZoneName: 'short' }) : 'unavailable';
+	};
+	const { book, price, checkpoint } = quote;
+	const quotes = Object.entries(checkpoint.books)
+		.filter(([key, value]) => !(key === 'circa' && data.circa_blurred) && typeof value === 'number' && Number.isFinite(value) && Math.abs(value) >= 100)
+		.map(([key, value]) => `${key.toUpperCase()}: ${display(value)}`).join('; ');
+	const element = document.createElement('span');
+	element.className = 'opening-price';
+	element.textContent = display(price);
+	element.title = `${book.toUpperCase()} opening capture: ${time(checkpoint.captured)}\n${OPENING_PRICE_DESCRIPTION}\n${quotes}`;
+	if (checkpoint.updated?.[book]) element.title += `\n${book.toUpperCase()} quote updated: ${time(checkpoint.updated[book])}`;
+	return element.outerHTML;
+}
+
+function openingPriceColumn() {
+	return {
+		title: 'Open', field: 'openingPrice', width: 75, minWidth: 65, responsive: 0,
+		visible: openingColumnVisible(), headerTooltip: OPENING_PRICE_DESCRIPTION,
+		formatter: cell => renderOpeningPrice(cell.getRow().getData()),
+		sorter: (a, b, aRow, bRow, column, dir) => {
+			const left = openingPriceQuote(aRow.getData())?.price;
+			const right = openingPriceQuote(bRow.getData())?.price;
+			if (left == null && right == null) return 0;
+			if (left == null) return dir === 'asc' ? 1 : -1;
+			if (right == null) return dir === 'asc' ? -1 : 1;
+			return left - right;
+		}
+	};
+}
+
+function ensureOpeningColumnControl(table = TABLE) {
+	const column = table?.getColumns().find(col => col.getField() === 'openingPrice');
+	const items = document.getElementById('items');
+	if (!column || !items) return;
+	let checkbox = document.getElementById('custom_openingPrice');
+	if (!checkbox) {
+		const control = document.createElement('div');
+		control.innerHTML = '<input id="custom_openingPrice" type="checkbox"><label for="custom_openingPrice">Open</label>';
+		control.title = OPENING_PRICE_DESCRIPTION;
+		const bookControl = items.querySelector('#custom_book')?.parentElement;
+		if (bookControl) bookControl.after(control);
+		else items.appendChild(control);
+		checkbox = control.querySelector('input');
+	}
+	checkbox.checked = column.isVisible();
+}
+
 function recordROIColumn() {
 	return {
 		title: 'Record<br><span style="font-size: 10px; font-weight: normal;">100-odds bins<br>1% EV bins</span>',
@@ -753,6 +828,12 @@ function initializeOddsTableView(table) {
 			finally { addingRecord = false; }
 		}
 		if (table.getColumns().some(col => col.getField() === 'roiRecord')) ensureRecordColumnControl();
+		if (!table.getColumns().some(col => col.getField() === 'openingPrice') && columns.some(col => col.getField() === 'ev')) {
+			addingRecord = true;
+			try { await table.addColumn(openingPriceColumn(), false, columns.some(col => col.getField() === 'book') ? 'book' : 'ev'); }
+			finally { addingRecord = false; }
+		}
+		ensureOpeningColumnControl(table);
 		state.widths.clear();
 		for (const col of table.getColumns()) {
 			const field = col.getField();
@@ -776,6 +857,8 @@ function initializeOddsTableView(table) {
 		if (field?.startsWith('bookOdds.')) syncBookOddsToggle(table);
 	});
 	table.on('columnsLoaded', capture);
+	// Open depends on book, side and checkpoint fields, not its synthetic field.
+	table.on('rowUpdated', row => row.reformat());
 	return capture();
 }
 
@@ -3363,6 +3446,7 @@ function loadWeights() {
 function showHideUserTable(loaded) {
 	initKellyToggle();
 	ensureLineColumnControl();
+	ensureOpeningColumnControl();
 	if (ENABLE_AUTH && CURR_USER && CURR_USER?.metadata) {
 		if (!loaded && typeof parseWeightKey === 'function') {
 			loadWeights();
@@ -3379,6 +3463,7 @@ function showHideUserTable(loaded) {
 			getPropHitRateColumnItems().forEach(item => allowed.add(item.key));
 		}
 		if (recordColumnVisible()) allowed.add('roiRecord');
+		if (openingColumnVisible()) allowed.add('openingPrice');
 		const viewState = oddsTableViewStates.get(TABLE);
 		if (viewState) {
 			// Already-hidden Stacked columns do not emit another hide event.
@@ -3454,6 +3539,7 @@ function openOverlay() {
 		});
 	}
 	ensureLineColumnControl();
+	ensureOpeningColumnControl();
 	syncOddsSummaryColumns();
 
 	const currentFavorites = new Set(getFavoriteDevigs());
@@ -4890,6 +4976,21 @@ function withRecordColumnOrder(savedOrder, defaultOrder, items) {
 	return { savedOrder: insertRecord(savedOrder), defaultOrder: insertRecord(defaultOrder), items };
 }
 
+function withOpeningColumnOrder(savedOrder, defaultOrder, items) {
+	if (!items.some(item => item.key === 'ev')) return { savedOrder, defaultOrder, items };
+	if (!items.some(item => item.key === 'openingPrice')) {
+		items = [...items, { key: 'openingPrice', label: 'Open', cols: [openingPriceColumn()] }];
+	}
+	const insert = order => {
+		if (!order?.length || order.includes('openingPrice')) return order;
+		const next = [...order];
+		const anchor = next.includes('book') ? 'book' : 'ev';
+		next.splice(Math.max(0, next.indexOf(anchor) + 1), 0, 'openingPrice');
+		return next;
+	};
+	return { savedOrder: insert(savedOrder), defaultOrder: insert(defaultOrder), items };
+}
+
 function completeColumnOrder(savedOrder, defaultOrder, items) {
 	const validKeys = new Set(items.map(item => item.key));
 	const canonical = [...new Set(defaultOrder)];
@@ -4922,6 +5023,7 @@ function completeColumnOrder(savedOrder, defaultOrder, items) {
  */
 function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null, extraCols = []) {
 	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
+	({ savedOrder, defaultOrder, items } = withOpeningColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
 	const order = completeColumnOrder(savedOrder, defaultOrder, items);
 	const cols = [];
@@ -4943,6 +5045,7 @@ function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null
  */
 function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
 	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
+	({ savedOrder, defaultOrder, items } = withOpeningColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
 	const displayOrder = completeColumnOrder(savedOrder, defaultOrder, items);
 	const list = document.getElementById('col-reorder-list');

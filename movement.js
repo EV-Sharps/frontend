@@ -16,7 +16,8 @@
   const bookName = key => bookNames[key] || title(key);
   const propName = key => propNames[key] || title(key);
   const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—';
-  const dayOf = (value = Date.now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+  const easternDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const dayOf = (value = Date.now()) => { const parts = Object.fromEntries(easternDayFormat.formatToParts(new Date(value)).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
   const notice = (id, message) => { $(id).textContent = message; $(id).hidden = !message; };
   const colors = ['#78b7fa', '#efbc77', '#b49ae9', '#f18cb2', '#68cbd0', '#d1ca7f', '#a1b8ca', '#e89970'];
   const selectedProps = new Set((url.searchParams.get('props') || '').split(',').filter(Boolean));
@@ -132,7 +133,7 @@
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
       const response = await fetch(`${API_BASE}/api/line-movement?${query}`, { signal: controller.signal, headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } });
-      if (response.status === 401 || response.status === 403) { access(response.status); return null; }
+      if (response.status === 401 || response.status === 403) { const error = new Error('Access required'); error.status = response.status; throw error; }
       if (response.status === 404) throw new Error('This selection is no longer available in today’s captures. Choose another row.');
       if (!response.ok) throw new Error('Unable to load movement. Please try Refresh.');
       return await response.json();
@@ -239,7 +240,10 @@
       if (!data.selection) { clearChart('No recorded prices for this selection today.'); return; }
       renderChart();
     } catch (error) {
-      if (version === detailVersion) notice('chart-status', error.name === 'AbortError' ? 'Price history timed out. Try Refresh.' : error.message);
+      if (version === detailVersion) {
+        if (error.status === 401 || error.status === 403) access(error.status);
+        else notice('chart-status', error.name === 'AbortError' ? 'Price history timed out. Try Refresh.' : error.message);
+      }
     } finally { if (version === detailVersion) detailController = null; }
   }
   async function refresh() {
@@ -271,6 +275,7 @@
       else { selectedId = ''; detailVersion++; detailController?.abort(); clearChart('Search another player or prop, or return after the first capture.'); }
     } catch (error) {
       if (version !== summaryVersion) return;
+      if (error.status === 401 || error.status === 403) { access(error.status); return; }
       notice('request-status', error.name === 'AbortError' ? 'Movement refresh timed out. Try Refresh.' : error.message);
       if (!catalog) { $('movement-content').hidden = false; clearRows('Movement could not be loaded. Use Refresh to try again.'); clearChart('Price history is unavailable until the slate loads.'); }
     } finally { if (version === summaryVersion) { summaryController = null; $('refresh').disabled = false; } }

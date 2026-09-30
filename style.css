@@ -429,6 +429,21 @@ body::before {
 	font-size: 10px;
 	white-space: nowrap;
 }
+#table.stacked-odds .tabulator-col[tabulator-field="ev"] .tabulator-col-title {
+	padding-right: 0;
+}
+#table.stacked-odds .tabulator-col[tabulator-field="ev"] #toggle-bookodds-btn {
+	display: block;
+	width: 100%;
+	margin-top: 4px;
+	padding: 3px 0;
+	font-size: 9px;
+	line-height: 1.2;
+	white-space: normal;
+}
+#table.stacked-odds .tabulator-col[tabulator-field="ev"] #book-odds-toggle {
+	display: none;
+}
 #table-container {
 	flex: 1 1 auto;
 	display: flex;

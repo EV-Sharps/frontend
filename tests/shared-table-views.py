@@ -48,6 +48,20 @@ with sync_playwright() as p:
                 handicap:0.5,under:false,book:'fd',line:500,ev:8.2,fairVal:450,kelly:0.31,
                 bookOdds:{fd:'+500/-700',kal:'+490/-710'},liquidity:{kal:[1200,2500]}}]);
         }''')
+        toggle = page.locator('#toggle-bookodds-btn')
+        assert toggle.count() == 1, name
+        assert toggle.is_visible(), name
+        assert toggle.evaluate("el => el.closest('.tabulator-col').getAttribute('tabulator-field')") == 'ev', name
+        assert toggle.get_attribute('aria-expanded') == 'true', name
+        # No Circa column in this fixture: hiding odds must use the actual columns.
+        toggle.click()
+        assert not page.evaluate("TABLE.getColumns().some(c => c.getField()?.startsWith('bookOdds.') && c.isVisible())"), name
+        assert toggle.get_attribute('aria-expanded') == 'false', name
+        assert 'Show Odds' in toggle.inner_text(), name
+        assert page.evaluate("TABLE.getColumn('ev').isVisible() && TABLE.getColumn('player').isVisible()"), name
+        assert page.evaluate('TABLE.getSorters().length') == 0, name
+        toggle.click()
+        assert page.evaluate("TABLE.getColumns().filter(c => c.getField()?.startsWith('bookOdds.')).every(c => c.isVisible())"), name
         row = page.locator('.tabulator-row').first
         assert row.bounding_box()['height'] == 42, name
         assert '+500' in row.locator('[tabulator-field="bookOdds.fd"] .stacked-odds-line').first.inner_text()
@@ -60,7 +74,13 @@ with sync_playwright() as p:
         # Reorder/rebuild while Stacked hides the separate summary columns.
         # That temporary layout must not become the user's Compact preference.
         page.evaluate('TABLE.setColumns(TABLE.getColumnDefinitions())')
+        assert toggle.count() == 1, name
+        toggle.click()
         choose('compact')
+        assert toggle.count() == 1 and toggle.is_visible(), name
+        assert toggle.evaluate("el => el.closest('.tabulator-col').getAttribute('tabulator-field')") == 'book', name
+        assert toggle.get_attribute('aria-expanded') == 'false', name
+        toggle.click()
         assert row.bounding_box()['height'] == 24, name
         assert row.locator('.stacked-odds-stack').count() == 0
         assert page.evaluate("TABLE.getColumn('fairVal').isVisible()")

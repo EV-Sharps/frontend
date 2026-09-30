@@ -637,6 +637,40 @@ function ensureLineColumnControl() {
 	checkbox.checked = column.isVisible();
 }
 
+function syncBookOddsToggle(table = TABLE) {
+	if (!table) return;
+	const columns = table.getColumns();
+	const oddsColumns = columns.filter(col => col.getField()?.startsWith('bookOdds.'));
+	if (!oddsColumns.length) return;
+	let button = table.element.querySelector('#toggle-bookodds-btn');
+	if (supportsOddsViews()) {
+		const hostField = CURRENT_VIEW === 'table' ? 'ev' : 'book';
+		const host = columns.find(col => col.getField() === hostField);
+		const title = host?.getElement().querySelector('.tabulator-col-title');
+		if (title) {
+			if (!button) {
+				button = document.createElement('button');
+				button.id = 'toggle-bookodds-btn';
+			}
+			if (button.parentElement !== title) title.appendChild(button);
+		}
+	}
+	if (!button) return;
+	button.type = 'button';
+	button.onclick = event => {
+		event.preventDefault();
+		event.stopPropagation();
+		toggleBookOddsColumns();
+	};
+	const visible = oddsColumns.some(col => col.isVisible());
+	const expanded = String(visible);
+	if (button.getAttribute('aria-expanded') !== expanded) {
+		button.innerHTML = `<span id="book-odds-toggle">${visible ? '\u2212' : '+'}</span> ${visible ? 'Hide' : 'Show'} Odds`;
+		button.setAttribute('aria-expanded', expanded);
+		button.title = `${visible ? 'Hide' : 'Show'} sportsbook odds columns`;
+	}
+}
+
 const oddsTableViewStates = new WeakMap();
 function syncOddsSummaryColumns(table = TABLE) {
 	const state = oddsTableViewStates.get(table);
@@ -698,6 +732,7 @@ function applyOddsTableView(table = TABLE) {
 		if (col.getWidth() !== width) col.setWidth(width);
 	}
 	syncOddsSummaryColumns(table);
+	syncBookOddsToggle(table);
 	table.getRows().forEach(row => { row.reformat(); row.normalizeHeight(); });
 	table.redraw(true);
 }
@@ -738,6 +773,7 @@ function initializeOddsTableView(table) {
 		if (['fairVal', 'book'].includes(field)) state.visibility[field] = visible;
 		if (field === 'roiRecord') state.visibility.roiRecord = visible;
 		if (['ev', 'player', 'book', 'fairVal', 'roiRecord'].includes(field)) syncOddsSummaryColumns(table);
+		if (field?.startsWith('bookOdds.')) syncBookOddsToggle(table);
 	});
 	table.on('columnsLoaded', capture);
 	return capture();
@@ -1107,7 +1143,8 @@ function snapShareColumn() {
 }
 
 function snapShareColumnOrder(savedOrder, defaultOrder) {
-	const order = [...new Set([...(savedOrder || []), ...defaultOrder])];
+	const keys = [...new Set([...(savedOrder || []), ...defaultOrder])];
+	const order = completeColumnOrder(savedOrder, defaultOrder, keys.map(key => ({ key })));
 	if (CURR_USER?.metadata?.[`${PAGE}-snaps-order-version`]) return order;
 	// Move the new column beside logs in layouts saved before this placement.
 	const withoutSnaps = order.filter(key => key !== "snaps");
@@ -4853,6 +4890,27 @@ function withRecordColumnOrder(savedOrder, defaultOrder, items) {
 	return { savedOrder: insertRecord(savedOrder), defaultOrder: insertRecord(defaultOrder), items };
 }
 
+function completeColumnOrder(savedOrder, defaultOrder, items) {
+	const validKeys = new Set(items.map(item => item.key));
+	const canonical = [...new Set(defaultOrder)];
+	const order = [...new Set(savedOrder?.length ? savedOrder : canonical)]
+		.filter(key => validKeys.has(key));
+	// Older Stacked layouts saved only visible groups, omitting Best Book and
+	// Fair Value. Restore missing groups beside their canonical neighbors while
+	// leaving every explicitly ordered group in its chosen relative position.
+	canonical.forEach((key, index) => {
+		if (!validKeys.has(key) || order.includes(key)) return;
+		const next = canonical.slice(index + 1).find(candidate => order.includes(candidate));
+		if (next !== undefined) {
+			order.splice(order.indexOf(next), 0, key);
+			return;
+		}
+		const previous = canonical.slice(0, index).reverse().find(candidate => order.includes(candidate));
+		order.splice(previous === undefined ? order.length : order.indexOf(previous) + 1, 0, key);
+	});
+	return order;
+}
+
 /**
  * Build a Tabulator columns array from a saved order.
  *
@@ -4865,15 +4923,11 @@ function withRecordColumnOrder(savedOrder, defaultOrder, items) {
 function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null, extraCols = []) {
 	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
-	const order = (savedOrder && savedOrder.length) ? savedOrder : defaultOrder;
-	const seen = new Set();
+	const order = completeColumnOrder(savedOrder, defaultOrder, items);
 	const cols = [];
 	if (starColFn) cols.push(starColFn());
 	for (const key of order) {
-		if (itemMap[key]) { cols.push(...itemMap[key].cols); seen.add(key); }
-	}
-	for (const key of defaultOrder) {
-		if (!seen.has(key) && itemMap[key]) cols.push(...itemMap[key].cols);
+		cols.push(...itemMap[key].cols);
 	}
 	cols.push(...extraCols);
 	return cols;
@@ -4890,10 +4944,10 @@ function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null
 function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
 	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
-	const seen = new Set(savedOrder);
-	const displayOrder = [...savedOrder, ...defaultOrder.filter(k => !seen.has(k))];
+	const displayOrder = completeColumnOrder(savedOrder, defaultOrder, items);
 	const list = document.getElementById('col-reorder-list');
 	list.innerHTML = '';
+	list._fullColumnOrder = displayOrder;
 	displayOrder.forEach(key => {
 		const meta = itemMap[key];
 		if (!meta) return;
@@ -4969,7 +5023,13 @@ function closeColReorderModal() {
  */
 async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	const list = document.getElementById('col-reorder-list');
-	const newOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
+	const visibleOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
+	const visibleKeys = new Set(visibleOrder);
+	let visibleIndex = 0;
+	// Reorder the displayed groups without discarding the hidden groups' slots.
+	// Switching views can make those groups visible again after this save.
+	const newOrder = (list._fullColumnOrder || visibleOrder)
+		.map(key => visibleKeys.has(key) ? visibleOrder[visibleIndex++] : key);
 	if (CURR_USER?.metadata) {
 		CURR_USER.metadata[storageKey] = newOrder;
 		if (["tds-order", "tds2-order", "ftd-order", "nfl-order"].includes(storageKey)) {

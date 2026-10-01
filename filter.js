@@ -168,10 +168,11 @@ function closeDropdown(dd, menu) {
 
 function openDropdown(id, menu) {
 	const r = document.getElementById(id).getBoundingClientRect();
+	const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
 	menu.style.position = "fixed";
 	menu.style.top = `${r.bottom + 6}px`;
-	menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-	menu.style.right = 'auto';
+	menu.style.left = rightAligned ? 'auto' : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+	menu.style.right = rightAligned ? '8px' : 'auto';
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
 	document.getElementById(id).setAttribute('aria-expanded','true');
@@ -314,10 +315,11 @@ document.getElementById('overlay')?.addEventListener('change', event => {
 
 function openMenu() {
 	const r = excludeBtn.getBoundingClientRect();
+	const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
 	menu.style.position = 'fixed';
 	menu.style.top = `${r.bottom + 6}px`;
-	menu.style.left = MOBILE ? 0 : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-	menu.style.right = 'auto';
+	menu.style.left = rightAligned ? 'auto' : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
+	menu.style.right = rightAligned ? '8px' : 'auto';
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
 	excludeBtn.setAttribute('aria-expanded','true');
@@ -445,9 +447,12 @@ if (devigSel) {
 			openCustomDevig();
 		} else {
 			[DEVIG, WEIGHT] = event.target.value.split(";");
+			DEVIG_EXCLUDED = [];
 			if (!DEVIG.includes("+")) {
 				WEIGHT = "1";
 			}
+			REQUIRED = DEVIG.replace("only+", "").split("+").filter(Boolean);
+			updateRequiredDropdown();
 			changeFilter();
 		}
 	});
@@ -456,121 +461,114 @@ if (devigSel) {
 function updateRequiredLabel(requiredBooks) {
 	const button = document.getElementById("required-button");
 	if (!button) return;
-	
-	if (requiredBooks.length === 0) {
-		button.textContent = "Any";
-	} else if (DEVIG && requiredBooks.length === DEVIG.split("+").length) {
-		button.textContent = `All`;
-	} else {
-		const booksHTML = requiredBooks.map(book => {
-			return `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`;
-		}).join("");
-		button.innerHTML = booksHTML;
+	const available = getDevigReferenceBooks().filter(book => !DEVIG_EXCLUDED.includes(book));
+	let label = requiredBooks.length === 0 ? "Any" : `${requiredBooks.length} required`;
+	if (available.length && requiredBooks.length === available.length) label = "All";
+	if (!available.length) label = "None";
+	button.replaceChildren(document.createTextNode(label));
+	if (DEVIG_EXCLUDED.length) {
+		const excluded = document.createElement("span");
+		excluded.className = "devig-excluded-count";
+		excluded.textContent = `${DEVIG_EXCLUDED.length} excluded`;
+		button.appendChild(excluded);
 	}
+	button.title = `Required: ${requiredBooks.map(parseBook).join(", ") || "None"}. Excluded from devig: ${DEVIG_EXCLUDED.map(parseBook).join(", ") || "None"}.`;
 }
 
 function getRequiredBooks() {
 	const menu = document.getElementById("required-options");
 	if (!menu) return [];
 	
-	const checkboxes = menu.querySelectorAll("input[type='checkbox']:checked");
-	return Array.from(checkboxes).map(cb => cb.value);
+	return Array.from(menu.querySelectorAll('input[data-book][value="required"]:checked'))
+		.map(input => input.dataset.book);
 }
 
 function updateRequiredDropdown() {
 	const menu = document.getElementById("required-options");
 	if (!menu) return;
 	
-	// Get current devig books
-	let devigBook = DEVIG || "";
-	if (devigBook.includes(";")) {
-		devigBook = devigBook.split(";")[0];
-	}
-	
-	let devigBooks = devigBook ? devigBook.split("+").filter(Boolean) : [];
-
-	if (!devigBooks.length) {
-		devigBooks = ALL_POSSIBLE_BOOKS;
-	} else if (devigBooks.length == 1) {
-		REQUIRED = devigBooks;
-	}
-	
-	// Clear existing options (keep action buttons)
-	const actionsDiv = menu.querySelector(".chkdd-actions");
-	menu.innerHTML = "";
-	if (actionsDiv) {
-		menu.appendChild(actionsDiv);
-	} else {
-		menu.innerHTML = `
+	const devigBooks = getDevigReferenceBooks();
+	DEVIG_EXCLUDED = DEVIG_EXCLUDED.filter(book => devigBooks.includes(book));
+	REQUIRED = (Array.isArray(REQUIRED) ? REQUIRED : String(REQUIRED || "").split(","))
+		.filter(book => devigBooks.includes(book) && !DEVIG_EXCLUDED.includes(book));
+	const label = document.querySelector('label[for="required-button"]');
+	if (label) label.textContent = "Devig books";
+	menu.innerHTML = `
+		<div class="devig-reference-header">
 			<div class="chkdd-actions">
-				<button type="button" data-act="all">All</button>
-				<button type="button" data-act="any">Any</button>
+				<button type="button" data-act="all" title="Require every included book">All</button>
+				<button type="button" data-act="any" title="Use any included book when available">Any</button>
+				<button type="button" data-act="reset" title="Clear requirements and exclusions">Reset</button>
 			</div>
-		`;
-	}
-	
-	// If no devig or market avg, show message
-	if (devigBooks.length === 0) {
-		const msg = document.createElement("div");
-		msg.style.padding = "8px";
-		msg.style.textAlign = "center";
-		msg.style.color = "#999";
-		msg.textContent = "Required Books";
-		menu.appendChild(msg);
-		updateRequiredLabel([]);
-		return;
-	}
-	
-	// Create checkbox for each devig book
+			<p id="devig-reference-help"><b>Use</b> if priced &middot; <b>Req</b> must be priced<br><b>Excl</b> ignore &middot; All / Any keep exclusions</p>
+		</div>
+	`;
+	const saveSelection = () => {
+		const selections = [...menu.querySelectorAll("input[data-book]:checked")];
+		REQUIRED = getRequiredBooks();
+		DEVIG_EXCLUDED = selections.filter(input => input.value === "excluded").map(input => input.dataset.book);
+		selections.forEach(input => input.closest(".devig-reference-row").dataset.state = input.value);
+		updateRequiredLabel(REQUIRED);
+		const empty = !selections.some(input => input.value !== "excluded");
+		menu.querySelector(".devig-reference-empty").hidden = !empty;
+		debouncedChangeFilter();
+	};
+
 	devigBooks.forEach(book => {
-		const label = document.createElement("label");
-		const checkbox = document.createElement("input");
-		checkbox.type = "checkbox";
-		checkbox.value = book;
-		checkbox.addEventListener("change", () => {
-			REQUIRED = getRequiredBooks();
-			updateRequiredLabel(REQUIRED);
-			debouncedChangeFilter();
+		const row = document.createElement("div");
+		row.className = "devig-reference-row";
+		row.dataset.book = book;
+		row.dataset.state = DEVIG_EXCLUDED.includes(book) ? "excluded" : REQUIRED.includes(book) ? "required" : "optional";
+		const name = document.createElement("span");
+		name.className = "devig-reference-name";
+		const logo = document.createElement("img");
+		logo.className = "book-img";
+		logo.src = `logos/${book.replace(/^hr_(az|oh)$/, "hr")}.png`;
+		logo.alt = "";
+		name.append(logo, document.createTextNode(parseBook(book)));
+		const choices = document.createElement("div");
+		choices.className = "devig-reference-choices";
+		choices.setAttribute("role", "radiogroup");
+		choices.setAttribute("aria-label", `${parseBook(book)} devig reference`);
+		choices.setAttribute("aria-describedby", "devig-reference-help");
+		[["optional", "Use", "Use if available"], ["required", "Req", "Required"], ["excluded", "Excl", "Excluded"]].forEach(([value, text, description]) => {
+			const choice = document.createElement("label");
+			choice.className = "devig-reference-choice";
+			choice.title = description;
+			const input = document.createElement("input");
+			input.type = "radio";
+			input.name = `devig-reference-${book}`;
+			input.dataset.book = book;
+			input.value = value;
+			input.checked = row.dataset.state === value;
+			input.setAttribute("aria-label", description);
+			input.addEventListener("change", saveSelection);
+			const caption = document.createElement("span");
+			caption.textContent = text;
+			choice.append(input, caption);
+			choices.appendChild(choice);
 		});
-		
-		const bookName = parseBook(book);
-		label.appendChild(checkbox);
-		label.appendChild(document.createTextNode(` ${bookName}`));
-		menu.appendChild(label);
+		row.append(name, choices);
+		menu.appendChild(row);
 	});
-	
-	// Wire up All/Any buttons
-	const actionsButtons = menu.querySelectorAll(".chkdd-actions button");
-	actionsButtons.forEach(btn => {
-		btn.addEventListener("click", (e) => {
-			const act = e.target.dataset.act;
-			const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
-			
-			if (act === "all") {
-				checkboxes.forEach(cb => cb.checked = true);
-			} else if (act === "any") {
-				checkboxes.forEach(cb => cb.checked = false);
-			}
-			
-			REQUIRED = getRequiredBooks();
-			updateRequiredLabel(REQUIRED);
-			debouncedChangeFilter();
+	const empty = document.createElement("p");
+	empty.className = "devig-reference-empty";
+	empty.setAttribute("role", "status");
+	empty.textContent = "All reference books are excluded. Include a book to calculate EV.";
+	empty.hidden = devigBooks.some(book => !DEVIG_EXCLUDED.includes(book));
+	menu.appendChild(empty);
+
+	menu.querySelectorAll(".chkdd-actions button").forEach(button => {
+		button.addEventListener("click", () => {
+			const action = button.dataset.act;
+			menu.querySelectorAll(".devig-reference-row").forEach(row => {
+				if (action !== "reset" && row.dataset.state === "excluded") return;
+				row.querySelector(`input[value="${action === "all" ? "required" : "optional"}"]`).checked = true;
+			});
+			saveSelection();
 		});
 	});
-	
-	// Restore previously selected books
-	if (REQUIRED.includes(",")) {
-		REQUIRED = REQUIRED.split(",");
-	} else if (typeof REQUIRED === "string" && REQUIRED.length > 0) {
-		REQUIRED = [REQUIRED];
-	}
-	const savedRequired = REQUIRED || [];
-	savedRequired.forEach(book => {
-		const checkbox = menu.querySelector(`input[value="${book}"]`);
-		if (checkbox) checkbox.checked = true;
-	});
-	
-	updateRequiredLabel(savedRequired);
+	updateRequiredLabel(REQUIRED);
 }
 
 if (document.getElementById("ou-select")) {
@@ -986,6 +984,7 @@ function renderDevigOptions(searchTerm = "") {
 			item.querySelector('input').addEventListener('change', (event) => {
 				const value = event.target.value;
 				[DEVIG, WEIGHT] = value.split(";");
+				DEVIG_EXCLUDED = [];
 				if (!DEVIG.includes("+")) {
 					WEIGHT = "1";
 				}
@@ -1469,6 +1468,8 @@ function changeFilter(render = true) {
 	params.set("boost", boost);
 	params.set("devig", devigBook.replaceAll("+", "-").split(";")[0]);
 	params.set("required", requiredBooks.join(","));
+	if (DEVIG_EXCLUDED.length) params.set("devig_excluded", DEVIG_EXCLUDED.join(","));
+	else params.delete("devig_excluded");
 	params.set("weight", WEIGHT.replaceAll("+", "-"));
 	params.set("game", games.join(","));
 	params.set("book", book);
@@ -1486,6 +1487,7 @@ function changeFilter(render = true) {
 	}
 
 	const weights = getUserWeights();
+	const referenceBooks = getDevigReferenceBooks().filter(book => !DEVIG_EXCLUDED.includes(book));
 	RES.data.forEach(row => {
 		const bookOdds = { ...row.bookOdds };
 		let avg = getAverageImplied(bookOdds, row.under);
@@ -1498,8 +1500,7 @@ function changeFilter(render = true) {
 			row["line"] = null;
 			return;
 		}
-		const comboList = devigBook ? devigBook.split("+").filter(Boolean) : Object.keys(bookOdds);
-		const presentBooks = comboList.filter(k => bookOdds[k]).length;
+		const presentBooks = referenceBooks.filter(k => bookOdds[k]).length;
 		row["present"] = presentBooks;
 
 		if (requiredBooks.length > 0) {
@@ -1546,6 +1547,8 @@ function changeFilter(render = true) {
 			row["fairVal"] = "";
 			row["implied"] = "";
 			row["kelly"] = "";
+			row["book"] = null;
+			row["line"] = null;
 			return;
 		}
 
@@ -1634,7 +1637,7 @@ function changeFilter(render = true) {
 	});
 
 	if (!filtered.length) {
-		let t = "No data for this devig. Try adjusting your filters or set required to Any.";
+		let t = "No data for this devig. Adjust Devig books or your filters.";
 		TABLE.options.placeholder = t;
 		TABLE.redraw(true);
 	}

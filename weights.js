@@ -1,5 +1,4 @@
 
-const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "hr_oh", "bv", "cz", "fl", "br", "re", "kal", "nv", "poly", "px"];
 let DEV_WINDOW = "All";
 const SESSION_WEIGHTS = {
 	"tds-pn+circa": {
@@ -28,13 +27,17 @@ function getDefaultWeights(books) {
 
 function getUserWeights() {
 	let weights = {};
-	if (!DEVIG) {
-		return getDefaultWeights();
+	const [selection, inlineWeights] = String(DEVIG || "").split(";");
+	const books = selection.replace(/^only\+/, "");
+	if (!books || books === "mkt") {
+		weights = getDefaultWeights();
+	} else {
+		const selectedWeights = String(WEIGHT || inlineWeights || "").split("+");
+		books.split("+").forEach((book, idx) => {
+			weights[book] = parseFloat(selectedWeights[idx]);
+		});
 	}
-	DEVIG.split("+").map((book, idx) => {
-		weights[book] = parseFloat(WEIGHT.split("+")[idx]);
-	});
-	return weights;
+	return Object.fromEntries(Object.entries(weights).filter(([book]) => !DEVIG_EXCLUDED.includes(book)));
 }
 
 function renderWeightSettings() {
@@ -258,6 +261,7 @@ async function saveWeights() {
 
 	if (!weightText) return;
 	DEVIG = bookKey;
+	DEVIG_EXCLUDED = [];
 	WEIGHT = weightKey;
 	REQUIRED = bookKey.replace("only+", "").split("+");
 	if (typeof updateRequiredDropdown === 'function') updateRequiredDropdown();
@@ -516,6 +520,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 				if (!devig) return;
 
 				DEVIG = devig;
+				DEVIG_EXCLUDED = [];
 				WEIGHT = repeatOnes(devig).slice(1);
 				REQUIRED = devig.replace("only+", "").split("+");
 				const bookSelectEl = document.getElementById("book-select");

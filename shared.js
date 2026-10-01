@@ -15,6 +15,8 @@ let TEST;
 let RES, TABLE;
 let CSV_DOWNLOADED = false;
 let ALL, PROP, DATE, MARK, GAME, TODAY, SPORT, PLAYER, DEVIG, WEIGHT, BOOST, PRETTY, IMP, DUE, CSV, BOOK, VIG, MIN, MAX, OU, SIDE, TEAMS, METHOD, REQUIRED, PLAYERS, HARD_HIT, L3, EXIT_VELO, DERBY, STREAM;
+let DEVIG_EXCLUDED = [];
+const ALL_WEIGHTABLE_BOOKS = ["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "hr_oh", "bv", "cz", "fl", "br", "re", "kal", "nv", "poly", "px"];
 let KELLY_DOLLARS = false;
 const KELLY_FRACTIONS = [[1, 'Full'], [0.5, '½'], [0.25, '¼'], [0.125, '⅛'], [0.0625, '¹⁄₁₆']];
 const kellyPageOverrides = new Map();
@@ -385,7 +387,9 @@ function buildPagePicker() {
 			const pw = panel.offsetWidth;
 			let left = rect.left + rect.width / 2 - pw / 2;
 			left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-			panel.style.left = left + "px";
+			const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
+			panel.style.left = rightAligned ? "auto" : left + "px";
+			panel.style.right = rightAligned ? "8px" : "auto";
 			panel.style.top = (rect.bottom + 6) + "px";
 		}
 	});
@@ -3375,7 +3379,7 @@ function parseWeightKey(key) {
 
 function setUrlParams(updates = {}) {
 	let url = new URL(window.location.href);
-	const params = new URLSearchParams(window.search);
+	const params = new URLSearchParams(url.search);
 	
 	Object.entries(updates).forEach(([k, v]) => {
         if (v === null || v === undefined || v === "") {
@@ -3390,7 +3394,10 @@ function setUrlParams(updates = {}) {
 }
 
 function loadWeights() {
-	DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
+	const previousDevig = DEVIG;
+	const params = new URL(window.location.href).searchParams;
+	const explicitDevig = params.has("devig") || params.has("devig_excluded");
+	if (!explicitDevig) DEVIG = DEVIG || CURR_USER.metadata[`${PAGE}-devig`] || "";
 	if (DEVIG && DEVIG.includes("only+")) {
 		DEVIG = DEVIG.replace("only+", "");
 	} else if (DEVIG.includes(";")) {
@@ -3450,6 +3457,7 @@ function loadWeights() {
 	if (DEVIG) {
 		reorderOddsColumns(BOOK, DEVIG);
 	}
+	if (DEVIG !== previousDevig && typeof updateRequiredDropdown === 'function') updateRequiredDropdown();
 }
 
 function showHideUserTable(loaded) {
@@ -3707,11 +3715,13 @@ function computeOutlierFromBookOdds(rowData) {
 	const legIndex = rowData.under ? 1 : 0;
 
 	let entries, avgP;
-	let excluded = getExcludedBooks();
+	let excluded = [...getExcludedBooks()];
 	excluded.push("pn"); excluded.push("circa");
 
-	if (REQUIRED.length > 0) {
-		const hasAllRequired = REQUIRED.every(book => bookOdds[book]);
+	const requiredBooks = (Array.isArray(REQUIRED) ? REQUIRED : String(REQUIRED || "").split(","))
+		.filter(book => book && !DEVIG_EXCLUDED.includes(book));
+	if (requiredBooks.length > 0) {
+		const hasAllRequired = requiredBooks.every(book => bookOdds[book]);
 		if (!hasAllRequired) {
 			return { book: null, value: null, deviation: 0, pct: 0 };
 		}
@@ -3719,9 +3729,10 @@ function computeOutlierFromBookOdds(rowData) {
 
 	if (DEVIG) {
 		let p_devig;
+		const devigBooks = getDevigReferenceBooks().filter(book => !DEVIG_EXCLUDED.includes(book));
+		if (!devigBooks.length) return { book: null, value: null, deviation: 0, pct: 0 };
 
 		if (DEVIG.includes("+")) {
-			const devigBooks = DEVIG.split("+");
 			let sumImpliedP = 0;
 			let count = 0;
 			
@@ -3743,7 +3754,7 @@ function computeOutlierFromBookOdds(rowData) {
 			// Average implied probability across the composite books
 			p_devig = sumImpliedP / count;
 		} else {
-			const devigVal = bookOdds[DEVIG];
+			const devigVal = bookOdds[devigBooks[0]];
 			
 			// Check for edge cases where odds are missing or invalid for a single book
 			if (!devigVal || (rowData.under && !String(devigVal).includes("/") && !rowData.prop.includes("vs-"))) {
@@ -3761,8 +3772,7 @@ function computeOutlierFromBookOdds(rowData) {
 
 		// Add the single book DEVIG to the excluded list to avoid comparing 
 		// a book against itself if DEVIG is a single book.
-		const devigExclusions = String(DEVIG).split("+");
-		devigExclusions.forEach(b => excluded.push(b));
+		devigBooks.forEach(b => excluded.push(b));
 		
 		Object.entries(bookOdds)
 			.filter(([book]) => !excluded.includes(book) && (!bookFilter || bookFilter == book)) 
@@ -3800,8 +3810,10 @@ function computeOutlierFromBookOdds(rowData) {
 
 		if (entries.length < 2) return { book: null, value: null, deviation: 0, pct: 0 };
 
-		// Average implied probability across books
-		avgP = entries.reduce((a, [, , p]) => a + p, 0) / entries.length;
+		// Reference exclusions do not remove a book's offered price from the candidates.
+		const references = entries.filter(([book]) => !DEVIG_EXCLUDED.includes(book));
+		if (!references.length) return { book: null, value: null, deviation: 0, pct: 0 };
+		avgP = references.reduce((a, [, , p]) => a + p, 0) / references.length;
 
 		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
@@ -4202,6 +4214,20 @@ function decimalToAmerican(d) {
   return d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
 }
 
+function getDevigReferenceBooks() {
+	const selected = String(DEVIG || "").split(";")[0].replace(/^only\+/, "");
+	if (selected && selected !== "mkt") return [...new Set(selected.split("+").filter(Boolean))];
+	const defaults = ALL_WEIGHTABLE_BOOKS.filter(book => !["bv", "bol", "br", "re"].includes(book));
+	// These pages also compare against the raw market average, which includes books
+	// outside the standard EV weights. Keep them available in the reference controls.
+	const rawMarketPages = ["outliers", "dingers2", "atgs2", "tds2", "atgs", "fgs", "tds", "ftd", "wbc", "olympics", "analysis"];
+	if (!rawMarketPages.includes(PAGE)) return defaults;
+	const rows = Array.isArray(RES) ? RES : RES?.data;
+	const available = Array.isArray(rows) ? rows.flatMap(row => Object.keys(row.bookOdds || {})) : [];
+	const known = typeof ALL_POSSIBLE_BOOKS !== "undefined" ? ALL_POSSIBLE_BOOKS : [];
+	return [...new Set([...ALL_WEIGHTABLE_BOOKS, ...known, ...available])];
+}
+
 function getAverageImplied(books, under) {
 	const skipUnder = new Set(["kambi"]);
 	const impliedProbs = Object.entries(books)
@@ -4253,10 +4279,11 @@ function buildOU(books, isUnder) {
 function averageDevigs(bookOdds, highest, isUnder, weights) {
 	let totalWeight = 0;
 	let fairVals = 0;
-	const devigBooks = DEVIG.replace("only+", "").split("+");
+	const devig = String(DEVIG || "").split(";")[0].replace(/^only\+/, "");
+	const devigBooks = devig.split("+");
 	Object.entries(bookOdds)
 		//.filter(([book, val]) => val && book != highest && (!DEVIG || devigBooks.includes(book)))
-		.filter(([book, val]) => val && (!DEVIG || (!DEVIG.includes("+") || book != highest) || devigBooks.includes(book)))
+		.filter(([book, val]) => val && !DEVIG_EXCLUDED.includes(book) && (!devig || (!devig.includes("+") || book != highest) || devigBooks.includes(book)))
 		.forEach(([book, val]) => {
 			let fv;
 
@@ -4722,6 +4749,7 @@ function interpolateColor(color1, color2, t) {
 // just the sum of the fine odds-bins it covers - no raw per-bet data needed.
 function getRowROI(rowData) {
 	try {
+		if (DEVIG_EXCLUDED.length) return null;
 		if (typeof HEATMAP === 'undefined' || !HEATMAP || !HEATMAP.xy || !HEATMAP.grid) return null;
 
 		const propData = HEATMAP.xy[rowData.prop];
@@ -4828,8 +4856,8 @@ const HELP_ITEMS = [
 		getEl: () => document.getElementById("devig-button")
 	},
 	{
-		title: "Required Books",
-		desc: "Only show plays where all selected books have a price available to devig against.",
+		title: "Devig books",
+		desc: "Optional books are used when priced, Required books must have a price, and Excluded books are left out of the reference average. The separate Exclude Books control chooses which books can be the best betting price.",
 		getEl: () => document.getElementById("required-button")
 	},
 	{
@@ -4935,6 +4963,7 @@ function parseURLParams() {
 	SPORT = URLParams.get("sport") || "mlb";
 	PLAYER = URLParams.get("player");
 	DEVIG = (URLParams.get("devig") || "").replaceAll("-","+");
+	DEVIG_EXCLUDED = [...new Set((URLParams.get("devig_excluded") || "").split(",").map(book => book.trim()).filter(Boolean))];
 	WEIGHT = (URLParams.get("weight") || "").replaceAll("-", "+");
 	BOOST = URLParams.get("boost");
 	PRETTY = URLParams.get("pretty");
@@ -5352,6 +5381,7 @@ async function initDevPicker(data){
 
 		btn.addEventListener('click', () => {
 			DEVIG = dev;
+			DEVIG_EXCLUDED = [];
 			if (hidden) hidden.value = dev;
 			// toggle active class only on buttons
 			document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));

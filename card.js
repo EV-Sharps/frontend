@@ -544,7 +544,7 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 	}
 
 	const devigBooks = (typeof DEVIG === 'string' && DEVIG)
-		? DEVIG.split(";")[0].split("+").filter(Boolean)
+		? DEVIG.split(";")[0].split("+").filter(book => book && !DEVIG_EXCLUDED.includes(book))
 		: [];
 
 	for (const bookKey of orderedKeys) {
@@ -575,6 +575,7 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 
 function renderCardRecord(rowData) {
 	try {
+		if (DEVIG_EXCLUDED.length) return '';
 		if (typeof RECORD === 'undefined' || !RECORD || !DEVIG) return '';
 		const method = (typeof METHOD !== 'undefined' && METHOD) || "worst";
 		const book = rowData.book;
@@ -699,8 +700,12 @@ function updateExistingCard(card, rowData) {
 	// when weights actually differ - equal weights collapse to a single "Equal" caption.
 	let devigPillHtml = "";
 	if (typeof DEVIG !== 'undefined' && DEVIG) {
-		const devigBooks = DEVIG.replace("only+", "").split("+");
-		const weights = (WEIGHT || "").split("+").map(Number);
+		const configuredWeights = (WEIGHT || "").split("+").map(Number);
+		const references = DEVIG.replace("only+", "").split("+")
+			.map((book, index) => [book, configuredWeights[index]])
+			.filter(([book]) => !DEVIG_EXCLUDED.includes(book));
+		const devigBooks = references.map(([book]) => book);
+		const weights = references.map(([, weight]) => weight);
 		const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
 		const percs = weights.map(w => Math.round(w * 100 / totalWeight));
 		const isEqual = new Set(weights).size <= 1;
@@ -712,10 +717,10 @@ function updateExistingCard(card, rowData) {
 			</div>
 		`).join("");
 
-		devigPillHtml = `<div class="metric-pill">
+		devigPillHtml = devigBooks.length ? `<div class="metric-pill">
 			<div style="display:flex;align-items:flex-end;justify-content:center;gap:3px;">${logosHtml}</div>
 			<div style="opacity:0.85; font-size:0.72rem;">${isEqual ? "Equal" : "Devig"}</div>
-		</div>`;
+		</div>` : "";
 	}
 
 	header.innerHTML = `

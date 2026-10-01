@@ -580,6 +580,10 @@
 								<label for="custom_hitRateCareer">Hit Rate Career</label>
 							</div>
 							<div>
+								<input id="custom_hitRates_bvt" type="checkbox">
+								<label for="custom_hitRates_bvt">vs Opp Hit Rate</label>
+							</div>
+							<div>
 								<input id="custom_logs" type="checkbox">
 								<label for="custom_logs">Logs</label>
 							</div>
@@ -615,6 +619,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="player-lines.js"></script>
+	<script src="nhl-history.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "atgs2";
@@ -629,9 +635,8 @@
 
 		let resolveTableReady;
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
-		const fetchProps = createDataRefresh(() => API_BASE+`/api/atgs`, async (data) => {
+		const fetchProps = createDataRefresh(() => API_BASE+`/api/atgs2`, async (data) => {
 			RES = data;
-			RES.data = RES.data.filter(r => r.handicap == "1.5" && !r.under);
 			UPDATED[PAGE] = data["updated"];
 
 			const gameMenu = document.getElementById("game-options");
@@ -691,7 +696,7 @@
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol',
 			'bookOdds_pn', 'bookOdds_kal', 'bookOdds_poly', 'bookOdds_px', 'bookOdds_nv',
-			'hitRate', 'hitRateLYR', 'hitRateCareer', 'logs', 'due_grp'
+			'hitRate', 'hitRateLYR', 'hitRateCareer', 'hitRates_bvt', 'logs', 'due_grp'
 		];
 
 		function getAtgsColumnItems() {
@@ -747,6 +752,7 @@
 				{ key: "hitRate",        label: "Season Hit Rate",   cols: [{ title: "Season</br>Hit Rate", field: "hitRate", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateLYR",     label: "Last Year Hit Rate", cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateCareer",  label: "Career Hit Rate",   cols: [{ title: "Career</br>Hit Rate", field: "hitRateCareer", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
+				getNhlOpponentHitRateColumnItem(),
 				{ key: "logs",           label: "Game Logs",         cols: [{ title: "Game Logs<br> Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams: {type: "bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 				{ key: "due_grp",        label: "Last Goal (Due)",   cols: [{ title: "Last Goal (Due)", columns: [{title: "Gm", field: "due.g.streak", width: 40, formatter: homerLogFormatter},{title: "Med", field: "due.g.med", width: 40, formatter: homerLogFormatter},{title: "Z", field: "due.g.z_median", width: 40, formatter: homerLogFormatter, sorter: "number"}] }] }
 			];
@@ -802,6 +808,10 @@
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
 				rowClick(row);
 			});
 
@@ -815,7 +825,7 @@
 		}
 
 		function rowClick(row) {
-			showCardModal(row.getData());
+			NhlHistory.open(row.getData());
 		}
 
 		function closeCardModal() {

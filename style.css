@@ -2154,6 +2154,72 @@ nav {
 	#player-lines-dialog .player-lines-close { width: 36px; height: 36px; }
 }
 
+#nhl-history-dialog {
+	box-sizing: border-box;
+	width: min(840px, calc(100vw - 24px));
+	max-width: none;
+	max-height: calc(100dvh - 32px);
+	padding: 0;
+	overflow: auto;
+	border: 1px solid #34475b;
+	border-radius: 12px;
+	background: #111b27;
+	color: #e4edf6;
+	box-shadow: 0 20px 70px #0008;
+}
+#nhl-history-dialog::backdrop { background: #020812bd; }
+#nhl-history-dialog button { font-family: inherit; cursor: pointer; }
+.nhl-history-header {
+	display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+	padding: 18px 20px 14px; border-bottom: 1px solid #29394b;
+}
+#nhl-history-title { margin: 0 0 6px; font-size: 20px; line-height: 1.2; color: #f3f7fb; }
+.nhl-history-context { margin: 0; font-size: 12px; line-height: 1.5; color: #b4c5d6; }
+#nhl-history-dialog .nhl-history-close {
+	flex: 0 0 32px; width: 32px; height: 32px; padding: 0;
+	background: #1c2b3c; border: 1px solid #3a4e64; border-radius: 6px; color: #dce8f4; font-size: 23px;
+}
+.nhl-history-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; }
+.nhl-history-tabs, .nhl-history-ranges { display: flex; gap: 3px; background: #09121d; padding: 3px; border: 1px solid #29394b; border-radius: 7px; }
+.nhl-history-ranges[hidden] { display: none; }
+.nhl-history-tabs button, .nhl-history-ranges button {
+	border: 1px solid transparent; border-radius: 5px; background: transparent; color: #aabdd0;
+	padding: 7px 12px; font-size: 12px; line-height: 1.3; white-space: nowrap;
+}
+.nhl-history-ranges button { padding: 5px 9px; font-size: 11px; }
+.nhl-history-tabs button[aria-selected="true"], .nhl-history-ranges button[aria-pressed="true"] { background: #223e58; border-color: #416d94; color: #fff; }
+.nhl-history-tabs button:disabled { color: #6d7b8b; cursor: default !important; }
+#nhl-history-dialog button:focus-visible { outline: 2px solid #79baff; outline-offset: 2px; }
+#nhl-history-panel { padding: 0 20px; }
+.nhl-history-stats { display: flex; gap: 8px; }
+.nhl-history-stats > div { flex: 1; min-width: 0; padding: 10px 12px; background: #192636; border: 1px solid #2a3b4f; border-radius: 7px; }
+.nhl-history-stats span { display: block; margin-bottom: 5px; font-size: 11px; color: #9eb2c7; }
+.nhl-history-stats strong { font-size: 17px; font-weight: 600; white-space: nowrap; }
+.nhl-history-note { margin: 12px 0 0; font-size: 11px; color: #a7bbcf; line-height: 1.5; }
+.nhl-history-plot-scroll { width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+#nhl-history-chart { min-height: 280px; }
+.nhl-history-empty { margin: 0; padding: 70px 16px; text-align: center; color: #afc1d2; font-size: 13px; }
+.nhl-history-legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 0 12px; font-size: 11px; color: #a7bbcf; }
+.nhl-history-legend .history-hit::before, .nhl-history-legend .history-miss::before, .nhl-history-legend .history-push::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 2px; background: #36d399; }
+.nhl-history-legend .history-miss::before { background: #c57580; }
+.nhl-history-legend .history-push::before { background: #94a3b8; }
+.nhl-history-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid #29394b; }
+.nhl-history-footer button { padding: 7px 11px; font-size: 12px; color: #cbdcef; background: #1c2b3c; border: 1px solid #3a4e64; border-radius: 5px; }
+@media (max-width: 600px) {
+	#nhl-history-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 24px); border-radius: 9px; }
+	.nhl-history-header { padding: 14px 12px 12px; }
+	#nhl-history-title { font-size: 18px; }
+	.nhl-history-toolbar { padding: 12px; gap: 8px; }
+	.nhl-history-tabs { flex: 1 1 100%; min-width: 0; }
+	.nhl-history-tabs button { flex: 1; padding: 8px 5px; }
+	#nhl-history-panel { padding: 0 12px; }
+	.nhl-history-stats { gap: 5px; }
+	.nhl-history-stats > div { padding: 9px 7px; }
+	.nhl-history-stats strong { font-size: 14px; }
+	.nhl-history-stats span { font-size: 10px; }
+	.nhl-history-footer { padding: 10px 12px; }
+}
+
 #card-modal-overlay {
 	display: none;
 	position: fixed;

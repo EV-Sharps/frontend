@@ -579,6 +579,10 @@
 								<label for="custom_hitRateLYR">Hit Rate LYR</label>
 							</div>
 							<div>
+								<input id="custom_hitRates_bvt" type="checkbox">
+								<label for="custom_hitRates_bvt">vs Opp Hit Rate</label>
+							</div>
+							<div>
 								<input id="custom_logs" type="checkbox">
 								<label for="custom_logs">Logs</label>
 							</div>
@@ -614,6 +618,7 @@
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="player-lines.js"></script>
+	<script src="nhl-history.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "nhl";
@@ -851,16 +856,19 @@
 					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					//{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					getNhlOpponentHitRateColumnItem().cols[0],
 					{field: "game", visible: false}
 				]
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());
 					return;
 				}
+				NhlHistory.open(row.getData());
 			});
 
 			TABLE.on("dataLoaded", function(data) {

@@ -309,6 +309,10 @@
 							<label for="custom_hitRateCareer">Hit Rate Career</label>
 						</div>
 						<div>
+							<input id="custom_hitRates_bvt" type="checkbox">
+							<label for="custom_hitRates_bvt">vs Opp Hit Rate</label>
+						</div>
+						<div>
 							<input id="custom_logs" type="checkbox">
 							<label for="custom_logs">Logs</label>
 						</div>
@@ -637,6 +641,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="player-lines.js"></script>
+	<script src="nhl-history.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "fgs";
@@ -735,7 +741,7 @@
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol',
 			'bookOdds_pn', 'bookOdds_kal', 'bookOdds_poly', 'bookOdds_px', 'bookOdds_nv',
-			'hitRate', 'hitRateLYR', 'hitRateCareer', 'logs'
+			'hitRate', 'hitRateLYR', 'hitRateCareer', 'hitRates_bvt', 'logs'
 		];
 
 		function getFgsColumnItems() {
@@ -778,6 +784,7 @@
 				{ key: "hitRate",        label: "Season Hit Rate",   cols: [{ title: "Season</br>Hit Rate", field: "hitRate", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateLYR",     label: "Last Year Hit Rate", cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateCareer",  label: "Career Hit Rate",   cols: [{ title: "Career</br>Hit Rate", field: "hitRateCareer", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
+				getNhlOpponentHitRateColumnItem(),
 				{ key: "logs",           label: "Game Logs",         cols: [{ title: "Game Logs<br> Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams: {type: "bar"}, responsive: 3, visible: MOBILE ? false : true }] },
 			];
 		}
@@ -832,6 +839,10 @@
 
 			TABLE.on("rowClick", function(e, row) {
 				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
+				if (e.shiftKey || e.ctrlKey) {
+					showCardModal(row.getData());
+					return;
+				}
 				rowClick(row);
 			});
 
@@ -910,7 +921,7 @@
 		}
 
 		function rowClick(row) {
-			showCardModal(row.getData());
+			NhlHistory.open(row.getData());
 		}
 
 		function closeCardModal() {

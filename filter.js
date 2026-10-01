@@ -350,9 +350,33 @@ if (boostSel) {
 }
 
 function toggleRange(e) {
-  e.stopPropagation();
-  document.getElementById("range-panel").classList.toggle("hidden");
+  e?.stopPropagation();
+  const panel = document.getElementById("range-panel");
+  if (!panel) return;
+  const hidden = panel.classList.toggle("hidden");
+  document.getElementById("range-btn")?.setAttribute("aria-expanded", String(!hidden));
 }
+
+function closeRange() {
+  document.getElementById("range-panel")?.classList.add("hidden");
+  document.getElementById("range-btn")?.setAttribute("aria-expanded", "false");
+}
+
+const rangeButton = document.getElementById("range-btn");
+rangeButton?.setAttribute("aria-controls", "range-panel");
+rangeButton?.setAttribute("aria-expanded", "false");
+// Capture also catches other dropdown buttons that stop click propagation.
+document.addEventListener("click", event => {
+  const panel = document.getElementById("range-panel");
+  if (!panel || panel.classList.contains("hidden")) return;
+  if (!panel.contains(event.target) && !rangeButton?.contains(event.target)) closeRange();
+}, true);
+document.addEventListener("keydown", event => {
+  const panel = document.getElementById("range-panel");
+  if (event.key !== "Escape" || !panel || panel.classList.contains("hidden")) return;
+  closeRange();
+  rangeButton?.focus({ preventScroll: true });
+});
 
 function applyRange() {
   const min = document.getElementById("range-min").value;
@@ -362,7 +386,7 @@ function applyRange() {
   document.getElementById("max-odds").value = max;
 
   updateRangeLabel(min, max);
-  document.getElementById("range-panel").classList.add("hidden");
+  closeRange();
 
   changeFilter();
 }
@@ -374,7 +398,7 @@ function clearRange() {
   document.getElementById("max-odds").value = "";
 
   updateRangeLabel();
-  document.getElementById("range-panel").classList.add("hidden");
+  closeRange();
 
   changeFilter();
 }

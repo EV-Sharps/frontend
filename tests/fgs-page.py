@@ -102,6 +102,9 @@ try:
             page.wait_for_function("TABLE.getData('active').length === 3")
             assert not page.evaluate("TABLE.getHeaderFilters().length")
             page.locator(".tabulator-row .tabulator-cell[tabulator-field='player']").first.click()
+            assert page.locator("#nhl-history-dialog").evaluate("el => el.open")
+            assert page.locator('[data-history-view="due"]').is_disabled()
+            page.get_by_role("button", name="Play card", exact=True).click()
             assert page.locator("#card-modal-overlay").evaluate("el => el.classList.contains('open')")
             assert page.locator("#card-modal-inner .data-card").count() == 1
             assert page.locator("#card-modal-inner .player-prop-row").evaluate("el => getComputedStyle(el).paddingRight") == "48px"

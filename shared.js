@@ -2081,6 +2081,7 @@ const bvpFormatter = function(cell) {
 }
 
 function hitRatePercent(value) {
+	if (value?.t != null && !(Number(value.t) > 0)) return null;
 	if (value?.p == null || value.p === "") return null;
 	const percent = Number(value.p);
 	return Number.isFinite(percent) ? percent : null;
@@ -2092,21 +2093,39 @@ const hitRateFormatter = function(cell) {
 	return cell.getRow().getData().blurred ? `<div class="blurred">${percent}%</div>` : `${percent}%`;
 }
 
+function hitRateSorter(a, b, aRow, bRow, column, dir) {
+	const first = hitRatePercent(a), second = hitRatePercent(b);
+	if (first === null && second === null) return 0;
+	if (first === null) return dir === "asc" ? 1 : -1;
+	if (second === null) return dir === "asc" ? -1 : 1;
+	return first - second;
+}
+
 function getPropHitRateColumnItems() {
 	return [["szn", "Season"], ["L10", "L10"], ["L20", "L20"], ["lyr", "LYR"]].map(([key, label]) => ({
 		key: `hitRates_${key}`, label: `${label} Hit Rate`,
 		cols: [{
 			title: `${label}<br>Hit Rate`, field: `hitRates.${key}`, width: 60, responsive: 2,
 			formatter: hitRateFormatter,
-			sorter: (a, b, aRow, bRow, column, dir) => {
-				const first = hitRatePercent(a), second = hitRatePercent(b);
-				if (first === null && second === null) return 0;
-				if (first === null) return dir === "asc" ? 1 : -1;
-				if (second === null) return dir === "asc" ? -1 : 1;
-				return first - second;
-			}
+			sorter: hitRateSorter
 		}]
 	}));
+}
+
+function getNhlOpponentHitRateColumnItem() {
+	return {
+		key: "hitRates_bvt", label: "vs Opp Hit Rate",
+		cols: [{
+			title: "vs Opp<br>Hit Rate", field: "hitRates.bvt", width: 60, responsive: 2,
+			formatter: hitRateFormatter, sorter: hitRateSorter,
+			headerTooltip: "Hit rate against this opponent for the current prop, line and Over/Under side.",
+			tooltip: (event, cell) => {
+				if (cell.getRow().getData().blurred) return "";
+				const rate = cell.getValue();
+				return hitRatePercent(rate) === null ? "" : `${rate.w}/${rate.t} games hit this line against this opponent`;
+			}
+		}]
+	};
 }
 
 const hedgeFormatter = function(cell) {
@@ -3323,10 +3342,11 @@ const DEFAULT_FIELDS = {
 	tds: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	ftd: [...DEFAULT_SHARED, "oppRank", "snaps"],
 	tds2: [...DEFAULT_SHARED, "oppRank", "snaps"],
-	atgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine"],
-	fgs: [...DEFAULT_SHARED, "hitRateCareer", "oppRank", "dvpRank", "goalie", "ppLine", "teamTotal"],
+	atgs: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine"],
+	atgs2: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine"],
+	fgs: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine", "teamTotal"],
 	nfl: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", "oppRank", "snaps", ...getPropHitRateColumnItems().map(item => item.key)],
-	nhl: [...DEFAULT_SHARED, "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
+	nhl: [...DEFAULT_SHARED, "hitRates_bvt", "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", ...getPropHitRateColumnItems().map(item => item.key)],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]
@@ -3484,6 +3504,9 @@ function showHideUserTable(loaded) {
 		if (["mlb", "nfl"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-hit-rates-version`]) {
 			getPropHitRateColumnItems().forEach(item => allowed.add(item.key));
 		}
+		if (["nhl", "atgs", "atgs2", "fgs"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-bvt-hit-rate-version`]) {
+			allowed.add("hitRates_bvt");
+		}
 		if (recordColumnVisible()) allowed.add('roiRecord');
 		if (openingColumnVisible()) allowed.add('openingPrice');
 		const viewState = oddsTableViewStates.get(TABLE);
@@ -3559,6 +3582,10 @@ function openOverlay() {
 			const checkbox = document.getElementById(`custom_${item.key}`);
 			if (checkbox) checkbox.checked = TABLE.getColumn(item.cols[0].field)?.isVisible() ?? false;
 		});
+	}
+	const opponentRateControl = document.getElementById('custom_hitRates_bvt');
+	if (opponentRateControl && typeof TABLE !== 'undefined' && TABLE) {
+		opponentRateControl.checked = TABLE.getColumn('hitRates.bvt')?.isVisible() ?? false;
 	}
 	ensureLineColumnControl();
 	ensureOpeningColumnControl();
@@ -4493,6 +4520,38 @@ function rowClick(row) {
 	}
 }
 
+// Keep alternate goals prices separate from the full rows used by the main table.
+function goalComparisonRows(playerData, payload) {
+	if (!playerData || playerData.blurred) return [];
+	const byLine = new Map();
+	const add = (handicap, bookOdds, circaBlurred = false) => {
+		if (handicap == null || String(handicap).trim() === "") return;
+		const line = Number(handicap);
+		if (!Number.isFinite(line) || !bookOdds || typeof bookOdds !== "object" || Array.isArray(bookOdds)) return;
+		const key = String(line);
+		if (!byLine.has(key)) byLine.set(key, { handicap: key, bookOdds: {} });
+		const target = byLine.get(key).bookOdds;
+		for (const [book, quote] of Object.entries(bookOdds)) {
+			if (book === "circa" && (playerData.circa_blurred || circaBlurred)) continue;
+			if (!Object.hasOwn(target, book)) target[book] = quote;
+		}
+	};
+	for (const row of Array.isArray(payload?.data) ? payload.data : []) {
+		if (!row || row.blurred || row.player !== playerData.player || row.game !== playerData.game || row.prop !== playerData.prop) continue;
+		add(row.handicap, row.bookOdds, row.circa_blurred);
+	}
+	// This compact map contains ATGS only; never reuse it for first/last goal props.
+	if (playerData.prop === "atgs") {
+		const prices = payload?.comparisonOdds?.[playerData.game]?.[playerData.player];
+		if (prices && typeof prices === "object" && !Array.isArray(prices)) {
+			for (const [handicap, bookOdds] of Object.entries(prices)) {
+				if (Number.isFinite(Number(handicap)) && Number(handicap) > 0.5) add(handicap, bookOdds);
+			}
+		}
+	}
+	return [...byLine.values()];
+}
+
 function renderGoalPropsTable(playerData) {
 	const rightBody = document.querySelector("#right-body");
 	if (!rightBody) return;
@@ -4507,8 +4566,7 @@ function renderGoalPropsTable(playerData) {
 
 	// Find all rows for this player+game with the SAME prop at different handicap levels
 	const clickedProp = playerData.prop;
-	const allRows = [...RES.data];
-	const playerRows = allRows.filter(r => r.player === playerData.player && r.game === playerData.game && r.prop === clickedProp);
+	const playerRows = goalComparisonRows(playerData, RES);
 
 	// Group by handicap level to build columns (1+, 2+, 3+, etc.)
 	const propMap = {};

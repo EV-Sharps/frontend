@@ -38,6 +38,9 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   const cards = new Map();
   const gameOptions = new Map();
   let snapshot = null, filter = 'all', pending = null, requestFailed = false;
+  let pageActive = true, activeController = null, refreshGeneration = 0;
+  let pollTimer = null, freshnessTimer = null;
+  const canRefresh = () => pageActive && document.visibilityState !== 'hidden';
   let selectedGames = null; // null follows the full slate, including newly reported games.
   let touchdownGameId = null, touchdownHTML = null, touchdownScroll = null;
   let allScorersOpen = false;
@@ -576,7 +579,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   }
 
   function updateFreshness() {
-    if (!snapshot) return;
+    if (!canRefresh() || !snapshot) return;
     const seconds = age(snapshot.scoreboard_updated), threshold = Math.max(45, (number(snapshot.poll_interval_seconds) || 15) * 3);
     const stale = snapshot.scoreboard_stale || seconds > threshold;
     $('connection').textContent = requestFailed ? 'Updates interrupted' : stale ? 'Feed delayed' : 'Auto-refresh on';
@@ -602,11 +605,23 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   async function load() {
     $('refresh').disabled = true;
     const controller = new AbortController();
+    activeController = controller;
+    const generation = refreshGeneration;
+    let onAbort;
+    const aborted = new Promise((_, reject) => {
+      onAbort = () => reject(controller.signal.reason || Error('Request aborted'));
+      controller.signal.addEventListener('abort', onAbort, { once: true });
+    });
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch(`${API_BASE}/api/${sport}-tracker`, { cache: 'no-store', signal: controller.signal });
+      const response = await Promise.race([
+        fetch(`${API_BASE}/api/${sport}-tracker`, { cache: 'no-store', signal: controller.signal }), aborted,
+      ]);
+      if (!canRefresh() || generation !== refreshGeneration) return;
       if (!response.ok) throw Error('unavailable');
-      const next = await response.json();
+      // Settle our refresh even if a delayed body reader ignores cancellation.
+      const next = await Promise.race([response.json(), aborted]);
+      if (!canRefresh() || generation !== refreshGeneration) return;
       if (next?.schema_version !== 1 || next.sport !== sport || !Array.isArray(next.data) || !Number.isFinite(Date.parse(next.updated)) ||
           next.data.some(game => !game || !game.id) || new Set(next.data.map(game => String(game.id))).size !== next.data.length) throw Error('invalid snapshot');
       if (snapshot && Date.parse(next.updated) < Date.parse(snapshot.updated)) throw Error('older snapshot');
@@ -615,6 +630,9 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
       $('request-status').textContent = hockey ? 'Some game details are delayed. Scores and clock use the latest available scoreboard; shots and last plays may lag.' : 'Some game details are delayed. Scores and last plays use the latest available scoreboard.';
       render();
     } catch (_) {
+      // Leaving the tab cancels work without displaying a network error. A late
+      // response from before the pause must not replace the resumed snapshot.
+      if (!canRefresh() || generation !== refreshGeneration) return;
       requestFailed = true;
       $('request-status').hidden = false;
       $('request-status').textContent = snapshot ? 'Could not refresh. Showing the last received games; retrying automatically.' : 'The game tracker is unavailable right now. Retrying automatically.';
@@ -625,10 +643,16 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
         $('games').setAttribute('aria-busy', 'false');
       }
       updateFreshness();
-    } finally { clearTimeout(timeout); $('refresh').disabled = false; }
+    } finally {
+      clearTimeout(timeout);
+      controller.signal.removeEventListener('abort', onAbort);
+      if (activeController === controller) activeController = null;
+      if (canRefresh() && generation === refreshGeneration) $('refresh').disabled = false;
+    }
   }
 
   function refresh() {
+    if (!canRefresh()) return Promise.resolve();
     if (!pending) pending = load().finally(() => { pending = null; });
     return pending;
   }
@@ -713,8 +737,25 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   $('games').addEventListener('error', logoError, true);
   $('touchdown-dialog').addEventListener('error', logoError, true);
   $('stats-dialog').addEventListener('error', logoError, true);
+  function syncRefreshActivity() {
+    clearInterval(pollTimer); clearInterval(freshnessTimer);
+    pollTimer = freshnessTimer = null;
+    if (!canRefresh()) {
+      refreshGeneration++;
+      activeController?.abort();
+      return;
+    }
+    $('refresh').disabled = Boolean(pending);
+    updateFreshness();
+    pollTimer = setInterval(refresh, 15000);
+    freshnessTimer = setInterval(updateFreshness, 5000);
+  }
+  document.addEventListener('visibilitychange', syncRefreshActivity);
+  window.addEventListener('pagehide', () => { pageActive = false; syncRefreshActivity(); });
+  window.addEventListener('pageshow', () => { pageActive = true; syncRefreshActivity(); });
+  // The shared live watcher reconnects and requests fresh data on return.
+  // Register after our lifecycle handlers so the tracker is active first.
   registerOddsLiveRefresh(refresh, dataset);
-  setInterval(() => { if (document.visibilityState !== 'hidden') refresh(); }, 15000);
-  setInterval(updateFreshness, 5000);
+  syncRefreshActivity();
   refresh();
 })();

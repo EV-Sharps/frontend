@@ -547,44 +547,135 @@
 		}
 
 		// ── Fetch ─────────────────────────────────────────────────────────
-		async function fetchTrackerData() {
-			fetch(API_BASE + "/api/tracker", {
-				headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
-			}).then(r => r.json()).then(async data => {
-				RES = data;
-				UPDATED[PAGE] = data.updated || {};
+		let trackerFetchPending = null;
+		let trackerFetchController = null;
+		let trackerFetchVersion = 0;
+		let trackerPageShown = true;
+		let trackerResumePending = false;
+		const trackerIsVisible = () => trackerPageShown && document.visibilityState !== "hidden";
+
+		function fetchTrackerData({ refreshProfile = false } = {}) {
+			if (!trackerIsVisible()) {
+				trackerResumePending = true;
+				return Promise.resolve();
+			}
+			if (trackerFetchPending) return trackerFetchPending;
+			const controller = new AbortController();
+			trackerFetchController = controller;
+			let finishAborted;
+			const aborted = new Promise(resolve => { finishAborted = () => resolve(null); });
+			controller.signal.addEventListener("abort", finishAborted, { once: true });
+			const version = ++trackerFetchVersion;
+			const userId = CURR_SESSION?.user?.id;
+			const user = CURR_USER;
+			const metadata = user?.metadata;
+			const token = ACCESS_TOKEN;
+			const current = () => version === trackerFetchVersion && !controller.signal.aborted && trackerIsVisible()
+				&& (userId ? CURR_SESSION?.user?.id === userId : ACCESS_TOKEN === token);
+			const context = { signal: controller.signal, current };
+			const run = Promise.resolve().then(async () => {
+				if (!current()) return;
+				const profileRequest = async () => {
+					if (!refreshProfile || !userId) return null;
+					let request = SB.from('profiles').select('*').eq('id', userId).maybeSingle();
+					if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
+					const { data, error } = await request;
+					if (error) throw error;
+					return data;
+				};
+				const popularResults = Promise.allSettled([fetchPopularBets(context), fetchPopularWatchlist(context)]);
+				const results = await Promise.race([Promise.allSettled([
+					fetch(API_BASE + "/api/tracker", {
+						headers: { Authorization: `Bearer ${token}` }, signal: controller.signal
+					}).then(response => {
+						if (!response.ok) throw new Error(`Tracker refresh failed (${response.status})`);
+						return response.json();
+					}),
+					profileRequest()
+				]), aborted]);
+				if (!results || !current()) return;
+				for (const result of results) {
+					if (result.status === "rejected" && result.reason?.name !== "AbortError") console.error("Tracker refresh failed", result.reason);
+				}
+				const profile = results[1].status === "fulfilled" ? results[1].value : null;
+				// Never replace changes made here while the cross-tab profile read was pending.
+				if (profile && profile.id === userId && CURR_USER === user && CURR_USER?.metadata === metadata && !_savingBet) {
+					CURR_USER = profile;
+					cacheProfile(CURR_USER);
+				}
+				if (results[0].status === "fulfilled") {
+					const data = results[0].value;
+					RES = data;
+					UPDATED[PAGE] = data.updated || {};
+					const raw = data.data || data;
+					ALL_ROWS = Array.isArray(raw)
+						? raw
+						: Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
+				}
 				loadBetsFromMetadata();
-				await loadWatchlistFromMetadata();
-				const raw = data.data || data;
-				ALL_ROWS = Array.isArray(raw)
-					? raw
-					: Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
-				refreshTable();
-				refreshWatchlist();
-			}).catch(err => console.log(err));
-			fetchPopularBets();
-			fetchPopularWatchlist();
+				await Promise.race([loadWatchlistFromMetadata(), aborted]);
+				if (current()) { refreshTable(); refreshWatchlist(); }
+				// Popular lists are supplementary; their requests must not delay the main tables.
+				const popular = await Promise.race([popularResults, aborted]);
+				if (popular && current()) {
+					for (const result of popular) {
+						if (result.status === "rejected" && result.reason?.name !== "AbortError") console.error("Tracker popular refresh failed", result.reason);
+					}
+				}
+			}).catch(error => {
+				if (current() && error?.name !== "AbortError") console.error("Tracker refresh failed", error);
+			}).finally(() => {
+				controller.signal.removeEventListener("abort", finishAborted);
+				if (trackerFetchPending === run) { trackerFetchPending = null; trackerFetchController = null; }
+			});
+			trackerFetchPending = run;
+			return run;
 		}
 
-		async function fetchPopularWatchlist() {
+		function pauseTrackerRefresh() {
+			trackerResumePending = true;
+			trackerFetchVersion++;
+			trackerFetchController?.abort();
+			trackerFetchController = null;
+			trackerFetchPending = null;
+		}
+
+		function resumeTrackerRefresh() {
+			if (!trackerIsVisible() || !trackerResumePending || _savingBet) return;
+			trackerResumePending = false;
+			fetchTrackerData({ refreshProfile: true });
+		}
+		document.addEventListener("visibilitychange", () => {
+			if (trackerIsVisible()) resumeTrackerRefresh(); else pauseTrackerRefresh();
+		});
+		window.addEventListener("pagehide", () => { trackerPageShown = false; pauseTrackerRefresh(); });
+		window.addEventListener("pageshow", () => { trackerPageShown = true; resumeTrackerRefresh(); });
+
+		async function fetchPopularWatchlist({ signal, current = trackerIsVisible } = {}) {
+			if (!current()) return;
 			const today = new Date().toISOString().slice(0, 10);
-			const { data, error } = await SB.rpc('popular_watchlist', { lim: 15, dt: today });
-			if (error || !data?.length) return;
+			let request = SB.rpc('popular_watchlist', { lim: 15, dt: today });
+			if (signal && typeof request.abortSignal === "function") request = request.abortSignal(signal);
+			const { data, error } = await request;
+			if (!current() || error) return;
 			const list = document.getElementById("popular-watchlist-list");
 			if (!list) return;
-			list.innerHTML = data.map(({ player, count }) => {
+			list.innerHTML = (data || []).map(({ player, count }) => {
 				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users watching" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
 			}).join("");
 		}
 
-		async function fetchPopularBets() {
+		async function fetchPopularBets({ signal, current = trackerIsVisible } = {}) {
+			if (!current()) return;
 			const today = new Date().toISOString().slice(0, 10);
-			const { data, error } = await SB.rpc('popular_bets', { lim: 15, dt: today });
-			if (error || !data?.length) return;
+			let request = SB.rpc('popular_bets', { lim: 15, dt: today });
+			if (signal && typeof request.abortSignal === "function") request = request.abortSignal(signal);
+			const { data, error } = await request;
+			if (!current() || error) return;
 			const list = document.getElementById("popular-bets-list");
 			if (!list) return;
-			list.innerHTML = data.map(({ player, count }) => {
+			list.innerHTML = (data || []).map(({ player, count }) => {
 				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users tracking" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
 			}).join("");
@@ -1444,6 +1535,7 @@
 			} finally {
 				_savingBet = false;
 				save.disabled = false;
+				resumeTrackerRefresh();
 			}
 			if (succeeded) closeAddBet();
 		}

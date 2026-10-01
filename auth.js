@@ -205,6 +205,7 @@ async function saveTableSettings() {
 	if (document.getElementById('custom_openingPrice')) fields[`${PAGE}-opening-column-version`] = 1;
 	if (["ncaaf", "main"].includes(PAGE)) fields[`${PAGE}-columns-version`] = 1;
 	if (["mlb", "nfl"].includes(PAGE)) fields[`${PAGE}-hit-rates-version`] = 1;
+	if (document.getElementById('custom_hitRates_bvt')) fields[`${PAGE}-bvt-hit-rate-version`] = 1;
 	if (document.querySelector("#sort-select")) {
 		fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
 	}

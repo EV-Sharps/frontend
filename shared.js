@@ -5478,19 +5478,87 @@ const FB_FIELDS = {
 	due:         { enabled: "fb-due-enabled" },
 	line:        { enabled: "fb-line-enabled", min: "fb-line-min", max: "fb-line-max" },
 	hrVsPitcher: { enabled: "fb-hrvspitcher-enabled" },
+	position:    { enabled: "fb-position-enabled", value: "fb-position-value" },
 };
 
-// pitcherStat/batterStat are multi-row (add as many field/cmp/value constraints as you want,
+const NHL_HIT_RATE_WINDOWS = { szn: 'Season', L5: 'Last 5', L10: 'Last 10', L20: 'Last 20', lyr: 'Last year', career: 'Career' };
+
+// Stat filters are multi-row (add as many field/cmp/value constraints as you want,
 // each with an X to remove it), so they're handled separately from the flat FB_FIELDS types.
 const FB_STAT_TYPES = {
 	pitcherStat: { enabledId: "fb-pitcherstat-enabled", rowsId: "fb-pitcherstat-rows", fields: () => PITCHER_STAT_FIELDS },
 	batterStat:  { enabledId: "fb-batterstat-enabled", rowsId: "fb-batterstat-rows", fields: () => BATTER_STAT_FIELDS },
+	hitRate:     { enabledId: "fb-hitrate-enabled", rowsId: "fb-hitrate-rows", fields: () => Object.keys(NHL_HIT_RATE_WINDOWS), labels: NHL_HIT_RATE_WINDOWS },
 };
+
+function initNhlFilterUI() {
+	if (!["nhl", "atgs", "atgs2", "fgs"].includes(PAGE) || document.getElementById('fb-hitrate-enabled')) return;
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu) return;
+	const section = document.createElement('div');
+	section.innerHTML = `
+		<label><input type="checkbox" id="fb-hitrate-enabled"> Hit rate (%)</label>
+		<div id="fb-hitrate-rows"></div>
+		<button type="button" class="fb-add-btn">Add hit-rate rule</button>
+		<p class="fb-stat-hint">All hit-rate rules must match. Uses the row's Over or Under side; missing history does not match.</p>
+		<label><input type="checkbox" id="fb-position-enabled"> Position</label>
+		<div class="fb-subrow">
+			<select id="fb-position-value" aria-label="Player position">
+				<option value="C">C - Center</option>
+				<option value="LW">LW - Left wing</option>
+				<option value="RW">RW - Right wing</option>
+				<option value="D">D - Defenseman</option>
+				<option value="G">G - Goalie</option>
+				<option value="W">Wings (LW / RW)</option>
+				<option value="F">All forwards (C / LW / RW)</option>
+			</select>
+		</div><hr>`;
+	section.addEventListener('click', event => event.stopPropagation());
+	const enabled = section.querySelector('#fb-hitrate-enabled');
+	section.querySelector('.fb-add-btn').addEventListener('click', () => {
+		enabled.checked = true;
+		addStatFilterRow('hitRate', { field: 'szn', cmp: 'gte', value: '50' });
+	});
+	enabled.addEventListener('change', () => {
+		if (enabled.checked && !document.getElementById('fb-hitrate-rows').children.length) {
+			addStatFilterRow('hitRate', { field: 'szn', cmp: 'gte', value: '50' });
+		}
+	});
+	const separator = menu.querySelector('hr');
+	if (separator) separator.after(section);
+	else menu.prepend(section);
+}
+
+function matchesNhlPosition(value, selected) {
+	const aliases = { L: 'LW', R: 'RW', CENTER: 'C', CENTRE: 'C', 'LEFT WING': 'LW', 'RIGHT WING': 'RW', DEFENSEMAN: 'D', DEFENCEMAN: 'D', GOALIE: 'G' };
+	const positions = (Array.isArray(value) ? value : [value]).flatMap(pos => String(pos || '').toUpperCase().split(/[/,;|]/))
+		.map(pos => aliases[pos.trim()] || pos.trim());
+	const allowed = selected === 'F' ? ['C', 'LW', 'RW', 'F', 'W'] : selected === 'W' ? ['LW', 'RW', 'W'] : [selected];
+	return positions.some(pos => pos && allowed.includes(pos));
+}
+
+function nhlFilterHitRate(row, window) {
+	const rate = row.hitRates?.[window];
+	const validPercent = value => value !== null && Number.isFinite(value) && value >= 0 && value <= 100;
+	if (rate != null) {
+		const total = numFrom(rate.t);
+		if (total !== null && total <= 0) return null;
+		const percent = numFrom(typeof rate === 'object' ? rate.p : rate);
+		if (validPercent(percent)) return percent;
+		const wins = numFrom(rate.w);
+		if (total > 0 && wins !== null && wins >= 0 && wins <= total) return 100 * wins / total;
+	}
+	const field = { szn: 'hitRate', lyr: 'hitRateLYR', career: 'hitRateCareer' }[window];
+	const percent = field ? numFrom(row[field]) : null;
+	if (!validPercent(percent)) return null;
+	// The legacy career field is always the Over rate; other rates already follow the row's side.
+	return window === 'career' && row.under ? 100 - percent : percent;
+}
 
 // 25th/50th/75th percentile values for a raw stat field, e.g. RES.thresholds.batters.ba.
 // Percentile-suffixed fields (already expressed as a percentile) have no entry.
 function getStatThresholds(type, field) {
-	if (!field || field.endsWith("Percentile")) return null;
+	if (!["pitcherStat", "batterStat"].includes(type) || !field || field.endsWith("Percentile")) return null;
 	const bucket = type === "pitcherStat" ? "pitchers" : "batters";
 	return RES?.thresholds?.[bucket]?.[field] || null;
 }
@@ -5509,7 +5577,7 @@ function createStatFilterRow(type, initial = {}) {
 	def.fields().forEach(f => {
 		const opt = document.createElement("option");
 		opt.value = f;
-		opt.textContent = statLabel(f);
+		opt.textContent = def.labels?.[f] || statLabel(f);
 		fieldSel.appendChild(opt);
 	});
 	if (initial.field) fieldSel.value = initial.field;
@@ -5517,12 +5585,20 @@ function createStatFilterRow(type, initial = {}) {
 	const cmpSel = document.createElement("select");
 	cmpSel.className = "fb-stat-cmp";
 	cmpSel.innerHTML = `<option value="gte">Above</option><option value="lte">Below</option>`;
+	if (type === 'hitRate') cmpSel.innerHTML = '<option value="gte">At least</option><option value="lte">At most</option>';
 	if (initial.cmp) cmpSel.value = initial.cmp;
 
 	const valInput = document.createElement("input");
 	valInput.type = "number";
 	valInput.step = "0.1";
 	valInput.className = "fb-stat-value";
+	if (type === 'hitRate') {
+		valInput.min = '0';
+		valInput.max = '100';
+		valInput.setAttribute('aria-label', 'Hit rate percentage');
+		fieldSel.setAttribute('aria-label', 'Hit rate period');
+		cmpSel.setAttribute('aria-label', 'Hit rate comparison');
+	}
 	if (initial.value != null) valInput.value = initial.value;
 
 	const removeBtn = document.createElement("button");
@@ -5621,6 +5697,15 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
+	if (c.position?.enabled && !matchesNhlPosition(row.pos, c.position.value)) return false;
+	if (c.hitRate?.enabled) {
+		for (const rule of (c.hitRate.rows || [])) {
+			const threshold = numFrom(rule.value);
+			if (!rule.field || threshold === null) continue;
+			const percent = nhlFilterHitRate(row, rule.field);
+			if (percent === null || !(rule.cmp === 'lte' ? percent <= threshold : percent >= threshold)) return false;
+		}
+	}
 	const liquidityMatches = [];
 	if (c.liquidityOver?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidityOver, 0));
 	if (c.liquidity?.enabled) liquidityMatches.push(passesLiquidityRule(row, c.liquidity, 1));
@@ -5690,8 +5775,9 @@ function updateFilterBuilderButtonLabel() {
 	if (!btn) return;
 	const c = FB_CONFIG;
 	let n = Object.keys(FB_FIELDS).filter(type => c[type]?.enabled).length;
-	if (c.pitcherStat?.enabled) n += Math.max(1, (c.pitcherStat.rows || []).length);
-	if (c.batterStat?.enabled) n += Math.max(1, (c.batterStat.rows || []).length);
+	Object.keys(FB_STAT_TYPES).forEach(type => {
+		if (c[type]?.enabled) n += Math.max(1, (c[type].rows || []).length);
+	});
 	btn.textContent = n === 0 ? "None" : `${n} Filter${n === 1 ? "" : "s"}`;
 }
 
@@ -5788,6 +5874,7 @@ function initFilterBuilderUI() {
 	if (!dd || dd.dataset.filterBuilderInit) return;
 	dd.dataset.filterBuilderInit = "1";
 	initLiquidityFilterUI();
+	initNhlFilterUI();
 
 	// filter.js has a document-level "change" listener that treats any checkbox inside any
 	// .chkdd-menu as a Prop/Game filter checkbox (onChkddChange). This panel reuses .chkdd-menu

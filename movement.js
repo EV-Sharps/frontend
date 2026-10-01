@@ -227,7 +227,7 @@
       paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#b7c8d2', family: 'Inter, system-ui, sans-serif', size: 11 },
       margin: { l: 67, r: 20, t: 18, b: 66 }, showlegend: false, hovermode: 'closest', dragmode: 'pan', uirevision: chartKey,
       xaxis: { type: 'linear', tickvals: tickIndexes.map(index => x[index]), ticktext: tickIndexes.map(index => time(points[index].ts)), title: { text: 'Capture time · Eastern', standoff: 16 }, gridcolor: '#303b42', zeroline: false, ...(x.length === 1 ? { range: [x[0] - 900000, x[0] + 900000] } : {}) },
-      yaxis: { title: { text: probabilityScale ? 'Probability (%)' : 'American odds', standoff: 12 }, gridcolor: '#303b42', zeroline: false, ...(probabilityScale ? { ticksuffix: '%' } : { tickvals: ticks.map(tick => tick.p), ticktext: ticks.map(tick => tick.label) }), ...(plottedKey !== chartKey ? { range: [low, high] } : {}) },
+      yaxis: { title: { text: probabilityScale ? 'Probability (%)' : 'American odds', standoff: 12 }, gridcolor: '#303b42', zeroline: false, ...(probabilityScale ? { ticksuffix: '%' } : { tickvals: ticks.map(tick => tick.p), ticktext: ticks.map(tick => tick.label) }), ...(plottedKey !== chartKey ? { range: [high, low] } : {}) },
     }, { responsive: true, displaylogo: false, scrollZoom: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'], toImageButtonOptions: { filename: 'line-movement' } });
     plottedKey = chartKey;
   }

@@ -87,7 +87,8 @@
 		dialog.querySelector('[data-history-action="prices"]').onclick = () => {
 			const data = selected;
 			close();
-			root.PlayerLines.open(data, RES?.data || [], { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
+			const rows = typeof root.goalComparisonInputRows === 'function' ? root.goalComparisonInputRows(data, RES) : RES?.data || [];
+			root.PlayerLines.open(data, rows, { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
 		};
 		dialog.querySelector('[data-history-action="card"]').onclick = () => {
 			const data = selected;

@@ -51,8 +51,16 @@ def payload_for(name):
         if missing:
             del row["awayLogs"]  # An older feed may omit the new fields entirely.
         rows.append(row)
-    return {"data": rows, "props": [prop], "games": ["tor @ bos"], "updated": {},
-            "times": {"tor @ bos": "2099-10-01T23:00:00Z"}}
+    payload = {"data": rows, "props": [prop], "games": ["tor @ bos"], "updated": {},
+               "times": {"tor @ bos": "2099-10-01T23:00:00Z"}}
+    if name == "atgs":
+        payload["comparisonOdds"] = {
+            "tor @ bos": {"history alpha": {"1.5": {"fd": "1000", "dk": "1100"},
+                                            "2.5": {"dk": "4000"}, "3.5": {"fd": "9000"}},
+                          "other player": {"1.5": {"fd": "8888"}}},
+            "nyr @ buf": {"history alpha": {"1.5": {"fd": "7777"}}},
+        }
+    return payload
 
 
 def chart(page):
@@ -308,6 +316,12 @@ try:
             page.get_by_role("button", name="Compare prices", exact=True).click()
             page.wait_for_function("document.getElementById('player-lines-dialog')?.open")
             assert not page.evaluate("document.getElementById('nhl-history-dialog').open")
+            if name == "atgs":
+                assert page.locator('#player-lines-dialog tbody th').all_text_contents() == ["0.5", "1.5", "2.5", "3.5"]
+                comparison = page.locator('#player-lines-dialog').inner_text()
+                assert all(f"+{price}" in comparison for price in [1000, 1100, 4000, 9000]), comparison
+                assert "+8888" not in comparison and "+7777" not in comparison, comparison
+                assert page.evaluate("RES.data.length") == 3, "Comparison must not reinsert alternate full rows in the main table"
             page.keyboard.press("Escape")
             if name == "nhl":
                 page.locator('.tabulator-row .player-lines-trigger').filter(has_text="Alpha").click()

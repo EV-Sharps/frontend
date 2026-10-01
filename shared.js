@@ -2467,7 +2467,7 @@ function playerLinesName(data, label) {
 
 function openPlayerLines(data) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
-	PlayerLines.open(data, RES?.data || [], { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
+	PlayerLines.open(data, goalComparisonInputRows(data, RES), { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
 }
 
 const basePlayerFormatter = function(cell, params, rendered) {
@@ -4550,6 +4550,21 @@ function goalComparisonRows(playerData, payload) {
 		}
 	}
 	return [...byLine.values()];
+}
+
+// Keep complete base rows for liquidity and prop switching; append only quote rows.
+function goalComparisonInputRows(playerData, payload) {
+	if (!playerData || playerData.blurred) return [];
+	const rows = (Array.isArray(payload?.data) ? payload.data : []).map(row =>
+		playerData.circa_blurred && row?.player === playerData.player && row?.game === playerData.game && row?.prop === playerData.prop
+			? { ...row, circa_blurred: true } : row);
+	if (playerData.prop === "atgs") {
+		for (const prices of goalComparisonRows(playerData, payload)) {
+			rows.push({ player: playerData.player, game: playerData.game, prop: playerData.prop,
+				...prices, circa_blurred: !!playerData.circa_blurred });
+		}
+	}
+	return rows;
 }
 
 function renderGoalPropsTable(playerData) {

@@ -115,3 +115,29 @@ test('malformed compact values and a compact 0.5 line cannot override regular pr
     assert.deepEqual(rows({}), []);
     assert.deepEqual(rows(null), []);
 });
+
+
+test('active dialog input preserves base exchange liquidity and all props while adding compact quote rows', () => {
+    const playerLines = require('../player-lines.js');
+    const payload = fixture();
+    payload.data[0] = { ...base, bookOdds: { ...base.bookOdds, nv: '270/-320' }, liquidity: { nv: [123, 456] }, logs: [1, 0] };
+    payload.data.push({ ...selected, prop: 'sog', handicap: '2.5', bookOdds: { fd: '-110/-110' } });
+    const input = plain(environment(payload).context.goalComparisonInputRows(selected, payload));
+    const result = playerLines.collect(selected, input);
+    assert.deepEqual(result.lines.map(row => row.line), [0.5, 1.5, 2.5, 3.5]);
+    assert.deepEqual(result.lines[0].liquidity.get('nv'), [123, 456]);
+    assert.deepEqual(playerLines.availableProps(selected, input), ['atgs', 'sog']);
+    assert.ok(input.filter(row => Number(row.handicap) === 1.5).every(row => !Object.hasOwn(row, 'logs') && !Object.hasOwn(row, 'liquidity')));
+    assert.equal(payload.data.length, 2);
+});
+
+test('active dialog input masks Circa in full and compact rows without changing other books', () => {
+    const playerLines = require('../player-lines.js');
+    const payload = fixture();
+    payload.comparisonOdds['buf @ cbj']['one player']['1.5'].circa = '9999';
+    const row = { ...selected, circa_blurred: true };
+    const input = plain(environment(payload).context.goalComparisonInputRows(row, payload));
+    assert.ok(!playerLines.collect(row, input).books.includes('circa'));
+    assert.equal(payload.data[0].bookOdds.circa, '240/-310');
+    assert.deepEqual(plain(environment(payload).context.goalComparisonInputRows({ ...row, blurred: true }, payload)), []);
+});

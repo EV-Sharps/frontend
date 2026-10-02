@@ -101,13 +101,17 @@ try:
                     getSession: async () => ({data: {session: {access_token: 'fixture-token'}}}),
                     onAuthStateChange: fn => {window.authChanged = fn; return {};}
                 }})};''')
-            elif request_url.startswith(f'http://localhost:{server.server_port}/'):
-                route.continue_()
+            elif request_url.startswith('https://ev-sharps.test/'):
+                asset = ROOT / request_url.split('/', 3)[3].split('?', 1)[0]
+                if asset.is_file():
+                    route.fulfill(path=asset)
+                else:
+                    route.fulfill(status=404, body='')
             else:
                 route.fulfill(status=404, body='')
 
         page.route('**/*', intercept)
-        page.goto(f'http://localhost:{server.server_port}/movement.html?sport=mlb')
+        page.goto('https://ev-sharps.test/movement.html?sport=mlb')
         expect(page.locator('#catalog-rows tr')).to_have_count(5)
         expect(page.locator('#chart-title')).to_have_text('Aaron Judge')
         page.wait_for_function("document.getElementById('movement-chart').data?.length === 4")

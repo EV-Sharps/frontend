@@ -33,10 +33,13 @@ def sample(now=NOW):
               history=history, history_label='mixed_or_negative')
     pn = dict(hr, reference='pn', reference_quotes={'pn': '1800/-2400'}, reference_updated={'pn': stamp},
               synthetic_reference=False, ev=-12.8, probit_ev=-12.8, worst_ev=-15.2, qualifies=False)
+    evidence = dict(reference='hr', snapshot='open', season='2025', method='probit',
+                    n=500, wins=40, profit=25, roi=5, synthetic=500, ev=17.0, fair_odds=1011,
+                    synthetic_reference=True, reference_updated={'hr': stamp})
     base = dict(player='test defenseman', game='nyr @ bos', start=(now+timedelta(hours=3)).isoformat(),
                 team='nyr', book='fd', price=1200, position='D', quote_updated=stamp, method='probit',
                 reference='hr', reference_updated={'hr': stamp}, ev=17.0, fair_odds=1011,
-                comparisons=[hr, pn], research_match=True, avgSOG_L10=0, sogGames_L10=10,
+                comparisons=[hr, pn], research_match=True, research_matches=[evidence], avgSOG_L10=0, sogGames_L10=10,
                 avgTOI=19.5, ppLine='2', teamTotal=3.1, history_label='mixed_or_negative',
                 history=history, warnings=['<img src=x onerror=alert(1)>'], link='https://example.com/selection')
     second = dict(base, player='test forward', book='dk', position='LW', avgSOG_L10=2.2, sogGames_L10=8,
@@ -47,9 +50,18 @@ def sample(now=NOW):
                 generated_at=now.isoformat(), refresh_minutes=5, picks=[copy.deepcopy(pick) for pick in [base, second, third]],
                 criteria=dict(min_odds=1000, max_odds=3000, min_ev=0, method='probit', max_age_minutes=15,
                               min_minutes_to_start=5, limit_per_book=10),
+                research_criteria=dict(season='2025', season_label='2025-26', min_bets=500, min_roi=5,
+                                       method='probit', snapshots=['open', 'close']),
                 books_checked=['fd', 'dk', 'fn', 'mgm', 'espn', 'hr', 'cz'],
                 books_summary={book: dict(quoted=50, in_range=10, qualified=1, shown=1) for book in ['fd', 'dk', 'fn']},
                 history_metadata=dict(season_labels={'2024': '2024-25', '2025': '2025-26'}))
+
+
+def expected_players(payload, research=False, book=None):
+    picks = [pick for pick in payload['picks'] if (not research or pick['research_match'])
+             and (not book or pick['book'] == book)]
+    starts = {pick['game']: min(offer['start'] for offer in picks if offer['game'] == pick['game']) for pick in picks}
+    return sorted({(pick['game'], pick['player']) for pick in picks}, key=lambda key: (starts[key[0]], *key))
 
 
 state = {'status': 200, 'payload': sample(), 'requests': 0, 'mode': 'normal', 'held': None}
@@ -78,15 +90,23 @@ try:
                     getSession: async () => ({data: {session: {access_token: 'fixture-token'}}}),
                     onAuthStateChange: fn => {window.authChanged = fn; return {};}
                   }})};''')
-            elif route.request.url.startswith(f'http://localhost:{server.server_port}/'):
-                route.continue_()
+            elif route.request.url.startswith('https://ev-sharps.test/'):
+                asset = SITE / route.request.url.split('/', 3)[3].split('?', 1)[0]
+                if asset.is_file():
+                    route.fulfill(path=asset)
+                else:
+                    route.fulfill(status=404, body='')
             else:
                 route.fulfill(status=404, body='')
 
         page.route('**/*', intercept)
-        page.goto(f'http://localhost:{server.server_port}/longshots.html')
+        page.goto('https://ev-sharps.test/longshots.html')
         expect(page.locator('.rec-pick')).to_have_count(3)
         assert page.locator('#research-filter').is_checked() is False
+        assert '500 bets & 5.0% ROI' in page.locator('#research-help').inner_text()
+        assert '2025-26' in page.locator('#research-help').inner_text()
+        assert 'FanDuel vs Hard Rock / open' in page.locator('.ls-history-cell').first.inner_text()
+        assert '+5.0% ROI / 500 bets' in page.locator('.ls-history-cell').first.inner_text()
         assert '0.00' in page.locator('.ls-sog-cell').first.inner_text()
         assert 'n = 10' in page.locator('.ls-sog-cell').first.inner_text()
         assert 'need 5' in page.locator('.ls-sog-cell').nth(2).inner_text()
@@ -152,6 +172,92 @@ try:
         page.screenshot(path=str(ARTIFACTS / 'mobile.png'), full_page=True)
         assert page.locator('.rec-book-cell img').first.is_visible()
 
+        # Research is generic across books, and a qualifying blended reference can differ from primary.
+        state['payload'] = sample()
+        stamp = (NOW-timedelta(minutes=1)).isoformat()
+        state['payload']['picks'][0].update(book='dk', teamTotal=None)
+        blend = dict(state['payload']['picks'][0]['research_matches'][0], reference='espn+hr', snapshot='close',
+                     n=900, profit=90, roi=10, ev=3, fair_odds=1162,
+                     reference_updated={'espn': stamp, 'hr': stamp})
+        state['payload']['picks'][1].update(book='mgm', research_match=True, research_matches=[blend], teamTotal=2.0)
+        refresh()
+        assert page.locator('#research-count').inner_text() == '2'
+        page.locator('#research-filter').check()
+        expect(page.locator('.rec-pick')).to_have_count(2)
+        assert 'DraftKings vs Hard Rock / open' in page.locator('.ls-history-cell').nth(0).inner_text()
+        assert 'BetMGM vs theScore Bet + Hard Rock / close' in page.locator('.ls-history-cell').nth(1).inner_text()
+        assert '+10.0% ROI / 900 bets' in page.locator('.ls-history-cell').nth(1).inner_text()
+        assert page.locator('.ls-reference-cell').nth(1).inner_text().startswith('Hard Rock')
+        assert '+17.0%' in page.locator('.ls-reference-cell').nth(1).inner_text()
+        page.locator('.rec-toggle').nth(1).click()
+        assert 'Current comparison: +3.0% EV' in page.locator('.ls-research-evidence').nth(1).inner_text()
+        assert 'not pooled' in page.locator('.ls-research-evidence').nth(1).inner_text()
+        # One stale blend component only removes its research badge, not an otherwise fresh offer.
+        state['payload']['picks'][1]['research_matches'][0]['reference_updated']['espn'] = (NOW-timedelta(minutes=16)).isoformat()
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(1)
+        page.locator('#research-filter').uncheck()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+        assert page.locator('#research-count').inner_text() == '1'
+
+        # Enforce the published season, sample, ROI, method and current-EV rules independently.
+        for changes in ({'n': 499}, {'roi': 4.99}, {'roi': None}, {'season': '2024'}, {'method': 'worst'},
+                        {'snapshot': 'all'}, {'ev': -.01}, {'reference_updated': {}}, {'reference': 'fd'}):
+            state['payload'] = sample()
+            state['payload']['picks'][0]['research_matches'][0].update(changes)
+            refresh()
+            expect(page.locator('.rec-pick')).to_have_count(3)
+            assert page.locator('#research-count').inner_text() == '0', changes
+            assert page.locator('.ls-tag').count() == 0, changes
+        # Use the scanner's floating-point tolerance at the EV boundary.
+        for ev, expected_count in [(-1e-10, '1'), (-2e-9, '0')]:
+            state['payload'] = sample()
+            state['payload']['picks'][0]['research_matches'][0]['ev'] = ev
+            refresh()
+            assert page.locator('#research-count').inner_text() == expected_count
+        state['payload'] = sample()
+        state['payload']['criteria']['min_ev'] = 18
+        state['payload']['picks'][0]['comparisons'][0]['ev'] = 20
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(1)
+        assert page.locator('#research-count').inner_text() == '0'
+        state['payload'] = sample()
+        state['payload']['picks'][0]['method'] = 'worst'
+        refresh()
+        assert page.locator('#research-count').inner_text() == '0'
+        state['payload'] = sample()
+        state['payload']['research_criteria']['min_bets'] = 600
+        refresh()
+        assert '600 bets' in page.locator('#research-help').inner_text()
+        assert page.locator('#research-count').inner_text() == '0'
+
+        # Open and close are separate cohorts; their smaller samples cannot be added together.
+        state['payload'] = sample()
+        match = state['payload']['picks'][0]['research_matches'][0]
+        state['payload']['picks'][0]['research_matches'] = [dict(match, n=250), dict(match, n=250, snapshot='close')]
+        refresh()
+        assert page.locator('#research-count').inner_text() == '0'
+        state['payload']['picks'][0]['research_matches'] = [dict(match), dict(match, snapshot='close'), dict(match)]
+        refresh()
+        assert page.locator('#research-count').inner_text() == '1'
+        assert page.locator('.ls-research-summary').count() == 2
+        assert '/ open' in page.locator('.ls-history-cell').first.inner_text()
+        assert '/ close' in page.locator('.ls-history-cell').first.inner_text()
+
+        # Legacy flags cannot preserve the old FD/HR research badge without current evidence.
+        state['payload'] = sample()
+        state['payload'].pop('research_criteria')
+        refresh()
+        assert page.locator('#research-count').inner_text() == '0'
+        assert page.locator('#research-filter').is_disabled()
+        assert 'unavailable' in page.locator('#research-help').inner_text()
+        state['payload'] = sample()
+        state['payload']['picks'][0].pop('research_matches')
+        refresh()
+        assert page.locator('#research-count').inner_text() == '0'
+        state['payload'] = sample()
+        refresh()
+
         # All published betting books and upcoming dates match the probit scan.
         state['payload'] = sample()
         state['payload'].update(date=None, slate_date='2026-10-02')
@@ -172,7 +278,7 @@ try:
         assert page.locator('#book-count').inner_text() == '14'
         assert 'bet365: 10 quoted' in page.locator('#coverage').text_content()
         assert 'Up to 10 offers per book' in page.locator('#criteria').text_content()
-        expected_keys = ['|'.join([pick['game'], pick['player'], pick['book']]) for pick in state['payload']['picks']]
+        expected_keys = ['|'.join(key) for key in expected_players(state['payload'])]
         assert page.locator('.rec-pick').evaluate_all('(rows) => rows.map(row => row.dataset.key)') == expected_keys
         page.select_option('#book-filter', 'b365')
         expect(page.locator('.rec-pick')).to_have_count(1)
@@ -199,6 +305,67 @@ try:
         state['payload'] = sample()
         refresh()
         expect(page.locator('.rec-pick')).to_have_count(3)
+
+        # One player per game; net payout, raw-price tiebreak and tied books match Discord.
+        state['payload'] = sample()
+        original = copy.deepcopy(state['payload']['picks'][0])
+        duplicate = copy.deepcopy(original)
+        duplicate.update(book='b365', price=1500, net_decimal_estimate=16, net_price_estimate=1500,
+                         research_match=False, research_matches=[])
+        exchange = copy.deepcopy(duplicate)
+        exchange.update(book='kal', price=1600, net_decimal_estimate=15.5, net_price_estimate=1450)
+        tied = copy.deepcopy(duplicate)
+        tied.update(book='fn', net_decimal_estimate=16 + 5e-10)
+        state['payload']['picks'] += [duplicate, exchange, tied]
+        state['payload']['books_checked'] += ['b365', 'kal']
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+        assert page.locator('#pick-count').inner_text() == '3'
+        assert page.locator('#research-count').inner_text() == '1'
+        assert page.locator('.rec-pick').first.get_attribute('data-book') == 'fn'
+        assert page.locator('.rec-book-cell').first.locator('.rec-offer').evaluate_all('(els) => els.map(el => el.dataset.book)') == ['b365', 'fn']
+        assert page.locator('.rec-pick').first.locator('.ls-tag').count() == 0
+        assert 'Research available at FanDuel' in page.locator('.rec-pick').first.inner_text()
+        assert 'FanDuel vs Hard Rock' not in page.locator('.ls-history-cell').first.inner_text()
+        assert page.locator('.ls-alternatives').first.locator('li').count() == 4
+        assert page.locator('.ls-alternatives').first.locator('[data-book="fd"] .ls-alternate-research').count() == 1
+        assert page.locator('.ls-alternatives').first.locator('[data-book="b365"] .ls-alternate-research').count() == 0
+        # Research filtering chooses the research-qualified price, without borrowing its badge.
+        page.locator('#research-filter').check()
+        expect(page.locator('.rec-pick')).to_have_count(1)
+        assert page.locator('.rec-pick').first.get_attribute('data-book') == 'fd'
+        assert '+1200' in page.locator('.rec-book-cell').inner_text()
+        assert page.locator('.ls-alternatives li').count() == 4
+        page.select_option('#book-filter', 'b365')
+        expect(page.locator('.rec-pick')).to_have_count(0)
+        page.locator('#research-filter').uncheck()
+        expect(page.locator('.rec-pick')).to_have_count(1)
+        assert page.locator('.ls-alternatives li').count() == 1
+        page.select_option('#book-filter', '')
+        # Expiring the top offers reranks the player and hides expired alternatives.
+        for pick in state['payload']['picks']:
+            if pick['book'] in ['b365', 'fn'] and pick['player'] == original['player']:
+                pick['quote_updated'] = (NOW-timedelta(minutes=16)).isoformat()
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+        assert page.locator('.rec-pick').first.get_attribute('data-book') == 'kal'
+        assert '~+1450 after fees' in page.locator('.rec-book-cell').first.inner_text()
+        assert page.locator('.ls-alternatives').first.locator('li').count() == 2
+        # Identical net payouts prefer smaller raw odds and do not falsely tie prices.
+        state['payload']['picks'][-2].update(net_decimal_estimate=13, net_price_estimate=1200)
+        refresh()
+        assert page.locator('.rec-pick').first.get_attribute('data-book') == 'fd'
+        assert page.locator('.rec-book-cell').first.locator('.rec-offer').count() == 1
+        # The same player in another game stays separate, with games ordered by start.
+        another_game = copy.deepcopy(original)
+        another_game.update(game='bos @ nyr', start=(NOW+timedelta(hours=2)).isoformat())
+        state['payload']['picks'].append(another_game)
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(4)
+        assert page.locator('.rec-pick').first.get_attribute('data-key') == 'bos @ nyr|test defenseman'
+        assert page.locator('#research-count').inner_text() == '2'
+        state['payload'] = sample()
+        refresh()
 
         # Midnight expiry refers to the snapshot day, not an upcoming game's date.
         midnight = datetime(2026, 10, 3, 4, 0, tzinfo=timezone.utc)
@@ -309,7 +476,8 @@ try:
             state['payload'] = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
             page.clock.set_system_time(datetime.fromisoformat(state['payload']['generated_at']))
             page.evaluate("window.authChanged('SIGNED_IN', {access_token: 'preview-token'})")
-            expect(page.locator('.rec-pick')).to_have_count(min(50, len(state['payload']['picks'])))
+            player_keys = expected_players(state['payload'])
+            expect(page.locator('.rec-pick')).to_have_count(min(50, len(player_keys)))
             page.set_viewport_size({'width': 1440, 'height': 1050})
             page.locator('.ls-context-filters > summary').click()
             page.locator('.rec-toggle').first.click()
@@ -322,17 +490,51 @@ try:
             page.screenshot(path=str(ARTIFACTS / 'mobile-viewport.png'), full_page=False)
             page.locator('.rec-pick').first.scroll_into_view_if_needed()
             page.screenshot(path=str(ARTIFACTS / 'mobile-offer.png'), full_page=False)
-            if len(state['payload']['picks']) > 50:
+            if len(player_keys) > 50:
                 page.locator('#show-more').click()
-                expect(page.locator('.rec-pick')).to_have_count(min(100, len(state['payload']['picks'])))
-            expected_keys = ['|'.join([pick['game'], pick['player'], pick['book']]) for pick in state['payload']['picks']]
+                expect(page.locator('.rec-pick')).to_have_count(min(100, len(player_keys)))
+            expected_keys = ['|'.join(key) for key in player_keys]
             assert page.locator('.rec-pick').evaluate_all('(rows) => rows.map(row => row.dataset.key)') == expected_keys[:100]
             assert page.locator('#book-filter option[value="b365"]').count() == 1
             assert page.locator('#book-filter option[value="bol"]').count() == 1
             page.locator('#research-filter').check()
-            expect(page.locator('.rec-pick')).to_have_count(sum(pick['research_match'] for pick in state['payload']['picks']))
+            expect(page.locator('.rec-pick')).to_have_count(len(expected_players(state['payload'], research=True)))
+            research_picks = [pick for pick in state['payload']['picks'] if pick['research_match']]
+            if research_picks:
+                dense_pick = max(research_picks, key=lambda pick: len(pick['research_matches']))
+                page.select_option('#book-filter', dense_pick['book'])
+                expected = expected_players(state['payload'], research=True, book=dense_pick['book'])
+                expect(page.locator('.rec-pick')).to_have_count(len(expected))
+                dense_index = expected.index((dense_pick['game'], dense_pick['player']))
+                page.locator('.rec-pick').nth(dense_index).screenshot(path=str(ARTIFACTS / 'mobile-research-offer.png'))
+                page.locator('.rec-toggle').nth(dense_index).click()
+                page.locator('.ls-research-evidence').nth(dense_index).screenshot(path=str(ARTIFACTS / 'mobile-research-evidence.png'))
+                page.set_viewport_size({'width': 1440, 'height': 1050})
+                page.locator('.rec-pick').nth(dense_index).screenshot(path=str(ARTIFACTS / 'desktop-research-offer.png'))
+            # Independently produced Python formatter expectations for the real published feed.
+            expected_path = Path(sys.argv[1]).with_name('grouped_expected.json')
+            if expected_path.is_file():
+                grouped_expected = json.loads(expected_path.read_text(encoding='utf-8'))
+                def assert_grouped(expected):
+                    expect(page.locator('.rec-pick')).to_have_count(len(expected))
+                    actual = page.locator('.rec-pick').evaluate_all('''rows => rows.map(row => ({
+                      key: row.dataset.key, book: row.dataset.book,
+                      price: Number(row.querySelector('.rec-book-cell strong').textContent),
+                      tied_books: Array.from(row.querySelectorAll('.rec-book-cell .rec-offer'), el => el.dataset.book)
+                    }))''')
+                    assert actual == [dict(key='|'.join([pick['game'], pick['player']]), book=pick['book'],
+                                           price=pick['price'], tied_books=pick['tied_books']) for pick in expected]
+                page.select_option('#book-filter', '')
+                page.locator('#research-filter').uncheck()
+                assert_grouped(grouped_expected['all'])
+                page.locator('#research-filter').check()
+                assert_grouped(grouped_expected['research'])
+                page.locator('#research-filter').uncheck()
+                for book, expected in grouped_expected['by_book'].items():
+                    page.select_option('#book-filter', book)
+                    assert_grouped(expected)
         assert not errors, errors
         browser.close()
-        print(f'PASS: desktop/mobile, dynamic books, upcoming games, midnight rollover, fees/liquidity, filters, all-reference history, escaping, freshness, empty, access, timeout and visibility. Screenshots: {ARTIFACTS}')
+        print(f'PASS: last-season research across books/blends, separate sample thresholds, research expiry/legacy safety, desktop/mobile, dynamic books, upcoming games, midnight rollover, fees/liquidity, filters, all-reference history, escaping, freshness, empty, access, timeout and visibility. Screenshots: {ARTIFACTS}')
 finally:
     server.shutdown()

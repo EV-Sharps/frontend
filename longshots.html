@@ -7,7 +7,7 @@
   <meta name="description" content="NHL anytime goalscorer longshots, with reference prices, recent shots and historical context.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="recommendations.css">
-  <link rel="stylesheet" href="longshots.css">
+  <link rel="stylesheet" href="longshots.css?v=20261002-unique-research">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="recommendations-page longshots-page">
@@ -22,7 +22,7 @@
     <div class="rec-intro">
       <div><p class="rec-eyebrow">NHL ANYTIME GOALSCORER <span>SHARP</span></p>
         <h1>Longshots</h1>
-        <p class="rec-lede">Model-positive watchlist. +1000 to +3000, with the evidence beside each price.</p></div>
+        <p class="rec-lede">+1000 to +3000 model-positive players, listed once at their best price after fees. Research matches are a smaller historical subset.</p></div>
       <div class="rec-refresh"><span id="report-date">Upcoming NHL games</span><small id="generated">Loading latest watchlist...</small>
         <button id="refresh" type="button">Refresh watchlist <span aria-hidden="true">&#8635;</span></button></div>
     </div>
@@ -34,8 +34,8 @@
     </section>
     <div id="report-content" aria-busy="true">
       <div class="rec-summary" aria-label="Watchlist summary">
-        <div><strong id="pick-count">-</strong><span>Fresh offers</span></div>
-        <div><strong id="research-count">-</strong><span>Research matches</span></div>
+        <div><strong id="pick-count">-</strong><span>Fresh players</span></div>
+        <div><strong id="research-count">-</strong><span>Players with research</span></div>
         <div><strong id="book-count">-</strong><span>Books checked</span></div>
       </div>
       <section aria-label="Longshot offers">
@@ -43,7 +43,7 @@
           <label>Book<select id="book-filter"><option value="">All books</option></select></label>
           <label>Position<select id="position-filter"><option value="">All positions</option><option value="F">Forwards</option><option value="D">Defensemen</option><option value="C">Centers</option><option value="LW">Left wings</option><option value="RW">Right wings</option></select></label>
           <label class="ls-search">Player or game<input id="search-filter" type="search" placeholder="Search the watchlist" autocomplete="off"></label>
-          <label class="ls-research-filter"><input id="research-filter" type="checkbox">Research matches only <small>FanDuel / Hard Rock probit &middot; team goals &ge; 3</small></label>
+          <label class="ls-research-filter"><input id="research-filter" type="checkbox" disabled>Research matches only <small id="research-help">Waiting for research criteria</small></label>
         </div>
         <details class="ls-context-filters"><summary>Optional context filters</summary><div class="rec-filters">
           <label>Minimum primary EV (%)<input id="ev-filter" type="number" min="0" step="1" placeholder="Any"></label>
@@ -55,7 +55,7 @@
         <div id="empty-state" class="rec-empty" hidden><h2>No qualifying offers</h2><p>The watchlist will appear when fresh prices meet the criteria.</p></div>
         <div id="picks-table-wrap" class="rec-table-wrap" role="region" aria-label="Longshot watchlist" tabindex="0" hidden>
           <table class="rec-table ls-table">
-            <caption class="sr-only">NHL longshot offers grouped by book. Expand an offer for all reference comparisons and opening and closing history.</caption>
+            <caption class="sr-only">NHL longshots listed once per player and game at the best price after fees. Expand a player for alternative books, reference comparisons and historical evidence.</caption>
             <thead><tr><th scope="col">Player / Game</th><th scope="col">Book / Odds</th><th scope="col">Primary reference / EV</th><th scope="col">Position</th><th scope="col">Last-10 SOG</th><th scope="col">Est. team goals</th><th scope="col">Historical context</th><th scope="col"><span class="sr-only">Offer details</span></th></tr></thead>
             <tbody id="picks"></tbody>
           </table>
@@ -65,9 +65,9 @@
       <aside class="rec-sidebar ls-sidebar">
         <details class="rec-method"><summary><strong>How to read this watchlist</strong><span>Model and research context</span></summary><div class="rec-method-body">
           <dl id="criteria"></dl>
-          <p>Research matches identify FanDuel offers positive against Hard Rock under probit with estimated team goals of at least 3. This is an exploratory subset, not a validated profit forecast. Other books can still have model-positive offers.</p>
+          <p id="research-explanation">Research matches use last-season results for the same betting book, reference and method. Opening and closing samples are evaluated separately, not pooled. This is a historical screen, not a profit forecast.</p>
           <p>Stored history covers the original +1000 to +3000, EV &ge; 0 opening and closing cohorts. Many strategies were inspected; neither season is an untouched holdout. The live screen excludes a problematic region of one-sided reference prices, so the stored ROI does not precisely backtest today's guarded screen.</p>
-          <p>Position, recent shots and team goals are context. Custom filters do not recalculate the historical cohorts. The same player at different books represents alternative offers.</p>
+          <p>Position, recent shots and team goals are context. Custom filters do not recalculate the historical cohorts. Details shows the player's alternative book offers; research evidence belongs to the specific book and reference.</p>
           <p>Opening means the saved approximately 10 a.m. Eastern baseline; closing means 30 minutes before scheduled start. These cohorts can overlap. Historical stakes were one unit per selection.</p>
         </div></details>
         <details class="rec-coverage"><summary>Book coverage</summary><div id="coverage">Loading...</div></details>
@@ -78,6 +78,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
   <script src="auth.js"></script>
-  <script src="longshots.js"></script>
+  <script src="longshots.js?v=20261002-unique-research"></script>
 </body>
 </html>

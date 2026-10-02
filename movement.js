@@ -145,7 +145,7 @@
   async function request(query, controller) {
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(`${API_BASE}/api/line-movement?${query}`, { signal: controller.signal, headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } });
+      const response = await fetch(`${API_BASE}/api/line-movement?${query}`, { signal: controller.signal, headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {} });
       if (response.status === 401 || response.status === 403) { const error = new Error('Access required'); error.status = response.status; throw error; }
       if (response.status === 404) throw new Error('This selection is no longer available in today’s captures. Choose another row.');
       if (!response.ok) throw new Error('Unable to load movement. Please try Refresh.');
@@ -354,7 +354,7 @@
   async function refresh() {
     resetDay();
     if (!ready) return;
-    if (!ACCESS_TOKEN) { access(401); return; }
+    if (!ACCESS_TOKEN && !IS_LOCALHOST) { access(401); return; }
     summaryController?.abort();
     const version = ++summaryVersion, controller = new AbortController();
     summaryController = controller;
@@ -446,6 +446,7 @@
     await refresh();
   }
   async function boot() {
+    if (IS_LOCALHOST) { await sessionChanged(null); return; }
     try {
       if (!SB) throw new Error();
       SB.auth.onAuthStateChange((_event, session) => { queueMicrotask(() => sessionChanged(session)); });

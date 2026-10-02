@@ -47,6 +47,35 @@
   let visibleLimit = 50;
   const openKeys = new Set(), openReferences = new Set();
   const keyOf = pick => [pick.game, pick.player, pick.book].join('|');
+  const playerKey = pick => [pick.game, pick.player].join('|');
+  const compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  function payout(pick) {
+    if (numeric(pick.net_decimal_estimate)) return Number(pick.net_decimal_estimate);
+    const price = Number(numeric(pick.net_price_estimate) ? pick.net_price_estimate : pick.price);
+    return price > 0 ? 1 + price / 100 : 1 - 100 / price;
+  }
+  const compareOffers = (a, b) => payout(b) - payout(a) || Number(a.price) - Number(b.price) || compareText(a.book, b.book);
+  function groupPlayers(picks, now, onlyResearch = false) {
+    const players = new Map(), gameStarts = new Map();
+    picks.forEach(pick => {
+      const key = playerKey(pick);
+      if (!players.has(key)) players.set(key, []);
+      players.get(key).push(pick);
+    });
+    const groups = [];
+    players.forEach(offers => {
+      offers.sort(compareOffers);
+      const eligible = onlyResearch ? offers.filter(pick => researchMatch(pick, now)) : offers;
+      if (!eligible.length) return;
+      const pick = eligible[0], tied = eligible.filter(offer => Number(offer.price) === Number(pick.price) && Math.abs(payout(offer) - payout(pick)) <= 1e-9);
+      tied.sort((a, b) => compareText(a.book, b.book));
+      const start = Math.min(...eligible.map(offer => Date.parse(offer.start)));
+      gameStarts.set(pick.game, Math.min(gameStarts.get(pick.game) ?? Infinity, start));
+      groups.push({pick, tied, offers});
+    });
+    return groups.sort((a, b) => gameStarts.get(a.pick.game) - gameStarts.get(b.pick.game)
+      || compareText(a.pick.game, b.pick.game) || compareText(a.pick.player, b.pick.player));
+  }
   function notice(id, message) { $(id).textContent = message; $(id).hidden = !message; }
   function ageLimit() { return Math.min(15, Number(report.criteria.max_age_minutes)); }
   function freshTimestamp(value, now) {
@@ -72,10 +101,37 @@
         && numeric(primary.ev) && Number(primary.ev) + 1e-9 >= Number(report.criteria.min_ev);
     });
   }
-  function researchMatch(pick, now) {
-    return pick.research_match === true && pick.book === 'fd' && pick.method === 'probit'
-      && numeric(pick.teamTotal) && Number(pick.teamTotal) >= 3
-      && pick.comparisons.some(c => c.reference === 'hr' && freshComparison(c, now) && numeric(c.ev) && Number(c.ev) >= Number(report.criteria.min_ev));
+  function researchCriteria() {
+    const criteria = report?.research_criteria;
+    return criteria && /^\d{4}$/.test(String(criteria.season)) && criteria.method === report.criteria.method
+      && numeric(criteria.min_bets) && Number(criteria.min_bets) > 0
+      && numeric(criteria.min_roi) && Number(criteria.min_roi) > 0
+      && Array.isArray(criteria.snapshots) && criteria.snapshots.length > 0
+      && criteria.snapshots.every(snapshot => ['open', 'close'].includes(snapshot)) ? criteria : null;
+  }
+  function researchMatches(pick, now) {
+    const criteria = researchCriteria(), seen = new Set();
+    if (!criteria || pick.research_match !== true || pick.method !== criteria.method || !Array.isArray(pick.research_matches)) return [];
+    return pick.research_matches.filter(match => {
+      if (!match || String(match.season) !== String(criteria.season) || match.method !== criteria.method
+        || !criteria.snapshots.includes(match.snapshot) || !numeric(match.n) || Number(match.n) < Number(criteria.min_bets)
+        || !numeric(match.roi) || Number(match.roi) < Number(criteria.min_roi)
+        || !numeric(match.ev) || Number(match.ev) + 1e-9 < Number(report.criteria.min_ev) || !freshComparison(match, now)
+        || String(match.reference).split(';')[0].split('+').includes(pick.book)) return false;
+      const key = [match.reference, match.snapshot].join('|');
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+  }
+  function researchMatch(pick, now) { return researchMatches(pick, now).length > 0; }
+  function researchSummary(pick, matches) {
+    const criteria = researchCriteria();
+    return matches.map(match => `<small class="ls-research-summary"><strong>${esc(bookName(pick.book))} vs ${esc(referenceName(match.reference))} / ${match.snapshot === 'open' ? 'open' : 'close'}</strong><br>${esc(criteria.season_label || criteria.season)}: ${esc(pct(match.roi))} ROI / ${esc(number(match.n, 0))} bets</small>`).join('');
+  }
+  function researchDetails(pick, matches) {
+    if (!matches.length) return '';
+    const criteria = researchCriteria();
+    return `<section class="ls-research-evidence" aria-label="Qualifying research samples"><h3>Qualifying research samples / ${esc(criteria.season_label || criteria.season)}</h3><ul>${matches.map(match => `<li><strong>${esc(bookName(pick.book))} vs ${esc(referenceName(match.reference))} / ${match.snapshot === 'open' ? 'opening' : 'closing'} / ${esc(match.method)}</strong>: ${esc(pct(match.roi))} ROI over ${esc(number(match.n, 0))} bets; ${esc(number(match.profit))}u profit. Current comparison: ${esc(pct(match.ev))} EV, fair ${esc(odds(match.fair_odds))}${match.synthetic_reference ? ' (estimated No price)' : ' (quoted Yes / No)'}.</li>`).join('')}</ul><p>This historical screen can use a different reference from the primary row. Opening and closing samples are evaluated separately, not pooled; historical ROI is not a profit forecast.</p></section>`;
   }
   function historyTable(history) {
     const labels = report.history_metadata?.season_labels || {'2024': '2024-25', '2025': '2025-26'};
@@ -106,29 +162,41 @@
         <p>${comparison.synthetic_reference ? 'The missing No price is inferred using the model\'s overround assumption.' : 'Both reference sides were quoted.'}</p>
         <p>${esc(historyLabel(comparison.history_label))}. These stored cohorts include all positions and shot volumes.</p></div>${historyTable(comparison.history)}</div></details>`;
   }
-  function renderRow(pick, index, now) {
-    const row = document.createElement('tr'), detail = document.createElement('tr');
-    const key = keyOf(pick), primary = primaryOf(pick), link = safeLink(pick.link);
-    const research = researchMatch(pick, now), freshRefs = pick.comparisons.filter(c => freshComparison(c, now));
-    const positiveRefs = freshRefs.filter(c => Number(c.ev) >= Number(report.criteria.min_ev)).length;
-    row.className = 'rec-pick'; row.dataset.key = key;
-    detail.className = 'rec-detail-row'; detail.id = `ls-detail-${index}`;
+  function offerMarkup(pick) {
+    const link = safeLink(pick.link);
     const offer = `${logo(pick.book)}<span class="rec-offer-copy"><strong>${esc(odds(pick.price))}</strong><small>${esc(bookName(pick.book))}</small>${numeric(pick.net_price_estimate) && Number(pick.net_price_estimate) !== Number(pick.price) ? `<small>~${esc(odds(pick.net_price_estimate))} after fees</small>` : ''}</span>${link ? '<span class="rec-offer-arrow" aria-hidden="true">&#8599;</span>' : ''}`;
+    return link ? `<a class="rec-offer" data-book="${esc(pick.book)}" href="${esc(link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(title(pick.player))} anytime goal at ${esc(bookName(pick.book))}">${offer}</a>` : `<span class="rec-offer" data-book="${esc(pick.book)}">${offer}</span>`;
+  }
+  function alternateOffers(group, now) {
+    return `<section class="ls-alternatives" aria-label="Prices by betting book"><h3>Prices by betting book</h3><p>The best offer matching your active filters is shown above. These are alternative offers on the same player; research applies only to the named book and reference.</p><ul>${group.offers.map(offer => {
+      const matches = researchMatches(offer, now), primary = primaryOf(offer);
+      return `<li data-book="${esc(offer.book)}">${offerMarkup(offer)}<div><strong>${esc(referenceName(offer.reference))}: ${esc(pct(primary.ev))} EV</strong><small>Updated ${esc(timeLabel(offer.quote_updated))}${numeric(offer.liquidity) ? ` / liquidity $${esc(number(offer.liquidity, 0))}` : ''}</small>${matches.length ? matches.map(match => `<small class="ls-alternate-research">Research: ${esc(bookName(offer.book))} vs ${esc(referenceName(match.reference))} / ${esc(match.snapshot)} / ${esc(researchCriteria().season_label || match.season)}: ${esc(pct(match.roi))} ROI, ${esc(number(match.n, 0))} bets. Current EV ${esc(pct(match.ev))}.</small>`).join('') : '<small>No qualifying last-season research sample for this offer.</small>'}</div></li>`;
+    }).join('')}</ul></section>`;
+  }
+  function renderRow(group, index, now) {
+    const {pick, tied, offers} = group;
+    const row = document.createElement('tr'), detail = document.createElement('tr');
+    const key = playerKey(pick), primary = primaryOf(pick), link = safeLink(pick.link);
+    const matches = researchMatches(pick, now), research = matches.length > 0, freshRefs = pick.comparisons.filter(c => freshComparison(c, now));
+    const otherResearchBooks = [...new Set(offers.filter(offer => offer.book !== pick.book && researchMatch(offer, now)).map(offer => bookName(offer.book)))];
+    const positiveRefs = freshRefs.filter(c => Number(c.ev) >= Number(report.criteria.min_ev)).length;
+    row.className = 'rec-pick'; row.dataset.key = key; row.dataset.book = pick.book;
+    detail.className = 'rec-detail-row'; detail.id = `ls-detail-${index}`;
     const measuredSog = numeric(pick.avgSOG_L10) && numeric(pick.sogGames_L10) && Number(pick.sogGames_L10) >= 5;
-    row.innerHTML = `<td class="ls-player-cell"><strong>${esc(title(pick.player))}</strong><small>${esc(String(pick.game || '').toUpperCase())} &middot; ${esc(gameTimeLabel(pick.start))}</small>${research ? '<span class="ls-tag">RESEARCH MATCH</span>' : ''}</td>
-      <td class="rec-book-cell">${link ? `<a class="rec-offer" href="${esc(link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(title(pick.player))} anytime goal at ${esc(bookName(pick.book))}">${offer}</a>` : `<span class="rec-offer">${offer}</span>`}</td>
+    row.innerHTML = `<td class="ls-player-cell"><strong>${esc(title(pick.player))}</strong><small>${esc(String(pick.game || '').toUpperCase())} &middot; ${esc(gameTimeLabel(pick.start))}</small>${research ? `<span class="ls-tag">RESEARCH AT ${esc(bookName(pick.book).toUpperCase())}</span>` : ''}${otherResearchBooks.length ? `<small class="ls-other-research">Research available at ${esc(otherResearchBooks.join(' / '))}; see Details.</small>` : ''}</td>
+      <td class="rec-book-cell"><div class="ls-best-offers">${tied.map(offerMarkup).join('')}</div></td>
       <td class="ls-reference-cell" data-label="Primary reference / EV"><span>${esc(referenceName(pick.reference))}</span><strong class="rec-value">${esc(pct(primary.ev))}</strong><small>Fair ${esc(odds(primary.fair_odds))} &middot; ${esc(pick.method)}${primary.synthetic_reference ? ' / est. No' : ''}</small></td>
       <td class="ls-position-cell" data-label="Position"><strong>${esc(position(pick.position) || '-')}</strong></td>
       <td class="ls-sog-cell" data-label="Last-10 SOG"><strong>${measuredSog ? esc(number(pick.avgSOG_L10, 2)) : '-'}</strong><small>${numeric(pick.sogGames_L10) ? `n = ${esc(number(pick.sogGames_L10, 0))}${measuredSog ? '' : ' / need 5'}` : 'No sample'}</small></td>
       <td class="ls-goals-cell" data-label="Est. team goals"><strong>${esc(number(pick.teamTotal, 2))}</strong></td>
-      <td class="ls-history-cell" data-label="Historical context">${esc(historyLabel(primary.history_label))}<small>${positiveRefs} of ${freshRefs.length} fresh references meet EV minimum</small></td>
+      <td class="ls-history-cell" data-label="Historical context">${researchSummary(pick, matches)}${research ? '<small>Primary history:</small>' : ''}${esc(historyLabel(primary.history_label))}<small>${positiveRefs} of ${freshRefs.length} fresh references meet EV minimum</small></td>
       <td class="rec-details-cell"><button class="rec-toggle" type="button" aria-controls="${detail.id}" aria-label="Offer details for ${esc(title(pick.player))} at ${esc(bookName(pick.book))}">Details <span aria-hidden="true">&#8964;</span></button></td>`;
     const warnings = Array.isArray(pick.warnings) ? pick.warnings.map(w => `<li>${esc(w)}</li>`).join('') : '';
     detail.innerHTML = `<td colspan="8"><div class="ls-details"><h2>${esc(title(pick.player))} &middot; anytime goal</h2>
       <div class="ls-detail-meta"><span>Offer updated ${esc(timeLabel(pick.quote_updated))}</span>${numeric(pick.liquidity) ? `<span>Available liquidity $${esc(number(pick.liquidity, 0))}</span>` : ''}<span>Average ice time ${esc(number(pick.avgTOI))} min</span><span>Power-play line ${esc(pick.ppLine ?? '-')}</span>${numeric(pick.suggested_units) ? `<span>Saved stake tier ${esc(number(pick.suggested_units))}u</span>` : ''}</div>
-      <p>The primary reference is the first qualifying reference in the published order. Additional comparisons include model disagreements; opening and closing histories stay separate.</p>
+      ${alternateOffers(group, now)}<p>Reference comparisons below apply to the displayed ${esc(bookName(pick.book))} offer. Its primary reference is the first qualifying reference in the published order. Opening and closing histories stay separate.</p>
       ${!link ? '<p>No direct selection link is available. Locate this player\'s full-game anytime goal market at the book.</p>' : ''}
-      ${warnings ? `<ul>${warnings}</ul>` : ''}${pick.comparisons.map(c => comparisonDetails(pick, c, now)).join('')}</div></td>`;
+      ${researchDetails(pick, matches)}${warnings ? `<ul>${warnings}</ul>` : ''}${pick.comparisons.map(c => comparisonDetails(pick, c, now)).join('')}</div></td>`;
     const toggle = row.querySelector('.rec-toggle');
     function expand(open) {
       toggle.setAttribute('aria-expanded', String(open)); detail.hidden = !open;
@@ -149,20 +217,19 @@
     const now = Date.now(), fresh = availablePicks(now), book = $('book-filter').value, pos = $('position-filter').value;
     const search = $('search-filter').value.trim().toLowerCase(), onlyResearch = $('research-filter').checked;
     const minEv = $('ev-filter').value, minSog = $('sog-filter').value, minGoals = $('goals-filter').value;
-    const shown = fresh.filter(pick => (!book || pick.book === book)
+    const filtered = fresh.filter(pick => (!book || pick.book === book)
       && (!pos || (pos === 'F' ? ['F', 'W', 'C', 'LW', 'RW'].includes(position(pick.position)) : position(pick.position) === pos))
       && (!search || `${pick.player} ${pick.game} ${pick.team || ''}`.toLowerCase().includes(search))
-      && (!onlyResearch || researchMatch(pick, now))
       && (!numeric(minEv) || Number(primaryOf(pick).ev) >= Number(minEv))
       && (!numeric(minSog) || numeric(pick.avgSOG_L10) && numeric(pick.sogGames_L10) && Number(pick.sogGames_L10) >= 5 && Number(pick.avgSOG_L10) >= Number(minSog))
       && (!numeric(minGoals) || numeric(pick.teamTotal) && Number(pick.teamTotal) >= Number(minGoals)));
-    const visible = shown.slice(0, visibleLimit);
+    const shown = groupPlayers(filtered, now, onlyResearch), visible = shown.slice(0, visibleLimit);
     $('picks').replaceChildren(...visible.map((pick, index) => renderRow(pick, index, now)));
     $('picks-table-wrap').hidden = shown.length === 0;
-    $('pick-count').textContent = fresh.length;
-    $('research-count').textContent = fresh.filter(pick => researchMatch(pick, now)).length;
+    $('pick-count').textContent = groupPlayers(fresh, now).length;
+    $('research-count').textContent = groupPlayers(fresh, now, true).length;
     $('book-count').textContent = offeredBooks(report).length;
-    $('list-caption').textContent = `${visible.length} of ${shown.length} matching offers · ${fresh.length} fresh · Grouped by book, then published rank`;
+    $('list-caption').textContent = `${visible.length} of ${shown.length} matching players · One row per player and game · Best ${onlyResearch ? 'research-qualified ' : ''}payout after fees${book ? ` at ${bookName(book)}` : ' across books'}`;
     $('show-more').hidden = visible.length >= shown.length;
     $('show-more').textContent = `Show ${Math.min(50, shown.length - visible.length)} more`;
     $('empty-state').hidden = shown.length > 0;
@@ -181,6 +248,15 @@
       || !c || !numeric(c.max_age_minutes) || Number(c.max_age_minutes) <= 0 || !numeric(c.min_minutes_to_start)
       || Number(c.min_minutes_to_start) < 0 || !numeric(c.min_ev) || Number(c.min_ev) < 0) throw new Error('The longshot snapshot is not available yet.');
     report = data;
+    const research = researchCriteria();
+    $('research-filter').disabled = !research;
+    if (!research) $('research-filter').checked = false;
+    $('research-help').textContent = research
+      ? `${research.season_label || research.season} / at least ${number(research.min_bets, 0)} bets & ${number(research.min_roi)}% ROI / open or close separately`
+      : 'Research criteria unavailable in this publication';
+    $('research-explanation').textContent = research
+      ? `The default list includes every player passing the price screen, once per game, matching the probit Discord list. Research is a smaller historical subset that can come from any betting book: the same book/reference and ${research.method} method must have at least ${number(research.min_bets, 0)} bets and ${number(research.min_roi)}% ROI in ${research.season_label || research.season}, and currently meet ${number(c.min_ev)}% EV with fresh reference prices. A better price at another book does not inherit that research. Turn on the research filter to show each player's best qualifying research offer. Opening and closing samples are evaluated separately, not pooled; historical ROI is not a profit forecast.`
+      : 'Research matches require a publication with last-season criteria and matching sample details. Older publications do not receive research badges.';
     $('report-content').hidden = false; $('report-content').setAttribute('aria-busy', 'false'); $('access-panel').hidden = true;
     const previous = $('book-filter').value, availableBooks = offeredBooks(data);
     $('book-filter').replaceChildren(new Option('All books', ''));
@@ -191,7 +267,7 @@
     $('criteria').innerHTML = [
       ['+1000 to +3000 anytime goal offers', `At least ${number(c.min_ev)}% estimated EV against a usable reference. Each offered book is excluded from its reference.`],
       [`${ageLimit()}-minute price limit`, `All upcoming games in the feed; more than ${Math.max(5, Number(c.min_minutes_to_start))} minutes before start. Timestamps describe the book feed, not verified updates to each market.`],
-      [`Up to ${number(c.limit_per_book, 0)} offers per book`, 'The published order and probit screen match the default longshot scan. Use the book filter to see each book separately.'],
+      [`Up to ${number(c.limit_per_book, 0)} offers per book`, 'The probit scan supplies the offers. Players appear once per game at their best estimated payout after fees, including tied books. Games are ordered by start time, then players alphabetically. Use the book filter or Details to compare alternatives.'],
       ['Primary reference stays fixed', 'The first qualifying published reference supplies EV, fair odds and the row\'s history. Expand all comparisons to inspect disagreements.'],
       ['Reference-only books', 'Pinnacle and Circa are used for comparison. All other eligible books, including bet365, BetOnline and exchanges, can appear as offers.'],
       ['Estimated No prices are labeled', 'One-sided reference prices at or below 7% raw probability are excluded by the live screen. Other one-sided prices still depend on an assumed overround.'],
@@ -206,6 +282,7 @@
   function clearReport() {
     report = null; openKeys.clear(); openReferences.clear(); $('picks').replaceChildren();
     $('criteria').replaceChildren(); $('coverage').replaceChildren();
+    $('research-help').textContent = 'Waiting for research criteria'; $('research-filter').disabled = true;
     ['pick-count', 'research-count', 'book-count'].forEach(id => { $(id).textContent = '-'; });
     $('report-content').hidden = true; $('picks-table-wrap').hidden = true; notice('freshness-status', '');
   }
@@ -255,6 +332,7 @@
     notice('request-status', ''); refresh.requestLatest();
   }
   async function boot() {
+    if (IS_LOCALHOST) { await refresh(); return; }
     try {
       if (!SB) throw new Error('No auth service');
       const {data, error} = await SB.auth.getSession();

@@ -6,6 +6,7 @@ let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
+const IS_LOCALHOST = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 let API_BASE = "http://localhost:5001";
 let UPDATED = {};
 let WEIGHTS = {};
@@ -120,10 +121,10 @@ function openKellySettings(event) {
 function getUnitSize() {
 	return CURR_USER?.metadata?.unit_size || 100;
 }
-if (window.location.protocol == "file:" || window.location.host.includes("localhost")) {
+if (window.location.protocol == "file:" || IS_LOCALHOST) {
 	HTML = ".html";
 }
-if (!window.location.host.includes("localhost")) {
+if (!IS_LOCALHOST) {
 	API_BASE = `https://api-production-3a3b.up.railway.app`;
 }
 

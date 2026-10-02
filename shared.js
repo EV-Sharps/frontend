@@ -2535,6 +2535,8 @@ const basePlayerFormatter = function(cell, params, rendered) {
 		let s = ["feed", "dingers", "dingers2", "barrels", "top_pitches"].includes(PAGE) ? "mlb" : sport;
 		if (s == "ncaaf") s = "ncaab";
 		else if (s == "baseball_ncaa") s = "ncaab";
+		else if (s == "atgs") s = "nhl";
+
 		let t = data.teamId || data.team?.replace("-gm2", "");
 		if (TEAM) {
 			//t = TEAM;

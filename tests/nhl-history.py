@@ -45,7 +45,7 @@ def payload_for(name):
             "awayLogs": None if missing else (AWAY_LOGS + [None, "9", False] if player == "history alpha" else [2, 0, 4, 1]),
             "homeLogs": [] if missing else (HOME_LOGS + [None, "8", True] if player == "history alpha" else [0, 0, 0]),
             "hitRates": {"bvt": {"w": 1, "t": 4, "p": 25}},
-            "due": {} if missing else {"g": {"btwn": [1, 3, 0, 2], "streak": 4, "med": 1.5, "avg": 1.5, "z_median": .5}},
+            "due": {} if missing else {"g": {"btwn": [1, 3, 0, 2], "streak": 4, "med": 1.5, "avg": 1.5, "z": 1.94, "z_median": .5}},
         }
         row["ouIdx"] = int(row["under"])
         if missing:
@@ -115,6 +115,37 @@ def tab(page, view):
     page.locator(f'[data-history-view="{view}"]').click()
 
 
+def open_due(page, data):
+    page.evaluate("""data => NhlHistory.open({
+        ...TABLE.getData('active').find(row => row.player === 'history alpha'), due:{g:data}
+    })""", data)
+    counts = {value: data['btwn'].count(value) for value in sorted(set(data['btwn']))}
+    return wait_values(page, list(counts.values()))
+
+
+def assert_due_references(page, result, values, labels):
+    shapes = result['layout'].get('shapes', [])
+    assert [shape['x0'] for shape in shapes] == values, shapes
+    assert all(shape['type'] == 'line' and shape['x0'] == shape['x1']
+               and shape['yref'] == 'paper' and shape['y0'] == 0 and shape['y1'] == 1
+               for shape in shapes), shapes
+    assert len({shape['line']['color'] for shape in shapes}) == len(shapes), shapes
+    legend = ' '.join(page.locator('.nhl-history-legend').inner_text().split())
+    for label in labels:
+        assert label in legend, legend
+
+
+def assert_z(page, text):
+    badge = page.locator('.nhl-history-z')
+    assert badge.count() == 1
+    assert badge.inner_text() == text
+    average = page.locator('.nhl-history-stats > div').filter(has_text='Average gap')
+    assert average.locator('.nhl-history-z').count() == 1, 'The z-score belongs beside the average summary'
+    bounds, badge_bounds = average.bounding_box(), badge.bounding_box()
+    assert bounds['x'] <= badge_bounds['x'] and badge_bounds['x'] + badge_bounds['width'] <= bounds['x'] + bounds['width'] + 1, (bounds, badge_bounds)
+    assert bounds['y'] <= badge_bounds['y'] and badge_bounds['y'] + badge_bounds['height'] <= bounds['y'] + bounds['height'] + 1, (bounds, badge_bounds)
+
+
 server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Quiet, directory=str(ROOT)))
 Thread(target=server.serve_forever, daemon=True).start()
 try:
@@ -172,11 +203,14 @@ try:
                 assert due_chart['data'][0]['y'] == [1, 1, 1, 1]
                 assert due_chart['layout']['shapes'][0]['x0'] == due_chart['layout']['shapes'][0]['x1'] == 4
                 assert metrics(page) == {"Current gap": "4 games", "Median gap": "1.5 games", "Average gap": "1.5 games"}
+                assert_due_references(page, due_chart, [4, 1.5], ['Current 4', 'Average / Median 1.5'])
+                assert_z(page, 'Z +1.94')
                 tab(page, "logs")
             else:
                 assert page.locator('[data-history-view="logs"]').get_attribute("aria-selected") == "true"
             line = float(payload_for(name)['data'][0]['handicap'])
             current = assert_logs(page, LOGS[-20:], line)
+            assert page.locator('.nhl-history-z').count() == 0, 'Logs must not retain the Due z-score'
             assert any(shape.get("y0") == float(payload_for(name)["data"][0]["handicap"]) == shape.get("y1")
                        for shape in current["layout"].get("shapes", [])), current["layout"]
             tab(page, "bvt")
@@ -283,13 +317,36 @@ try:
                 page.evaluate("NhlHistory.open({...TABLE.getData('active').find(row => row.player === 'history alpha'), under:true})")
                 assert due.is_disabled(), 'An under must not inherit anytime goals gap history'
                 assert_logs(page, LOGS[-20:], line, under=True)
-                page.evaluate("""NhlHistory.open({
-                    ...TABLE.getData('active').find(row => row.player === 'history alpha'),
-                    due:{g:{btwn:[19], streak:3, med:0, avg:0}}
-                })""")
-                single_gap = wait_values(page, [1])
+                single_gap = open_due(page, {'btwn': [19], 'streak': 3, 'med': 0, 'avg': 0, 'z': 0})
                 assert single_gap['data'][0]['x'] == [19]
                 assert metrics(page) == {"Current gap": "3 games", "Median gap": "19 games", "Average gap": "19 games"}, metrics(page)
+                assert_z(page, 'Z N/A')
+                assert_due_references(page, single_gap, [3, 19], ['Current 3', 'Average / Median 19'])
+                constant = open_due(page, {'btwn': [3, 3], 'streak': 11, 'sd': 0, 'z': 0, 'z_median': 0})
+                assert_z(page, 'Z N/A')
+                assert_due_references(page, constant, [11, 3], ['Current 11', 'Average / Median 3'])
+
+                # The plotted history controls mean/median markers even when
+                # feed summaries are stale. The missing z uses sample SD (n-1).
+                distinct = open_due(page, {'btwn': [0, 0, 1, 3], 'streak': 4, 'med': 999, 'avg': 999, 'z_median': 8})
+                assert metrics(page) == {"Current gap": "4 games", "Median gap": "0.5 games", "Average gap": "1 games"}
+                assert_z(page, 'Z +2.12')
+                assert_due_references(page, distinct, [4, 1, .5], ['Current 4', 'Average 1', 'Median 0.5'])
+                screenshot = Path(gettempdir()) / f'nhl-history-due-{width}.png'
+                page.screenshot(path=str(screenshot))
+                print(f'Screenshot: {screenshot}')
+
+                negative = open_due(page, {'btwn': [4, 5, 6, 7], 'streak': 3, 'z': -1.94, 'z_median': 9})
+                assert_z(page, 'Z -1.94')
+                assert_due_references(page, negative, [3, 5.5], ['Current 3', 'Average / Median 5.5'])
+                coincident = open_due(page, {'btwn': [0, 2, 4], 'streak': 2, 'z': 0, 'z_median': 9})
+                assert_z(page, 'Z 0.00')
+                assert_due_references(page, coincident, [2], ['Current / Average / Median 2'])
+                missing_z = open_due(page, {'btwn': [0, 1, 2, 3], 'streak': 4, 'z_median': 9})
+                assert_z(page, 'Z +1.94')
+                assert_due_references(page, missing_z, [4, 1.5], ['Current 4', 'Average / Median 1.5'])
+                open_due(page, {'btwn': [0, 1, 2, 3], 'streak': 4, 'z': 1.9, 'z_median': 9})
+                assert_z(page, 'Z +1.90')  # Preserve a valid feed z rather than substituting z_median or recomputing it.
             page.evaluate("NhlHistory.close()")
 
             click_row(page, "history alpha", modifiers=["Control"])

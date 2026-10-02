@@ -324,6 +324,12 @@
 			const select = document.getElementById('book-select');
 			const picker = document.getElementById('book-picker');
 			if (!select || !picker) return;
+			const available = new Set(Object.values(RES?.xy || {}).flatMap(books => Object.keys(books || {})));
+			const preferred = Array.from(select.options, option => option.value);
+			const books = [...new Set([...preferred, ...ALL_WEIGHTABLE_BOOKS, ...available])].filter(book => available.has(book));
+			const labels = { best: 'Best', kambi: 'Kambi' };
+			select.replaceChildren(...books.map(book => new Option(labels[book] || book.toUpperCase().replaceAll('_', ' '), book)));
+			if (!available.has(BOOK)) BOOK = available.has('fd') ? 'fd' : books[0] || '';
 			picker.innerHTML = '';
 			Array.from(select.options).forEach(opt => {
 				const btn = document.createElement('button');
@@ -340,7 +346,7 @@
 				btn.addEventListener('click', () => {
 					BOOK = opt.value;
 					select.value = BOOK;
-					document.querySelectorAll('.book-chip').forEach(c => c.classList.toggle('active', c === btn));
+					picker.querySelectorAll('.book-chip').forEach(c => c.classList.toggle('active', c === btn));
 					btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
 					updateHeatmap();
 				});
@@ -351,8 +357,8 @@
 			if (active) active.scrollIntoView({inline: 'center'});
 		}
 
-		// init devig picker by reading available dev keys from the gz JSON (union across books)
-        async function initDevPicker(data){
+		// Read the devig references available for the selected betting book.
+        function initDevPicker(data){
 			const devSet = new Set(Object.keys(data || {}));
 			const picker = document.getElementById('dev-picker');
 			const hidden = document.getElementById('devig-select');
@@ -366,7 +372,13 @@
 					return (typeof rec?.roi === 'number') ? rec.roi : -Infinity;
 				} catch { return -Infinity; }
 			};
-		Array.from(devSet).sort((a, b) => getRoi(b) - getRoi(a)).forEach(dev => {
+			const devs = Array.from(devSet).sort((a, b) => getRoi(b) - getRoi(a));
+			DEVIG = devs.find(dev => devigSetEquals(dev, DEVIG)) || devs[0] || '';
+			if (hidden) {
+				hidden.replaceChildren(...devs.map(dev => new Option(dev.toUpperCase(), dev)));
+				hidden.value = DEVIG;
+			}
+			devs.forEach(dev => {
 				// wrapper holds the chip button and the small record line beneath
 				const wrap = document.createElement('div');
 				wrap.className = 'dev-chip-wrap';
@@ -485,13 +497,15 @@
 
 			//let bets = await loadGzJson(gzUrl);
 			//RES = bets;
-			initDevPicker(RES["xy"][cfg.prop][cfg.bookLabel]);
+			const bookData = RES?.xy?.[cfg.prop]?.[cfg.bookLabel] || {};
+			initDevPicker(bookData);
+			cfg.devLabel = DEVIG;
 
 			// Server ships pre-binned bets - evIdx -> oddsIdx -> [wins, losses, profitSum] -
 			// at a fine grid (RES.grid) instead of one row per historical bet, so we fold
 			// each fine bin into whichever display bin (cfg.evStep/oddsStep, user-selectable)
 			// its midpoint falls into, rather than filtering/binning raw bets.
-			const fineBins = RES["xy"][cfg.prop][cfg.bookLabel][cfg.devLabel];
+			const fineBins = bookData[cfg.devLabel];
 			const grid = RES["grid"];
 
 			// bins
@@ -595,6 +609,11 @@
 			}
 
 			if (MOBILE) annotations = [];
+			if (!fineBins) annotations = [{
+				xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
+				text: 'No historical data for this book and prop.', showarrow: false,
+				font: { color: '#bfc6cc', size: 13 }
+			}];
 
 			// build Plotly trace
 			const trace = {
@@ -782,22 +801,14 @@
 		}
 
 		async function init() {
-			initBookPicker();
 			RES = await loadGzJson(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);
 			RECORD = RES["record"];
 			initPropPicker(RES["xy"]);
+			initBookPicker();
 			updateHeatmap();
 		}
 
 		function updateHeatmap() {
-			const params = new URLSearchParams(window.location.search);
-			params.set("sport", SPORT);
-			params.set("book", BOOK);
-			params.set("devig", DEVIG);
-			params.set("prop", PROP);
-			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
-
 			const [evRange, oddsRange] = getRanges();
 
             const evStep = selEvStep ? Number(selEvStep.value) : 1;
@@ -809,6 +820,13 @@
 				evStep: evStep, oddsStep: oddsStep,
 				evRange: evRange, oddsRange: oddsRange
 			});
+			const params = new URLSearchParams(window.location.search);
+			params.set("sport", SPORT);
+			params.set("book", BOOK);
+			params.set("devig", DEVIG);
+			params.set("prop", PROP);
+			const newUrl = `${window.location.pathname}?${params.toString()}`;
+			history.pushState({}, '', newUrl);
 		}
 
 		async function downloadHeatmapImage(){

@@ -2,7 +2,7 @@
 	const views = { due: 'Due', logs: 'Logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' };
 	const logFields = { logs: 'logs', bvt: 'bvtLogs', away: 'awayLogs', home: 'homeLogs' };
 	const props = { atgs: 'Goals', fgs: 'First goal', lgs: 'Last goal', sog: 'Shots on goal', ast: 'Assists', pts: 'Points', sv: 'Saves', bs: 'Blocked shots', pp_pts: 'Power play points' };
-	const colors = { hit: '#36d399', miss: '#c57580', push: '#94a3b8', gap: '#659be8', current: '#c388ff' };
+	const colors = { hit: '#36d399', miss: '#c57580', push: '#94a3b8', gap: '#659be8', current: '#c388ff', average: '#f2bd60', median: '#5dd8cf' };
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
 	const display = value => Number.isInteger(value) ? String(value) : Number(value.toFixed(1)).toString();
@@ -99,13 +99,24 @@
 
 	function summary(items) {
 		const container = dialog.querySelector('.nhl-history-stats');
-		container.replaceChildren(...items.map(([label, value]) => {
+		container.replaceChildren(...items.map(([label, value, detail]) => {
 			const item = document.createElement('div');
 			const name = document.createElement('span');
 			name.textContent = label;
 			const metric = document.createElement('strong');
 			metric.textContent = value;
-			item.append(name, metric);
+			const content = document.createElement('div');
+			content.className = 'nhl-history-value';
+			content.append(metric);
+			if (detail) {
+				const badge = document.createElement('small');
+				badge.className = 'nhl-history-z';
+				badge.textContent = detail.text;
+				badge.title = detail.title;
+				badge.setAttribute('aria-label', detail.title);
+				content.append(badge);
+			}
+			item.append(name, content);
 			return item;
 		}));
 	}
@@ -141,8 +152,33 @@
 		// The feed can leave med/avg at zero for a single gap; use the plotted sample.
 		const median = (sorted[middle] + sorted[Math.ceil(sorted.length / 2) - 1]) / 2;
 		const average = due.gaps.reduce((a, b) => a + b, 0) / due.gaps.length;
-		summary([['Current gap', `${display(due.streak)} games`], ['Median gap', `${display(median)} games`], ['Average gap', `${display(average)} games`]]);
-		dialog.querySelector('.nhl-history-note').textContent = `Career games between goals · ${due.gaps.length} completed gaps. Purple marks the current gap.`;
+		const sd = due.gaps.length > 1 ? Math.sqrt(due.gaps.reduce((sum, gap) => sum + (gap - average) ** 2, 0) / (due.gaps.length - 1)) : 0;
+		// The feed's mean-based score is `z`; zero is a placeholder when SD is zero.
+		const score = sd > 0 ? (numeric(due.z) ? due.z : (due.streak - average) / sd) : null;
+		const z = numeric(score) ? Number(score.toFixed(2)) : null;
+		const zDetail = z === null
+			? { text: 'Z N/A', title: 'Z-score unavailable: at least two completed gaps with variation are needed.' }
+			: { text: `Z ${z > 0 ? '+' : ''}${z.toFixed(2)}`, title: z === 0 ? 'Z-score: current gap is at the average gap.' : `Z-score: current gap is ${Math.abs(z).toFixed(2)} standard deviations ${z < 0 ? 'below' : 'above'} the average gap.` };
+		summary([['Current gap', `${display(due.streak)} games`], ['Median gap', `${display(median)} games`], ['Average gap', `${display(average)} games`, zDetail]]);
+		const markers = [];
+		for (const [label, value, color, dash] of [
+			['Current', due.streak, colors.current, 'dash'],
+			['Average', average, colors.average, 'dashdot'],
+			['Median', median, colors.median, 'dot']
+		]) {
+			const existing = markers.find(marker => Math.abs(marker.value - value) < 1e-9);
+			if (existing) existing.labels.push(label);
+			else markers.push({ labels: [label], value, color, dash });
+		}
+		dialog.querySelector('.nhl-history-legend').replaceChildren(...markers.map(marker => {
+			const label = document.createElement('span');
+			label.className = 'history-reference';
+			label.style.setProperty('--reference-color', marker.color);
+			label.style.setProperty('--reference-style', marker.dash === 'dot' ? 'dotted' : 'dashed');
+			label.textContent = `${marker.labels.join(' / ')} ${display(marker.value)}`;
+			return label;
+		}));
+		dialog.querySelector('.nhl-history-note').textContent = `Career games between goals · ${due.gaps.length} completed gaps. Lines mark the current, average and median gaps.`;
 		draw([{
 			type: 'bar', x, y, text: y.map(String), textposition: 'outside', cliponaxis: false,
 			marker: { color: x.map(gap => gap === due.streak ? colors.current : colors.gap) },
@@ -150,7 +186,7 @@
 		}], {
 			xaxis: { title: { text: 'Games between goals' }, range: [-0.8, Math.max(...x, due.streak) + 0.8], showgrid: false, fixedrange: true, dtick: Math.max(...x, due.streak) < 20 ? 1 : undefined },
 			yaxis: { title: { text: 'Occurrences' }, range: [0, Math.max(...y) * 1.25 + 0.5], gridcolor: '#263445', zeroline: false, fixedrange: true },
-			shapes: [{ type: 'line', x0: due.streak, x1: due.streak, y0: 0, y1: 1, yref: 'paper', line: { color: colors.current, dash: 'dash', width: 2 } }],
+			shapes: markers.map(marker => ({ type: 'line', x0: marker.value, x1: marker.value, y0: 0, y1: 1, yref: 'paper', line: { color: marker.color, dash: marker.dash, width: 2 } })),
 			annotations: [{ x: due.streak, y: 1.04, yref: 'paper', text: `Current ${display(due.streak)}`, showarrow: false, font: { color: colors.current } }]
 		});
 	}

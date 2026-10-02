@@ -14,7 +14,7 @@
   const bookNames = { circa: 'Circa', pn: 'Pinnacle', fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', mgm: 'BetMGM', cz: 'Caesars', br: 'BetRivers', espn: 'ESPN BET', fn: 'Fanatics', hr: 'Hard Rock', bv: 'Bovada', bol: 'BetOnline', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi', kambi: 'Kambi', re: 'Rebet', fl: 'Fliff', poly: 'Polymarket', hr_az: 'Hard Rock AZ', hr_oh: 'Hard Rock OH' };
   const propNames = { hr: 'Home runs', h: 'Hits', r: 'Runs', rbi: 'RBIs', tb: 'Total bases', so: 'Strikeouts', k: 'Strikeouts', attd: 'Anytime touchdown', anytime_td: 'Anytime touchdown', td: 'Touchdowns', atgs: 'Anytime goalscorer', g: 'Goals', goals: 'Goals', sog: 'Shots on goal', shots: 'Shots on goal', pts: 'Points', points: 'Points', reb: 'Rebounds', ast: 'Assists', pass_yd: 'Passing yards', rush_yd: 'Rushing yards', rec_yd: 'Receiving yards', rec: 'Receptions', ml: 'Moneyline', spread: 'Spread', total: 'Total' };
   const bookName = key => bookNames[key] || title(key);
-  const propName = key => propNames[key] || title(key);
+  const propName = key => key === 'atgs' && SPORT === 'nhl' ? 'Anytime goalscorer (1+)' : propNames[key] || title(key);
   const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '—';
   const gameTime = value => value && Number.isFinite(Date.parse(value)) ? `${new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}, ${time(value)} ET` : '—';
   const easternDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -48,19 +48,38 @@
     const line = String(row.prop).includes('spread') && Number(row.side) === 1 && finite(row.handicap) ? -Number(row.handicap) : row.handicap;
     return `${propName(row.prop)} · ${title(sideName(row))}${hasLine ? ` ${line}` : ''}`;
   }
+  function visibleMarket(row) { return SPORT !== 'nhl' || row.prop !== 'atgs' || (finite(row.handicap) && Number(row.handicap) === .5); }
+  function fairTime(row, endpoint) {
+    const key = endpoint === 'first' ? 'first_fair_at' : 'current_fair_at';
+    return key in row ? row[key] : finite(row[`${endpoint}_fair`]) ? row[endpoint === 'first' ? 'first_at' : 'last_at'] : null;
+  }
+  function fairBooks(row, endpoint) {
+    const value = row[`${endpoint}_reference_books`];
+    return Array.isArray(value) ? value : row.reference_books || [];
+  }
+  function fairCoverage(row, endpoint) {
+    if (!finite(row[`${endpoint}_fair`])) return 'No paired quotes';
+    const books = fairBooks(row, endpoint);
+    return books.length === 1 ? `Single book · ${bookName(books[0])}` : books.length ? `${books.length} books · ${books.map(bookName).join(', ')}` : 'Reference unavailable';
+  }
   function referenceName() { return $('reference-select').value === 'consensus' ? 'Sportsbook consensus' : bookName($('reference-select').value); }
   function rowStatus(row) {
     if (row.start && Date.parse(row.start) <= Date.now()) return 'started';
     if (row.last_at && Date.now() - Date.parse(row.last_at) > (catalog?.max_age_minutes || 60) * 60000) return 'stale';
     return row.status || 'ok';
   }
-  function usableMove(row) { return ['started', 'stale'].includes(rowStatus(row)) ? null : row.change_pp; }
+  function singleFairCapture(row) { return !!row.first_fair_at && row.first_fair_at === row.current_fair_at; }
+  function usableMove(row) { return singleFairCapture(row) || row.fair_comparable === false || ['started', 'stale'].includes(rowStatus(row)) ? null : row.change_pp; }
   function statusLabel(row) {
     const status = rowStatus(row);
     if (status === 'started') return 'Game started';
     if (status === 'stale') return 'Capture out of date';
+    if (!finite(row.first_fair) && !finite(row.current_fair)) return 'Paired quotes unavailable';
+    if (!finite(row.first_fair) || !finite(row.current_fair)) return 'Fair comparison unavailable';
+    if (singleFairCapture(row)) return 'Awaiting next fair capture';
+    if (row.fair_comparable === false) return 'No matched comparison';
     if (finite(row.change_pp)) return Number(row.change_pp) > 0 ? 'Shortening' : Number(row.change_pp) < 0 ? 'Drifting' : 'Unchanged';
-    return Number(row.point_count) < 2 ? 'Awaiting next capture' : 'Fair value unavailable';
+    return Number(row.point_count) < 2 ? 'Awaiting next capture' : 'Fair comparison unavailable';
   }
   function moveClass(row) { const value = usableMove(row); return finite(value) && Number(value) > 0 ? 'shortening' : finite(value) && Number(value) < 0 ? 'drifting' : 'unchanged'; }
   function syncURL() {
@@ -163,8 +182,8 @@
   }
   function renderRows() {
     if (!catalog) return;
-    const rows = (catalog.rows || []).filter(row => $('direction-select').value === 'all' || finite(usableMove(row)));
-    $('catalog-rows').innerHTML = rows.map(row => `<tr data-id="${esc(row.id)}" class="${row.id === selectedId ? 'is-selected' : ''}"><td><strong>${esc(title(row.player || row.game))}</strong><small>${esc(marketName(row))}</small><small>${esc(String(row.game || '').toUpperCase())} · ${esc(gameTime(row.start))}</small></td><td><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)}</small></td><td><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small></td><td class="${moveClass(row)}"><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></td><td>${esc(time(row.first_at))} → ${esc(time(row.last_at))}<small>${Number(row.point_count) || 0} captured points</small></td><td><button class="chart-row" type="button" aria-label="Chart ${esc(title(row.player || row.game))}, ${esc(marketName(row))}" aria-pressed="${row.id === selectedId}">Chart</button></td></tr>`).join('');
+    const rows = (catalog.rows || []).filter(row => visibleMarket(row) && ($('direction-select').value === 'all' || finite(usableMove(row))));
+    $('catalog-rows').innerHTML = rows.map(row => `<tr data-id="${esc(row.id)}" class="${row.id === selectedId ? 'is-selected' : ''}"><td><strong>${esc(title(row.player || row.game))}</strong><small>${esc(marketName(row))}</small><small>${esc(String(row.game || '').toUpperCase())} · ${esc(gameTime(row.start))}</small></td><td><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)}</small><small class="fair-coverage">${esc(fairCoverage(row, 'first'))}</small></td><td><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small><small class="fair-coverage">${esc(fairCoverage(row, 'current'))}</small></td><td class="${moveClass(row)}"><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></td><td>${esc(time(fairTime(row, 'first')))} → ${esc(time(fairTime(row, 'current')))}<small>${Number(row.point_count) || 0} captured points</small></td><td><button class="chart-row" type="button" aria-label="Chart ${esc(title(row.player || row.game))}, ${esc(marketName(row))}" aria-pressed="${row.id === selectedId}">Chart</button></td></tr>`).join('');
     $('catalog-wrap').hidden = rows.length === 0;
     const filtered = $('player-search').value.trim() || selectedProps.size || $('direction-select').value !== 'all' || $('side-select').value !== '0';
     notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another player, prop or side.' : 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.');
@@ -176,7 +195,7 @@
   }
   function renderMetrics(row) {
     $('selection-metrics').hidden = false;
-    $('selection-metrics').innerHTML = `<div><span>First captured fair</span><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)} · ${esc(time(row.first_at))} ET</small></div><div><span>Latest captured fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)} · ${esc(time(row.last_at))} ET</small></div><div><span>Fair probability move</span><strong class="${moveClass(row)}">${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></div>`;
+    $('selection-metrics').innerHTML = `<div><span>First captured fair</span><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)} · ${esc(time(fairTime(row, 'first')))} ET</small><small>${esc(fairCoverage(row, 'first'))}</small></div><div><span>Latest captured fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)} · ${esc(time(fairTime(row, 'current')))} ET</small><small>${esc(fairCoverage(row, 'current'))}</small></div><div><span>Fair probability move</span><strong class="${moveClass(row)}">${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></div>`;
   }
   function implied(value) { return finite(value) && Math.abs(Number(value)) >= 100 ? (Number(value) > 0 ? 100 / (Number(value) + 100) : -Number(value) / (-Number(value) + 100)) : null; }
   function fairFromProbability(p) { return p >= .5 ? -100 * p / (1 - p) : 100 * (1 - p) / p; }
@@ -278,8 +297,13 @@
     let message = '';
     if (rowStatus(row) === 'started') message = 'Game started. Showing captured pre-game history; this selection is no longer ranked as a current mover.';
     else if (rowStatus(row) === 'stale') message = 'These captures are out of date. Showing recorded history; this selection is no longer ranked as a current mover.';
-    else if (!points.some(point => finite(point.probability))) message = 'Fair value unavailable: paired prices are missing, or consensus has fewer than two matched sportsbooks. Available book prices are shown below.';
+    else if (row.note) message = row.note;
+    else if (!points.some(point => finite(point.probability))) message = finite(row.first_fair) || finite(row.current_fair)
+      ? 'First and latest available fair values are shown above with their reference books. Fewer than two sportsbooks have matched paired prices, so no consensus movement is ranked or connected on the chart.'
+      : 'Fair value unavailable: actual paired prices are missing. Available book prices are shown below; missing opposite-side quotes are never estimated.';
+    else if (singleFairCapture(row)) message = 'First usable fair capture recorded. Movement appears after another capture with matching paired prices.';
     else if (Number(row.point_count) < 2) message = 'First capture recorded. Movement appears after a second capture.';
+    if (row.note && message !== row.note) message = `${message} ${row.note}`.trim();
     notice('chart-status', message);
     if (!points.length) { $('movement-chart').hidden = true; notice('chart-status', 'No recorded prices for this selection today.'); return; }
     const probabilityScale = $('chart-scale').value === 'probability';
@@ -301,7 +325,7 @@
       hovertemplate: '<b>Fair %{customdata[1]}</b><br>%{customdata[0]}<br>Fair probability: %{y:.2f}%<extra></extra>',
     });
     $('chart-footnote').hidden = false;
-    $('chart-footnote').textContent = `Bold green is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are quoted book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. Times are Eastern.`;
+    $('chart-footnote').textContent = `${points.some(point => finite(point.probability)) ? `Bold green is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are` : 'Lines are'} quoted book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. ${row.fair_comparable === false && $('reference-select').value === 'consensus' ? 'Endpoint fair values above may use different books and are not connected as a consensus move. ' : ''}Times are Eastern.`;
     if (!traces.length) { $('movement-chart').hidden = true; notice('chart-status', 'Select a sportsbook to display its captured prices.'); return; }
     if (!window.Plotly) { notice('chart-status', 'The chart could not load. Refresh this page to try again.'); return; }
     const yValues = traces.flatMap(trace => trace.y).filter(finite);
@@ -342,7 +366,7 @@
       if (version !== detailVersion || !data) return;
       if (resetDay() || data.day !== day || data.sport !== SPORT) { clearChart('Waiting for today’s captures.'); return; }
       detail = data;
-      if (!data.selection) { clearChart('No recorded prices for this selection today.'); return; }
+      if (!data.selection || !visibleMarket(data.selection)) { clearChart(`No recorded prices for this selection today.${SPORT === 'nhl' ? ' NHL anytime goalscorer history includes only the 0.5 line (1+ goal).' : ''}`); return; }
       renderChart();
     } catch (error) {
       if (version === detailVersion) {
@@ -367,12 +391,17 @@
       $('movement-content').hidden = false;
       if (data.day !== day || data.sport !== SPORT) { clearRows('Waiting for today’s captures.'); clearChart('Waiting for today’s captures.'); notice('request-status', 'Today’s capture file is not available yet.'); return; }
       const previousUpdate = catalog?.updated;
+      // Older API deployments may still return alternate ATGS lines. Keep their
+      // server offsets for pagination; new payloads arrive filtered already.
+      const originalRowCount = (data.rows || []).length;
+      data.rows = (data.rows || []).filter(visibleMarket);
+      if (!offset && data.total === originalRowCount) data.total = data.rows.length;
       catalog = data;
       renderOptions(data); renderRows();
       $('updated').textContent = data.updated ? `Latest capture ${time(data.updated)} ET` : 'Waiting for first capture';
       const interval = Number(data.interval_minutes) || 30;
       $('day-note').textContent = `Today only · Resets at midnight Eastern · Pre-game captures about every ${interval} minutes`;
-      $('capture-methodology').textContent = `History starts with the first observed pre-game capture today, not a sportsbook’s official opening price. New captures are recorded about every ${interval} minutes. Each handicap is tracked separately. History resets at midnight Eastern. Captures older than ${Number(data.max_age_minutes) || 60} minutes and started games are excluded from current mover rankings; their recorded charts remain available today.`;
+      $('capture-methodology').textContent = `History starts with the first observed pre-game capture today, not a sportsbook’s official opening price. New captures are recorded about every ${interval} minutes. Each handicap is tracked separately; NHL anytime goalscorer includes only 0.5 (1+ goal). Fair timestamps mark usable paired prices, which may begin after the first raw capture. History resets at midnight Eastern. Captures older than ${Number(data.max_age_minutes) || 60} minutes and started games are excluded from current mover rankings; their recorded charts remain available today.`;
       notice('request-status', data.status === 'stale' ? 'The latest capture is out of date. Showing recorded history while waiting for a new capture.' : data.status === 'awaiting_today' ? 'Waiting for today’s first capture. Yesterday’s history has been cleared.' : '');
       const rows = data.rows || [];
       const chosen = rows.find(row => row.id === selectedId) || rows[0];

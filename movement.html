@@ -6,7 +6,7 @@
   <title>Line movement | +EV Sharps</title>
   <meta name="description" content="Search today's captured player and team markets, chart sportsbook prices and compare the largest changes in fair probability.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="movement.css">
+  <link rel="stylesheet" href="movement.css?v=20261002-fair2">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="movement-page">
@@ -55,23 +55,23 @@
       </section>
       <section class="panel slate-panel" aria-labelledby="slate-title">
         <div class="section-heading"><div><p class="eyebrow">ACROSS THE SLATE</p><h2 id="slate-title">Biggest fair value moves</h2></div><span id="catalog-count" role="status"></span></div>
-        <p class="muted slate-help">Ranked by change in fair probability from the first capture to the latest. A positive move means a shorter fair price; a negative move means a longer price. Select a row to chart its exact line.</p>
+        <p class="muted slate-help">Ranked by change in fair probability from the first usable matched capture to the latest. First and latest fair values show their actual capture times and reference books; unmatched values are not ranked as moves. A positive move means a shorter fair price; a negative move means a longer price. Select a row to chart its exact line.</p>
         <p id="empty-slate" class="empty-state" role="status" hidden></p>
         <div id="catalog-wrap" class="table-wrap" role="region" aria-label="Today's line movement selections" tabindex="0">
-          <table class="movement-table"><caption class="sr-only">Fair odds and probability changes for each exact player or team market</caption><thead><tr><th>Selection</th><th>First fair</th><th>Latest fair</th><th>Move</th><th>Captured (ET)</th><th class="chart-column"><span class="sr-only">Chart</span></th></tr></thead><tbody id="catalog-rows"></tbody></table>
+          <table class="movement-table"><caption class="sr-only">Fair odds and probability changes for each exact player or team market</caption><thead><tr><th>Selection</th><th>First fair</th><th>Latest fair</th><th>Move</th><th>Fair captures (ET)</th><th class="chart-column"><span class="sr-only">Chart</span></th></tr></thead><tbody id="catalog-rows"></tbody></table>
         </div>
         <div class="pagination" id="pagination" hidden><button id="previous-page" type="button">Previous</button><span id="page-range"></span><button id="next-page" type="button">Next</button></div>
       </section>
       <details class="panel methodology"><summary>How to read these moves</summary>
         <p>Fair value removes the sportsbook margin by dividing each side's implied probability by the sum of all sides at the same book. Both sides are required (all three for a three-way market); missing prices are never invented.</p>
-        <p>Sportsbook consensus averages fair probabilities from at least two sportsbooks that have valid paired prices at both endpoints. The same group is used through the chart, so a book entering or leaving the feed does not create a false move. Select one reference book to see its fair value alone.</p>
+        <p>Sportsbook consensus compares at least two sportsbooks with actual paired prices at the latest capture and an earlier usable capture. It starts at the first capture with that coverage, even if the earliest raw capture has only one-sided prices. The same group is required throughout the fair chart; missing members create gaps. If there is no matched group, available endpoint fair values are shown separately with their book coverage, including single-book values, without a consensus move. Select one reference book to see its fair value alone; a missing endpoint stays blank.</p>
         <p>Movement is measured in percentage points, not the numerical difference between American prices. The chart's American-odds axis spaces prices by probability, so crossing even money does not create an artificial jump. On the probability scale, book lines show implied probability including margin; the fair line excludes margin.</p>
-        <p id="capture-methodology">History starts with the first observed pre-game capture today, not a sportsbook's official opening price. New captures are recorded about every 30 minutes. Each handicap is tracked separately. History resets at midnight Eastern.</p>
+        <p id="capture-methodology">History starts with the first observed pre-game capture today, not a sportsbook's official opening price. New captures are recorded about every 30 minutes. Each handicap is tracked separately; NHL anytime goalscorer includes only 0.5 (1+ goal). History resets at midnight Eastern.</p>
       </details>
     </div>
   </main>
   <script src="plotly-3.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261002-fair2"></script>
 </body>
 </html>

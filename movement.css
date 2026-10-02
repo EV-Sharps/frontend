@@ -123,3 +123,6 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 @media (max-width: 359px) {
   #book-options { grid-template-columns: minmax(0, 1fr); }
 }
+
+.movement-page .selection-metrics small { display: block; overflow-wrap: anywhere; line-height: 1.5; }
+.movement-table .fair-coverage { white-space: normal; min-width: 110px; max-width: 230px; }

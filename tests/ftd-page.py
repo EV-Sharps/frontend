@@ -110,6 +110,10 @@ try:
 
             row = page.locator("#table .tabulator-row").first
             row.locator('[tabulator-field="ev"]').click()
+            history = page.locator("#nfl-history-dialog")
+            assert history.is_visible()
+            assert history.locator('[data-history-view="due"]').count() == 0
+            history.get_by_role("button", name="Play card", exact=True).click()
             modal = page.locator("#card-modal-overlay")
             assert modal.is_visible()
             assert modal.locator(".data-card.expanded").count() == 1
@@ -118,9 +122,11 @@ try:
             page.locator("#card-modal-close").click()
             assert not modal.is_visible()
             row.locator('[tabulator-field="ev"]').click()
+            history.get_by_role("button", name="Play card", exact=True).click()
             page.keyboard.press("Escape")
             assert not modal.is_visible()
             row.locator('[tabulator-field="ev"]').click()
+            history.get_by_role("button", name="Play card", exact=True).click()
             modal.click(position={"x": 2, "y": 2})
             assert not modal.is_visible()
             assert not errors, errors

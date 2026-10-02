@@ -1,7 +1,5 @@
-(function (root) {
-	const views = { due: 'Due', logs: 'Logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' };
+function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.handicap }) {
 	const logFields = { logs: 'logs', bvt: 'bvtLogs', away: 'awayLogs', home: 'homeLogs' };
-	const props = { atgs: 'Goals', fgs: 'First goal', lgs: 'Last goal', sog: 'Shots on goal', ast: 'Assists', pts: 'Points', sv: 'Saves', bs: 'Blocked shots', pp_pts: 'Power play points' };
 	const colors = { hit: '#36d399', miss: '#c57580', push: '#94a3b8', gap: '#659be8', current: '#c388ff', average: '#f2bd60', median: '#5dd8cf' };
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
@@ -10,14 +8,14 @@
 
 	function dueOf(row) {
 		// Goal-gap history describes any goal, not a 2+ or first-goal result.
-		if (row.prop !== 'atgs' || Number(row.handicap) !== 0.5 || row.under) return null;
+		if (!views.due || row.prop !== 'atgs' || Number(row.handicap) !== 0.5 || row.under) return null;
 		const due = row.due?.g;
 		const gaps = logsOf(due?.btwn).filter(value => Number.isInteger(value) && value >= 0);
 		return gaps.length && numeric(due.streak) && due.streak >= 0 ? { ...due, gaps } : null;
 	}
 
 	function purgeChart() {
-		const chart = dialog?.querySelector('#nhl-history-chart');
+		const chart = dialog?.querySelector(`#${prefix}-chart`);
 		if (chart && root.Plotly) root.Plotly.purge(chart);
 		chart?.remove(); // Disconnect pending lazy renders before changing the view/player.
 	}
@@ -29,16 +27,17 @@
 	function ensureDialog() {
 		if (dialog) return;
 		dialog = document.createElement('dialog');
-		dialog.id = 'nhl-history-dialog';
-		dialog.setAttribute('aria-labelledby', 'nhl-history-title');
+		dialog.id = `${prefix}-dialog`;
+		dialog.className = 'player-history-dialog';
+		dialog.setAttribute('aria-labelledby', `${prefix}-title`);
 		dialog.innerHTML = `
 			<header class="nhl-history-header">
-				<div><h2 id="nhl-history-title"></h2><p class="nhl-history-context"></p></div>
+				<div><h2 id="${prefix}-title" class="player-history-title"></h2><p class="nhl-history-context"></p></div>
 				<button type="button" class="nhl-history-close" aria-label="Close player history">&times;</button>
 			</header>
 			<div class="nhl-history-toolbar">
 				<div class="nhl-history-tabs" role="tablist" aria-label="Player history">
-					${Object.entries(views).map(([key, label]) => `<button type="button" id="nhl-history-tab-${key}" role="tab" aria-controls="nhl-history-panel" data-history-view="${key}">${label}</button>`).join('')}
+					${Object.entries(views).map(([key, label]) => `<button type="button" id="${prefix}-tab-${key}" role="tab" aria-controls="${prefix}-panel" data-history-view="${key}">${label}</button>`).join('')}
 				</div>
 				<div class="nhl-history-ranges" role="group" aria-label="Games shown">
 					<button type="button" data-history-range="10">L10</button>
@@ -46,7 +45,7 @@
 					<button type="button" data-history-range="all">All</button>
 				</div>
 			</div>
-			<section id="nhl-history-panel" role="tabpanel" tabindex="0">
+			<section id="${prefix}-panel" class="player-history-panel" role="tabpanel" tabindex="0">
 				<div class="nhl-history-stats"></div>
 				<p class="nhl-history-note"></p>
 				<div class="nhl-history-plot-scroll"></div>
@@ -88,7 +87,8 @@
 			const data = selected;
 			close();
 			const rows = typeof root.goalComparisonInputRows === 'function' ? root.goalComparisonInputRows(data, RES) : RES?.data || [];
-			root.PlayerLines.open(data, rows, { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
+			const comparisonRow = row => lineOf(row) === row.handicap ? row : { ...row, handicap: lineOf(row) };
+			root.PlayerLines.open(comparisonRow(data), rows.map(comparisonRow), { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
 		};
 		dialog.querySelector('[data-history-action="card"]').onclick = () => {
 			const data = selected;
@@ -124,7 +124,8 @@
 	function draw(traces, layout, count = 0) {
 		const scroll = dialog.querySelector('.nhl-history-plot-scroll');
 		const chart = document.createElement('div');
-		chart.id = 'nhl-history-chart';
+		chart.id = `${prefix}-chart`;
+		chart.className = 'player-history-chart';
 		chart.style.width = `${Math.max(scroll.clientWidth, count * 15 + 65)}px`;
 		chart.setAttribute('role', 'img');
 		chart.setAttribute('aria-label', `${views[view]} for ${title(selected.player)}. ${dialog.querySelector('.nhl-history-note').textContent}`);
@@ -199,7 +200,7 @@
 		const opponent = String(selected.opp || '').toUpperCase();
 		const venue = view === 'away' || view === 'home' ? view : '';
 		const games = view === 'bvt' ? `meetings vs ${opponent || 'this opponent'}` : venue ? `${venue} games` : 'games';
-		const rawLine = selected.handicap;
+		const rawLine = lineOf(selected);
 		const line = rawLine === null || rawLine === undefined || rawLine === '' ? NaN : Number(rawLine);
 		const hasLine = Number.isFinite(line);
 		if (!values.length) {
@@ -218,6 +219,7 @@
 		if (hasLine) dialog.querySelector('.nhl-history-legend').innerHTML = '<span class="history-hit">Hit</span><span class="history-miss">Miss</span><span class="history-push">Push</span><span>Dashed: selected line</span>';
 		const x = values.map((_, index) => index + 1);
 		const max = Math.max(...values, hasLine ? line : 0, 1);
+		const min = Math.min(0, ...values);
 		const labels = values.map((_, index) => index === values.length - 1 ? 'Latest' : `${values.length - index - 1} ago`);
 		const step = Math.max(1, Math.ceil(values.length / (innerWidth < 600 ? 5 : 10)));
 		const tickvals = x.filter((value, index) => index % step === 0 || value === values.length);
@@ -228,7 +230,7 @@
 			hovertemplate: '%{customdata[0]}<br>%{y} · %{customdata[1]}<extra></extra>'
 		}], {
 			xaxis: { title: { text: view === 'bvt' ? `Games vs ${opponent || 'opponent'}` : venue ? `${views[view]} games` : 'Recent games' }, tickvals, ticktext: tickvals.map(value => labels[value - 1]), showgrid: false, fixedrange: true },
-			yaxis: { title: { text: props[selected.prop] || convertProp(selected.prop) }, range: [Math.min(0, ...values), max * 1.2 + 0.5], dtick: max < 10 ? 1 : undefined, gridcolor: '#263445', zeroline: false, fixedrange: true },
+			yaxis: { title: { text: props[selected.prop] || convertProp(selected.prop) }, range: [min < 0 ? min - (max - min) * 0.12 - 0.5 : 0, max * 1.2 + 0.5], dtick: max < 10 ? 1 : undefined, gridcolor: '#263445', zeroline: false, fixedrange: true },
 			shapes: hasLine ? [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: line, y1: line, line: { color: '#dbe7f3', dash: 'dash', width: 1.5 } }] : []
 		}, values.length);
 	}
@@ -241,7 +243,7 @@
 			button.setAttribute('aria-selected', String(button.dataset.historyView === view));
 			button.tabIndex = button.dataset.historyView === view ? 0 : -1;
 		});
-		dialog.querySelector('#nhl-history-panel').setAttribute('aria-labelledby', `nhl-history-tab-${view}`);
+		dialog.querySelector(`#${prefix}-panel`).setAttribute('aria-labelledby', `${prefix}-tab-${view}`);
 		dialog.querySelector('.nhl-history-ranges').hidden = view === 'due';
 		dialog.querySelectorAll('[data-history-range]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.historyRange === range)));
 		if (view === 'due') renderDue(dueOf(selected));
@@ -256,16 +258,37 @@
 		range = '20';
 		const due = dueOf(row);
 		view = due ? 'due' : 'logs';
-		dialog.querySelector('#nhl-history-title').textContent = title(row.player);
-		dialog.querySelector('.nhl-history-context').textContent = `${props[row.prop] || convertProp(row.prop)} · ${row.under ? 'Under' : 'Over'} ${row.handicap ?? ''} · ${String(row.game || row.opp || '').toUpperCase()}`;
+		dialog.querySelector(`#${prefix}-title`).textContent = title(row.player);
+		dialog.querySelector('.nhl-history-context').textContent = `${props[row.prop] || convertProp(row.prop)} · ${row.under ? 'Under' : 'Over'} ${lineOf(row) ?? ''} · ${String(row.game || row.opp || '').toUpperCase()}`;
 		const dueButton = dialog.querySelector('[data-history-view="due"]');
-		dueButton.disabled = !due;
-		dueButton.title = due ? 'Career games between goals' : 'Goal-gap history is not available for this prop and line.';
+		if (dueButton) {
+			dueButton.disabled = !due;
+			dueButton.title = due ? 'Career games between goals' : 'Goal-gap history is not available for this prop and line.';
+		}
 		dialog.querySelector('[data-history-action="prices"]').hidden = !root.PlayerLines;
 		dialog.querySelector('[data-history-action="card"]').hidden = typeof showCardModal !== 'function';
 		if (!dialog.open) dialog.showModal();
 		render();
 	}
 
-	root.NhlHistory = { open, close };
-})(window);
+	return { open, close };
+}
+
+window.NhlHistory = createPlayerHistory(window, {
+	prefix: 'nhl-history',
+	views: { due: 'Due', logs: 'Logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
+	props: { atgs: 'Goals', fgs: 'First goal', lgs: 'Last goal', sog: 'Shots on goal', ast: 'Assists', pts: 'Points', sv: 'Saves', bs: 'Blocked shots', pp_pts: 'Power play points' }
+});
+window.NflHistory = createPlayerHistory(window, {
+	prefix: 'nfl-history',
+	views: { logs: 'Game logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
+	props: {
+		attd: 'Touchdowns', '2+td': 'Touchdowns', '3+td': 'Touchdowns', ftd: 'First touchdown', ltd: 'Last touchdown',
+		pass_yd: 'Passing yards', pass_yds: 'Passing yards', pass_td: 'Passing touchdowns', pass_int: 'Interceptions thrown',
+		pass_att: 'Pass attempts', pass_cmp: 'Completions', rush_yd: 'Rushing yards', rush_yds: 'Rushing yards',
+		rush_att: 'Rush attempts', rec: 'Receptions', rec_yd: 'Receiving yards', rec_yds: 'Receiving yards',
+		'rush+rec_yd': 'Rushing + receiving yards', 'rush+rec_yds': 'Rushing + receiving yards',
+		longest_rec: 'Longest reception', longest_rush: 'Longest rush', 'tackles+ast': 'Tackles + assists'
+	},
+	lineOf: row => row.prop === '2+td' ? 1.5 : row.prop === '3+td' ? 2.5 : row.handicap
+});

@@ -652,6 +652,7 @@
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="player-lines.js"></script>
+	<script src="player-history.js"></script>
 	<script src="nfl-usage.js"></script>
 	<script src="nfl-defense.js"></script>
 	<script src="auth.js"></script>
@@ -867,10 +868,12 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());
 					return;
 				}
+				NflHistory.open(row.getData());
 			});
 		}
 		function closeCardModal() {

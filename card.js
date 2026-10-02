@@ -300,7 +300,7 @@ function cardHitRates(rowData) {
 	};
 	const hasRate = key => number(rates[key]?.p) != null;
 	const logs = (Array.isArray(rowData.logs) ? rowData.logs : []).map(number).filter(value => value != null);
-	const line = number(rowData.handicap);
+	const line = number(rowData.prop === "2+td" ? 1.5 : rowData.prop === "3+td" ? 2.5 : rowData.handicap);
 	const under = rowData.ouIdx == null ? !!rowData.under : rowData.ouIdx == 1;
 	// Older football feeds supply season logs and scalar rates instead of hitRates.
 	if (logs.length && line != null) {

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NHL longshots | +EV Sharps</title>
+  <meta name="description" content="NHL anytime goalscorer longshots, with reference prices, recent shots and historical context.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="recommendations.css">
+  <link rel="stylesheet" href="longshots.css">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="recommendations-page longshots-page">
+  <header class="rec-header">
+    <a class="rec-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>NHL longshots</option></select></div>
+      <a id="account-link" href="profile">Sign in</a>
+    </nav>
+  </header>
+  <main class="rec-main">
+    <div class="rec-intro">
+      <div><p class="rec-eyebrow">NHL ANYTIME GOALSCORER <span>SHARP</span></p>
+        <h1>Longshots</h1>
+        <p class="rec-lede">Model-positive watchlist. +1000 to +3000, with the evidence beside each price.</p></div>
+      <div class="rec-refresh"><span id="report-date">Today's NHL slate</span><small id="generated">Loading latest watchlist...</small>
+        <button id="refresh" type="button">Refresh watchlist <span aria-hidden="true">&#8635;</span></button></div>
+    </div>
+    <div id="request-status" class="rec-notice" role="status" hidden></div>
+    <div id="freshness-status" class="rec-notice" role="status" hidden></div>
+    <section id="access-panel" class="rec-empty" hidden>
+      <h2>Longshots are included with Sharp</h2><p>Sign in with your Sharp account to see the NHL watchlist.</p>
+      <a id="access-login" class="rec-button" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a>
+    </section>
+    <div id="report-content" aria-busy="true">
+      <div class="rec-summary" aria-label="Watchlist summary">
+        <div><strong id="pick-count">-</strong><span>Fresh offers</span></div>
+        <div><strong id="research-count">-</strong><span>Research matches</span></div>
+        <div><strong id="book-count">-</strong><span>Books checked</span></div>
+      </div>
+      <section aria-label="Longshot offers">
+        <div class="rec-filters ls-filters">
+          <label>Book<select id="book-filter"><option value="">All books</option></select></label>
+          <label>Position<select id="position-filter"><option value="">All positions</option><option value="F">Forwards</option><option value="D">Defensemen</option><option value="C">Centers</option><option value="LW">Left wings</option><option value="RW">Right wings</option></select></label>
+          <label class="ls-search">Player or game<input id="search-filter" type="search" placeholder="Search the watchlist" autocomplete="off"></label>
+          <label class="ls-research-filter"><input id="research-filter" type="checkbox">Research matches only <small>FanDuel / Hard Rock probit &middot; team goals &ge; 3</small></label>
+        </div>
+        <details class="ls-context-filters"><summary>Optional context filters</summary><div class="rec-filters">
+          <label>Minimum last-10 SOG<input id="sog-filter" type="number" min="0" step="0.1" placeholder="Any"></label>
+          <label>Minimum estimated team goals<input id="goals-filter" type="number" min="0" step="0.1" placeholder="Any"></label>
+          <p>Both positions and all shot volumes are included by default. An active minimum excludes missing values; history does not recalculate for these filters.</p>
+        </div></details>
+        <p id="list-caption" class="rec-caption" aria-live="polite">Loading today's published offers.</p>
+        <div id="empty-state" class="rec-empty" hidden><h2>No qualifying offers</h2><p>The watchlist will appear when fresh prices meet the criteria.</p></div>
+        <div id="picks-table-wrap" class="rec-table-wrap" role="region" aria-label="Longshot watchlist" tabindex="0" hidden>
+          <table class="rec-table ls-table">
+            <caption class="sr-only">NHL longshot offers grouped by book. Expand an offer for all reference comparisons and opening and closing history.</caption>
+            <thead><tr><th scope="col">Player / Game</th><th scope="col">Book / Odds</th><th scope="col">Primary reference / EV</th><th scope="col">Position</th><th scope="col">Last-10 SOG</th><th scope="col">Est. team goals</th><th scope="col">Historical context</th><th scope="col"><span class="sr-only">Offer details</span></th></tr></thead>
+            <tbody id="picks"></tbody>
+          </table>
+        </div>
+        <button id="show-more" type="button" aria-controls="picks" hidden>Show more</button>
+      </section>
+      <aside class="rec-sidebar ls-sidebar">
+        <details class="rec-method"><summary><strong>How to read this watchlist</strong><span>Model and research context</span></summary><div class="rec-method-body">
+          <dl id="criteria"></dl>
+          <p>Research matches identify FanDuel offers positive against Hard Rock under probit with estimated team goals of at least 3. This is an exploratory subset, not a validated profit forecast. Other books can still have model-positive offers.</p>
+          <p>Stored history covers the original +1000 to +3000, EV &ge; 0 opening and closing cohorts. Many strategies were inspected; neither season is an untouched holdout. The live screen excludes a problematic region of one-sided reference prices, so the stored ROI does not precisely backtest today's guarded screen.</p>
+          <p>Position, recent shots and team goals are context. Custom filters do not recalculate the historical cohorts. The same player at different books represents alternative offers.</p>
+          <p>Opening means the saved approximately 10 a.m. Eastern baseline; closing means 30 minutes before scheduled start. These cohorts can overlap. Historical stakes were one unit per selection.</p>
+        </div></details>
+        <details class="rec-coverage"><summary>Book coverage</summary><div id="coverage">Loading...</div></details>
+      </aside>
+    </div>
+  </main>
+  <footer class="rec-footer">Prices and lineups can change. Verify the market and current price at the book. Estimated value and historical returns do not promise profit.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+  <script src="auth.js"></script>
+  <script src="longshots.js"></script>
+</body>
+</html>

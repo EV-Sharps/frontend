@@ -215,6 +215,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
 			{ label: "ATGS Parlays", value: "parlays?market=atgs" },
+			{ label: "Longshots", value: "longshots", sharp: true },
 			{ label: "Line Movement", value: "movement?sport=nhl", sharp: true },
 			{ label: "📊 Results", value: "analysis?sport=nhl" },
 		]

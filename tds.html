@@ -649,6 +649,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="player-lines.js"></script>
+	<script src="player-history.js"></script>
 	<script src="nfl-usage.js"></script>
 	<script src="nfl-defense.js"></script>
 	<script src="auth.js"></script>
@@ -874,11 +876,12 @@
 			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
-				if (e.target.closest('.watchlist-star')) return;
+				if (e.target.closest('a, button, input, select, .watchlist-star')) return;
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());
 					return;
 				}
+				NflHistory.open(row.getData());
 			});
 
 			TABLE.on("dataLoaded", function(data) {

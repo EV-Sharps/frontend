@@ -46,6 +46,7 @@
           <label class="ls-research-filter"><input id="research-filter" type="checkbox">Research matches only <small>FanDuel / Hard Rock probit &middot; team goals &ge; 3</small></label>
         </div>
         <details class="ls-context-filters"><summary>Optional context filters</summary><div class="rec-filters">
+          <label>Minimum primary EV (%)<input id="ev-filter" type="number" min="0" step="1" placeholder="Any"></label>
           <label>Minimum last-10 SOG<input id="sog-filter" type="number" min="0" step="0.1" placeholder="Any"></label>
           <label>Minimum estimated team goals<input id="goals-filter" type="number" min="0" step="0.1" placeholder="Any"></label>
           <p>Both positions and all shot volumes are included by default. An active minimum excludes missing values; history does not recalculate for these filters.</p>

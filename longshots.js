@@ -141,11 +141,12 @@
     if (!report) return;
     const now = Date.now(), fresh = availablePicks(now), book = $('book-filter').value, pos = $('position-filter').value;
     const search = $('search-filter').value.trim().toLowerCase(), onlyResearch = $('research-filter').checked;
-    const minSog = $('sog-filter').value, minGoals = $('goals-filter').value;
+    const minEv = $('ev-filter').value, minSog = $('sog-filter').value, minGoals = $('goals-filter').value;
     const shown = fresh.filter(pick => (!book || pick.book === book)
       && (!pos || (pos === 'F' ? ['F', 'W', 'C', 'LW', 'RW'].includes(position(pick.position)) : position(pick.position) === pos))
       && (!search || `${pick.player} ${pick.game} ${pick.team || ''}`.toLowerCase().includes(search))
       && (!onlyResearch || researchMatch(pick, now))
+      && (!numeric(minEv) || Number(primaryOf(pick).ev) >= Number(minEv))
       && (!numeric(minSog) || numeric(pick.avgSOG_L10) && numeric(pick.sogGames_L10) && Number(pick.sogGames_L10) >= 5 && Number(pick.avgSOG_L10) >= Number(minSog))
       && (!numeric(minGoals) || numeric(pick.teamTotal) && Number(pick.teamTotal) >= Number(minGoals)));
     const visible = shown.slice(0, visibleLimit);
@@ -233,7 +234,7 @@
   window.refreshLongshots = refresh;
   $('refresh').addEventListener('click', refresh);
   ['book-filter', 'position-filter', 'research-filter'].forEach(id => $(id).addEventListener('change', () => { visibleLimit = 50; render(); }));
-  ['search-filter', 'sog-filter', 'goals-filter'].forEach(id => $(id).addEventListener('input', () => { visibleLimit = 50; render(); }));
+  ['search-filter', 'ev-filter', 'sog-filter', 'goals-filter'].forEach(id => $(id).addEventListener('input', () => { visibleLimit = 50; render(); }));
   $('show-more').addEventListener('click', () => { visibleLimit += 50; render(); });
   ['account-link', 'access-login'].forEach(id => { $(id).href = `profile${HTML}`; });
   $('access-pricing').href = `pricing${HTML}`;

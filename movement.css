@@ -35,7 +35,7 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 #prop-picker > summary { cursor: pointer; border: 1px solid #4a5b67; background: #202b32; border-radius: 4px; padding: 10px 12px; color: #edf3f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .movement-page .prop-menu { position: absolute; z-index: 12; left: 0; right: 0; top: calc(100% + 6px); min-width: 200px; max-height: 350px; overflow: auto; border: 1px solid #526575; border-radius: 6px; background: #202b32; padding: 10px; box-shadow: 0 12px 25px #0008; }
 .movement-page .prop-menu button { width: 100%; margin-bottom: 8px; text-align: left; }
-.movement-page .prop-menu label, .movement-page #book-options label { display: flex; align-items: center; gap: 8px; padding: 7px 4px; cursor: pointer; }
+.movement-page .prop-menu label { display: flex; align-items: center; gap: 8px; padding: 7px 4px; cursor: pointer; }
 .movement-page input[type=checkbox] { width: 15px; height: 15px; margin: 0; accent-color: #76dcac; flex-shrink: 0; }
 .movement-page .muted { color: #a6b7c1; font-size: 12px; }
 .movement-page .chart-scale { width: 155px; flex-shrink: 0; }
@@ -46,10 +46,29 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 .movement-page .selection-metrics span, .movement-page .selection-metrics small { font-size: 11px; color: #9eb0ba; }
 #movement-chart { width: 100%; height: 420px; min-height: 350px; }
 #chart-status { padding: 20px 0; }
-#book-picker { margin: 12px 0 0; padding: 8px 12px; border: 1px solid #3c4950; border-radius: 5px; }
-#book-picker legend { padding: 0 6px; color: #a6b7c1; font-size: 11px; }
-#book-options { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.movement-page .book-swatch { width: 14px; height: 3px; display: inline-block; }
+#book-picker { min-width: 0; margin: 12px 0 0; padding: 10px; border: 1px solid #3c4950; border-radius: 6px; }
+#book-picker legend { padding: 0 6px; color: #c5d3db; font-size: 12px; font-weight: 600; }
+.movement-page .book-picker-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+#book-price-time { font-size: 11px; font-variant-numeric: tabular-nums; }
+.movement-page .book-picker-actions { display: flex; gap: 5px; margin-left: auto; }
+.movement-page .book-picker-actions button { min-width: 42px; padding: 5px 9px; font-size: 11px; }
+#book-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 210px)); gap: 8px; }
+.movement-page .movement-book { display: grid; grid-template-columns: minmax(0, 1fr) 41px; min-width: 0; background: #202c34; border: 1px solid #42535f; border-radius: 5px; }
+.movement-page #book-options .movement-book label { display: grid; grid-template-columns: 15px 16px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 4px 6px; padding: 7px 6px; cursor: pointer; }
+.movement-page .movement-book input { grid-column: 1; grid-row: 1; }
+.movement-page .movement-book .book-logo { grid-column: 2; grid-row: 1; width: 16px; height: 16px; object-fit: contain; }
+.movement-page .movement-book .book-name { grid-column: 3; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c7d6df; font-size: 11px; line-height: 1.2; }
+.movement-page .movement-book .book-price { grid-column: 2 / 4; grid-row: 2; color: #edf5fa; font-size: 14px; line-height: 1.2; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.movement-page .movement-book .book-swatch { grid-column: 1; grid-row: 2; display: block; width: 16px; height: 0; border-top: 3px solid var(--book-color, currentColor); }
+.movement-page .movement-book .book-focus { align-self: stretch; padding: 4px; border: 0; border-left: 1px solid #42535f; border-radius: 0 4px 4px 0; background: #263640; color: #bbd3e2; font-size: 10px; }
+.movement-page .movement-book:focus-within { outline: 2px solid #a9e1ff; outline-offset: 2px; }
+.movement-page .movement-book .book-focus:focus-visible { outline-offset: -3px; }
+.movement-page .movement-book.is-focused { border-color: #8ac6ef; background: #243c4b; }
+.movement-page .movement-book.is-focused .book-focus { color: #132534; background: #a9d7f4; border-color: #8ac6ef; }
+.movement-page .movement-book.is-hidden { background: #171e22; border-style: dashed; border-color: #38464f; }
+.movement-page .movement-book.is-hidden .book-name, .movement-page .movement-book.is-hidden .book-price { color: #8b9da8; }
+.movement-page .movement-book.is-hidden .book-logo, .movement-page .movement-book.is-hidden .book-swatch { opacity: .4; }
+.movement-page .book-picker-hint { margin: 10px 0 0; color: #9fb2bf; font-size: 11px; }
 .movement-page .notice { border: 1px solid #786745; border-radius: 4px; padding: 12px 16px; background: #30291e; color: #f1d5a6; font-size: 13px; }
 .movement-page .empty { padding: 36px; }
 .movement-page .empty a { display: inline-block; margin: 10px 20px 0 0; }
@@ -94,9 +113,13 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
   .movement-page .selection-metrics strong { font-size: 20px; }
   .movement-page .selection-metrics small { font-size: 10px; }
   #movement-chart { height: 360px; }
+  #book-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .movement-table th, .movement-table td { padding: 11px; }
   .movement-table th:first-child, .movement-table td:first-child { min-width: 195px; }
   .movement-table td:first-child { position: sticky; left: 0; background: #1b2226; }
   .movement-table .is-selected td:first-child { background: #223c30; }
   .movement-table th:first-child { left: 0; z-index: 3; }
+}
+@media (max-width: 359px) {
+  #book-options { grid-template-columns: minmax(0, 1fr); }
 }

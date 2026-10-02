@@ -39,7 +39,18 @@
         <div id="selection-metrics" class="selection-metrics" hidden></div>
         <p id="chart-status" class="muted" role="status">Loading today's selections...</p>
         <div id="movement-chart" aria-label="Price history chart" hidden></div>
-        <fieldset id="book-picker" hidden><legend>Show sportsbook prices</legend><div id="book-options"></div></fieldset>
+        <fieldset id="book-picker" hidden>
+          <legend>Sportsbook prices</legend>
+          <div class="book-picker-toolbar">
+            <span id="book-price-time" class="muted"></span>
+            <div class="book-picker-actions" role="group" aria-label="Show sportsbook lines">
+              <button id="show-all-books" type="button">All</button>
+              <button id="hide-all-books" type="button">None</button>
+            </div>
+          </div>
+          <div id="book-options"></div>
+          <p class="book-picker-hint">Hover the chart for prices at that capture. Focus a book to follow its line.</p>
+        </fieldset>
         <p id="chart-footnote" class="muted" hidden>Bold green is fair value after removing the margin. Other lines are the books' quoted prices. Gaps mean no usable quote was captured.</p>
       </section>
       <section class="panel slate-panel" aria-labelledby="slate-title">

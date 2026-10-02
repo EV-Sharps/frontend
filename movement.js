@@ -11,7 +11,7 @@
   const percent = value => finite(value) ? `${(Number(value) * 100).toFixed(2)}%` : '—';
   const move = value => finite(value) ? `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)} pp` : '—';
   const title = value => String(value ?? '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  const bookNames = { circa: 'Circa', pn: 'Pinnacle', fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', mgm: 'BetMGM', cz: 'Caesars', br: 'BetRivers', espn: 'ESPN BET', fn: 'Fanatics', hr: 'Hard Rock', bv: 'Bovada', bol: 'BetOnline', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi', kambi: 'Kambi' };
+  const bookNames = { circa: 'Circa', pn: 'Pinnacle', fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', mgm: 'BetMGM', cz: 'Caesars', br: 'BetRivers', espn: 'ESPN BET', fn: 'Fanatics', hr: 'Hard Rock', bv: 'Bovada', bol: 'BetOnline', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi', kambi: 'Kambi', re: 'Rebet', fl: 'Fliff', poly: 'Polymarket', hr_az: 'Hard Rock AZ', hr_oh: 'Hard Rock OH' };
   const propNames = { hr: 'Home runs', h: 'Hits', r: 'Runs', rbi: 'RBIs', tb: 'Total bases', so: 'Strikeouts', k: 'Strikeouts', attd: 'Anytime touchdown', anytime_td: 'Anytime touchdown', td: 'Touchdowns', atgs: 'Anytime goalscorer', g: 'Goals', goals: 'Goals', sog: 'Shots on goal', shots: 'Shots on goal', pts: 'Points', points: 'Points', reb: 'Rebounds', ast: 'Assists', pass_yd: 'Passing yards', rush_yd: 'Rushing yards', rec_yd: 'Receiving yards', rec: 'Receptions', ml: 'Moneyline', spread: 'Spread', total: 'Total' };
   const bookName = key => bookNames[key] || title(key);
   const propName = key => propNames[key] || title(key);
@@ -20,12 +20,18 @@
   const easternDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
   const dayOf = (value = Date.now()) => { const parts = Object.fromEntries(easternDayFormat.formatToParts(new Date(value)).map(part => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; };
   const notice = (id, message) => { $(id).textContent = message; $(id).hidden = !message; };
-  const colors = ['#78b7fa', '#efbc77', '#b49ae9', '#f18cb2', '#68cbd0', '#d1ca7f', '#a1b8ca', '#e89970'];
+  const colors = ['#78b7fa', '#efbc77', '#b49ae9', '#f18cb2', '#68cbd0', '#e4d570', '#b5ccd9', '#f29669', '#d6a4ff', '#8acde8', '#edb5bb', '#9babf7', '#c8cc9c', '#df95c9', '#d4c4a1', '#65d7bb'];
+  const bookOrder = Object.keys(bookNames);
+  function bookStyle(book) {
+    const known = bookOrder.indexOf(book);
+    const index = known >= 0 ? known : [...book].reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 0);
+    return { color: colors[index % colors.length], dash: ['solid', 'dash', 'dot'][Math.floor(index / colors.length) % 3] };
+  }
   const selectedProps = new Set((url.searchParams.get('props') || '').split(',').filter(Boolean));
   const hiddenBooks = new Set();
   let catalog = null, detail = null, selectedId = '', offset = 0, day = dayOf(), ready = false;
   let summaryController = null, detailController = null, summaryVersion = 0, detailVersion = 0, debounceTimer, midnightTimer;
-  let plottedKey = '';
+  let plottedKey = '', focusedBook = '', chartPoints = [], zoomedX = false, zoomedY = false;
   const limit = 100;
   $('sport-select').value = SPORT;
   $('player-search').value = url.searchParams.get('query') || '';
@@ -79,7 +85,7 @@
     return query;
   }
   function clearChart(message = 'Choose a selection from the slate.') {
-    detail = null; plottedKey = '';
+    detail = null; plottedKey = ''; focusedBook = ''; chartPoints = []; zoomedX = zoomedY = false;
     $('chart-title').textContent = 'Choose a selection from the slate';
     $('chart-subtitle').textContent = '';
     $('selection-metrics').hidden = true;
@@ -174,6 +180,84 @@
   }
   function implied(value) { return finite(value) && Math.abs(Number(value)) >= 100 ? (Number(value) > 0 ? 100 / (Number(value) + 100) : -Number(value) / (-Number(value) + 100)) : null; }
   function fairFromProbability(p) { return p >= .5 ? -100 * p / (1 - p) : 100 * (1 - p) / p; }
+  function americanTicks(range) {
+    const low = Math.max(.001, Math.min(...range)), high = Math.min(99.999, Math.max(...range));
+    if (!(high > low)) return [];
+    const count = window.innerWidth < 700 ? 6 : 8;
+    // Join -100/+100 at zero for choosing round labels, while plotting in probability space.
+    const coordinate = p => { const price = fairFromProbability(p / 100); return price > 0 ? price - 100 : price + 100; };
+    const start = coordinate(high), end = coordinate(low);
+    const rough = (end - start) / (count - 1);
+    const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, rough)));
+    const step = [1, 2, 5, 10].map(value => value * magnitude).reduce((best, value) => Math.abs(value - rough) < Math.abs(best - rough) ? value : best);
+    let prices = [];
+    for (let value = Math.ceil(start / step) * step; value <= end + step * 1e-8; value += step) prices.push(value >= 0 ? value + 100 : value - 100);
+    const ticksFor = values => [...new Set(values.map(Math.round))].map(value => ({ p: implied(value) * 100, label: odds(value) }))
+      .filter(tick => tick.p >= low && tick.p <= high).sort((a, b) => a.p - b.p);
+    let ticks = ticksFor(prices);
+    // Very wide ranges need probability-spaced labels to avoid crowded favorites/longshots.
+    if (ticks.length < 4 || ticks.some((tick, index) => index && tick.p - ticks[index - 1].p < (high - low) / (count * 2.2))) {
+      prices = Array.from({ length: count + 2 }, (_, index) => {
+        const price = fairFromProbability((low + (high - low) * index / (count + 1)) / 100);
+        const amount = Math.abs(price);
+        const rounding = amount < 200 ? 5 : amount < 500 ? 10 : amount < 1000 ? 25 : amount < 2500 ? 50 : 10 ** (Math.floor(Math.log10(amount)) - 1);
+        return Math.sign(price) * Math.max(100, Math.round(amount / rounding) * rounding);
+      });
+      ticks = ticksFor(prices);
+    }
+    return ticks;
+  }
+  function updatePriceReadout(index = chartPoints.length - 1) {
+    const point = chartPoints[index];
+    $('book-price-time').textContent = point ? `${index === chartPoints.length - 1 ? 'Latest capture' : 'Captured'} · ${time(point.ts)} ET` : '';
+    $('book-options').querySelectorAll('.movement-book').forEach(item => {
+      const price = point?.prices?.[item.dataset.book];
+      const value = item.querySelector('.book-price');
+      value.textContent = implied(price) === null ? '-' : odds(price);
+      value.title = implied(price) === null ? 'No quote at this capture' : `${bookName(item.dataset.book)} at ${time(point.ts)} ET`;
+    });
+  }
+  function applyBookFocus() {
+    const chart = $('movement-chart');
+    $('book-options').querySelectorAll('.movement-book').forEach(item => {
+      const active = item.dataset.book === focusedBook;
+      item.classList.toggle('is-focused', active);
+      item.querySelector('.book-focus').setAttribute('aria-pressed', String(active));
+    });
+    if (chart.hidden || !chart.data?.length || !window.Plotly) return;
+    Plotly.restyle(chart, {
+      opacity: chart.data.map(trace => !focusedBook || trace.meta?.book === focusedBook ? 1 : trace.meta?.fair ? .55 : .18),
+      'line.width': chart.data.map(trace => trace.meta?.fair ? 3.5 : trace.meta?.book === focusedBook ? 3.4 : 2),
+      'marker.size': chart.data.map(trace => trace.meta?.fair ? 6 : trace.meta?.book === focusedBook ? 6 : 4)
+    });
+  }
+  function refreshOddsTicks() {
+    const chart = $('movement-chart');
+    if (chart.hidden || !chart._fullLayout || $('chart-scale').value === 'probability') return;
+    const ticks = americanTicks(chart._fullLayout.yaxis.range);
+    const tickvals = ticks.map(tick => tick.p), ticktext = ticks.map(tick => tick.label);
+    if (JSON.stringify(chart.layout.yaxis.tickvals) === JSON.stringify(tickvals)) return;
+    Plotly.relayout(chart, { 'yaxis.tickvals': tickvals, 'yaxis.ticktext': ticktext });
+  }
+  function wirePriceChart(chart) {
+    // Replace our handlers after react; never accumulate them during polling or book toggles.
+    for (const [event, handler] of Object.entries(chart.movementHandlers || {})) chart.removeListener(event, handler);
+    chart.movementHandlers = {
+      plotly_hover: event => { const index = event.points?.[0]?.pointNumber; if (Number.isInteger(index)) updatePriceReadout(index); },
+      plotly_unhover: () => updatePriceReadout(),
+      plotly_relayout: event => {
+        const keys = Object.keys(event);
+        if ('xaxis.autorange' in event) zoomedX = false;
+        else if (keys.some(key => key.startsWith('xaxis.range'))) zoomedX = true;
+        if ('yaxis.autorange' in event) zoomedY = false;
+        else if (keys.some(key => key.startsWith('yaxis.range'))) zoomedY = true;
+        // Autoscale must retain the price-axis direction after a manual zoom.
+        if (event['yaxis.autorange'] === true) { Plotly.relayout(chart, { 'yaxis.autorange': 'reversed' }); return; }
+        if (keys.some(key => key.startsWith('yaxis.range') || key === 'yaxis.autorange' || key === 'width' || key === 'height')) refreshOddsTicks();
+      }
+    };
+    for (const [event, handler] of Object.entries(chart.movementHandlers)) chart.on(event, handler);
+  }
   function renderChart() {
     if (!detail?.selection) return;
     const row = detail.selection;
@@ -181,8 +265,14 @@
     $('chart-subtitle').textContent = `${marketName(row)} · ${String(row.game || '').toUpperCase()} · ${gameTime(row.start)} · ${referenceName()}`;
     renderMetrics(row);
     const points = (detail.points || []).filter(point => dayOf(point.ts) === day);
+    chartPoints = points;
     const books = [...new Set(points.flatMap(point => Object.keys(point.prices || {})))].sort();
-    $('book-options').innerHTML = books.map((book, index) => `<label><input type="checkbox" value="${esc(book)}"${hiddenBooks.has(book) ? '' : ' checked'}><span class="book-swatch" style="background:${colors[index % colors.length]}"></span>${esc(bookName(book))}</label>`).join('');
+    if (!books.includes(focusedBook) || hiddenBooks.has(focusedBook)) focusedBook = '';
+    $('book-options').innerHTML = books.map(book => {
+      const style = bookStyle(book), logo = book === 'kambi' ? 'parx' : book.startsWith('hr_') ? 'hr' : book;
+      return `<div class="movement-book${hiddenBooks.has(book) ? ' is-hidden' : ''}${focusedBook === book ? ' is-focused' : ''}" data-book="${esc(book)}" style="--book-color:${style.color}"><label><input type="checkbox" value="${esc(book)}"${hiddenBooks.has(book) ? '' : ' checked'}><span class="book-swatch" style="border-top-style:${style.dash === 'solid' ? 'solid' : style.dash === 'dot' ? 'dotted' : 'dashed'}"></span><img class="book-logo" src="logos/${encodeURIComponent(logo)}.png" alt=""><span class="book-name">${esc(bookName(book))}</span><strong class="book-price"></strong></label><button type="button" class="book-focus" data-focus-book="${esc(book)}" aria-label="Focus ${esc(bookName(book))}" aria-pressed="${focusedBook === book}"${hiddenBooks.has(book) ? ' disabled' : ''}>Focus</button></div>`;
+    }).join('');
+    updatePriceReadout();
     $('book-picker').hidden = !books.length;
     const cohort = row.reference_books || [];
     let message = '';
@@ -196,18 +286,19 @@
     const x = points.map(point => Date.parse(point.ts));
     const times = points.map(point => `${time(point.ts)} ET`);
     const traces = books.filter(book => !hiddenBooks.has(book)).map(book => ({
-      type: 'scatter', mode: 'lines+markers', name: bookName(book), x,
+      type: 'scatter', mode: 'lines+markers', name: bookName(book), x, meta: { book },
       y: points.map(point => { const p = implied(point.prices?.[book]); return p === null ? null : p * 100; }),
       customdata: points.map((point, index) => [times[index], odds(point.prices?.[book])]),
-      line: { color: colors[books.indexOf(book) % colors.length], width: 1.7, shape: 'hv' }, marker: { size: 4 }, connectgaps: false,
-      hovertemplate: `%{customdata[0]}<br>${esc(bookName(book))}: %{customdata[1]}${probabilityScale ? '<br>Implied: %{y:.2f}%' : ''}<extra></extra>`,
+      line: { ...bookStyle(book), width: focusedBook === book ? 3.4 : 2, shape: 'hv' }, marker: { size: focusedBook === book ? 6 : 4 }, connectgaps: false,
+      opacity: !focusedBook || focusedBook === book ? 1 : .18,
+      hovertemplate: `<b>${esc(bookName(book))} %{customdata[1]}</b><br>%{customdata[0]}${probabilityScale ? '<br>Implied: %{y:.2f}%' : ''}<extra></extra>`,
     }));
     if (points.some(point => finite(point.probability))) traces.push({
-      type: 'scatter', mode: 'lines+markers', name: `${referenceName()} fair`, x,
+      type: 'scatter', mode: 'lines+markers', name: `${referenceName()} fair`, x, meta: { fair: true }, opacity: focusedBook ? .55 : 1,
       y: points.map(point => finite(point.probability) ? Number(point.probability) * 100 : null),
       customdata: points.map((point, index) => [times[index], odds(point.fair)]),
       line: { color: '#8dedb4', width: 3.5, shape: 'hv' }, marker: { size: 6 }, connectgaps: false,
-      hovertemplate: '%{customdata[0]}<br>Fair: %{customdata[1]}<br>Fair probability: %{y:.2f}%<extra></extra>',
+      hovertemplate: '<b>Fair %{customdata[1]}</b><br>%{customdata[0]}<br>Fair probability: %{y:.2f}%<extra></extra>',
     });
     $('chart-footnote').hidden = false;
     $('chart-footnote').textContent = `Bold green is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are quoted book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. Times are Eastern.`;
@@ -215,20 +306,25 @@
     if (!window.Plotly) { notice('chart-status', 'The chart could not load. Refresh this page to try again.'); return; }
     const yValues = traces.flatMap(trace => trace.y).filter(finite);
     if (!yValues.length) { $('movement-chart').hidden = true; notice('chart-status', 'No captured prices for this side at the selected books. Try another side or sportsbook.'); return; }
-    const low = Math.max(.01, Math.min(...yValues) - 3), high = Math.min(99.99, Math.max(...yValues) + 3);
-    const oddsTicks = [10000, 5000, 2500, 1500, 1000, 750, 500, 400, 300, 250, 200, 150, 125, 100, -125, -150, -200, -250, -300, -400, -500, -750, -1000, -1500, -2500, -5000, -10000];
-    let ticks = oddsTicks.map(value => ({ p: implied(value) * 100, label: odds(value) })).filter(tick => tick.p >= low && tick.p <= high);
-    if (ticks.length < 3) ticks = Array.from({ length: 5 }, (_, index) => { const p = low + (high - low) * index / 4; return { p, label: odds(fairFromProbability(p / 100)) }; });
+    const padding = Math.max(.12, (Math.max(...yValues) - Math.min(...yValues)) * .12);
+    const low = Math.max(.01, Math.min(...yValues) - padding), high = Math.min(99.99, Math.max(...yValues) + padding);
     const tickIndexes = [...new Set(Array.from({ length: Math.min(6, points.length) }, (_, index) => Math.round(index * (points.length - 1) / Math.max(1, Math.min(6, points.length) - 1))))];
     $('movement-chart').hidden = false;
     const chartKey = `${SPORT}:${row.id}:${row.side}:${$('reference-select').value}:${day}:${probabilityScale}`;
+    if (plottedKey !== chartKey) zoomedX = zoomedY = false;
+    const currentRange = zoomedY ? $('movement-chart')._fullLayout?.yaxis.range : null;
+    const currentTimes = zoomedX ? $('movement-chart')._fullLayout?.xaxis.range : null;
+    const ticks = americanTicks(currentRange || [high, low]);
     Plotly.react($('movement-chart'), traces, {
       width: $('movement-chart').clientWidth, height: $('movement-chart').clientHeight,
       paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#b7c8d2', family: 'Inter, system-ui, sans-serif', size: 11 },
-      margin: { l: 67, r: 20, t: 18, b: 66 }, showlegend: false, hovermode: 'closest', dragmode: 'pan', uirevision: chartKey,
-      xaxis: { type: 'linear', tickvals: tickIndexes.map(index => x[index]), ticktext: tickIndexes.map(index => time(points[index].ts)), title: { text: 'Capture time · Eastern', standoff: 16 }, gridcolor: '#303b42', zeroline: false, ...(x.length === 1 ? { range: [x[0] - 900000, x[0] + 900000] } : {}) },
-      yaxis: { title: { text: probabilityScale ? 'Probability (%)' : 'American odds', standoff: 12 }, gridcolor: '#303b42', zeroline: false, ...(probabilityScale ? { ticksuffix: '%' } : { tickvals: ticks.map(tick => tick.p), ticktext: ticks.map(tick => tick.label) }), ...(plottedKey !== chartKey ? { range: [high, low] } : {}) },
-    }, { responsive: true, displaylogo: false, scrollZoom: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'], toImageButtonOptions: { filename: 'line-movement' } });
+      margin: { l: 72, r: 20, t: 18, b: 66 }, showlegend: false, hovermode: 'closest', dragmode: 'pan', uirevision: chartKey,
+      hoverlabel: { bgcolor: '#111b22', bordercolor: '#708899', font: { color: '#edf3f7', size: 14 } },
+      xaxis: { type: 'linear', tickvals: tickIndexes.map(index => x[index]), ticktext: tickIndexes.map(index => time(points[index].ts)), title: { text: 'Capture time · Eastern', standoff: 16 }, gridcolor: '#303b42', zeroline: false, showspikes: true, spikemode: 'across', spikesnap: 'data', spikecolor: '#71828d', spikethickness: 1, ...(currentTimes ? { range: currentTimes, autorange: false } : x.length === 1 ? { range: [x[0] - 900000, x[0] + 900000], autorange: false } : { autorange: true }) },
+      yaxis: { title: { text: probabilityScale ? 'Probability (%)' : 'American odds', standoff: 12 }, gridcolor: '#303b42', zeroline: false, ...(probabilityScale ? { ticksuffix: '%' } : { tickvals: ticks.map(tick => tick.p), ticktext: ticks.map(tick => tick.label) }), range: currentRange || [high, low], autorange: false },
+    }, { responsive: true, displaylogo: false, scrollZoom: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'], toImageButtonOptions: { filename: 'line-movement' } }).then(() => {
+      if (plottedKey === chartKey && !$('movement-chart').hidden) wirePriceChart($('movement-chart'));
+    });
     plottedKey = chartKey;
   }
   async function loadDetail(id, force = false) {
@@ -317,6 +413,18 @@
     if (row) { loadDetail(row.dataset.id); $('chart-title').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
   $('book-options').addEventListener('change', event => { if (!event.target.matches('input')) return; if (event.target.checked) hiddenBooks.delete(event.target.value); else hiddenBooks.add(event.target.value); renderChart(); });
+  $('book-options').addEventListener('click', event => {
+    const button = event.target.closest('[data-focus-book]');
+    if (!button || button.disabled) return;
+    focusedBook = focusedBook === button.dataset.focusBook ? '' : button.dataset.focusBook;
+    applyBookFocus();
+  });
+  $('book-options').addEventListener('error', event => { if (event.target.matches('img')) event.target.hidden = true; }, true);
+  $('show-all-books').addEventListener('click', () => { hiddenBooks.clear(); focusedBook = ''; renderChart(); });
+  $('hide-all-books').addEventListener('click', () => {
+    $('book-options').querySelectorAll('input').forEach(input => hiddenBooks.add(input.value));
+    focusedBook = ''; renderChart();
+  });
   $('chart-scale').addEventListener('change', renderChart);
   if (window.ResizeObserver) new ResizeObserver(() => {
     const chart = $('movement-chart');

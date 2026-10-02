@@ -46,7 +46,7 @@ def sample(now=NOW):
     return dict(schema_version=1, sport='nhl', market='atgs', date=now.date().isoformat(),
                 generated_at=now.isoformat(), refresh_minutes=5, picks=[copy.deepcopy(pick) for pick in [base, second, third]],
                 criteria=dict(min_odds=1000, max_odds=3000, min_ev=0, method='probit', max_age_minutes=15,
-                              min_minutes_to_start=5, limit_per_book=100),
+                              min_minutes_to_start=5, limit_per_book=10),
                 books_checked=['fd', 'dk', 'fn', 'mgm', 'espn', 'hr', 'cz'],
                 books_summary={book: dict(quoted=50, in_range=10, qualified=1, shown=1) for book in ['fd', 'dk', 'fn']},
                 history_metadata=dict(season_labels={'2024': '2024-25', '2025': '2025-26'}))
@@ -152,6 +152,73 @@ try:
         page.screenshot(path=str(ARTIFACTS / 'mobile.png'), full_page=True)
         assert page.locator('.rec-book-cell img').first.is_visible()
 
+        # All published betting books and upcoming dates match the probit scan.
+        state['payload'] = sample()
+        state['payload'].update(date=None, slate_date='2026-10-02')
+        added_books = ['b365', 'bol', 'kal', 'nv', 'px', 'poly', 'mb']
+        for book in added_books:
+            offer = copy.deepcopy(state['payload']['picks'][0])
+            offer.update(player=f'{book} player', book=book, research_match=False,
+                         start=(NOW+timedelta(days=1)).isoformat(),
+                         net_price_estimate=1150 if book == 'kal' else 1200, liquidity=75)
+            state['payload']['picks'].append(offer)
+        state['payload']['books_checked'] += added_books
+        state['payload']['books_summary'].update({book: dict(quoted=10, in_range=5, qualified=1, shown=1) for book in added_books})
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(10)
+        assert page.locator('#book-filter option').count() == 15
+        assert page.locator('#book-filter option[value="b365"]').inner_text() == 'bet365'
+        assert page.locator('#book-filter option[value="bol"]').inner_text() == 'BetOnline'
+        assert page.locator('#book-count').inner_text() == '14'
+        assert 'bet365: 10 quoted' in page.locator('#coverage').text_content()
+        assert 'Up to 10 offers per book' in page.locator('#criteria').text_content()
+        expected_keys = ['|'.join([pick['game'], pick['player'], pick['book']]) for pick in state['payload']['picks']]
+        assert page.locator('.rec-pick').evaluate_all('(rows) => rows.map(row => row.dataset.key)') == expected_keys
+        page.select_option('#book-filter', 'b365')
+        expect(page.locator('.rec-pick')).to_have_count(1)
+        assert 'Oct 3' in page.locator('.ls-player-cell').inner_text()
+        refresh()
+        assert page.locator('#book-filter').input_value() == 'b365'
+        page.select_option('#book-filter', 'kal')
+        assert '~+1150 after fees' in page.locator('.rec-book-cell').inner_text()
+        page.locator('.rec-toggle').click()
+        assert 'Available liquidity $75' in page.locator('.ls-details').inner_text()
+        page.select_option('#book-filter', '')
+        # A null date also works without optional slate metadata, using generated_at.
+        del state['payload']['slate_date']
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(10)
+        page.wait_for_function('Array.from(document.querySelectorAll("#picks img")).every(img => img.complete && img.naturalWidth > 0)')
+        # Only Circa/Pinnacle remain reference-only even if the feed lists them.
+        state['payload']['books_checked'] += ['pn', 'circa']
+        for book in ['pn', 'circa']:
+            state['payload']['picks'].append(dict(state['payload']['picks'][0], book=book))
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(10)
+        assert page.locator('#book-filter option[value="pn"], #book-filter option[value="circa"]').count() == 0
+        state['payload'] = sample()
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+
+        # Midnight expiry refers to the snapshot day, not an upcoming game's date.
+        midnight = datetime(2026, 10, 3, 4, 0, tzinfo=timezone.utc)
+        before_midnight = midnight-timedelta(minutes=1)
+        state['payload'] = sample(before_midnight)
+        state['payload'].update(date=None, slate_date='2026-10-02')
+        page.clock.set_system_time(before_midnight)
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+        page.clock.set_system_time(midnight)
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(0)
+        state['payload'] = sample(midnight)
+        state['payload'].update(date=None, slate_date='2026-10-03')
+        refresh()
+        expect(page.locator('.rec-pick')).to_have_count(3)
+        page.clock.set_system_time(NOW)
+        state['payload'] = sample()
+        refresh()
+
         # Book, primary-reference, report and start freshness all fail closed.
         for mutate in (
             lambda data: data['picks'][0].update(quote_updated=(NOW-timedelta(minutes=16)).isoformat()),
@@ -184,7 +251,8 @@ try:
         assert page.locator('#empty-state').is_visible()
         assert page.locator('#empty-state h2').inner_text() == 'No qualifying offers'
         state['payload'] = sample()
-        state['payload']['picks'][0]['book'] = 'bol'
+        state['payload']['books_checked'].append('pn')
+        state['payload']['picks'][0]['book'] = 'pn'
         refresh()
         expect(page.locator('.rec-pick')).to_have_count(2)
 
@@ -257,10 +325,14 @@ try:
             if len(state['payload']['picks']) > 50:
                 page.locator('#show-more').click()
                 expect(page.locator('.rec-pick')).to_have_count(min(100, len(state['payload']['picks'])))
+            expected_keys = ['|'.join([pick['game'], pick['player'], pick['book']]) for pick in state['payload']['picks']]
+            assert page.locator('.rec-pick').evaluate_all('(rows) => rows.map(row => row.dataset.key)') == expected_keys[:100]
+            assert page.locator('#book-filter option[value="b365"]').count() == 1
+            assert page.locator('#book-filter option[value="bol"]').count() == 1
             page.locator('#research-filter').check()
             expect(page.locator('.rec-pick')).to_have_count(sum(pick['research_match'] for pick in state['payload']['picks']))
         assert not errors, errors
         browser.close()
-        print(f'PASS: desktop/mobile, filters, all-reference history, escaping, freshness, empty, access, timeout and visibility. Screenshots: {ARTIFACTS}')
+        print(f'PASS: desktop/mobile, dynamic books, upcoming games, midnight rollover, fees/liquidity, filters, all-reference history, escaping, freshness, empty, access, timeout and visibility. Screenshots: {ARTIFACTS}')
 finally:
     server.shutdown()

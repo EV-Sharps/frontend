@@ -7,8 +7,10 @@ let SB;
 try {
 	SB = supabase.createClient(
 		'https://nkdhryqpiulrepmphwmt.supabase.co',
-		'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt'
+		'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt',
+		window.EV_APP_CONFIG?.packaged === true ? { auth: { flowType: "pkce", detectSessionInUrl: false } } : undefined
 	);
+	if (window.EV_APP_CONFIG?.packaged === true) window.EVNative?.setAuthClient(SB);
 } catch (e) {
 
 }
@@ -370,6 +372,7 @@ function fillProfile(data, discordUsername, tier, session) {
 }
 
 async function loginWithGoogle() {
+	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.signIn('google');
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'google',
 		options: {
@@ -384,6 +387,7 @@ async function loginWithGoogle() {
 }
 
 async function loginWithDiscord() {
+	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.signIn('discord');
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'discord',
 		options: {
@@ -434,7 +438,8 @@ async function upgrade(tier) {
 	});
 	const data = await response.json();
 	if (data.url) {
-		window.location.href = data.url;
+		if (IS_PACKAGED_APP && window.EVNative) await window.EVNative.openExternal(data.url);
+		else window.location.href = data.url;
 	} else {
 		alert('Error starting checkout. Contact plusevsharps@gmail.com');
 	}
@@ -452,6 +457,7 @@ async function handleSession() {
 	let session = null;
 	if (ENABLE_AUTH) {
 		document.querySelector("#auth-buttons").style.display = "flex";
+		if (IS_PACKAGED_APP) await window.EVNative?.authReady;
 		const res = await SB.auth.getSession();
 		session = res.data?.session;
 		if (session) {

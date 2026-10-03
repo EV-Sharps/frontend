@@ -188,15 +188,10 @@
 			       type="number" min="0" step="5"
 			       placeholder="Custom %"
 			       style="display:none; width:7ch;" />
-				<div class="chkdd" id="game-dd">
-					<label for="game-dd-button" class="select-label">Game</label>
-					<button id="game-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('game-dd', event)">All Games</button>
-					<div class="chkdd-menu" id="game-options">
-						<div class="chkdd-actions">
-							<button type="button" data-act="all">All</button>
-							<button type="button" data-act="none">None</button>
-						</div>
-					</div>
+				<div class="select-wrapper">
+					<label for="game-select" class="select-label">Game</label>
+					<select id="game-select"><option value="">All Games</option></select>
+					<svg class="select-arrow" viewBox="0 0 20 20"><path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
 				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 				<button onclick="downloadCSV()">💾 CSV</button>
@@ -242,11 +237,6 @@
 			</div>
 		</header>
 		<main>
-			<div>
-				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
-
-				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
-			</div>
 			<div id="table-container">
 				<div class="loggedOut" style="display: none;">
 					<div style="padding: 0.5rem;">
@@ -280,30 +270,30 @@
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "sb";
-		let TABLE, EV_COL, FV_COL, RES;
+		let EV_COL, FV_COL;
 		let url = "";
 		const windowURL = new URL(window.location.href);
 		const URLParams = new URLSearchParams(windowURL.search);
-		let SPORT = "mlb";
+		SPORT = "mlb";
 		let KAMBI = URLParams.get("kambi");
-		let MARK = URLParams.get("mark");
+		MARK = URLParams.get("mark");
 		let BPP = URLParams.get("bpp") != undefined;
 		let PH = URLParams.get("ph") != undefined;
 		let SIMPLE = URLParams.get("simple");
-		let PLAYER = URLParams.get("player");
+		PLAYER = URLParams.get("player");
 		let REFRESH = URLParams.get("refresh") || "off";
 		REFRESH = "auto";
-		let BOOK = URLParams.get("book");
+		BOOK = URLParams.get("book") || "";
 		let HISTORICAL = URLParams.get("historical");
-		let PRETTY = URLParams.get("pretty");
-		let IMP = URLParams.get("imp");
-		let GAME = URLParams.get("game");
+		PRETTY = URLParams.get("pretty");
+		IMP = URLParams.get("imp");
+		GAME = URLParams.get("game");
 		TEAM = URLParams.get("team");
-		let DATE = URLParams.get("date");
+		DATE = URLParams.get("date");
 		let NOCACHE = URLParams.get("nocache");
 		let NO365 = URLParams.get("no365");
-		let BOOST = URLParams.get("boost");
-		let DEVIG = URLParams.get("devig");
+		BOOST = URLParams.get("boost");
+		DEVIG = URLParams.get("devig");
 
 		if (GAME) {
 			let [a,h] = GAME.split("-");
@@ -350,12 +340,15 @@
 				UPDATED[PAGE] = res.data["updated"];
 				RES = res.data;
 				const gameSel = document.getElementById("game-select");
+				const selectedGame = gameSel.value || GAME?.replace(" @ ", "-") || "";
+				gameSel.replaceChildren(new Option("All Games", ""));
 				RES.games.forEach(game => {
 					const option = document.createElement("option");
 					option.value = game.replace(" @ ", "-");
 					option.textContent = game.toUpperCase();
 					gameSel.appendChild(option);
 				});
+				gameSel.value = selectedGame;
 
 				setTimeout(function() {
 					updateTimes();
@@ -389,7 +382,7 @@
 			}
 		}
 
-		function changeFilter() {
+		function changeFilter(updateUrl = true) {
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
 			let game = document.getElementById("game-select").value;
@@ -399,6 +392,7 @@
 				boost = boostCustom.value;
 			}
 			BOOK = book;
+			if (!RES?.data || !TABLE) return;
 			let url = new URL(window.location.href);
 
 			const params = new URLSearchParams(window.location.search);
@@ -408,17 +402,18 @@
 			params.set("book", book);
 
 			RES.data.forEach(row => {
+				Object.assign(row, { book: null, line: null, ev: "", fairVal: "", implied: "", kelly: "" });
 				const bookOdds = { ...row.bookOdds };
 				let avg = getAverageImplied(bookOdds, row.under);
 				if (!avg) {
 					return;
 				}
-				const ex = excluded;
-				ex.push("pn"); ex.push("circa");
+				const ex = [...excluded, "pn", "circa"];
 				if (devigBook) {
-					ex.push(devigBook);
+					ex.push(...devigBook.split("+"));
 				}
-				const highest = highestOver(bookOdds, ex, boost, book, row.under);
+				const highest = highestOver(bookOdds, ex, boost, book, row.under, row);
+				if (!highest.book || !Number.isFinite(highest.value)) return;
 				let ou = avg.avgAmerican.toString();
 				if (row.under) {
 				    // If under, swap priority
@@ -462,7 +457,7 @@
 				row["kelly"] = d.kelly;
 			});
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
+			if (updateUrl) history.replaceState({}, '', newUrl);
 			//TABLE.setData(RES.data);
 			TABLE.setSort([
 				{column: "ev", dir: "desc"}
@@ -475,7 +470,7 @@
 			if (filters.length > 0) {
 				TABLE.setFilter(filters);
 			}
-			TABLE.setData(RES.data);
+			return TABLE.setData(RES.data.filter(row => row.book && Number.isFinite(row.line)));
 			//TABLE.redraw(true);
 		}
 
@@ -515,9 +510,11 @@
 			changeFilter();
 		});
 
-		document.querySelector("#book-select").value = BOOK || "";
+		const SB_BOOKS = [...document.querySelector("#book-select").options].map(option => option.value).filter(Boolean);
+		renderBookSelect(SB_BOOKS);
+		setBookSelection(BOOK);
 		document.querySelector("#book-select").addEventListener("change", (event) => {
-			BOOK = event.target.value;
+			setBookSelection(event.target.value);
 			changeFilter();
 		});
 
@@ -544,7 +541,7 @@
 				autoResize: true,
 				data: data,
 				initialSort: [
-					{column: "curr_ev", dir: "desc"},
+					{column: "ev", dir: "desc"},
 				],
 				columnDefaults: {
 					vertAlign: "middle",
@@ -567,7 +564,7 @@
 						field: "ev",
 						width: MOBILE ? 55 : 60,
 						sorter: "number",
-						formatter: evMutFormatter,
+						formatter: baseEVFormatter,
 						responsive: 0
 					},
 					{
@@ -616,7 +613,7 @@
 						title: `Best Book<br><br><button id='toggle-bookodds-btn' onclick="event.preventDefault(); event.stopPropagation(); toggleBookOddsColumns();"><span id="book-odds-toggle">−</span> Hide Odds</button>`,
 						field: "book",
 						vertAlign:"bottom", width: MOBILE ? 65 : 70,
-						formatter: evBookFormatter,
+						formatter: bestBookFormatter,
 						formatterParams:{book:BOOK},
 						responsive: 0
 					},
@@ -643,7 +640,7 @@
 						{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},
 						{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75},
 					]},
-					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: bppFormatter},
+					{title: "BPP<br>HR", field: "bpp", width: 45, formatter: cell => cell.getValue() == null ? "" : bppFormatter(cell)},
 					{title: "Batter Metrics", columns: [
 						{title: "xBA", field: "savant.est_ba", width: 45, formatter: baFormatter, visible: false },
 						{title: "xwOBA", field: "savant.est_woba", width: 45, formatter: xwobaFormatter, visible: false },
@@ -785,18 +782,8 @@
 
 		window.addEventListener('popstate', (event) => {
 			const book = event.state?.book || new URLSearchParams(location.search).get('book') || '';
-			BOOK = book;
-			RES.forEach(row => {
-				row["curr_ev"] = row[`${BOOK ? `${BOOK}_` : ""}ev`]
-				row["curr_fv"] = row[`${BOOK ? `${BOOK}_` : ""}fairVal`]
-				row["curr_kelly"] = row[`${BOOK ? `${BOOK}_` : ""}kelly`]
-				row["curr_implied"] = row[`${BOOK ? `${BOOK}_` : ""}implied`]
-			});
-			TABLE.updateData(RES);
-			TABLE.setSort([
-				{column: "curr_ev", dir: "desc"}
-			]);
-			TABLE.redraw(true);
+			setBookSelection(book);
+			changeFilter(false);
 		});
 	</script>
 	<script>handleSession();</script>

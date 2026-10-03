@@ -848,9 +848,9 @@
 			const list = [];
 			const books = record[METHOD || "worst"];
 			if (!books) return list;
-			const targetBook = bookArg || BOOK || "best";
+			const targetBooks = String(bookArg || BOOK || "best").split(",");
 			for (const book in books) {
-				if (book !== targetBook) continue;
+				if (!targetBooks.includes(book)) continue;
 				const devigs = books[book];
 				if (!devigs) continue;
 				for (const devigKey in devigs) {

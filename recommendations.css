@@ -4,6 +4,30 @@ body.recommendations-page::before { display: none; }
 .recommendations-page * { box-sizing: border-box; }
 .recommendations-page [hidden] { display: none !important; }
 .recommendations-page h2 { display: block; text-align: left; }
+.rec-view-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.rec-view-tabs button[aria-pressed="true"] { background: #253a37; border-color: #65ad95; color: #c2f7de; }
+.rec-performance-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 20px 0; }
+.rec-performance-heading h2 { margin: 0 0 8px; font-size: 21px; }
+.rec-performance-heading > button { flex-shrink: 0; }
+.rec-summary.rec-performance-summary { flex-wrap: wrap; gap: 18px 30px; }
+.rec-summary.rec-performance-summary > div { flex-direction: column; align-items: flex-start; gap: 4px; }
+.rec-summary.rec-performance-summary > div + div { padding-left: 0; border: 0; }
+.rec-performance-breakdowns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 425px), 1fr)); gap: 20px; margin-bottom: 24px; }
+.rec-performance-breakdowns h3, #performance-data > h3 { font-size: 14px; margin: 18px 0 10px; }
+.rec-performance-table { min-width: 420px; }
+.rec-performance-table tbody td { padding: 11px 12px; border-bottom: 1px solid #343a40; }
+.rec-performance-table tbody tr:nth-child(even) { background: #202425; }
+.rec-performance-table small { display: block; color: #9eacb6; margin-top: 4px; font-size: 10px; line-height: 1.5; }
+.rec-performance-results { min-width: 850px; }
+.rec-performance-results td:nth-child(2) { max-width: 320px; }
+.rec-result-positive { color: #75e7b2; }
+.rec-result-negative { color: #ff9b9b; }
+@media (max-width: 600px) {
+  .rec-view-tabs button { font-size: 12px; padding: 9px; }
+  .rec-performance-heading { align-items: flex-start; flex-direction: column; }
+  .rec-performance-summary { gap: 18px; }
+  .rec-performance-summary > div { width: calc(50% - 9px); }
+}
 .recommendations-page a { color: #a7d4ff; text-decoration: none; }
 .recommendations-page a:hover { text-decoration: underline; }
 .recommendations-page button, .recommendations-page select { font: inherit; }
@@ -192,4 +216,14 @@ main.rec-main { display: block; overflow: visible; max-width: 1660px; margin: au
   .rec-method dl { grid-template-columns: minmax(0, 1fr); gap: 15px; }
   .rec-method summary span { display: none; }
   .rec-footer { padding: 20px 12px; }
+}
+/* Performance uses normal scrollable tables, independent of the live pick cards. */
+#performance-view .rec-table-wrap { overflow-x: auto; border: 1px solid #343a40; background: #181a1b; border-radius: 5px; }
+#performance-view .rec-table { display: table; min-width: 420px; width: 100%; }
+#performance-view .rec-table > tbody { display: table-row-group; }
+#performance-view .rec-table > thead { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
+#performance-view .rec-performance-results { min-width: 850px; }
+@media (max-width: 600px) {
+  #performance-view .rec-performance-summary { gap: 18px; }
+  #performance-view .rec-performance-summary > div { display: flex; flex: 0 0 calc(50% - 9px); }
 }

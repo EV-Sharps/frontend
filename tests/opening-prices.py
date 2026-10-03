@@ -186,7 +186,10 @@ try:
             await changeFilter();
         }""")
         assert displayed() == '+120'
-        page.locator('#book-select').select_option('dk')
+        page.locator('#book-filter-button').click()
+        page.locator('#book-options [data-book-action="none"]').click()
+        page.locator('#book-options input[value="dk"]').check()
+        page.keyboard.press('Escape')
         page.wait_for_function("TABLE.getRow(1).getData().book === 'dk'")
         assert displayed() == '+110'
         page.locator('#boost-select').select_option('50')

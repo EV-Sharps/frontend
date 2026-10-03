@@ -137,7 +137,7 @@ try:
         state['payload'] = sample()
         state['payload']['picks'][0]['reference_probabilities'] = {'pn': .6, 'circa': .5, 'fd': None}
         refresh()
-        assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['-150', '-100', '\u2014']
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-line').all_text_contents() == ['-150', '-100', '-']
         state['payload'] = sample()
         state['payload']['picks'][0]['book'] = 'newbook'
         state['payload']['picks'][0]['under'] = True
@@ -152,7 +152,7 @@ try:
         state['payload'] = sample()
         state['payload']['picks'][0]['reference_odds'] = {'pn': [None, -120], 'circa': [105], 'fd': ['<img src=x onerror=alert(1)>', -110]}
         refresh()
-        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['\u2014 / -120', '+105 / \u2014', '\u2014 / -110']
+        assert page.locator('.rec-ref-table').first.locator('.rec-reference-raw').all_text_contents() == ['- / -120', '+105 / -', '- / -110']
         assert page.locator('#picks img[src="x"], #picks [onerror]').count() == 0
         state['payload'] = sample()
         base = state['payload']['picks'][0]

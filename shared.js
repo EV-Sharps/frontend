@@ -6,7 +6,8 @@ let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
 let ACCESS_TOKEN = "";
-const IS_LOCALHOST = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+const IS_PACKAGED_APP = window.EV_APP_CONFIG?.packaged === true;
+const IS_LOCALHOST = !IS_PACKAGED_APP && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 let API_BASE = "http://localhost:5001";
 let UPDATED = {};
 let WEIGHTS = {};
@@ -121,11 +122,11 @@ function openKellySettings(event) {
 function getUnitSize() {
 	return CURR_USER?.metadata?.unit_size || 100;
 }
-if (window.location.protocol == "file:" || IS_LOCALHOST) {
+if (IS_PACKAGED_APP || window.location.protocol == "file:" || IS_LOCALHOST) {
 	HTML = ".html";
 }
 if (!IS_LOCALHOST) {
-	API_BASE = `https://api-production-3a3b.up.railway.app`;
+	API_BASE = IS_PACKAGED_APP && window.EV_APP_CONFIG.apiBase || "https://api-production-3a3b.up.railway.app";
 }
 
 function getToday() {
@@ -410,6 +411,7 @@ function openProfile() {
 }
 
 function changePage(page) {
+	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.navigate(page);
 	if (page == "historical") {
 		window.location.href = `./historical${HTML}?historical=z`;
 	} else if (page == "kambi") {
@@ -2182,6 +2184,7 @@ const evBookFormatter = function(cell, params, rendered) {
 	if (PAGE == "dingers") {
 		params.book = BOOK;
 	}
+	if (String(params.book || "").includes(",")) params = { ...params, book: data.book };
 	if (PAGE == "hedge") {
 		let line = data.line;
 		if (line > 0) {
@@ -3745,8 +3748,8 @@ function getImpliedProbabilityFromOddsString(oddsString, legIndex) {
 
 function computeOutlierFromBookOdds(rowData) {
 	const bookOdds = rowData.bookOdds;
-	let bookFilter = document.getElementById("book-select").value;
-	if (!bookOdds || (bookFilter && !bookOdds[bookFilter])) return { book: null, value: null, deviation: 0, pct: 0 };
+	const selectedBooks = parseBookFilter(document.getElementById("book-select").value);
+	if (!bookOdds || (selectedBooks.length && !selectedBooks.some(book => bookOdds[book]))) return { book: null, value: null, deviation: 0, pct: 0 };
 
 	const legIndex = rowData.under ? 1 : 0;
 
@@ -3811,7 +3814,7 @@ function computeOutlierFromBookOdds(rowData) {
 		devigBooks.forEach(b => excluded.push(b));
 		
 		Object.entries(bookOdds)
-			.filter(([book]) => !excluded.includes(book) && (!bookFilter || bookFilter == book)) 
+			.filter(([book]) => !excluded.includes(book) && (!selectedBooks.length || selectedBooks.includes(book)))
 			.forEach(([book, val]) => {
 				const p = getImpliedProbabilityFromOddsString(val, legIndex);
 
@@ -3854,7 +3857,7 @@ function computeOutlierFromBookOdds(rowData) {
 		let best = { book: null, value: null, deviation: -Infinity, pct: 0 };
 
 		entries.forEach(([book, american, p]) => {
-			if ((bookFilter && book != bookFilter) || excluded.includes(book)) {
+			if ((selectedBooks.length && !selectedBooks.includes(book)) || excluded.includes(book)) {
 				return;
 			}
 			const dev = avgP - p;
@@ -4457,7 +4460,12 @@ const BOOK_FEE_FUNCTIONS = {
 	//px: addPXFee,
 };
 
+function parseBookFilter(value, preserveBest = typeof PAGE !== "undefined" && PAGE === "heatmap") {
+	return [...new Set(String(value || "").split(",").map(book => book.trim().toLowerCase()).filter(book => book && (preserveBest || book !== "best")))];
+}
+
 function highestOver(bookOdds, excluded, boost, book, under, data = {}) {
+	const selectedBooks = parseBookFilter(book);
 	if (!boost) {
 		boost = 0;
 	}
@@ -4474,8 +4482,8 @@ function highestOver(bookOdds, excluded, boost, book, under, data = {}) {
 		.filter(([key, value]) =>
 		  // exclude list
 		  !excluded.includes(key) &&
-		  // if a specific book is requested, only consider that one
-		  (!book || key === book) &&
+		  // Compare only selected books; an empty selection value means All.
+		  (!selectedBooks.length || selectedBooks.includes(key)) &&
 		  value !== undefined && value !== null && value !== ""
 		)
 		.reduce(
@@ -4924,8 +4932,8 @@ const HELP_ITEMS = [
 	},
 	{
 		title: "Book Filter",
-		desc: "Limit results to plays available at a specific sportsbook. Useful if you only have access to certain books.",
-		getEl: () => document.getElementById("book-select")
+		desc: "Choose one or more sportsbooks. Each play uses the best price among your selected books to calculate EV. All restores the full pool with your Exclude settings.",
+		getEl: () => document.getElementById("book-filter-button") || document.getElementById("book-select")
 	},
 	{
 		title: "Exclude Books",
@@ -5296,9 +5304,41 @@ function initChkddActions(root = document) {
 	}
 }
 
-function renderBookSelect() {
-	let exclude = document.querySelector("#exclude-dd .chkdd-menu");
-	let bookSel = document.getElementById("book-select");
+function setBookSelection(value) {
+	const select = document.getElementById("book-select");
+	if (!select) return;
+	const books = parseBookFilter(value);
+	BOOK = books.join(",");
+	select.querySelectorAll('option[data-book-group]').forEach(option => option.remove());
+	if (![...select.options].some(option => option.value === BOOK)) {
+		const option = new Option(BOOK, BOOK);
+		option.dataset.bookGroup = "true";
+		select.appendChild(option);
+	}
+	select.value = BOOK;
+	syncBookPicker();
+}
+
+function syncBookPicker() {
+	const select = document.getElementById("book-select");
+	const button = document.getElementById("book-filter-button");
+	if (!select || !button) return;
+	const selected = parseBookFilter(select.value);
+	const all = selected.length === 0;
+	document.querySelectorAll('#book-options input[type="checkbox"]').forEach(input => {
+		input.checked = all || selected.includes(input.value);
+	});
+	document.getElementById("book-filter-value").textContent = all ? "All" : select.value === "none" ? "None"
+		: selected.length <= 2 ? selected.map(book => book.toUpperCase()).join(" + ") : `${selected.length} books`;
+	button.title = all ? "Best price across all books, using your Exclude settings" : select.value === "none" ? "No books selected"
+		: `Best price among ${selected.map(parseBook).join(", ")}`;
+	if (PAGE === "heatmap") button.title = all ? "Show all book histories" : select.value === "none" ? "No books selected"
+		: `Historical results for ${selected.map(parseBook).join(", ")}`;
+}
+
+function renderBookSelect(availableBooks = null) {
+	const bookSel = document.getElementById("book-select");
+	if (!bookSel) return;
 
 	let books = ["fd", "dk", "b365", "mgm", "espn", "cz", "fn", "br", "hr", "bv", "fl", "re", "bol", "kambi", "pn", "kal", "nv", "px", "poly"];
 
@@ -5314,13 +5354,92 @@ function renderBookSelect() {
 		books.push("hr_oh");
 		if (!books.includes("hr_az")) books.push("hr_az");
 	}
+	if (Array.isArray(availableBooks)) books = [...new Set(availableBooks)].filter(book => /^[a-z][a-z0-9_]*$/.test(book));
 
-	bookSel.innerHTML = `
-		<option value="" selected>All</option>
-		${books.map(book => `<option value='${book}'>${book.toUpperCase()}</option>`)};
-	`;
-	bookSel.value = BOOK || "";
+	bookSel.innerHTML = `<option value="">All</option><option value="none">None</option>` +
+		books.map(book => `<option value="${book}">${book.toUpperCase()}</option>`).join("");
+	const wrapper = bookSel.parentElement;
+	let menu = document.getElementById("book-options");
+	if (!menu) {
+		wrapper.classList.add("book-filter");
+		bookSel.hidden = true;
+		bookSel.style.display = "none";
+		const label = wrapper.querySelector('label[for="book-select"]');
+		if (label) { label.htmlFor = "book-filter-button"; label.textContent = "Books"; }
+		const button = document.createElement("button");
+		button.id = "book-filter-button";
+		button.type = "button";
+		button.setAttribute("aria-label", "Choose betting books");
+		button.setAttribute("aria-controls", "book-options");
+		button.setAttribute("aria-expanded", "false");
+		button.innerHTML = '<span id="book-filter-value">All</span>';
+		wrapper.appendChild(button);
+		menu = document.createElement("div");
+		menu.id = "book-options";
+		menu.className = "chkdd-menu book-filter-menu";
+		menu.dataset.wired = "1";
+		menu.setAttribute("role", "group");
+		menu.setAttribute("aria-label", "Betting books");
+		wrapper.appendChild(menu);
+		const close = () => {
+			menu.style.display = "none";
+			button.setAttribute("aria-expanded", "false");
+			wrapper.appendChild(menu);
+		};
+		const apply = value => {
+			setBookSelection(value);
+			bookSel.dispatchEvent(new Event("change", { bubbles: true }));
+		};
+		button.addEventListener("click", event => {
+			event.stopPropagation();
+			if (menu.style.display === "block") { close(); return; }
+			document.body.appendChild(menu);
+			menu.style.display = "block";
+			const rect = button.getBoundingClientRect();
+			menu.style.top = `${rect.bottom + 6}px`;
+			menu.style.left = `${MOBILE || CURRENT_VIEW === "mobile" ? Math.max(8, window.innerWidth - menu.offsetWidth - 8)
+				: Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+			menu.style.maxHeight = `${Math.max(80, window.innerHeight - rect.bottom - 14)}px`;
+			button.setAttribute("aria-expanded", "true");
+			menu.querySelector("button")?.focus({ preventScroll: true });
+		});
+		menu.addEventListener("click", event => {
+			event.stopPropagation();
+			const action = event.target.closest("button")?.dataset.bookAction;
+			if (action === "all") apply("");
+			else if (action === "none") apply("none");
+		});
+		menu.addEventListener("change", event => {
+			event.stopPropagation();
+			if (!event.target.matches('input[type="checkbox"]')) return;
+			const inputs = [...menu.querySelectorAll('input[type="checkbox"]')];
+			const selected = inputs.filter(input => input.checked).map(input => input.value);
+			apply(selected.length === inputs.length ? "" : selected.join(",") || "none");
+		});
+		document.addEventListener("click", event => {
+			if (!wrapper.contains(event.target) && !menu.contains(event.target)) close();
+		});
+		document.addEventListener("keydown", event => {
+			if (event.key === "Escape" && menu.style.display === "block") { close(); button.focus(); }
+		});
+		document.addEventListener("focusin", event => {
+			if (!wrapper.contains(event.target) && !menu.contains(event.target)) close();
+		});
+		window.addEventListener("resize", close);
+	}
+	menu.innerHTML = `<p>${PAGE === "heatmap" ? "Show a chart for each checked book." : "Best price among checked books."}</p>
+		<div class="chkdd-actions"><button type="button" data-book-action="all">All</button><button type="button" data-book-action="none">None</button></div>
+		<div class="book-filter-list">${books.map(book => `<label><input type="checkbox" value="${book}">${book === "best" ? '<span aria-hidden="true" style="width:18px;text-align:center">★</span>Best book' : `<img src="logos/${book}.png" alt="">${parseBook(book)}`}</label>`).join("")}</div>`;
+	setBookSelection(BOOK || "");
 }
+
+// Older pages initialize data independently of renderFilters(). Upgrade their
+// Book control as well, after page-specific globals and handlers have loaded.
+document.addEventListener("DOMContentLoaded", () => {
+	if (PAGE !== "heatmap" && document.getElementById("book-select") && !document.getElementById("book-filter-button")) {
+		renderBookSelect();
+	}
+});
 
 // Devig keys are "+"-joined book lists (e.g. "circa+pn+kal"); the same set of
 // books can come back in a different order (e.g. "pn+circa+kal"), so compare
@@ -5390,7 +5509,7 @@ async function initDevPicker(data){
 	if (!data || data.length === 0 || data.error) {
 		return;
 	}
-	for (row of data) {
+	for (const row of data) {
 		let prop, dev;
 		if (!row.devig.includes("-vs-")) {
 			prop = "hr"; dev = row.devig;
@@ -5430,6 +5549,7 @@ async function initDevPicker(data){
 		const btn = document.createElement('button');
 		btn.type = 'button';
 		btn.id = `devig-btn-${cssSafeId(dev)}`;
+		if (parseBookFilter(BOOK).length > 1) btn.id += `-${row.book}`;
 		btn.className = 'book-chip dev-chip';
 		btn.dataset.value = dev;
 		btn.textContent = dev.toUpperCase();
@@ -5440,7 +5560,7 @@ async function initDevPicker(data){
 		info.className = 'dev-subinfo';
 		let recText = '';
 		try {
-			let rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[METHOD||"worst"][BOOK||"best"]) ? RECORD[METHOD||"worst"][BOOK||"best"][`${prop}-vs-${dev}`] : null;
+			let rec = (typeof RECORD !== 'undefined' && RECORD) ? RECORD[METHOD||"worst"]?.[row.book]?.[`${prop}-vs-${dev}`] : null;
 			if (rec) {
 				rec = rec[DEV_WINDOW] || rec["All"];
 				const wins = rec.wins ?? rec.w ?? 0;
@@ -5451,7 +5571,7 @@ async function initDevPicker(data){
 		} catch (e) {
 			recText = '';
 		}
-		info.innerHTML = recText;
+		info.innerHTML = recText && parseBookFilter(BOOK).length > 1 ? `${row.book.toUpperCase()}: ${recText}` : recText;
 		wrap.appendChild(info);
 
 		// default selection logic: preserve DEVIG or pick first available
@@ -5472,8 +5592,8 @@ async function initDevPicker(data){
 			WEIGHT = repeatOnes(DEVIG).slice(1);
 			REQUIRED = DEVIG.split("+");
 			document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
-			const bookSelectEl = document.getElementById("book-select");
-			if (bookSelectEl) bookSelectEl.value = row.book.replace("best", "") || "";
+			// A devig chip changes the reference while retaining a selected book group.
+			if (parseBookFilter(BOOK).length <= 1) setBookSelection(row.book === "best" ? "" : row.book);
 			let props = [prop];
 			if (prop == "team_total") {
 				props = ["away_total", "home_total"];

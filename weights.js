@@ -316,10 +316,11 @@ function getTopDevigs(bookArg = null) {
 		return { error: "RECORD not available" };
 	}
 	const list = [];
+	const selectedBooks = bookArg ? String(bookArg).split(",") : [];
 	const books = RECORD[METHOD || "worst"];
 	if (!books) return list;
 	for (const book in books) {
-		if (bookArg && book !== bookArg) continue;
+		if (selectedBooks.length && !selectedBooks.includes(book)) continue;
 		const devigs = books[book];
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
@@ -422,7 +423,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	bookWrapper.appendChild(bookSelect);
 	header.appendChild(bookWrapper);
 
-	bookSelect.value = BOOK || "all";
+	bookSelect.value = uniqueBooks.includes(BOOK) ? BOOK : "all";
 
 	// prop select
 	const propWrapper = document.createElement("div");
@@ -523,8 +524,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 				DEVIG_EXCLUDED = [];
 				WEIGHT = repeatOnes(devig).slice(1);
 				REQUIRED = devig.replace("only+", "").split("+");
-				const bookSelectEl = document.getElementById("book-select");
-				if (bookSelectEl) bookSelectEl.value = book.replace("best", "") || "";
+				setBookSelection(book === "best" ? "" : book);
 				setOptions("prop-options", [prop]);
 				updatePropLabel([prop]);
 				if (typeof updateRequiredDropdown === 'function') updateRequiredDropdown();

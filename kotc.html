@@ -525,8 +525,19 @@
 		let resolveTableReady;
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
 		const fetchProps = createDataRefresh(() => API_BASE + '/api/kotc', async data => {
-			RES = data;
-			await TABLE.replaceData(data);
+			RES = Array.isArray(data) ? { data } : data;
+			RES.games = RES.games || [...new Set(RES.data.map(row => row.game).filter(Boolean))];
+			RES.props = RES.props || [...new Set(RES.data.map(row => row.prop).filter(Boolean))];
+			RES.updated = RES.updated || {};
+			UPDATED[PAGE] = RES.updated;
+			for (const [id, values] of [["game-options", RES.games], ["prop-options", RES.props]]) {
+				const menu = document.getElementById(id);
+				menu.querySelectorAll('label, .chkdd-date-sep').forEach(element => element.remove());
+				if (id === "game-options") populateGameOptions(values, RES.times, menu);
+				else values.forEach(value => createOption(value, menu));
+				restoreChkddState(menu);
+			}
+			await changeFilter();
 		});
 
 		let loaded = false;
@@ -580,10 +591,11 @@
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
-				if (!loaded) {
+				const firstLoad = !loaded;
+				loaded = true;
+				if (firstLoad) {
 					changeFilter();
 				}
-				loaded = true;
 			});
 		}
 
@@ -642,6 +654,46 @@
 		}
 	</script>
 	<script type="text/javascript" src="filter.js"></script>
+	<script>
+		const filterKotcOdds = changeFilter;
+		changeFilter = function(render = true) {
+			if (!RES?.data || !TABLE) return;
+			let status = document.getElementById("kotc-book-status");
+			if (!status) {
+				status = document.createElement("p");
+				status.id = "kotc-book-status";
+				status.setAttribute("role", "status");
+				document.getElementById("table-container").before(status);
+			}
+			status.hidden = true;
+			if (RES.data.some(row => row.bookOdds && Object.keys(row.bookOdds).length)) {
+				return filterKotcOdds(render);
+			}
+
+			// KOTC's research feed has projections, but no prices to compare or devig.
+			BOOK = document.getElementById("book-select").value;
+			syncBookPicker();
+			const selectedBooks = parseBookFilter(BOOK);
+			const availableGames = [...document.querySelectorAll('#game-options input[type="checkbox"]')];
+			const games = availableGames.filter(input => input.checked).map(input => input.value);
+			const noBooks = BOOK === "none";
+			const scoped = selectedBooks.length > 0 && !noBooks;
+			status.textContent = scoped ? "Book prices are unavailable for this research data. Choose All to view xPRA." : "";
+			status.hidden = !scoped;
+			const rows = selectedBooks.length ? [] : RES.data.filter(row => !availableGames.length || games.includes(row.game));
+			const params = new URLSearchParams(location.search);
+			params.set("book", BOOK);
+			params.set("game", games.length === availableGames.length ? "" : games.join(","));
+			const nextUrl = `${location.pathname}?${params.toString()}`;
+			if (nextUrl !== `${location.pathname}${location.search}`) history.replaceState({}, "", nextUrl);
+			if (!render) return;
+			TABLE.clearFilter();
+			TABLE.options.placeholder = scoped ? status.textContent : noBooks ? "No books selected." : "No research matches these filters.";
+			document.getElementById("table").style.display = "initial";
+			document.getElementById("card-container").style.display = "none";
+			return TABLE.replaceData(rows);
+		};
+	</script>
 	<script type="text/javascript" src="card.js"></script>
 	<script type="text/javascript" src="weights.js"></script>
 	<script>handleSession();</script>

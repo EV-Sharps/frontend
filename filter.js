@@ -619,6 +619,7 @@ if (document.getElementById("book-select")) {
 	document.querySelector("#book-select").value = BOOK || "";
 	document.querySelector("#book-select").addEventListener("change", (event) => {
 		BOOK = event.target.value;
+		syncBookPicker();
 		if (PAGE === "heatmap") {
 			updateHeatmap();
 		} else {
@@ -1471,6 +1472,8 @@ function changeFilter(render = true) {
 	}
 	let boost = document.getElementById("boost-select").value;
 	let book = document.getElementById("book-select").value;
+	const selectedBooks = parseBookFilter(book);
+	syncBookPicker();
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;
@@ -1546,7 +1549,7 @@ function changeFilter(render = true) {
 			ex.push(devigBook);
 		}
 		if (book) {
-			ex = ex.filter(b => b !== book);
+			ex = ex.filter(b => !selectedBooks.includes(b));
 		}
 		const highest = highestOver(bookOdds, ex, boost, book, row.under, row);
 		if (!isFinite(highest.value)) {
@@ -1646,6 +1649,7 @@ function changeFilter(render = true) {
 
 	// Filters
 	let filtered = [...RES.data].filter(r => {
+		if (selectedBooks.length && !selectedBooks.some(book => r.bookOdds?.[book])) return false;
 		if (OU != "ou") {
 			if (r.under !== (OU === "u")) return false;
 		}

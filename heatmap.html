@@ -13,10 +13,16 @@
 		#header {
 			padding: 1rem 2rem;
 		}
-		#heatmap {
+		main { min-height: 0; overflow-y: auto; justify-content: flex-start; }
+		.heatmap-chart {
 			width: 100%;
 			height: 70vh; min-height: 520px
 		}
+		#heatmaps { min-width: 0; flex: 0 0 auto; }
+		.heatmap-panel + .heatmap-panel { border-top: 1px solid #2a2e39; margin-top: 16px; }
+		.heatmap-empty { padding: 48px 20px; text-align: center; color: #bfc6cc; }
+		#heatmap-status { padding: 0 16px; color: #bfc6cc; font-size: 12px; flex: 0 0 auto; }
+		#download-btn:disabled { opacity: .55; cursor: default; }
 		/* book picker styles */
 		#book-select { display: none; }
 
@@ -163,7 +169,7 @@
 			#header {
 				padding: 0.5rem 1rem
 			}
-			#heatmap { height: 80vh; min-height: 240px; }
+			.heatmap-chart { height: 80vh; min-height: 240px; }
 			#header-top {
 				flex-wrap: wrap;
 			}
@@ -295,7 +301,6 @@
 						<option value="kambi">Kambi</option>
 					</select>
 
-					<div id="book-picker" class="book-picker" role="tablist" aria-label="Select book"></div>
 				</div>
 
 				<div class="select-wrapper">
@@ -307,7 +312,8 @@
 			</div>
 		</header>
 		<main>
-			<div id="heatmap"></div>
+			<p id="heatmap-status" role="status" aria-live="polite"></p>
+			<div id="heatmaps"></div>
 		</main>
 	</div>
 	<script src="plotly-3.0.0.min.js"></script>
@@ -318,48 +324,33 @@
 		PAGE = "heatmap";
 		let RECORD;
 		let SIZING = "unit";
+		let heatmapBooks = [];
+		let heatmapVersion = 0;
+		let heatmapLoadVersion = 0;
 		parseURLParams();
 
 		function initBookPicker(){
 			const select = document.getElementById('book-select');
-			const picker = document.getElementById('book-picker');
-			if (!select || !picker) return;
+			if (!select) return;
 			const available = new Set(Object.values(RES?.xy || {}).flatMap(books => Object.keys(books || {})));
-			const preferred = Array.from(select.options, option => option.value);
-			const books = [...new Set([...preferred, ...ALL_WEIGHTABLE_BOOKS, ...available])].filter(book => available.has(book));
-			const labels = { best: 'Best', kambi: 'Kambi' };
-			select.replaceChildren(...books.map(book => new Option(labels[book] || book.toUpperCase().replaceAll('_', ' '), book)));
-			if (!available.has(BOOK)) BOOK = available.has('fd') ? 'fd' : books[0] || '';
-			picker.innerHTML = '';
-			Array.from(select.options).forEach(opt => {
-				const btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'book-chip';
-				btn.dataset.value = opt.value;
-				btn.textContent = opt.text;
-				if ((BOOK === undefined && opt.selected) || (BOOK && opt.value === BOOK)) {
-					btn.classList.add('active');
-					// ensure BOOK matches the selected option
-					BOOK = opt.value;
-					select.value = opt.value;
-				}
-				btn.addEventListener('click', () => {
-					BOOK = opt.value;
-					select.value = BOOK;
-					picker.querySelectorAll('.book-chip').forEach(c => c.classList.toggle('active', c === btn));
-					btn.scrollIntoView({behavior: 'smooth', inline: 'center'});
-					updateHeatmap();
-				});
-				picker.appendChild(btn);
-			});
-			// scroll active into view
-			const active = picker.querySelector('.book-chip.active');
-			if (active) active.scrollIntoView({inline: 'center'});
+			const preferred = ['best', 'fd', 'dk', 'b365', 'mgm', 'espn', 'cz', 'fn', 'br', 'hr', 'bv', 'kambi'];
+			heatmapBooks = [...new Set([...preferred, ...ALL_WEIGHTABLE_BOOKS, ...available])].filter(book => available.has(book));
+			if (BOOK && BOOK !== 'none') BOOK = parseBookFilter(BOOK).filter(book => available.has(book)).join(',') || 'none';
+			renderBookSelect(heatmapBooks);
 		}
 
-		// Read the devig references available for the selected betting book.
-        function initDevPicker(data){
-			const devSet = new Set(Object.keys(data || {}));
+		function selectedHeatmapBooks() {
+			if (BOOK === 'none') return [];
+			const selected = parseBookFilter(BOOK);
+			return selected.length ? heatmapBooks.filter(book => selected.includes(book)) : heatmapBooks.slice();
+		}
+
+		// References are shared controls; each book retains its own history and record.
+        function initDevPicker(books){
+			const propData = RES?.xy?.[PROP] || {};
+			const references = books.flatMap(book => Object.keys(propData[book] || {}));
+			const devSet = new Set(references.filter((dev, index) => references.findIndex(other => devigSetEquals(dev, other)) === index));
+			const singleBook = books.length === 1 ? books[0] : null;
 			const picker = document.getElementById('dev-picker');
 			const hidden = document.getElementById('devig-select');
 			if (!picker) return;
@@ -368,12 +359,12 @@
 
 			const getRoi = dev => {
 				try {
-					const rec = RECORD?.[BOOK]?.[`${PROP}-vs-${dev}`]?.["All"];
+					const rec = RECORD?.[singleBook]?.[`${PROP}-vs-${dev}`]?.["All"];
 					return (typeof rec?.roi === 'number') ? rec.roi : -Infinity;
 				} catch { return -Infinity; }
 			};
 			const devs = Array.from(devSet).sort((a, b) => getRoi(b) - getRoi(a));
-			DEVIG = devs.find(dev => devigSetEquals(dev, DEVIG)) || devs[0] || '';
+			if (devs.length) DEVIG = devs.find(dev => devigSetEquals(dev, DEVIG)) || devs[0];
 			if (hidden) {
 				hidden.replaceChildren(...devs.map(dev => new Option(dev.toUpperCase(), dev)));
 				hidden.value = DEVIG;
@@ -395,7 +386,7 @@
 				info.className = 'dev-subinfo';
 				let recText = '';
 				try {
-					let rec = (typeof RECORD !== 'undefined' && RECORD && RECORD[BOOK]) ? RECORD[BOOK][`${PROP}-vs-${dev}`] : null;
+					let rec = RECORD?.[singleBook]?.[`${PROP}-vs-${dev}`];
 					if (rec) {
 						rec = rec["All"];
 						const wins = rec.wins ?? rec.w ?? 0;
@@ -404,6 +395,7 @@
 						//recText = `${wins}W ${losses}L ${roi ? `(${roi})` : ''}`;
 						recText = `${wins}W - ${losses}L ${roi ? `<br><span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>` : ''}`;
 					}
+					if (!singleBook) recText = `${books.filter(book => Object.keys(propData[book] || {}).some(other => devigSetEquals(dev, other))).length}/${books.length} books`;
 				} catch (e) {
 					recText = '';
 				}
@@ -429,13 +421,8 @@
 				picker.appendChild(wrap);
 			});
 
-			// ensure active visible
-			const activeWrap = picker.querySelector('.dev-chip.active');
-			if (activeWrap) {
-				// if the active element is a button inside wrap, scroll its wrapper
-				const btn = picker.querySelector('.dev-chip.active');
-				if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'center'});
-			}
+			const activeWrap = picker.querySelector('.dev-chip.active')?.parentElement;
+			if (activeWrap) picker.scrollLeft = Math.max(0, activeWrap.offsetLeft - picker.offsetLeft - picker.clientWidth / 2 + activeWrap.clientWidth / 2);
 		}
 
 		function initPropPicker(props) {
@@ -456,10 +443,10 @@
 			if (!PROP || !propSet.has(PROP)) PROP = propsList[0] || '';
 			sel.value = PROP;
 
-			sel.addEventListener('change', (e) => {
+			sel.onchange = (e) => {
 				PROP = e.target.value;
 				updateHeatmap();
-			});
+			};
 		}
 
 		async function loadGzJson(url){
@@ -484,7 +471,7 @@
 		function formatXLabel(left, right){ return `${Math.round(left)}–${Math.round(right)}%`; }
 		function formatYLabel(left, right){ return `${Math.round(left)}–${Math.round(right)}`; }
 
-		async function renderHeatmap(gzUrl, opts = {}){
+		async function renderHeatmap(opts = {}){
 			const cfg = Object.assign({
 				roi: false,
 				evRange: [0,15], evStep: 1,
@@ -495,17 +482,14 @@
 				containerId: 'heatmap'
 			}, opts);
 
-			//let bets = await loadGzJson(gzUrl);
-			//RES = bets;
 			const bookData = RES?.xy?.[cfg.prop]?.[cfg.bookLabel] || {};
-			initDevPicker(bookData);
-			cfg.devLabel = DEVIG;
 
 			// Server ships pre-binned bets - evIdx -> oddsIdx -> [wins, losses, profitSum] -
 			// at a fine grid (RES.grid) instead of one row per historical bet, so we fold
 			// each fine bin into whichever display bin (cfg.evStep/oddsStep, user-selectable)
 			// its midpoint falls into, rather than filtering/binning raw bets.
-			const fineBins = bookData[cfg.devLabel];
+			const reference = Object.keys(bookData).find(dev => devigSetEquals(dev, cfg.devLabel));
+			const fineBins = bookData[reference];
 			const grid = RES["grid"];
 
 			// bins
@@ -611,7 +595,7 @@
 			if (MOBILE) annotations = [];
 			if (!fineBins) annotations = [{
 				xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
-				text: 'No historical data for this book and prop.', showarrow: false,
+				text: 'No history for this book, prop and reference.', showarrow: false,
 				font: { color: '#bfc6cc', size: 13 }
 			}];
 
@@ -637,6 +621,7 @@
 							? (cfg.sizing === "kelly" ? 'ROI (avg kelly units/bet)' : 'ROI (avg units/bet)')
 							: (cfg.sizing === "kelly" ? 'Total Profit (kelly units)' : 'Total Profit (units)')
 					},
+					tickfont: { size: MOBILE ? 10 : 12 },
 					orientation: 'h',
 					x: 0.5, y: -0.30, xanchor: 'center'
 				},
@@ -670,21 +655,20 @@
 					zerolinecolor: '#2a2e39'
 				},
 				title: {
-					text: `${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')} Heatmap - ${cfg.sizing === 'kelly' ? 'Kelly' : 'Unit'} sizing (bet on ${cfg.bookLabel}, devig: vs ${cfg.devLabel}, method: ${METHOD||'worst-case'})`,
+					text: `${cfg.bookLabel === 'best' ? 'Best book' : cfg.bookLabel.toUpperCase()} · ${(cfg.sport||'SPORT').toUpperCase()} ${(cfg.prop||'PROP').toUpperCase()} ${(cfg.roi ? 'ROI' : 'Total Profit')}<br>${cfg.sizing === 'kelly' ? 'Kelly' : 'Unit'} sizing · vs ${cfg.devLabel.toUpperCase() || '-'} · ${METHOD||'worst-case'}`,
+					font: { size: MOBILE ? 12 : 15 },
+					x: .5, xanchor: 'center',
 				},
 				annotations,
-				margin: { l: 80, r: 20, t: 40, b: MOBILE ? 160 : 90 },
+				margin: { l: 80, r: 20, t: 65, b: MOBILE ? 160 : 90 },
 			};
 
-			Plotly.newPlot(cfg.containerId, [trace], layout, {displayModeBar:false, responsive:true});
-			setTimeout(() => {
-				Plotly.Plots.resize(cfg.containerId)
-			}, 100);
+			await Plotly.newPlot(cfg.containerId, [trace], layout, {displayModeBar:false, responsive:true});
 
 			// custom hover tooltip showing list of bets split between hits and losses
             (function attachTooltip() {
-                const gd = document.getElementById(cfg.containerId);
-                if (!gd) return;
+				const gd = typeof cfg.containerId === 'string' ? document.getElementById(cfg.containerId) : cfg.containerId;
+				if (!gd?.isConnected) return;
 
                 // create tooltip element once
                 let tip = document.getElementById('heatmap-tooltip');
@@ -753,7 +737,6 @@
 		selSport.value = SPORT || 'nba';
 		selSport.addEventListener('change', () => {
 			SPORT = selSport.value;
-			BOOK = "fd";
 			DEVIG = "circa";
 			if (SPORT == "nba") PROP = "reb";
 			else if (SPORT == "nhl") PROP = "atgs";
@@ -769,7 +752,7 @@
 		const selSizing = document.getElementById('selSizing');
 		if (selSizing) selSizing.addEventListener('change', () => { SIZING = selSizing.value; updateHeatmap(); });
 
-		if (!BOOK) BOOK = 'fd';
+		if (BOOK == null) BOOK = 'fd';
 		if (!DEVIG) DEVIG = 'circa';
 		if (!PROP) {
 			if (SPORT === 'nba') PROP = 'reb';
@@ -801,24 +784,53 @@
 		}
 
 		async function init() {
-			RES = await loadGzJson(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);
+			const version = ++heatmapLoadVersion;
+			const data = await loadGzJson(`/heatmaps/${SPORT}_${METHOD || "worst"}.json.gz`);
+			if (version !== heatmapLoadVersion) return;
+			RES = data;
 			RECORD = RES["record"];
 			initPropPicker(RES["xy"]);
 			initBookPicker();
-			updateHeatmap();
+			return updateHeatmap();
 		}
 
-		function updateHeatmap() {
+		async function updateHeatmap() {
+			if (!RES?.xy) return;
+			const version = ++heatmapVersion;
+			const books = selectedHeatmapBooks();
+			initDevPicker(books);
 			const [evRange, oddsRange] = getRanges();
 
             const evStep = selEvStep ? Number(selEvStep.value) : 1;
             const oddsStep = selOddsStep ? Number(selOddsStep.value) : 100;
 
-			renderHeatmap(`/heatmaps/${SPORT}.json.gz`, {
-				roi: true, minBets: 1, containerId:'heatmap', bookLabel: BOOK, devLabel: DEVIG, sport: SPORT,
-				prop: PROP, sizing: SIZING,
-				evStep: evStep, oddsStep: oddsStep,
-				evRange: evRange, oddsRange: oddsRange
+			const container = document.getElementById('heatmaps');
+			container.querySelectorAll('.heatmap-chart').forEach(chart => Plotly.purge(chart));
+			container.replaceChildren();
+			document.getElementById('heatmap-status').textContent = books.length > 1
+				? `${books.length} book histories. Chart controls apply to all books.` : '';
+			const download = document.getElementById('download-btn');
+			download.disabled = true;
+			if (!books.length) {
+				const empty = document.createElement('p');
+				empty.className = 'heatmap-empty';
+				empty.textContent = heatmapBooks.length ? 'Select a betting book to view its history.' : 'No book histories are available.';
+				container.appendChild(empty);
+			}
+			const plots = books.map((book, index) => {
+				const panel = document.createElement('section');
+				panel.className = 'heatmap-panel';
+				panel.dataset.book = book;
+				panel.setAttribute('aria-label', `${book === 'best' ? 'Best book' : book.toUpperCase()} history`);
+				const chart = document.createElement('div');
+				chart.className = 'heatmap-chart';
+				chart.id = index === 0 ? 'heatmap' : `heatmap-${index}`;
+				panel.appendChild(chart);
+				container.appendChild(panel);
+				return renderHeatmap({
+					roi: true, minBets: 1, containerId: chart, bookLabel: book, devLabel: DEVIG, sport: SPORT,
+					prop: PROP, sizing: SIZING, evStep, oddsStep, evRange, oddsRange
+				});
 			});
 			const params = new URLSearchParams(window.location.search);
 			params.set("sport", SPORT);
@@ -826,44 +838,52 @@
 			params.set("devig", DEVIG);
 			params.set("prop", PROP);
 			const newUrl = `${window.location.pathname}?${params.toString()}`;
-			history.pushState({}, '', newUrl);
+			if (newUrl !== window.location.pathname + window.location.search) history.pushState({}, '', newUrl);
+			await Promise.all(plots);
+			if (version === heatmapVersion) download.disabled = books.length === 0;
 		}
 
 		async function downloadHeatmapImage(){
             const btn = document.getElementById('download-btn');
-            const gd = document.getElementById('heatmap');
-            if (!gd) {
-                alert('Heatmap not ready');
-                return;
-            }
-            const filenameBase = `heatmap_${(SPORT||'sport')}_${(PROP||'prop')}_${(BOOK||'book')}_${(DEVIG||'dev')}`.replace(/[^a-z0-9-_]/gi,'_');
+            const charts = [...document.querySelectorAll('.heatmap-chart')].filter(chart => chart.data);
+            if (!charts.length || btn.disabled) return;
+            const filenameBase = `heatmap_${(SPORT||'sport')}_${(PROP||'prop')}_${(BOOK||'all')}_${(DEVIG||'dev')}`.replace(/[^a-z0-9-_]/gi,'_');
             try {
                 if (btn) { btn.disabled = true; btn.textContent = 'Preparing...'; }
-                // prefer toImage for data-uri -> anchor download (works across builds)
-                if (typeof Plotly.toImage === 'function') {
-                    // choose a reasonable export size (scale up for better quality)
-                    const width = Math.max(gd.clientWidth, 1200);
-                    const height = Math.max(gd.clientHeight, 800);
-                    const dataUrl = await Plotly.toImage(gd, {format: 'png', width, height, scale: 2});
-                    const a = document.createElement('a');
-                    a.href = dataUrl;
-                    a.download = filenameBase + '.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    return;
+                let dataUrl;
+                if (charts.length === 1) {
+                    const gd = charts[0];
+                    dataUrl = await Plotly.toImage(gd, {format: 'png', width: Math.max(gd.clientWidth, 1200), height: Math.max(gd.clientHeight, 800), scale: 2});
+                } else {
+                    // One image avoids browsers blocking repeated automatic downloads.
+                    // Every panel remains independent, with its own book and reference title.
+                    const width = 1200, height = 800, columns = 2;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width * columns;
+                    canvas.height = height * Math.ceil(charts.length / columns);
+                    const context = canvas.getContext('2d');
+                    context.fillStyle = '#0f1117';
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    for (let index = 0; index < charts.length; index++) {
+                        const uri = await Plotly.toImage(charts[index], {format: 'png', width, height, scale: 1});
+                        const picture = new Image();
+                        picture.src = uri;
+                        await picture.decode();
+                        context.drawImage(picture, (index % columns) * width, Math.floor(index / columns) * height, width, height);
+                    }
+                    dataUrl = canvas.toDataURL('image/png');
                 }
-                // fallback to Plotly.downloadImage if available
-                if (typeof Plotly.downloadImage === 'function') {
-                    await Plotly.downloadImage(gd, {format:'png', filename: filenameBase, width: Math.max(gd.clientWidth,1200), height: Math.max(gd.clientHeight,800)});
-                    return;
-                }
-                alert('This Plotly build does not support image export.');
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = filenameBase + '.png';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
             } catch (err) {
                 console.error('downloadHeatmapImage error', err);
                 alert('Failed to generate image.');
             } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Download PNG'; }
+                if (btn) { btn.disabled = selectedHeatmapBooks().length === 0; btn.textContent = 'Download PNG'; }
             }
         }
 

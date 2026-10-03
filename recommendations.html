@@ -6,7 +6,7 @@
   <title>Daily recommendations | +EV Sharps</title>
   <meta name="description" content="A daily shortlist of player props and main lines, screened for price, market agreement and liquidity.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="recommendations.css">
+  <link rel="stylesheet" href="recommendations.css?v=20261003-performance">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="recommendations-page">
@@ -25,12 +25,17 @@
       <div class="rec-refresh"><span id="report-date">Today's slate</span><small id="generated">Loading latest shortlist…</small>
         <button id="refresh" type="button">Refresh shortlist <span aria-hidden="true">↻</span></button></div>
     </div>
-    <div id="request-status" class="rec-notice" role="status" hidden></div>
-    <div id="freshness-status" class="rec-notice" role="status" hidden></div>
+    <nav class="rec-view-tabs" aria-label="Recommendations views">
+      <button id="current-tab" type="button" aria-pressed="true" aria-controls="current-view">Current recommendations</button>
+      <button id="performance-tab" type="button" aria-pressed="false" aria-controls="performance-view">Performance</button>
+    </nav>
     <section id="access-panel" class="rec-empty" hidden>
       <h2>Recommendations are included with Sharp</h2><p>Sign in with your Sharp account to see the daily shortlist.</p>
       <a id="access-login" class="rec-button" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a>
     </section>
+    <section id="current-view" aria-label="Current recommendations">
+    <div id="request-status" class="rec-notice" role="status" hidden></div>
+    <div id="freshness-status" class="rec-notice" role="status" hidden></div>
     <div id="report-content" aria-busy="true">
       <div class="rec-summary" aria-label="Shortlist summary">
         <div><strong id="pick-count">-</strong><span>Available plays</span></div>
@@ -76,12 +81,34 @@
         </aside>
       </div>
     </div>
+    </section>
+    <section id="performance-view" hidden aria-label="Recommendation performance">
+      <div class="rec-performance-heading"><div><p class="rec-eyebrow">FORWARD TRACKING</p><h2>How recommendations performed</h2>
+        <p class="rec-lede">A record of the prices published here, graded at a flat 1 unit per offer.</p></div>
+        <button id="performance-refresh" type="button">Refresh results</button></div>
+      <div id="performance-status" class="rec-notice" role="status">Loading performance...</div>
+      <div id="performance-data" hidden>
+        <p id="performance-policy" class="rec-caption"></p>
+        <div class="rec-filters"><label>Performance book<select id="performance-book"><option value="">All books (separate offers)</option></select></label></div>
+        <p id="performance-period" class="rec-caption"></p>
+        <div id="performance-summary" class="rec-summary rec-performance-summary" aria-label="All-time performance"></div>
+        <p id="performance-unique" class="rec-caption" hidden></p>
+        <div class="rec-performance-breakdowns">
+          <section><h3>By betting book</h3><div class="rec-table-wrap"><table class="rec-table rec-performance-table"><caption class="sr-only">All-time offered-bet results by betting book</caption><thead><tr><th>Book</th><th>W-L-P</th><th>Net units</th><th>ROI</th><th>Pending / ungraded</th></tr></thead><tbody id="performance-books"></tbody></table></div></section>
+          <section><h3>By sport</h3><div class="rec-table-wrap"><table class="rec-table rec-performance-table"><caption class="sr-only">All-time offered-bet results by sport, across all books</caption><thead><tr><th>Sport</th><th>W-L-P</th><th>Net units</th><th>ROI</th><th>Pending / ungraded</th></tr></thead><tbody id="performance-sports"></tbody></table></div></section>
+          <section><h3>By market</h3><div class="rec-table-wrap"><table class="rec-table rec-performance-table"><caption class="sr-only">All-time offered-bet results by market, across all books</caption><thead><tr><th>Market</th><th>W-L-P</th><th>Net units</th><th>ROI</th><th>Pending / ungraded</th></tr></thead><tbody id="performance-markets"></tbody></table></div></section>
+        </div>
+        <h3>Recent tracked offers</h3><p id="performance-recent-caption" class="rec-caption"></p>
+        <div class="rec-table-wrap"><table class="rec-table rec-performance-table rec-performance-results"><caption class="sr-only">Recent tracked recommendations at their first published prices</caption><thead><tr><th>Date / Game</th><th>Selection</th><th>Book / Price</th><th>First EV</th><th>Result</th><th>Net units</th></tr></thead><tbody id="performance-results"></tbody></table></div>
+      </div>
+    </section>
   </main>
   <footer class="rec-footer">Prices can move. Minimum odds apply only while the reference prices remain unchanged.</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
   <script src="auth.js"></script>
   <script src="page-performance.js"></script>
-  <script src="recommendations.js"></script>
+  <script src="recommendations-performance.js?v=20261003-performance2"></script>
+  <script src="recommendations.js?v=20261003-performance"></script>
 </body>
 </html>

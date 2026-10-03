@@ -158,7 +158,8 @@ document.getElementById('profile-billing').addEventListener('click', async event
 		if (!response.ok) throw new Error();
 		const data = await response.json();
 		if (!data.url) throw new Error();
-		window.location.href = data.url;
+		if (IS_PACKAGED_APP && window.EVNative) await window.EVNative.openExternal(data.url);
+		else window.location.href = data.url;
 	} catch (error) {
 		profileStatus(status, 'Billing could not be opened. Please try again.', 'error');
 	} finally {
@@ -182,7 +183,14 @@ document.getElementById('link-discord-btn').addEventListener('click', async even
 	try {
 		const { data, error } = await SB.auth.getSession();
 		if (error || !data?.session?.user?.id) throw new Error();
-		window.location.href = `${API_BASE}/api/discord/login?user_id=${encodeURIComponent(data.session.user.id)}`;
+		const url = `${API_BASE}/api/discord/login?user_id=${encodeURIComponent(data.session.user.id)}`;
+		if (IS_PACKAGED_APP && window.EVNative) {
+			await window.EVNative.openExternal(url);
+			button.disabled = false;
+			button.removeAttribute('aria-busy');
+			text.textContent = originalText;
+			spinner.hidden = true;
+		} else window.location.href = url;
 	} catch (error) {
 		profileStatus(status, 'Could not connect. Sign in again and retry.', 'error');
 		button.disabled = false;

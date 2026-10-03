@@ -228,6 +228,7 @@
         });
         if (requestVersion !== authVersion) return;
         if ([401, 403].includes(response.status)) {
+          window.RecommendationPerformance?.deny(response.status);
           report = null;
           $('picks').replaceChildren();
           $('report-content').hidden = true;
@@ -276,6 +277,7 @@
     const token = session?.access_token || '';
     if (token === ACCESS_TOKEN) return;
     ACCESS_TOKEN = token;
+    window.RecommendationPerformance?.setSession(token);
     authVersion++;
     report = null;
     $('picks').replaceChildren();
@@ -289,6 +291,7 @@
       const { data, error } = await SB.auth.getSession();
       if (error) throw error;
       ACCESS_TOKEN = data.session?.access_token || '';
+      window.RecommendationPerformance?.setSession(ACCESS_TOKEN);
       $('account-link').textContent = ACCESS_TOKEN ? 'My account' : 'Sign in';
       SB.auth.onAuthStateChange((_event, session) => { queueMicrotask(() => setSession(session)); });
       await refresh();

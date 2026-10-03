@@ -387,7 +387,7 @@
 	<script type="text/javascript" src="test.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "analysis";
+		PAGE = "analysis2";
 
 		// Exclude
 		const dd = document.getElementById('exclude-dd');
@@ -460,6 +460,17 @@
 		});
 
 		function changeFilter(render = true) {
+			BOOK = document.getElementById("book-select").value;
+			syncBookPicker();
+			// This chart's history is aggregated by devig, without per-book wagers.
+			if (!Array.isArray(RES)) {
+				const url = new URL(window.location.href);
+				if (BOOK) url.searchParams.set("book", BOOK);
+				else url.searchParams.delete("book");
+				history.replaceState({}, "", url);
+				fetchData();
+				return;
+			}
 			let [w,l,profit,kellyProfit] = [0,0,0,0];
 			let devigBook = document.getElementById("devig-select").value;
 			let boost = document.getElementById("boost-select").value;
@@ -640,7 +651,7 @@
 			changeFilter();
 		});
 
-		document.querySelector("#book-select").value = BOOK || "";
+		renderBookSelect();
 		document.querySelector("#book-select").addEventListener("change", (event) => {
 			BOOK = event.target.value;
 			changeFilter();
@@ -648,13 +659,23 @@
 
 		function fetchData() {
 			RES = TEST;
+			const tables = document.getElementById("tables");
+			tables.querySelectorAll(".js-plotly-plot").forEach(plot => Plotly.purge(plot));
+			tables.replaceChildren();
+			if (BOOK) {
+				const message = document.createElement("p");
+				message.setAttribute("role", "status");
+				message.textContent = BOOK === "none" ? "No books selected." : "Per-book history isn't available for these results. Select All to view the combined history.";
+				tables.appendChild(message);
+				return;
+			}
 			let props = ["pts", "reb", "ast", "stl", "blk", "dd", "3ptm", "pts+reb+ast", "pts+ast", "pts+reb", "reb+ast"];
 			if (RES["atgs-vs-circa"]) {
 				props = ["atgs", "sog", "pts", "ast", "sv", "bs"];
 			} else if (RES["rec-vs-fd"]) {
 				props = ["attd", "pass_td", "pass_int", "pass_yds", "pass_cmp", "rush_att", "rush_yds", "rec_yds", "rec", "tackles+ast"];
 			}
-			for (prop of props) {
+			for (const prop of props) {
 				const barColors = [];
 				const profits = [];
 				const kellyProfits = [];
@@ -665,7 +686,7 @@
 				if (true) {
 					devigs = devigs.concat(["only+pn+circa", "only+pn+dk", "only+pn+fd", "only+dk+espn", "only+fd+dk+bol", "circa+pn+fd+espn+hr"]);
 				}
-				for (book of devigs) {
+				for (const book of devigs) {
 					const key = `${prop}-vs-${book}`;
 					if (!TEST[key]) {
 						continue;

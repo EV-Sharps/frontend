@@ -2728,12 +2728,12 @@ nav {
 	justify-content: space-between;
 	gap: 12px;
 	flex: 0 0 auto;
-	padding: 15px 14px 11px 16px;
+	padding: 10px 14px 8px 16px;
 }
 #page-picker-panel .pp-heading > div { min-width: 0; }
-#page-picker-panel .pp-heading strong { display: block; color: #f0f5fb; font-size: 16px; font-weight: 650; line-height: 1.4; }
+#page-picker-panel .pp-heading strong { display: block; color: #f0f5fb; font-size: 14px; font-weight: 650; line-height: 1.4; }
 #page-picker-panel .pp-context { display: block; margin-top: 3px; color: #96abc1; font-size: 12px; overflow-wrap: anywhere; }
-#page-picker-panel .pp-tier-note { display: block; margin-top: 6px; color: #a7b8ca; font-size: 11px; line-height: 1.5; }
+#page-picker-panel .pp-tier-note { display: block; margin-top: 4px; color: #a7b8ca; font-size: 11px; line-height: 1.5; }
 #page-picker-panel .pp-close,
 #page-picker-panel .pp-search-clear {
 	display: inline-flex;
@@ -2839,7 +2839,7 @@ nav {
 	justify-content: space-between;
 	gap: 8px;
 	flex: 0 0 auto;
-	padding: 12px 16px 9px;
+	padding: 8px 16px 6px;
 }
 #page-picker-panel .pp-results-header strong { color: #e1eaf4; font-size: 13px; font-weight: 600; }
 #page-picker-panel #page-picker-count { color: #8ea4bc; font-size: 11px; white-space: nowrap; }
@@ -2974,28 +2974,25 @@ nav {
 }
 #page-picker-panel .pp-page-btn[data-favorite] .pp-page-link,
 #page-picker-drag-layer .pp-page-link {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) 5px 30px;
-	grid-template-rows: 1fr 20px;
-	gap: 6px 4px;
-	width: 100%;
-	padding: 9px 6px 9px 11px;
-	font-size: 13px;
+	display: flex;
+	gap: 4px;
+	min-height: 44px;
+	padding: 5px 0 5px 8px;
+	font-size: 12px;
+	line-height: 1.3;
 }
 #page-picker-panel.pp-reordering .pp-page-btn[data-favorite] .pp-page-link,
-#page-picker-drag-layer .pp-page-link { padding-left: 25px; cursor: grab; }
+#page-picker-drag-layer .pp-page-link { padding-left: 22px; cursor: grab; }
 #page-picker-panel .pp-page-btn[data-favorite],
 #page-picker-drag-layer .pp-page-btn { position: relative; }
-#page-picker-panel .pp-page-btn[data-favorite] .pp-label,
-#page-picker-drag-layer .pp-label { grid-column: 1 / -1; align-self: start; }
-#page-picker-panel .pp-page-btn[data-favorite] .pp-badge,
-#page-picker-drag-layer .pp-badge { grid-column: 1; grid-row: 2; justify-self: start; }
-#page-picker-panel .pp-page-btn[data-favorite] .pp-current-dot,
-#page-picker-drag-layer .pp-current-dot { grid-column: 2; grid-row: 2; }
+#page-picker-panel .pp-page-name,
+#page-picker-drag-layer .pp-page-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#page-picker-panel .pp-page-meta,
+#page-picker-drag-layer .pp-page-meta { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
 #page-picker-panel .pp-page-btn[data-favorite] .pp-star,
-#page-picker-drag-layer .pp-star { position: absolute; right: 2px; bottom: 2px; width: 32px; height: 32px; }
+#page-picker-drag-layer .pp-star { flex: 0 0 32px; width: 32px; height: 32px; margin: 0 2px; }
 #page-picker-panel .pp-page-btn[data-favorite] .pp-drag-grip,
-#page-picker-drag-layer .pp-drag-grip { position: absolute; top: 10px; left: 5px; }
+#page-picker-drag-layer .pp-drag-grip { position: absolute; top: 50%; left: 4px; transform: translateY(-50%); }
 #page-picker-panel .pp-drag-grip,
 #page-picker-drag-layer .pp-drag-grip {
 	display: inline-flex;
@@ -3012,7 +3009,9 @@ nav {
 #page-picker-panel .pp-drag-grip svg,
 #page-picker-drag-layer .pp-drag-grip svg { width: 14px; height: 18px; }
 #page-picker-panel .pp-page-sport,
-#page-picker-drag-layer .pp-page-sport { display: block; margin-top: 2px; color: #91a7bf; font-size: 11px; font-weight: 400; line-height: 1.35; }
+#page-picker-drag-layer .pp-page-sport { color: #91a7bf; font-size: 10px; font-weight: 400; line-height: 1.3; }
+#page-picker-panel .pp-page-meta .pp-badge,
+#page-picker-drag-layer .pp-page-meta .pp-badge { padding: 1px 3px; font-size: 9px; }
 #page-picker-panel .pp-drag-source { opacity: 0.25; border-style: dashed; }
 #page-picker-panel .pp-dragging,
 #page-picker-panel .pp-dragging * { cursor: grabbing; }
@@ -3069,13 +3068,13 @@ nav {
 
 @media (max-width: 500px) {
 	#page-picker-panel { width: calc(100vw - 16px); border-radius: 8px; }
-	#page-picker-panel .pp-heading { padding: 12px 10px 10px 12px; }
+	#page-picker-panel .pp-heading { padding: 8px 10px 7px 12px; }
 	#page-picker-panel .pp-search-row { margin: 8px 12px 12px; }
 	#page-picker-panel #page-picker-search { font-size: 16px; }
 	#page-picker-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 12px 10px; gap: 4px; }
 	#page-picker-panel .pp-tab { min-height: 36px; padding: 7px 4px; }
 	#page-picker-panel .pp-tab:first-child { grid-column: span 2; }
-	#page-picker-panel .pp-results-header { padding: 10px 12px 8px; }
+	#page-picker-panel .pp-results-header { padding: 7px 12px 6px; }
 	#page-picker-grid { padding: 0 10px 10px 12px; }
 	#page-picker-panel .pp-group-pages { grid-template-columns: minmax(0, 1fr); }
 	#page-picker-panel .pp-page-link { font-size: 13px; }

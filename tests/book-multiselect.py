@@ -87,6 +87,29 @@ def main():
                 page.locator('#book-options [data-book-action="all"]').click()
                 page.wait_for_function('TABLE.getData().length === 2')
                 assert page.locator('#book-filter-value').inner_text() == 'All'
+                # The first book click from All selects only that book.
+                fd = page.locator('#book-options input[value="fd"]')
+                dk = page.locator('#book-options input[value="dk"]')
+                fd.click()
+                page.wait_for_function("TABLE.getData()[0]?.book === 'fd'")
+                assert page.locator('#book-options input:checked').count() == 1
+                assert page.locator('#book-filter-value').inner_text() == 'FD'
+                assert page.evaluate("new URL(location).searchParams.get('book')") == 'fd'
+                dk.click()
+                page.wait_for_function("TABLE.getData()[0]?.book === 'dk'")
+                assert page.locator('#book-filter-value').inner_text() == 'FD + DK'
+                dk.click()
+                page.wait_for_function("TABLE.getData()[0]?.book === 'fd'")
+                fd.click()
+                page.wait_for_function('TABLE.getData().length === 0')
+                assert page.locator('#book-filter-value').inner_text() == 'None'
+                page.locator('#book-options [data-book-action="all"]').click()
+                dk.focus()
+                page.keyboard.press('Space')
+                page.wait_for_function("TABLE.getData()[0]?.book === 'dk'")
+                assert page.locator('#book-options input:checked').count() == 1
+                assert page.locator('#book-filter-value').inner_text() == 'DK'
+                assert menu.is_visible()
                 page.keyboard.press('Escape')
                 assert not menu.is_visible()
                 assert page.locator('#book-filter-button').get_attribute('aria-expanded') == 'false'

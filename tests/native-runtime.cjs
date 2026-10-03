@@ -28,7 +28,7 @@ function setup({ packaged = false, hostname = 'localhost', apiBase = production 
       signIn: async provider => { calls.providers.push(provider); },
       openExternal: async url => { calls.external.push(url); },
     } },
-    location, calls, console,
+    location, calls, console, URLSearchParams,
     localStorage: { getItem: () => null },
     document: { querySelector: () => ({ style: {} }), querySelectorAll: () => [] },
     supabase: { createClient: (_url, _key, options) => { calls.options = options; return client; } },

@@ -144,104 +144,104 @@ const PAGE_SECTIONS = [
 	{
 		key: "mlb", label: "⚾ MLB",
 		pages: [
-			{ label: "💣 Dingers", value: "dingers" },
-			{ label: "Homer Parlays", value: "parlays" },
-			{ label: "💨 Ks (FREE)", value: "strikeouts" },
-			{ label: "⚾ Props", value: "mlb", sharp: true },
-			{ label: "🏆 MLB Main", value: "main?sport=mlb", sharp: true },
-			{ label: "📝 Main Recap", value: "main_recap?sport=mlb" },
-			{ label: "⚾ Live", value: "live?sport=mlb", sharp: true },
-			{ label: "💣💣 2+ HR", value: "dingers2" },
-			{ label: "🔮 Futures", value: "futures" },
-			{ label: "🆚 BvP", value: "bvp" },
-			{ label: "🆚 Matchups", value: "matchups" },
-			{ label: "📊 Stats", value: "stats" },
-			{ label: "🏏 Barrels", value: "barrels" },
-			{ label: "🔍 Pitcher Preview", value: "preview" },
-			{ label: "💨 Pitcher Ks Preview", value: "preview_k" },
-			{ label: "📰 Pitcher Mix", value: "pitcher_mix" },
-			{ label: "🔥 Top 3 Pitches", value: "top_pitches" },
-			{ label: "📡 Feed", value: "feed" },
-			{ label: "📊 Trends", value: "trends" },
-			{ label: "📉 Movement", value: "movement?sport=mlb", sharp: true },
-			{ label: "🎟️ Bets", value: "bets?sport=mlb", sharp: true },
-			{ label: "📝 Recap", value: "recap" }
+			{ label: "💣 Dingers", value: "dingers", tier: "analyst" },
+			{ label: "Homer Parlays", value: "parlays", tier: "analyst" },
+			{ label: "💨 Ks (FREE)", value: "strikeouts", tier: "free" },
+			{ label: "⚾ Props", value: "mlb", tier: "sharp" },
+			{ label: "🏆 MLB Main", value: "main?sport=mlb", tier: "sharp" },
+			{ label: "📝 Main Recap", value: "main_recap?sport=mlb", tier: "free" },
+			{ label: "⚾ Live", value: "live?sport=mlb", tier: "sharp" },
+			{ label: "💣💣 2+ HR", value: "dingers2", tier: "analyst" },
+			{ label: "🔮 Futures", value: "futures", tier: "sharp" },
+			{ label: "🆚 BvP", value: "bvp", tier: "free" },
+			{ label: "🆚 Matchups", value: "matchups", tier: "free" },
+			{ label: "📊 Stats", value: "stats", tier: "free" },
+			{ label: "🏏 Barrels", value: "barrels", tier: "free" },
+			{ label: "🔍 Pitcher Preview", value: "preview", tier: "free" },
+			{ label: "💨 Pitcher Ks Preview", value: "preview_k", tier: "free" },
+			{ label: "📰 Pitcher Mix", value: "pitcher_mix", tier: "free" },
+			{ label: "🔥 Top 3 Pitches", value: "top_pitches", tier: "free" },
+			{ label: "📡 Feed", value: "feed", tier: "free" },
+			{ label: "📊 Trends", value: "trends", tier: "free" },
+			{ label: "📉 Movement", value: "movement?sport=mlb", tier: "sharp" },
+			{ label: "🎟️ Bets", value: "bets?sport=mlb", tier: "sharp" },
+			{ label: "📝 Recap", value: "recap", tier: "free" }
 		]
 	},
 	{
 		key: "nba", label: "🏀 NBA",
 		pages: [
-			{ label: "🏀 All Props", value: "nba", sharp: true },
-			{ label: "🏆 Main", value: "main?sport=nba", sharp: true },
-			{ label: "📝 Main Recap", value: "main_recap?sport=nba" },
-			{ label: "Line Movement", value: "movement?sport=nba", sharp: true },
-			{ label: "🏀 Live", value: "live?sport=nba", sharp: true },
-			{ label: "🏀 KOTC", value: "kotc" },
-			{ label: "📊 Results", value: "analysis?sport=nba" },
-			{ label: "3PTM (Free)", value: "threes" },
-			{ label: "PTS/REB/AST", value: "pts" },
-			{ label: "🏀 CBB", value: "ncaab" },
-			{ label: "🏆 WNBA Main", value: "main?sport=wnba" },
-			{ label: "🏀 WNBA", value: "wnba" },
+			{ label: "🏀 All Props", value: "nba", tier: "sharp" },
+			{ label: "🏆 Main", value: "main?sport=nba", tier: "sharp" },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nba", tier: "free" },
+			{ label: "Line Movement", value: "movement?sport=nba", tier: "sharp" },
+			{ label: "🏀 Live", value: "live?sport=nba", tier: "sharp" },
+			{ label: "🏀 KOTC", value: "kotc", tier: "free" },
+			{ label: "📊 Results", value: "analysis?sport=nba", tier: "free" },
+			{ label: "3PTM (Free)", value: "threes", tier: "free" },
+			{ label: "PTS/REB/AST", value: "pts", tier: "analyst" },
+			{ label: "🏀 CBB", value: "ncaab", tier: "sharp" },
+			{ label: "🏆 WNBA Main", value: "main?sport=wnba", tier: "sharp" },
+			{ label: "🏀 WNBA", value: "wnba", tier: "analyst" },
 		]
 	},
 	{
 		key: "nfl", label: "🏈 NFL",
 		pages: [
-			{ label: "🏈 TDs", value: "tds"},
-			{ label: "🏈 Props", value: "nfl", sharp: true },
-			{ label: "First / Last TD", value: "ftd" },
-			{ label: "🏈🏈 2+TD", value: "tds2"},
-			{ label: "ATTD Parlays", value: "parlays?market=attd" },
-			{ label: "🏈 Live", value: "live?sport=nfl", sharp: true },
-			{ label: "🏆 Main", value: "main?sport=nfl", sharp: true },
-			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker" },
-			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf" },
-			{ label: "📝 Main Recap", value: "main_recap?sport=nfl" },
-			{ label: "Line Movement", value: "movement?sport=nfl", sharp: true },
-			{ label: "🏈 Preseason", value: "preseason", sharp: true },
-			{ label: "🔮 Futures", value: "nfl_futures" },
-			{ label: "🏈 CFB", value: "ncaaf", sharp: true },
-			{ label: "🏆 CFB Main", value: "main?sport=ncaaf", sharp: true },
+			{ label: "🏈 TDs", value: "tds", tier: "analyst" },
+			{ label: "🏈 Props", value: "nfl", tier: "sharp" },
+			{ label: "First / Last TD", value: "ftd", tier: "analyst" },
+			{ label: "🏈🏈 2+TD", value: "tds2", tier: "analyst" },
+			{ label: "ATTD Parlays", value: "parlays?market=attd", tier: "analyst" },
+			{ label: "🏈 Live", value: "live?sport=nfl", tier: "sharp" },
+			{ label: "🏆 Main", value: "main?sport=nfl", tier: "sharp" },
+			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker", tier: "free" },
+			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf", tier: "free" },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nfl", tier: "free" },
+			{ label: "Line Movement", value: "movement?sport=nfl", tier: "sharp" },
+			{ label: "🏈 Preseason", value: "preseason", tier: "sharp" },
+			{ label: "🔮 Futures", value: "nfl_futures", tier: "free" },
+			{ label: "🏈 CFB", value: "ncaaf", tier: "sharp" },
+			{ label: "🏆 CFB Main", value: "main?sport=ncaaf", tier: "sharp" },
 		]
 	},
 	{
 		key: "nhl", label: "🏒 NHL",
 		pages: [
-			{ label: "🏒 Goals", value: "atgs" },
-			{ label: "🏒 2+ Goals", value: "atgs2" },
-			{ label: "First Goals", value: "fgs" },
-			{ label: "🏒 Props", value: "nhl", sharp: true },
-			{ label: "🏒 Live", value: "live?sport=nhl", sharp: true },
-			{ label: "🏒 NHL Game Tracker", value: "nfl_tracker?sport=nhl" },
-			{ label: "🏒 Main", value: "main?sport=nhl", sharp: true },
-			{ label: "📝 Main Recap", value: "main_recap?sport=nhl" },
-			{ label: "ATGS Parlays", value: "parlays?market=atgs" },
-			{ label: "Longshots", value: "longshots", sharp: true },
-			{ label: "Line Movement", value: "movement?sport=nhl", sharp: true },
-			{ label: "📊 Results", value: "analysis?sport=nhl" },
+			{ label: "🏒 Goals", value: "atgs", tier: "analyst" },
+			{ label: "🏒 2+ Goals", value: "atgs2", tier: "analyst" },
+			{ label: "First Goals", value: "fgs", tier: "analyst" },
+			{ label: "🏒 Props", value: "nhl", tier: "sharp" },
+			{ label: "🏒 Live", value: "live?sport=nhl", tier: "sharp" },
+			{ label: "🏒 NHL Game Tracker", value: "nfl_tracker?sport=nhl", tier: "free" },
+			{ label: "🏒 Main", value: "main?sport=nhl", tier: "sharp" },
+			{ label: "📝 Main Recap", value: "main_recap?sport=nhl", tier: "free" },
+			{ label: "ATGS Parlays", value: "parlays?market=atgs", tier: "analyst" },
+			{ label: "Longshots", value: "longshots", tier: "sharp" },
+			{ label: "Line Movement", value: "movement?sport=nhl", tier: "sharp" },
+			{ label: "📊 Results", value: "analysis?sport=nhl", tier: "free" },
 		]
 	},
 	{
 		key: "other", label: "🌐 Other",
 		pages: [
-			{ label: "🎯 Recommendations", value: "recommendations", sharp: true },
-			{ label: "Line Movement / All Sports", value: "movement?sport=soccer", sharp: true },
-			{ label: "⚾ NCAA", value: "baseball_ncaa" },
-			{ label: "⚽ Soccer", value: "soccer" },
-			{ label: "🌍 World Cup", value: "cup", sharp: true },
-			{ label: "🥊 UFC", value: "ufc" },
-			{ label: "🗺️ Heat Map", value: "heatmap" },
-			{ label: "📋 Cheat Sheets", value: "cheat" },
-			{ label: "⚾ Outliers", value: "outliers?sport=mlb" },
-			{ label: "🏀 Outliers", value: "outliers?sport=nba" },
-			{ label: "🏒 Outliers", value: "outliers?sport=nhl" },
+			{ label: "🎯 Recommendations", value: "recommendations", tier: "sharp" },
+			{ label: "Line Movement / All Sports", value: "movement?sport=soccer", tier: "sharp" },
+			{ label: "⚾ NCAA", value: "baseball_ncaa", tier: "sharp" },
+			{ label: "⚽ Soccer", value: "soccer", tier: "analyst" },
+			{ label: "🌍 World Cup", value: "cup", tier: "sharp" },
+			{ label: "🥊 UFC", value: "ufc", tier: "analyst" },
+			{ label: "🗺️ Heat Map", value: "heatmap", tier: "free" },
+			{ label: "📋 Cheat Sheets", value: "cheat", tier: "free" },
+			{ label: "⚾ Outliers", value: "outliers?sport=mlb", tier: "sharp" },
+			{ label: "🏀 Outliers", value: "outliers?sport=nba", tier: "sharp" },
+			{ label: "🏒 Outliers", value: "outliers?sport=nhl", tier: "sharp" },
 		]
 	},
 	{
 		key: "account", label: "👤",
 		pages: [
-			{ label: "⭐ Watchlist/Bets", value: "tracker" },
+			{ label: "⭐ Watchlist/Bets", value: "tracker", tier: "sharp" },
 			{ label: "❓ FAQ", value: "faq" },
 			{ label: "👤 Profile", value: "profile" },
 			{ label: "💳 Pricing", value: "pricing" },
@@ -252,27 +252,38 @@ const PAGE_SECTIONS = [
 let _ppRenderGrid = null;
 
 function getPageFavorites() {
-	if (typeof CURR_USER !== 'undefined' && CURR_USER?.metadata?.page_favorites?.length) return CURR_USER.metadata.page_favorites;
-	try { return JSON.parse(localStorage.getItem("page_favorites") || "[]"); } catch(e) { return []; }
+	let saved;
+	if (typeof CURR_USER !== 'undefined' && Array.isArray(CURR_USER?.metadata?.page_favorites)) saved = CURR_USER.metadata.page_favorites;
+	else { try { saved = JSON.parse(localStorage.getItem("page_favorites") || "[]"); } catch(e) {} }
+	return Array.isArray(saved) ? [...new Set(saved.filter(value => typeof value === "string"))] : [];
+}
+
+function setPageFavorites(favs) {
+	try { localStorage.setItem("page_favorites", JSON.stringify(favs)); } catch(e) {}
+	if (typeof CURR_USER !== 'undefined' && CURR_USER) {
+		if (!CURR_USER.metadata) CURR_USER.metadata = {};
+		CURR_USER.metadata.page_favorites = favs;
+		if (typeof savePageFavorites === "function") savePageFavorites(favs);
+	}
 }
 
 function togglePageFav(value) {
 	let favs = getPageFavorites();
 	favs = favs.includes(value) ? favs.filter(f => f !== value) : [...favs, value];
-	localStorage.setItem("page_favorites", JSON.stringify(favs));
-	if (CURR_USER) {
-		if (!CURR_USER.metadata) CURR_USER.metadata = {};
-		CURR_USER.metadata.page_favorites = favs;
-		if (typeof savePageFavorites === "function") savePageFavorites(favs);
-	}
-	// Update all star buttons in panel for this value
+	setPageFavorites(favs);
 	document.querySelectorAll("#page-picker-panel .pp-star").forEach(btn => {
-		if (btn.dataset.val === value) btn.classList.toggle("starred", favs.includes(value));
+		const starred = favs.includes(btn.dataset.val);
+		btn.classList.toggle("starred", starred);
+		btn.innerHTML = starred ? "&#9733;" : "&#9734;";
+		btn.setAttribute("aria-pressed", String(starred));
+		btn.setAttribute("aria-label", `${starred ? "Unstar" : "Star"} ${btn.dataset.label}`);
+		btn.title = starred ? "Remove from favorites" : "Add to favorites";
 	});
-	// Re-render if currently on favorites tab
-	const activeTabEl = document.querySelector("#page-picker-panel .pp-tab.active");
-	if (activeTabEl?.dataset.key === "favorites" && _ppRenderGrid) {
+	const activeTab = document.querySelector("#page-picker-panel .pp-tab.active");
+	if (activeTab?.dataset.key === "favorites" && _ppRenderGrid) {
+		const restoreFocus = document.activeElement?.classList.contains("pp-star");
 		_ppRenderGrid("favorites");
+		if (restoreFocus) (document.querySelector("#page-picker-grid .pp-star") || document.getElementById("page-picker-search"))?.focus({ preventScroll: true });
 	}
 }
 
@@ -283,168 +294,341 @@ if (document.readyState === "loading") {
 	setTimeout(buildPagePicker, 0);
 }
 
+function pagePickerValue() {
+	const filename = window.location.pathname.split("/").pop().replace(/\.html$/, "");
+	const knownFile = PAGE_SECTIONS.some(section => section.pages.some(page => page.value.split("?")[0] === filename));
+	let page = knownFile ? filename : PAGE;
+	if (PAGE === "props") page = SPORT;
+	if (["main", "main_recap", "outliers", "live", "analysis", "movement", "bets"].includes(page)) {
+		return `${page}?sport=${SPORT || new URLSearchParams(window.location.search).get("sport") || "mlb"}`;
+	}
+	if (page === "nfl_tracker" && ["nhl", "ncaaf"].includes(SPORT)) return `${page}?sport=${SPORT}`;
+	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : "parlays";
+	return page;
+}
+
 function buildPagePicker() {
 	const selectEl = document.getElementById("page-select");
-	if (!selectEl) return;
+	if (!selectEl || document.getElementById("page-picker-btn")) return;
 	const wrapper = selectEl.closest(".select-wrapper") || selectEl.parentElement;
 	if (!wrapper) return;
-
-	// Current page value for highlighting
-	let currentVal = PAGE;
-	if (PAGE === "props") currentVal = SPORT;
-	else if (PAGE === "outliers") currentVal = `outliers?sport=${SPORT}`;
-	else if (PAGE === "live") currentVal = `live?sport=${SPORT}`;
-	else if (PAGE === "analysis") currentVal = `analysis?sport=${SPORT}`;
-	else if (PAGE === "movement") currentVal = `movement?sport=${SPORT}`;
-	else if (PAGE === "bets" && SPORT === "nfl") currentVal = "bets?sport=nfl";
-	else if (PAGE === "main") currentVal = `main?sport=${SPORT}`;
-	else if (PAGE === "main_recap") currentVal = `main_recap?sport=${SPORT}`;
-	else if (PAGE === "nfl_tracker" && ["ncaaf", "nhl"].includes(SPORT)) currentVal = `nfl_tracker?sport=${SPORT}`;
-	else if (PAGE === "parlays" && SPORT === "nfl") currentVal = "parlays?market=attd";
-	else if (PAGE === "parlays" && SPORT === "nhl") currentVal = "parlays?market=atgs";
-
-	// Active tab: favorites if any saved, else current sport
-	const sportToTab = { mlb: "mlb", nba: "nba", nfl: "nfl", ncaaf: "nfl", nhl: "nhl", ncaab: "nba" };
-	const hasFavs = getPageFavorites().length > 0;
-	const activeTab = hasFavs ? "favorites" : (sportToTab[SPORT] || "mlb");
-
-	// Create trigger button (replaces select wrapper)
+	const cleanLabel = label => label.replace(/^[^\p{L}\p{N}]+/u, "").replace(/\s*\(free\)/ig, "").trim();
+	const names = { dingers: "Home runs", dingers2: "2+ home runs", strikeouts: "Strikeouts", tds: "Anytime touchdowns", tds2: "2+ touchdowns", ftd: "First / last touchdown", atgs: "Anytime goals", atgs2: "2+ goals", fgs: "First goal", tracker: "Watchlist & bets" };
+	const aliases = { dingers: "dingers homer home runs hr baseball", dingers2: "dingers homer home runs hr", strikeouts: "ks pitcher strikeouts", tds: "attd touchdowns football", tds2: "touchdowns football", ftd: "ftd touchdowns football", atgs: "atgs anytime goal scorer goalscorer hockey", atgs2: "goalscorer hockey", fgs: "goalscorer hockey", tracker: "saved picks favorites bets", threes: "three pointers 3ptm", pts: "points rebounds assists", ncaaf: "college football cfb", ncaab: "college basketball cbb", mlb: "baseball", nfl: "football", nhl: "hockey", heatmap: "heat map history roi profit" };
+	const entries = PAGE_SECTIONS.flatMap(section => section.pages.map(page => ({ ...page,
+		section: section.key, sectionLabel: section.key === "account" ? "Account" : section.key === "other" ? "More" : cleanLabel(section.label),
+		name: names[page.value] || cleanLabel(page.label),
+		terms: `${section.key} ${section.label} ${page.label} ${page.value} ${aliases[page.value.split("?")[0]] || ""}`.toLowerCase()
+	})));
+	const currentEntry = () => entries.find(page => page.value === pagePickerValue());
+	const validFavorites = () => getPageFavorites().filter(value => entries.some(page => page.value === value));
+	let activeTab = validFavorites().length ? "favorites" : currentEntry()?.section || ({ ncaaf: "nfl", ncaab: "nba", wnba: "nba" }[SPORT] || SPORT || "other");
+	if (!["favorites", ...PAGE_SECTIONS.map(section => section.key)].includes(activeTab)) activeTab = "other";
 	const btn = document.createElement("button");
 	btn.id = "page-picker-btn";
-	btn.innerHTML = `Pages <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:middle;margin-left:2px"><path d="M5 8l5 5 5-5"/></svg>`;
+	btn.type = "button";
+	btn.setAttribute("aria-haspopup", "dialog");
+	btn.setAttribute("aria-controls", "page-picker-panel");
+	btn.setAttribute("aria-expanded", "false");
+	btn.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg><span>Pages</span><svg class="pp-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg>';
 	wrapper.replaceWith(btn);
-
-	// Build panel
 	const panel = document.createElement("div");
 	panel.id = "page-picker-panel";
-
-	const ALL_TABS = [{ key: "favorites", label: "⭐" }, ...PAGE_SECTIONS];
-
-	const tabsEl = document.createElement("div");
-	tabsEl.id = "page-picker-tabs";
-	ALL_TABS.forEach(section => {
-		const tab = document.createElement("button");
-		tab.className = "pp-tab" + (section.key === activeTab ? " active" : "");
-		tab.dataset.key = section.key;
-		tab.textContent = section.label;
-		tab.addEventListener("click", () => {
-			panel.querySelectorAll(".pp-tab").forEach(t => t.classList.remove("active"));
-			tab.classList.add("active");
-			renderGrid(section.key);
-		});
-		tabsEl.appendChild(tab);
-	});
-	panel.appendChild(tabsEl);
-
-	const grid = document.createElement("div");
-	grid.id = "page-picker-grid";
-	panel.appendChild(grid);
+	panel.className = "pp-menu";
+	panel.hidden = true;
+	panel.setAttribute("role", "dialog");
+	panel.setAttribute("aria-labelledby", "page-picker-title");
+	panel.setAttribute("aria-describedby", "page-picker-tier-note");
+	panel.innerHTML = `<div class="pp-heading"><div><strong id="page-picker-title">Explore pages</strong><span class="pp-context"></span><span class="pp-tier-note" id="page-picker-tier-note">Sharp includes all Analyst pages. All plans include Free.</span></div><button type="button" class="pp-close" aria-label="Close pages">&times;</button></div>
+		<div id="page-picker-tabs" role="group" aria-label="Page sections"></div>
+		<div class="pp-results-header"><strong id="page-picker-section"></strong><span id="page-picker-count" role="status" aria-live="polite"></span></div>
+		<div id="page-picker-grid"></div><div class="pp-footer" id="page-picker-reorder-help">Star pages to keep them in Favorites.</div>
+		<div class="pp-search-wrap"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input id="page-picker-search" type="search" placeholder="Search pages or sports" aria-label="Search all pages" autocomplete="off" spellcheck="false"><button type="button" class="pp-search-clear" aria-label="Clear page search" hidden>&times;</button></div><span class="pp-reorder-status" role="status" aria-live="polite"></span>`;
 	document.body.appendChild(panel);
+	const search = panel.querySelector("#page-picker-search");
+	const clear = panel.querySelector(".pp-search-clear");
+	const grid = panel.querySelector("#page-picker-grid");
+	const tabs = [{ key: "favorites", label: "Favorites" }, ...PAGE_SECTIONS.map(section => ({ key: section.key, label: section.key === "account" ? "Account" : section.key === "other" ? "More" : cleanLabel(section.label) }))];
+	panel.querySelector("#page-picker-tabs").innerHTML = tabs.map(tab => `<button type="button" class="pp-tab" data-key="${tab.key}" aria-pressed="false">${tab.label}</button>`).join("");
 
-	function makeRow(page) {
-		const isCurrent = page.value === (PAGE === "parlays" ? SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : "parlays" : currentVal);
-		const isStarred = getPageFavorites().includes(page.value);
-		return `<button class="pp-page-btn${isCurrent ? " current-page" : ""}${page.sharp ? " pp-sharp" : ""}" onclick="changePage('${page.value}');closePicker()">
-			<span class="pp-label">${page.label}</span>
-			<span class="pp-star${isStarred ? " starred" : ""}" data-val="${page.value}" onclick="event.stopPropagation();togglePageFav('${page.value}')">★</span>
-		</button>`;
+	const tierLabels = { free: "Free", analyst: "Analyst", sharp: "Sharp" };
+	function makeRow(page, reorderable = false) {
+		const isCurrent = page.value === pagePickerValue();
+		const starred = getPageFavorites().includes(page.value);
+		return `<div class="pp-page-btn${isCurrent ? " current-page" : ""}${page.tier ? " pp-" + page.tier : ""}"${reorderable ? ` data-favorite="${escapeHtml(page.value)}"` : ''}>
+			<a class="pp-page-link" data-page="${escapeHtml(page.value)}" href="${escapeHtml(getPageUrl(page.value))}"${isCurrent ? ' aria-current="page"' : ''}${reorderable ? ' draggable="false" aria-describedby="page-picker-reorder-help"' : ''}>${reorderable ? '<span class="pp-drag-grip" aria-hidden="true"><svg viewBox="0 0 16 20"><path d="M5 4h.01M11 4h.01M5 10h.01M11 10h.01M5 16h.01M11 16h.01"/></svg></span>' : ''}<span class="pp-label">${escapeHtml(page.name)}${reorderable ? `<span class="pp-page-sport">${escapeHtml(page.sectionLabel)}</span>` : ''}</span>${page.tier ? `<span class="pp-badge pp-${page.tier}">${tierLabels[page.tier]}</span>` : ''}${isCurrent ? '<span class="pp-current-dot" title="Current page" aria-hidden="true"></span>' : ''}</a>
+			<button type="button" class="pp-star${starred ? " starred" : ""}" data-val="${escapeHtml(page.value)}" data-label="${escapeHtml(page.sectionLabel + ' ' + page.name)}" aria-label="${starred ? "Unstar" : "Star"} ${escapeHtml(page.sectionLabel + ' ' + page.name)}" aria-pressed="${starred}" title="${starred ? "Remove from favorites" : "Add to favorites"}">${starred ? "&#9733;" : "&#9734;"}</button></div>`;
 	}
-
-	function renderGrid(sportKey) {
-		if (sportKey === "favorites") {
-			const favVals = getPageFavorites();
-			if (favVals.length === 0) {
-				const mlbPages = PAGE_SECTIONS.find(s => s.key === "mlb")?.pages || [];
-				grid.innerHTML = `<div class="pp-fav-hint">Star pages to save favorites</div>` +
-					mlbPages.map(makeRow).join("");
-			} else {
-				const pages = favVals.map(val => {
-					for (const s of PAGE_SECTIONS) {
-						const found = s.pages.find(p => p.value === val);
-						if (found) return found;
-					}
-					return null;
-				}).filter(Boolean);
-				grid.innerHTML = pages.map(makeRow).join("");
-			}
-		} else {
-			const section = PAGE_SECTIONS.find(s => s.key === sportKey);
-			if (!section) return;
-			grid.innerHTML = section.pages.map(makeRow).join("");
-		}
+	function groupFor(page) {
+		if (search.value.trim() || activeTab === "favorites") return page.sectionLabel;
+		const route = page.value.split("?")[0];
+		if (activeTab === "account") return "Your account";
+		if (["live", "nfl_tracker", "feed"].includes(route)) return "Live & tracking";
+		if (["recap", "main_recap", "analysis", "bets"].includes(route)) return "Results";
+		if (["bvp", "matchups", "stats", "barrels", "preview", "preview_k", "pitcher_mix", "top_pitches", "trends", "movement", "longshots", "kotc", "recommendations", "heatmap", "cheat", "outliers"].includes(route)) return "Research & tools";
+		return "Markets";
 	}
-
+	function renderGrid(key = activeTab) {
+		grid.dispatchEvent(new Event("pagepickercancel"));
+		activeTab = key;
+		const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+		const favorites = validFavorites();
+		const reorderable = !words.length && activeTab === "favorites";
+		const pages = reorderable ? favorites.map(value => entries.find(page => page.value === value)) : entries.filter(page => words.length ? words.every(word => `${page.terms} ${page.name.toLowerCase()}`.includes(word)) : page.section === activeTab);
+		panel.querySelectorAll(".pp-tab").forEach(tab => {
+			const selected = !words.length && tab.dataset.key === activeTab;
+			tab.classList.toggle("active", selected);
+			tab.setAttribute("aria-pressed", String(selected));
+		});
+		panel.querySelector("#page-picker-section").textContent = words.length ? "Search results" : tabs.find(tab => tab.key === activeTab)?.label || "Pages";
+		panel.querySelector("#page-picker-count").textContent = `${pages.length} ${pages.length === 1 ? "page" : "pages"}`;
+		clear.hidden = !search.value;
+		panel.querySelector(".pp-footer").textContent = reorderable && pages.length ? "Hold and drag to reorder. Keyboard: Alt + Up / Down." : "Star pages to keep them in Favorites.";
+		const groups = new Map();
+		pages.forEach(page => { const group = groupFor(page); if (!groups.has(group)) groups.set(group, []); groups.get(group).push(page); });
+		grid.innerHTML = (reorderable && pages.length ? `<div class="pp-favorites-list">${pages.map(page => makeRow(page, true)).join("")}</div>` : [...groups].map(([name, pages]) => `<section class="pp-group"><h3>${escapeHtml(name)}</h3><div class="pp-group-pages">${pages.map(page => makeRow(page)).join("")}</div></section>`).join("")) || `<div class="pp-empty"><strong>${words.length ? "No pages found" : "Your shortcuts start here"}</strong><p>${words.length ? "Try a sport, market, or page name." : "Choose a sport and star a page to save it here."}</p></div>`;
+		grid.scrollTop = 0;
+	}
 	_ppRenderGrid = renderGrid;
-	renderGrid(activeTab);
-
-	btn.addEventListener("click", e => {
-		e.stopPropagation();
-		if (panel.style.display === "block") {
-			panel.style.display = "none";
-		} else {
-			// Re-render active tab to pick up fresh auth/favorites data
-			const activeTabEl = panel.querySelector(".pp-tab.active");
-			if (activeTabEl) renderGrid(activeTabEl.dataset.key);
-			panel.style.display = "block";
-			const rect = btn.getBoundingClientRect();
-			const pw = panel.offsetWidth;
-			let left = rect.left + rect.width / 2 - pw / 2;
-			left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-			const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
-			panel.style.left = rightAligned ? "auto" : left + "px";
-			panel.style.right = rightAligned ? "8px" : "auto";
-			panel.style.top = (rect.bottom + 6) + "px";
+	renderGrid();
+	initPageFavoriteDrag(panel, grid, () => renderGrid("favorites"));
+	function positionPanel() {
+		if (panel.hidden) return;
+		const viewport = window.visualViewport;
+		const width = viewport?.width || window.innerWidth;
+		const height = viewport?.height || window.innerHeight;
+		panel.classList.toggle("pp-tight", height < 500);
+		const leftOffset = viewport?.offsetLeft || 0;
+		const topOffset = viewport?.offsetTop || 0;
+		const rect = btn.getBoundingClientRect();
+		const top = Math.max(topOffset + 8, Math.min(rect.bottom + 8, topOffset + height - 220));
+		panel.style.maxWidth = `${width - 16}px`;
+		panel.style.maxHeight = `${Math.min(680, Math.max(80, topOffset + height - top - 8))}px`;
+		panel.style.top = `${top}px`;
+		panel.style.left = `${MOBILE || CURRENT_VIEW === "mobile" ? leftOffset + width - panel.offsetWidth - 8 : Math.max(leftOffset + 8, Math.min(rect.left, leftOffset + width - panel.offsetWidth - 8))}px`;
+	}
+	btn.addEventListener("click", event => {
+		event.stopPropagation();
+		if (!panel.hidden) { closePicker(); return; }
+		const current = currentEntry();
+		panel.querySelector(".pp-context").textContent = current ? `${current.sectionLabel} / ${current.name}` : "Find your next market";
+		search.value = "";
+		renderGrid();
+		panel.hidden = false;
+		panel.style.display = "flex";
+		btn.setAttribute("aria-expanded", "true");
+		positionPanel();
+		if (!MOBILE && CURRENT_VIEW !== "mobile") search.focus({ preventScroll: true });
+	});
+	panel.addEventListener("click", event => {
+		event.stopPropagation();
+		const star = event.target.closest(".pp-star");
+		if (star) { togglePageFav(star.dataset.val); return; }
+		const tab = event.target.closest(".pp-tab");
+		if (tab) { search.value = ""; renderGrid(tab.dataset.key); return; }
+		const link = event.target.closest(".pp-page-link");
+		if (link && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
+			event.preventDefault(); closePicker(); changePage(link.dataset.page);
 		}
 	});
-
-	document.addEventListener("click", () => { panel.style.display = "none"; });
-	panel.addEventListener("click", e => e.stopPropagation());
+	search.addEventListener("input", () => renderGrid());
+	clear.addEventListener("click", () => { search.value = ""; renderGrid(); search.focus(); });
+	panel.querySelector(".pp-close").addEventListener("click", () => closePicker(true));
+	panel.addEventListener("keydown", event => {
+		if (event.defaultPrevented) return;
+		const links = [...grid.querySelectorAll(".pp-page-link")];
+		if (event.key === "ArrowDown" && event.target === search && links.length) { event.preventDefault(); links[0].focus(); }
+		else if (["ArrowDown", "ArrowUp"].includes(event.key) && event.target.matches(".pp-page-link")) {
+			event.preventDefault(); const index = links.indexOf(event.target) + (event.key === "ArrowDown" ? 1 : -1);
+			(links[index] || search).focus();
+		}
+	});
+	document.addEventListener("click", event => { if (!panel.contains(event.target) && !btn.contains(event.target)) closePicker(); });
+	document.addEventListener("keydown", event => { if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); closePicker(true); } });
+	document.addEventListener("focusin", event => { if (!panel.hidden && !panel.contains(event.target) && !btn.contains(event.target)) closePicker(); });
+	window.addEventListener("resize", positionPanel);
+	window.visualViewport?.addEventListener("resize", positionPanel);
+	window.visualViewport?.addEventListener("scroll", positionPanel);
 }
 
-function closePicker() {
+function initPageFavoriteDrag(panel, grid, render) {
+	let session = null;
+	let blockDragClick = false;
+	const rows = () => [...grid.querySelectorAll("[data-favorite]")];
+	const announce = text => { panel.querySelector(".pp-reorder-status").textContent = text; };
+	const saveOrder = order => setPageFavorites([...order, ...getPageFavorites().filter(value => !order.includes(value))]);
+	const restoreLink = value => [...grid.querySelectorAll(".pp-page-link")].find(link => link.dataset.page === value)?.focus({ preventScroll: true });
+	function finish(commit = false) {
+		const drag = session;
+		if (!drag) return;
+		session = null;
+		clearTimeout(drag.timer);
+		cancelAnimationFrame(drag.frame);
+		grid.classList.remove("pp-dragging");
+		drag.row.classList.remove("pp-drag-source");
+		drag.rows.forEach(row => row.style.removeProperty("order"));
+		drag.layer?.remove();
+		if (drag.kind === "pointer" && grid.hasPointerCapture?.(drag.id)) grid.releasePointerCapture(drag.id);
+		if (!drag.active) return;
+		blockDragClick = true;
+		const changed = drag.order.some((value, index) => value !== drag.original[index]);
+		if (commit && changed) saveOrder(drag.order);
+		const scroll = grid.scrollTop;
+		render();
+		grid.scrollTop = scroll;
+		if (drag.kind === "pointer") restoreLink(drag.value);
+		announce(commit ? `${drag.name} at position ${drag.order.indexOf(drag.value) + 1} of ${drag.order.length}.` : "Reorder canceled.");
+	}
+	function preview() {
+		const drag = session;
+		if (!drag?.active) return;
+		drag.ghost.style.left = `${drag.x - drag.offsetX}px`;
+		drag.ghost.style.top = `${drag.y - drag.offsetY}px`;
+		const others = drag.rows.filter(row => row !== drag.row).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+		const index = others.filter(row => { const rect = row.getBoundingClientRect(); return drag.y > rect.top + rect.height / 2; }).length;
+		drag.order = others.map(row => row.dataset.favorite);
+		drag.order.splice(index, 0, drag.value);
+		drag.rows.forEach(row => { row.style.order = drag.order.indexOf(row.dataset.favorite); });
+	}
+	function scrollFrame() {
+		const drag = session;
+		if (!drag?.active) return;
+		const rect = grid.getBoundingClientRect();
+		const edge = Math.min(40, rect.height / 3);
+		const speed = drag.y < rect.top + edge ? -Math.min(10, (rect.top + edge - drag.y) / 4)
+			: drag.y > rect.bottom - edge ? Math.min(10, (drag.y - rect.bottom + edge) / 4) : 0;
+		if (speed && drag.moved) { grid.scrollTop += speed; preview(); }
+		drag.frame = requestAnimationFrame(scrollFrame);
+	}
+	function begin(drag) {
+		if (session !== drag || panel.hidden || !drag.row.isConnected) return;
+		drag.active = true;
+		blockDragClick = true;
+		const rect = drag.row.getBoundingClientRect();
+		drag.offsetX = drag.x - rect.left;
+		drag.offsetY = drag.y - rect.top;
+		drag.layer = document.createElement("div");
+		drag.layer.id = "page-picker-drag-layer";
+		drag.layer.setAttribute("aria-hidden", "true");
+		drag.layer.inert = true;
+		drag.ghost = drag.row.cloneNode(true);
+		drag.ghost.classList.add("pp-drag-ghost");
+		drag.ghost.removeAttribute("data-favorite");
+		drag.ghost.style.width = `${rect.width}px`;
+		drag.ghost.style.height = `${rect.height}px`;
+		drag.layer.appendChild(drag.ghost);
+		document.body.appendChild(drag.layer);
+		drag.row.classList.add("pp-drag-source");
+		grid.classList.add("pp-dragging");
+		if (drag.kind === "pointer") grid.setPointerCapture?.(drag.id);
+		preview();
+		announce(`Moving ${drag.name}. Release to place it; Escape cancels.`);
+		drag.frame = requestAnimationFrame(scrollFrame);
+	}
+	function prepare(target, id, x, y, kind) {
+		finish(false);
+		blockDragClick = false;
+		const row = target.closest("[data-favorite]");
+		const cards = rows();
+		if (!row || target.closest(".pp-star") || cards.length < 2) return;
+		const order = cards.map(card => card.dataset.favorite);
+		const drag = { row, rows: cards, id, kind, x, y, startX: x, startY: y, value: row.dataset.favorite,
+			name: row.querySelector(".pp-label").firstChild.textContent.trim(), order, original: order.slice(), active: false };
+		session = drag;
+		drag.timer = setTimeout(() => begin(drag), 400);
+	}
+	function move(x, y, event) {
+		if (!session) return;
+		session.x = x; session.y = y;
+		if (!session.active) {
+			if (Math.hypot(x - session.startX, y - session.startY) > 8) finish(false);
+			return;
+		}
+		if (event.cancelable) event.preventDefault();
+		session.moved = session.moved || Math.hypot(x - session.startX, y - session.startY) > 3;
+		preview();
+	}
+	function inside(x, y) {
+		const rect = grid.getBoundingClientRect();
+		return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+	}
+	grid.addEventListener("pointerdown", event => {
+		if (event.pointerType !== "touch" && event.button === 0 && event.isPrimary) prepare(event.target, event.pointerId, event.clientX, event.clientY, "pointer");
+	});
+	document.addEventListener("pointermove", event => { if (session?.kind === "pointer" && session.id === event.pointerId) move(event.clientX, event.clientY, event); });
+	document.addEventListener("pointerup", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(inside(event.clientX, event.clientY)); });
+	document.addEventListener("pointercancel", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(false); });
+	grid.addEventListener("lostpointercapture", () => { if (session?.kind === "pointer") finish(false); });
+	// Touch listeners keep ordinary swipes native; only an activated hold cancels scrolling.
+	grid.addEventListener("touchstart", event => {
+		if (event.touches.length !== 1) { finish(false); return; }
+		const touch = event.touches[0];
+		prepare(event.target, touch.identifier, touch.clientX, touch.clientY, "touch");
+	}, { passive: true });
+	grid.addEventListener("touchmove", event => {
+		if (session?.kind !== "touch") return;
+		const touch = [...event.touches].find(touch => touch.identifier === session.id);
+		if (touch) move(touch.clientX, touch.clientY, event);
+	}, { passive: false });
+	grid.addEventListener("touchend", event => {
+		if (session?.kind !== "touch") return;
+		const touch = [...event.changedTouches].find(touch => touch.identifier === session.id);
+		if (!touch) return;
+		if (session.active && event.cancelable) event.preventDefault();
+		finish(inside(touch.clientX, touch.clientY));
+	}, { passive: false });
+	grid.addEventListener("touchcancel", () => { if (session?.kind === "touch") finish(false); });
+	grid.addEventListener("click", event => { if (blockDragClick) { blockDragClick = false; event.preventDefault(); event.stopImmediatePropagation(); } }, true);
+	grid.addEventListener("contextmenu", event => { if (session) event.preventDefault(); });
+	grid.addEventListener("dragstart", event => { if (event.target.closest("[data-favorite]")) event.preventDefault(); });
+	grid.addEventListener("pagepickercancel", () => finish(false));
+	panel.addEventListener("keydown", event => {
+		if (event.key === "Escape" && session?.active) { event.preventDefault(); event.stopImmediatePropagation(); finish(false); return; }
+		blockDragClick = false;
+		const row = event.target.closest("[data-favorite]");
+		if (!row || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+		event.preventDefault(); event.stopImmediatePropagation();
+		const order = rows().map(card => card.dataset.favorite);
+		const index = order.indexOf(row.dataset.favorite);
+		const next = index + (event.key === "ArrowUp" ? -1 : 1);
+		if (next < 0 || next >= order.length) return;
+		[order[index], order[next]] = [order[next], order[index]];
+		saveOrder(order); render(); restoreLink(row.dataset.favorite);
+		announce(`Moved to position ${next + 1} of ${order.length}.`);
+	});
+	window.addEventListener("blur", () => finish(false));
+	document.addEventListener("visibilitychange", () => { if (document.hidden) finish(false); });
+}
+
+function closePicker(restoreFocus = false) {
 	const panel = document.getElementById("page-picker-panel");
-	if (panel) panel.style.display = "none";
+	if (!panel) return;
+	panel.querySelector("#page-picker-grid")?.dispatchEvent(new Event("pagepickercancel"));
+	panel.hidden = true;
+	panel.style.display = "none";
+	const button = document.getElementById("page-picker-btn");
+	button?.setAttribute("aria-expanded", "false");
+	if (restoreFocus) button?.focus({ preventScroll: true });
 }
 
-function openProfile() {
-	changePage("profile");
-}
+function openProfile() { changePage("profile"); }
 
 function changePage(page) {
 	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.navigate(page);
-	if (page == "historical") {
-		window.location.href = `./historical${HTML}?historical=z`;
-	} else if (page == "kambi") {
-		window.location.href = `./dingers${HTML}?kambi=true`;
-	} else if (page.includes("main_recap")) {
-		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
-		window.location.href = `./main_recap${HTML}?sport=${sport}`;
-	} else if (page.includes("main")) {
-		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
-		window.location.href = `./main${HTML}?sport=${sport}`;
-	} else if (page.includes("bets")) {
-		let sport = !page.includes("sport=") ? "mlb" : page.split("?sport=")[1];
-		window.location.href = `./bets${HTML}?sport=${sport}`;
-	} else if (page.includes("live")) { 
-		let sport = !page.includes("sport=") ? "attd" : page.split("?sport=")[1];
-		window.location.href = `./live${HTML}?sport=${sport}`;
-	} else if (page.includes("analysis")) { 
-		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
-		window.location.href = `./analysis${HTML}?sport=${sport}`;
-	} else if (page.includes("outliers")) {
-		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
-		window.location.href = `./outliers${HTML}?sport=${sport}`;
-	} else if (page.includes("cheat")) {
-		let sport = !page.includes("sport=") ? "nba" : page.split("?sport=")[1];
-		window.location.href = `./cheat${HTML}?sport=${sport}`;
-	} else if (page.includes("movement")) {
-		let sport = !page.includes("sport=") ? "atgs" : page.split("?sport=")[1];
-		window.location.href = `./movement${HTML}?sport=${sport}`;
-	} else if (page.startsWith("parlays?")) {
-		window.location.href = `./parlays${HTML}?${page.split("?")[1]}`;
-	} else {
-		window.location.href = `./${page}${HTML}`;
-	}
+	window.location.href = getPageUrl(page);
+}
+
+function getPageUrl(page) {
+	const [target, hash] = String(page).split("#");
+	let [route, query = ""] = target.split("?");
+	route = route.replace(/\.html$/, "");
+	const params = new URLSearchParams(query);
+	if (route === "historical" && !params.has("historical")) params.set("historical", "z");
+	if (route === "kambi") { route = "dingers"; params.set("kambi", "true"); }
+	const defaults = { main: "mlb", main_recap: "mlb", bets: "mlb", live: "attd", analysis: "nba", outliers: "nba", cheat: "nba", movement: "atgs" };
+	if (defaults[route] && !params.has("sport")) params.set("sport", defaults[route]);
+	const suffix = params.toString();
+	return `./${route}${HTML}${suffix ? `?${suffix}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
 function parseBook(book) {
@@ -5412,6 +5596,11 @@ function renderBookSelect(availableBooks = null) {
 		menu.addEventListener("change", event => {
 			event.stopPropagation();
 			if (!event.target.matches('input[type="checkbox"]')) return;
+			// All is the starting pool; the first choice starts a custom selection.
+			if (!parseBookFilter(bookSel.value).length) {
+				apply(event.target.value);
+				return;
+			}
 			const inputs = [...menu.querySelectorAll('input[type="checkbox"]')];
 			const selected = inputs.filter(input => input.checked).map(input => input.value);
 			apply(selected.length === inputs.length ? "" : selected.join(",") || "none");
@@ -5427,7 +5616,7 @@ function renderBookSelect(availableBooks = null) {
 		});
 		window.addEventListener("resize", close);
 	}
-	menu.innerHTML = `<p>${PAGE === "heatmap" ? "Show a chart for each checked book." : "Best price among checked books."}</p>
+	menu.innerHTML = `<p>${PAGE === "heatmap" ? "Show a chart for each checked book." : "Best price among checked books."} From All, pick one book, then add more.</p>
 		<div class="chkdd-actions"><button type="button" data-book-action="all">All</button><button type="button" data-book-action="none">None</button></div>
 		<div class="book-filter-list">${books.map(book => `<label><input type="checkbox" value="${book}">${book === "best" ? '<span aria-hidden="true" style="width:18px;text-align:center">★</span>Best book' : `<img src="logos/${book}.png" alt="">${parseBook(book)}`}</label>`).join("")}</div>`;
 	setBookSelection(BOOK || "");

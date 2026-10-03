@@ -68,7 +68,7 @@ try:
             page.locator("#page-picker-btn").click()
             assert page.locator('#page-picker-tabs .active').get_attribute("data-key") == "nfl"
             ftd_link = page.locator('#page-picker-panel .pp-page-btn').filter(has=page.locator('.pp-star[data-val="ftd"]'))
-            assert ftd_link.locator('.pp-label').inner_text() == "First / Last TD"
+            assert ftd_link.locator('.pp-label').inner_text() == "First / last touchdown"
             assert "current-page" in ftd_link.get_attribute("class")
             page.locator("#page-picker-btn").click()
             preloads = page.evaluate("getTopDevigs().map(item => item.prop)")

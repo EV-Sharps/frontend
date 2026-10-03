@@ -157,17 +157,20 @@ function fillPricing(tier) {
 	});
 }
 
-async function savePageFavorites(favs) {
-	if (!CURR_USER || !CURR_SESSION) return;
-	const metadata = { ...CURR_USER.metadata, page_favorites: favs };
-	const { error } = await SB.from('profiles')
-		.update({ metadata })
-		.eq('id', CURR_SESSION.user.id);
-	if (error) console.error('savePageFavorites error:', error);
-	else {
-		CURR_USER.metadata = metadata;
-		cacheProfile(CURR_USER);
-	}
+let pageFavoritesSave = Promise.resolve();
+function savePageFavorites(favs) {
+	if (!CURR_USER || !CURR_SESSION) return Promise.resolve();
+	const userId = CURR_SESSION.user.id;
+	const favorites = [...favs];
+	// Serialize rapid drops so an earlier request cannot overwrite a later order.
+	pageFavoritesSave = pageFavoritesSave.catch(() => {}).then(async () => {
+		if (!CURR_USER || CURR_SESSION?.user.id !== userId) return;
+		const metadata = { ...CURR_USER.metadata, page_favorites: favorites };
+		const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
+		if (error) console.error('savePageFavorites error:', error);
+		else if (CURR_SESSION?.user.id === userId && CURR_USER && JSON.stringify(CURR_USER.metadata?.page_favorites) === JSON.stringify(favorites)) cacheProfile(CURR_USER);
+	}).catch(error => console.error('savePageFavorites error:', error));
+	return pageFavoritesSave;
 }
 
 async function saveCustomDevigs() {

@@ -926,6 +926,29 @@
 			console.log(out);
 		}
 
+		// Console export: bets() prints the rows; copy(bets()) copies them in DevTools.
+		function bets() {
+			const rows = RES?.data || TABLE?.getData("active") || [];
+			const seen = new Set();
+			const output = [];
+			for (const row of rows) {
+				const player = _normPlayer(row.player);
+				if (!player || seen.has(player) || row.prop !== "atgs" || row.under || Number(row.handicap) !== 0.5) continue;
+				if (!isWatchlisted(player, "nhl", "atgs", row.prop)) continue;
+				// Export the current displayed price, including exchange fees.
+				const quote = watchlistQuote(row, "atgs");
+				if (!quote) continue;
+				const { book, odds } = quote;
+				const units = book === "hr" || book.startsWith("hr_") ? 0.2
+					: odds < 800 ? 1 : odds < 1100 ? 0.8 : odds < 1600 ? 0.6 : odds < 2000 ? 0.4 : 0.2;
+				output.push(`[${JSON.stringify(player)}, ${JSON.stringify(book)}, ${odds}, {"units": ${units}}],`);
+				seen.add(player);
+			}
+			const text = output.join("\n");
+			console.log(text || "No starred ATGS plays with available prices.");
+			return text;
+		}
+
 		function closeCardModal() {
 			document.getElementById('card-modal-overlay').classList.remove('open');
 		}

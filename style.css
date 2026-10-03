@@ -3342,6 +3342,7 @@ button#logout:hover {
 .game-log-bar.hit { fill: #359967; }
 .game-log-bar.miss { fill: #bf5b65; }
 .game-log-bar.push { fill: #bd954a; }
+.game-log-bar.neutral { fill: #789cbd; }
 .game-log-bar.missing { fill: #64748b; fill-opacity: 0.45; }
 .game-log-value { fill: #dce2e8; font: 9px ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 .game-log-game.latest .game-log-value { fill: var(--accent, #77c3ff); font-weight: 700; }

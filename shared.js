@@ -2778,7 +2778,7 @@ function fetchFile(file, cb) {
 	}).catch(err => console.log(err));
 }
 
-function renderGameLogChart(logs, data, height = 34) {
+function renderGameLogChart(logs, data, height = 34, { neutral = false, label: chartLabel = "Game logs" } = {}) {
 	const recent = (Array.isArray(logs) ? logs : String(logs ?? "").split(",")).slice(-15).map(value => {
 		if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") return null;
 		const number = Number(value);
@@ -2798,19 +2798,19 @@ function renderGameLogChart(logs, data, height = 34) {
 	const y = value => plotTop + (high - value) / (high - low) * (plotBottom - plotTop);
 	const baseline = y(0);
 	const line = Number(data.playerHandicap ?? data.handicap ?? data.daily?.line ?? 0);
-	const hasLine = Number.isFinite(line);
+	const hasLine = !neutral && Number.isFinite(line);
 	const step = width / values.length;
 	const barWidth = Math.min(18, step - 3);
-	const description = `Showing last ${values.length} games, oldest to newest. Recent game logs: ${recent.map(label).join(", ")}.${hasLine ? ` ${data.under ? "Under" : "Over"} ${line}; gold indicates a push.` : ""}`;
+	const description = `Showing last ${values.length} ${neutral ? "recorded entries" : "games"}, oldest to newest. Recent ${chartLabel.toLowerCase()}: ${recent.map(label).join(", ")}.${hasLine ? ` ${data.under ? "Under" : "Over"} ${line}; gold indicates a push.` : ""}`;
 	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 	svg.setAttribute("class", `game-log-chart${data.blurred ? " blurred" : ""}`);
 	svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 	svg.setAttribute("width", width);
 	svg.setAttribute("height", height);
 	svg.setAttribute("role", "img");
-	svg.setAttribute("aria-label", data.blurred ? "Game logs" : description);
+	svg.setAttribute("aria-label", data.blurred ? chartLabel : description);
 	const title = document.createElementNS(svg.namespaceURI, "title");
-	title.textContent = data.blurred ? "Game logs" : description;
+	title.textContent = data.blurred ? chartLabel : description;
 	svg.appendChild(title);
 	let chart = `<rect class="game-log-latest" x="${width - step}" y="0" width="${step}" height="${height}" rx="2" />`;
 	chart += `<line class="game-log-baseline" x1="0" x2="${width}" y1="${baseline}" y2="${baseline}" />`;
@@ -2822,11 +2822,13 @@ function renderGameLogChart(logs, data, height = 34) {
 		const top = Math.min(baseline, y(value ?? 0));
 		const barHeight = Math.max(2, Math.abs(baseline - y(value ?? 0)));
 		const barY = Math.min(top, plotBottom - barHeight);
-		const outcome = value === null || !hasLine ? "missing" : value === line ? "push"
+		const outcome = value === null ? "missing" : neutral ? "neutral" : !hasLine ? "missing" : value === line ? "push"
 			: (data.under ? value < line : value > line) ? "hit" : "miss";
 		const latest = index === values.length - 1;
+		const entryLabel = neutral ? (latest ? "Most recent entry" : `${values.length - 1 - index} entries ago`)
+			: (latest ? "Most recent game" : `${values.length - 1 - index} games ago`);
 		chart += `<g class="game-log-game${latest ? " latest" : ""}">
-			${data.blurred ? "" : `<title>${latest ? "Most recent game" : `${values.length - 1 - index} games ago`}: ${label(value)}${value === null ? " (no data)" : hasLine ? ` (${outcome})` : ""}</title>`}
+			${data.blurred ? "" : `<title>${entryLabel}: ${label(value)}${value === null ? " (no data)" : hasLine ? ` (${outcome})` : ""}</title>`}
 			<rect class="game-log-bar ${outcome}" x="${center - barWidth / 2}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="1.5" />
 			<text class="game-log-value" x="${center}" y="${Math.max(8, barY - 2)}" text-anchor="middle">${label(value)}</text>
 		</g>`;
@@ -2837,8 +2839,8 @@ function renderGameLogChart(logs, data, height = 34) {
 
 const chartFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
-	if (cell.getField() === "logs" && params.type === "bar") {
-		return renderGameLogChart(cell.getValue(), data, isStackedOddsCell(cell) ? 34 : 18);
+	if ((cell.getField() === "logs" || params.neutral) && params.type === "bar") {
+		return renderGameLogChart(cell.getValue(), data, isStackedOddsCell(cell) ? 34 : 18, params);
 	}
 	const content = document.createElement("span");
 	if (!cell.getValue()) {
@@ -3501,6 +3503,9 @@ function showHideUserTable(loaded) {
 			return;
 		}
 		const allowed = new Set(CURR_USER.metadata[PAGE]);
+		if (PAGE === "ncaaf" && !CURR_USER.metadata['ncaaf-carries-version'] && allowed.has('logs')) {
+			allowed.add('carries');
+		}
 		if (["nhl", "atgs", "fgs"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-team-total-version`]) {
 			allowed.add("teamTotal");
 		}

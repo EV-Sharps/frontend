@@ -498,6 +498,10 @@
 								<input id="custom_logs" type="checkbox">
 								<label for="custom_logs">Logs</label>
 							</div>
+							<div>
+								<input id="custom_carries" type="checkbox">
+								<label for="custom_carries">Carries / Rec</label>
+							</div>
 						</div>
 						<div>
 							<h3>Sportsbook Odds</h3>
@@ -689,7 +693,7 @@
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl',
 			'bookOdds_br', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv',
-			'bookOdds_px', 'bookOdds_poly', 'bookOdds_pn', 'logs'
+			'bookOdds_px', 'bookOdds_poly', 'bookOdds_pn', 'logs', 'carries'
 		];
 
 		function ncaafPlayerHeaderFilter(cell, onRendered, success) {
@@ -774,6 +778,12 @@
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'logs', label: 'Game Logs', cols: [{ title: "Game Logs<br> ➡️ Most Recent", field: "logs", width: 160, formatter: chartFormatter, formatterParams: {type: "bar"}, responsive: 3, visible: !MOBILE }] },
+				{ key: 'carries', label: 'Carries / Rec', cols: [{
+					title: "Carries / Rec<br> ➡️ Most Recent", field: "carries", width: 160,
+					formatter: cell => chartFormatter(cell, {type: "bar", neutral: true, label: cell.getRow().getData().pos === "WR" ? "Receptions" : "Carries"}),
+					headerTooltip: "QB/RB: rushing attempts. WR: receptions. Available game entries, oldest to newest; missing games are not filled in. Workload only; no hit or miss grading.",
+					responsive: 3, visible: !MOBILE, headerSort: false
+				}] },
 			];
 		}
 

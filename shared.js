@@ -343,14 +343,26 @@ function buildPagePicker() {
 		<div id="page-picker-tabs" role="group" aria-label="Page sections"></div>
 		<div class="pp-results-header"><strong id="page-picker-section"></strong><span id="page-picker-count" role="status" aria-live="polite"></span></div>
 		<div id="page-picker-grid"></div><div class="pp-footer" id="page-picker-reorder-help">Star pages to keep them in Favorites.</div>
-		<div class="pp-search-wrap"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input id="page-picker-search" type="search" placeholder="Search pages or sports" aria-label="Search all pages" autocomplete="off" spellcheck="false"><button type="button" class="pp-search-clear" aria-label="Clear page search" hidden>&times;</button></div><span class="pp-reorder-status" role="status" aria-live="polite"></span>`;
+		<div class="pp-search-row"><div class="pp-search-wrap"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input id="page-picker-search" type="search" placeholder="Search pages or sports" aria-label="Search all pages" autocomplete="off" spellcheck="false"><button type="button" class="pp-search-clear" aria-label="Clear page search" hidden>&times;</button></div><button type="button" class="pp-reorder-toggle" aria-pressed="false" aria-controls="page-picker-grid" hidden>Reorder</button></div><span class="pp-reorder-status" role="status" aria-live="polite"></span>`;
 	document.body.appendChild(panel);
 	const search = panel.querySelector("#page-picker-search");
 	const clear = panel.querySelector(".pp-search-clear");
 	const grid = panel.querySelector("#page-picker-grid");
+	const reorderButton = panel.querySelector(".pp-reorder-toggle");
 	const tabs = [{ key: "favorites", label: "Favorites" }, ...PAGE_SECTIONS.map(section => ({ key: section.key, label: section.key === "account" ? "Account" : section.key === "other" ? "More" : cleanLabel(section.label) }))];
 	panel.querySelector("#page-picker-tabs").innerHTML = tabs.map(tab => `<button type="button" class="pp-tab" data-key="${tab.key}" aria-pressed="false">${tab.label}</button>`).join("");
 
+	function updateReorderControls(enabled = panel.classList.contains("pp-reordering")) {
+		const canReorder = activeTab === "favorites" && !search.value.trim() && validFavorites().length > 1;
+		const reordering = canReorder && enabled;
+		panel.classList.toggle("pp-reordering", reordering);
+		reorderButton.hidden = !canReorder;
+		reorderButton.textContent = reordering ? "Done" : "Reorder";
+		reorderButton.setAttribute("aria-pressed", String(reordering));
+		reorderButton.setAttribute("aria-label", reordering ? "Finish reordering favorites" : "Reorder favorites");
+		panel.querySelector(".pp-footer").textContent = reordering ? "Drag to reorder. Saves automatically. Keyboard: Alt + Up / Down."
+			: canReorder ? "Choose Reorder to arrange your favorites." : "Star pages to keep them in Favorites.";
+	}
 	const tierLabels = { free: "Free", analyst: "Analyst", sharp: "Sharp" };
 	function makeRow(page, reorderable = false) {
 		const isCurrent = page.value === pagePickerValue();
@@ -383,7 +395,7 @@ function buildPagePicker() {
 		panel.querySelector("#page-picker-section").textContent = words.length ? "Search results" : tabs.find(tab => tab.key === activeTab)?.label || "Pages";
 		panel.querySelector("#page-picker-count").textContent = `${pages.length} ${pages.length === 1 ? "page" : "pages"}`;
 		clear.hidden = !search.value;
-		panel.querySelector(".pp-footer").textContent = reorderable && pages.length ? "Hold and drag to reorder. Keyboard: Alt + Up / Down." : "Star pages to keep them in Favorites.";
+		updateReorderControls();
 		const groups = new Map();
 		pages.forEach(page => { const group = groupFor(page); if (!groups.has(group)) groups.set(group, []); groups.get(group).push(page); });
 		grid.innerHTML = (reorderable && pages.length ? `<div class="pp-favorites-list">${pages.map(page => makeRow(page, true)).join("")}</div>` : [...groups].map(([name, pages]) => `<section class="pp-group"><h3>${escapeHtml(name)}</h3><div class="pp-group-pages">${pages.map(page => makeRow(page)).join("")}</div></section>`).join("")) || `<div class="pp-empty"><strong>${words.length ? "No pages found" : "Your shortcuts start here"}</strong><p>${words.length ? "Try a sport, market, or page name." : "Choose a sport and star a page to save it here."}</p></div>`;
@@ -391,7 +403,12 @@ function buildPagePicker() {
 	}
 	_ppRenderGrid = renderGrid;
 	renderGrid();
-	initPageFavoriteDrag(panel, grid, () => renderGrid("favorites"));
+	initPageFavoriteDrag(panel, grid, () => renderGrid("favorites"), updateReorderControls);
+	panel.addEventListener("pagepickerclose", () => updateReorderControls(false));
+	reorderButton.addEventListener("click", () => {
+		grid.dispatchEvent(new Event("pagepickercancel"));
+		updateReorderControls(!panel.classList.contains("pp-reordering"));
+	});
 	function positionPanel() {
 		if (panel.hidden) return;
 		const viewport = window.visualViewport;
@@ -427,6 +444,7 @@ function buildPagePicker() {
 		const tab = event.target.closest(".pp-tab");
 		if (tab) { search.value = ""; renderGrid(tab.dataset.key); return; }
 		const link = event.target.closest(".pp-page-link");
+		if (link && panel.classList.contains("pp-reordering")) { event.preventDefault(); return; }
 		if (link && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
 			event.preventDefault(); closePicker(); changePage(link.dataset.page);
 		}
@@ -451,9 +469,10 @@ function buildPagePicker() {
 	window.visualViewport?.addEventListener("scroll", positionPanel);
 }
 
-function initPageFavoriteDrag(panel, grid, render) {
+function initPageFavoriteDrag(panel, grid, render, setReordering) {
 	let session = null;
 	let blockDragClick = false;
+	const isReordering = () => panel.classList.contains("pp-reordering");
 	const rows = () => [...grid.querySelectorAll("[data-favorite]")];
 	const announce = text => { panel.querySelector(".pp-reorder-status").textContent = text; };
 	const saveOrder = order => setPageFavorites([...order, ...getPageFavorites().filter(value => !order.includes(value))]);
@@ -462,7 +481,6 @@ function initPageFavoriteDrag(panel, grid, render) {
 		const drag = session;
 		if (!drag) return;
 		session = null;
-		clearTimeout(drag.timer);
 		cancelAnimationFrame(drag.frame);
 		grid.classList.remove("pp-dragging");
 		drag.row.classList.remove("pp-drag-source");
@@ -484,9 +502,18 @@ function initPageFavoriteDrag(panel, grid, render) {
 		if (!drag?.active) return;
 		drag.ghost.style.left = `${drag.x - drag.offsetX}px`;
 		drag.ghost.style.top = `${drag.y - drag.offsetY}px`;
-		const others = drag.rows.filter(row => row !== drag.row).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-		const index = others.filter(row => { const rect = row.getBoundingClientRect(); return drag.y > rect.top + rect.height / 2; }).length;
-		drag.order = others.map(row => row.dataset.favorite);
+		// Include the source slot so a placed card stays put until the pointer reaches another slot.
+		const slots = drag.rows.map(row => ({ row, rect: row.getBoundingClientRect() }))
+			.sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left);
+		let index = 0, closest = Infinity;
+		slots.forEach(({ rect }, position) => {
+			const dx = Math.max(rect.left - drag.x, 0, drag.x - rect.right);
+			const dy = Math.max(rect.top - drag.y, 0, drag.y - rect.bottom);
+			const distance = dx * dx + dy * dy;
+			if (distance < closest) { closest = distance; index = position; }
+		});
+		if (slots[index].row === drag.row) return;
+		drag.order = slots.filter(slot => slot.row !== drag.row).map(slot => slot.row.dataset.favorite);
 		drag.order.splice(index, 0, drag.value);
 		drag.rows.forEach(row => { row.style.order = drag.order.indexOf(row.dataset.favorite); });
 	}
@@ -528,6 +555,7 @@ function initPageFavoriteDrag(panel, grid, render) {
 	function prepare(target, id, x, y, kind) {
 		finish(false);
 		blockDragClick = false;
+		if (!isReordering()) return;
 		const row = target.closest("[data-favorite]");
 		const cards = rows();
 		if (!row || target.closest(".pp-star") || cards.length < 2) return;
@@ -535,15 +563,11 @@ function initPageFavoriteDrag(panel, grid, render) {
 		const drag = { row, rows: cards, id, kind, x, y, startX: x, startY: y, value: row.dataset.favorite,
 			name: row.querySelector(".pp-label").firstChild.textContent.trim(), order, original: order.slice(), active: false };
 		session = drag;
-		drag.timer = setTimeout(() => begin(drag), 400);
+		begin(drag);
 	}
 	function move(x, y, event) {
-		if (!session) return;
+		if (!session?.active) return;
 		session.x = x; session.y = y;
-		if (!session.active) {
-			if (Math.hypot(x - session.startX, y - session.startY) > 8) finish(false);
-			return;
-		}
 		if (event.cancelable) event.preventDefault();
 		session.moved = session.moved || Math.hypot(x - session.startX, y - session.startY) > 3;
 		preview();
@@ -559,12 +583,13 @@ function initPageFavoriteDrag(panel, grid, render) {
 	document.addEventListener("pointerup", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(inside(event.clientX, event.clientY)); });
 	document.addEventListener("pointercancel", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(false); });
 	grid.addEventListener("lostpointercapture", () => { if (session?.kind === "pointer") finish(false); });
-	// Touch listeners keep ordinary swipes native; only an activated hold cancels scrolling.
+	// Browse mode keeps swipes native; Reorder mode starts touch dragging immediately.
 	grid.addEventListener("touchstart", event => {
 		if (event.touches.length !== 1) { finish(false); return; }
 		const touch = event.touches[0];
 		prepare(event.target, touch.identifier, touch.clientX, touch.clientY, "touch");
-	}, { passive: true });
+		if (session?.active && event.cancelable) event.preventDefault();
+	}, { passive: false });
 	grid.addEventListener("touchmove", event => {
 		if (session?.kind !== "touch") return;
 		const touch = [...event.touches].find(touch => touch.identifier === session.id);
@@ -583,10 +608,19 @@ function initPageFavoriteDrag(panel, grid, render) {
 	grid.addEventListener("dragstart", event => { if (event.target.closest("[data-favorite]")) event.preventDefault(); });
 	grid.addEventListener("pagepickercancel", () => finish(false));
 	panel.addEventListener("keydown", event => {
-		if (event.key === "Escape" && session?.active) { event.preventDefault(); event.stopImmediatePropagation(); finish(false); return; }
+		if (event.key === "Escape" && isReordering()) {
+			event.preventDefault(); event.stopImmediatePropagation();
+			if (session?.active) finish(false);
+			else {
+				setReordering(false);
+				panel.querySelector(".pp-reorder-toggle").focus({ preventScroll: true });
+				announce("Reordering finished.");
+			}
+			return;
+		}
 		blockDragClick = false;
 		const row = event.target.closest("[data-favorite]");
-		if (!row || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+		if (!isReordering() || !row || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
 		event.preventDefault(); event.stopImmediatePropagation();
 		const order = rows().map(card => card.dataset.favorite);
 		const index = order.indexOf(row.dataset.favorite);
@@ -604,6 +638,7 @@ function closePicker(restoreFocus = false) {
 	const panel = document.getElementById("page-picker-panel");
 	if (!panel) return;
 	panel.querySelector("#page-picker-grid")?.dispatchEvent(new Event("pagepickercancel"));
+	panel.dispatchEvent(new Event("pagepickerclose"));
 	panel.hidden = true;
 	panel.style.display = "none";
 	const button = document.getElementById("page-picker-btn");

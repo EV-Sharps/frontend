@@ -45,7 +45,7 @@ def check_real_page(browser, origin, width):
     assert bounds['x'] >= 0 and bounds['y'] >= 0, bounds
     assert bounds['x'] + bounds['width'] <= width + 1, bounds
     assert bounds['y'] + bounds['height'] <= 845, bounds
-    assert panel.evaluate("el => el.querySelector('.pp-search-wrap').previousElementSibling.matches('.pp-footer')")
+    assert panel.evaluate("el => el.querySelector('.pp-search-row').previousElementSibling.matches('.pp-footer')")
     assert search_is_below_grid(panel)
     current = panel.locator('.pp-page-btn.current-page .pp-page-link')
     assert current.get_attribute('data-page') == 'atgs'
@@ -69,6 +69,7 @@ def check_real_page(browser, origin, width):
         panel.locator(f'.pp-tab[data-key="{section}"]').click()
         assert panel.locator(f'.pp-tab[data-key="{section}"]').get_attribute('aria-pressed') == 'true'
         assert panel.locator(f'.pp-page-link[data-page="{destination}"]').count() == 1
+        assert not panel.locator('.pp-reorder-toggle').is_visible()
 
     panel.locator('.pp-tab[data-key="nhl"]').click()
     original_url = page.url
@@ -81,6 +82,7 @@ def check_real_page(browser, origin, width):
     panel.locator('.pp-tab[data-key="favorites"]').click()
     assert panel.locator('.pp-page-link').count() == 1
     assert panel.locator('.pp-page-link').get_attribute('data-page') == 'atgs'
+    assert not panel.locator('.pp-reorder-toggle').is_visible()
     page.reload()
     trigger.click()
     assert panel.locator('.pp-tab[data-key="favorites"]').get_attribute('aria-pressed') == 'true'
@@ -94,6 +96,7 @@ def check_real_page(browser, origin, width):
     page.keyboard.press('Space')
     assert page.url == original_url
     assert page.evaluate("JSON.parse(localStorage.getItem('page_favorites'))") == []
+    assert not panel.locator('.pp-reorder-toggle').is_visible()
     page.keyboard.press('Escape')
     assert not panel.is_visible()
     assert trigger.get_attribute('aria-expanded') == 'false'
@@ -157,7 +160,34 @@ def saved_favorites(page):
 
 def displayed_favorite_order(page):
     return page.locator('.pp-favorites-list > .pp-page-btn').evaluate_all(
-        'rows => rows.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map(row => row.dataset.favorite)')
+        '''rows => rows.sort((a, b) => {
+            const first = a.getBoundingClientRect();
+            const second = b.getBoundingClientRect();
+            return first.top - second.top || first.left - second.left;
+        }).map(row => row.dataset.favorite)''')
+
+
+def assert_two_column_favorites(page):
+    bounds = page.locator('.pp-favorites-list > .pp-page-btn').evaluate_all(
+        'rows => rows.map(row => { const r = row.getBoundingClientRect(); return {x: r.x, y: r.y, width: r.width}; })')
+    assert len(bounds) >= 4
+    for index, card in enumerate(bounds):
+        assert abs(card['x'] - bounds[index % 2]['x']) < 1, bounds
+        if index % 2:
+            previous = bounds[index - 1]
+            assert abs(card['y'] - previous['y']) < 1, bounds
+            assert card['x'] >= previous['x'] + previous['width'], bounds
+        elif index:
+            assert card['y'] > bounds[index - 2]['y'], bounds
+
+
+def assert_stable_favorite_preview(page, expected, repeat_move):
+    assert displayed_favorite_order(page) == expected
+    # Repeated events at the held position must not swap the placeholder back.
+    for _ in range(6):
+        repeat_move()
+        page.wait_for_timeout(40)
+        assert displayed_favorite_order(page) == expected
 
 
 def favorite_point(page, value, vertical=0.5):
@@ -168,9 +198,16 @@ def favorite_point(page, value, vertical=0.5):
 def begin_mouse_drag(page, value):
     page.mouse.move(*favorite_point(page, value))
     page.mouse.down()
-    page.wait_for_timeout(450)
     assert page.locator('#page-picker-grid.pp-dragging').count() == 1
     assert page.locator('.pp-drag-ghost').count() == 1
+
+
+def assert_reorder_mode(page, active):
+    panel = page.locator('#page-picker-panel')
+    toggle = panel.locator('.pp-reorder-toggle')
+    assert panel.evaluate("el => el.classList.contains('pp-reordering')") == active
+    assert toggle.get_attribute('aria-pressed') == str(active).lower()
+    assert toggle.inner_text().strip() == ('Done' if active else 'Reorder')
 
 
 def check_favorite_drag(browser, origin):
@@ -185,12 +222,50 @@ def check_favorite_drag(browser, origin):
     page.locator('#page-picker-btn').click()
     page.locator('.pp-tab[data-key="favorites"]').click()
     assert favorite_order(page) == original
+    assert_two_column_favorites(page)
     assert page.locator('.pp-favorites-list .pp-page-sport').all_text_contents() == ['NHL', 'NBA', 'NFL', 'MLB']
+    toggle = page.locator('.pp-reorder-toggle')
+    assert toggle.is_visible()
+    assert_reorder_mode(page, False)
 
+    # Reordering requires the explicit mode, for both mouse and keyboard.
+    page.locator('.pp-favorites-list .pp-page-link[data-page="atgs"]').focus()
+    page.keyboard.press('Alt+ArrowDown')
+    assert favorite_order(page) == original
+    assert saved_favorites(page) == original
+    page.mouse.move(*favorite_point(page, 'atgs'))
+    page.mouse.down()
+    page.wait_for_timeout(500)
+    assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
+    assert saved_favorites(page) == original
+    page.mouse.up()
+    assert page.evaluate('window.pickerDestinations') == ['atgs']
+    assert not page.locator('#page-picker-panel').is_visible()
+    page.locator('#page-picker-btn').click()
+    page.evaluate('window.pickerDestinations = []')
+    toggle.click()
+    assert_reorder_mode(page, True)
+
+    # Mouse clicks and keyboard activation cannot navigate while arranging cards.
+    page.locator('.pp-favorites-list .pp-page-link[data-page="nba"]').focus()
+    page.keyboard.press('Enter')
+    page.locator('.pp-favorites-list .pp-page-link[data-page="nba"]').click()
+    assert page.evaluate('window.pickerDestinations') == []
+    assert page.locator('#page-picker-panel').is_visible()
+    assert favorite_order(page) == original
+
+    first_slot = favorite_point(page, 'atgs')
+    second_slot = favorite_point(page, 'nba')
     begin_mouse_drag(page, 'atgs')
-    page.mouse.move(*favorite_point(page, 'dingers', 0.8), steps=8)
+    assert displayed_favorite_order(page) == original, 'Holding without moving must preserve the order'
+    page.mouse.move(*second_slot, steps=8)
+    assert_stable_favorite_preview(page, ['nba', 'atgs', 'tds', 'dingers'], lambda: page.mouse.move(*second_slot))
+    page.mouse.move(*first_slot, steps=8)
+    assert_stable_favorite_preview(page, original, lambda: page.mouse.move(*first_slot))
+    last_slot = favorite_point(page, 'dingers', 0.8)
+    page.mouse.move(*last_slot, steps=8)
     reordered = ['nba', 'tds', 'dingers', 'atgs']
-    assert displayed_favorite_order(page) == reordered
+    assert_stable_favorite_preview(page, reordered, lambda: page.mouse.move(*last_slot))
     assert saved_favorites(page) == original, 'Dragging should save only on drop'
     page.screenshot(path=str(Path(tempfile.gettempdir()) / 'page-picker-favorites-drag.png'))
     page.mouse.up()
@@ -199,18 +274,22 @@ def check_favorite_drag(browser, origin):
     assert page.url == url
     assert page.locator('#page-picker-panel').is_visible()
     assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
+    assert_reorder_mode(page, True)
 
     page.reload()
     page.evaluate('() => { window.pickerDestinations = []; changePage = value => window.pickerDestinations.push(value); }')
     page.locator('#page-picker-btn').click()
     assert favorite_order(page) == reordered
+    assert_two_column_favorites(page)
+    assert_reorder_mode(page, False)
+    toggle.click()
     begin_mouse_drag(page, 'atgs')
     page.mouse.move(*favorite_point(page, 'nba', 0.2), steps=8)
     assert displayed_favorite_order(page) != reordered
     page.keyboard.press('Escape')
     page.mouse.up()
-    if not page.locator('#page-picker-panel').is_visible():
-        page.locator('#page-picker-btn').click()
+    assert page.locator('#page-picker-panel').is_visible()
+    assert_reorder_mode(page, True)
     assert favorite_order(page) == reordered
     assert saved_favorites(page) == reordered
     assert page.evaluate('window.pickerDestinations') == []
@@ -230,12 +309,19 @@ def check_favorite_drag(browser, origin):
     assert page.evaluate('CURR_USER.metadata.page_favorites') == original
     assert page.evaluate('window.favoriteSaves') == [original]
 
-    # A subsequent normal click must still navigate, without needing a long press.
+    # Done restores normal click navigation and leaves the dropped order saved.
+    toggle.click()
+    assert_reorder_mode(page, False)
     page.locator('.pp-favorites-list .pp-page-link[data-page="nba"]').click()
     assert page.evaluate('window.pickerDestinations') == ['nba']
     assert not page.locator('#page-picker-panel').is_visible()
     assert saved_favorites(page) == original
     page.locator('#page-picker-btn').click()
+    assert_reorder_mode(page, False)
+    page.locator('.pp-favorites-list .pp-page-link[data-page="atgs"]').focus()
+    page.keyboard.press('Alt+ArrowDown')
+    assert favorite_order(page) == original
+    toggle.click()
     page.locator('.pp-favorites-list .pp-page-link[data-page="atgs"]').focus()
     page.keyboard.press('Alt+ArrowDown')
     keyboard_order = ['nba', 'atgs', 'tds', 'dingers']
@@ -243,8 +329,40 @@ def check_favorite_drag(browser, origin):
     assert saved_favorites(page) == keyboard_order
     assert page.evaluate('window.favoriteSaves') == [original, keyboard_order]
     assert page.evaluate('window.pickerDestinations') == ['nba']
+
+    # Escape without a drag exits Reorder first; the next Escape closes the picker.
+    page.keyboard.press('Escape')
+    assert_reorder_mode(page, False)
+    assert page.locator('#page-picker-panel').is_visible()
+    page.keyboard.press('Escape')
+    assert not page.locator('#page-picker-panel').is_visible()
+    page.locator('#page-picker-btn').click()
+    assert_reorder_mode(page, False)
+
+    # Leaving Favorites, searching, and closing all clear the editing state.
+    toggle.click()
+    page.locator('.pp-tab[data-key="nhl"]').click()
+    assert_reorder_mode(page, False)
+    assert not toggle.is_visible()
+    page.locator('.pp-tab[data-key="favorites"]').click()
+    assert toggle.is_visible()
+    assert_reorder_mode(page, False)
+    toggle.click()
+    page.locator('#page-picker-search').fill('NBA')
+    assert_reorder_mode(page, False)
+    assert not toggle.is_visible()
+    page.locator('.pp-search-clear').click()
+    assert toggle.is_visible()
+    assert_reorder_mode(page, False)
+    toggle.click()
+    page.mouse.click(1277, 842)
+    assert not page.locator('#page-picker-panel').is_visible()
+    page.locator('#page-picker-btn').click()
+    assert_reorder_mode(page, False)
+    assert favorite_order(page) == keyboard_order
+    assert saved_favorites(page) == keyboard_order
     page.close()
-    print('PASS: favorite order, mouse hold/drag, drop persistence, reload, Escape, profile save, quick click and keyboard reorder', flush=True)
+    print('PASS: explicit Reorder mode, immediate two-column mouse drag, stable previews, persistence, mode resets, navigation and keyboard gating', flush=True)
 
 
 def check_touch_favorite_drag(browser, origin):
@@ -261,6 +379,8 @@ def check_touch_favorite_drag(browser, origin):
     page.locator('#page-picker-btn').tap()
     page.locator('.pp-tab[data-key="favorites"]').tap()
     assert favorite_order(page) == original
+    assert_two_column_favorites(page)
+    assert_reorder_mode(page, False)
     grid = page.locator('#page-picker-grid')
     assert grid.evaluate('el => el.scrollHeight > el.clientHeight')
     cdp = context.new_cdp_session(page)
@@ -269,29 +389,32 @@ def check_touch_favorite_drag(browser, origin):
         cdp.send('Input.dispatchTouchEvent', {'type': kind, 'touchPoints': [] if point is None else [
             {'x': point[0], 'y': point[1], 'id': 1, 'radiusX': 4, 'radiusY': 4, 'force': 1}]})
 
-    # Native Chromium touch dispatch lets the browser choose scrolling/pointercancel.
-    bounds = grid.bounding_box()
-    visible_values = page.locator('.pp-favorites-list > .pp-page-btn').evaluate_all('''rows => {
-        const grid = document.getElementById('page-picker-grid').getBoundingClientRect();
-        return rows.filter(row => {
-            const rect = row.getBoundingClientRect();
-            return rect.top >= grid.top && rect.bottom <= grid.bottom;
-        }).map(row => row.dataset.favorite);
-    }''')
-    x, start_y = favorite_point(page, visible_values[-1])
-    end_y = bounds['y'] + 35
-    touch('touchStart', (x, start_y))
-    for step in range(1, 9):
-        touch('touchMove', (x, start_y + (end_y - start_y) * step / 8))
-        page.wait_for_timeout(20)
-    touch('touchEnd')
-    page.wait_for_function("document.getElementById('page-picker-grid').scrollTop > 0")
+    def swipe_grid():
+        # Native Chromium dispatch lets the browser choose scrolling/pointercancel.
+        bounds = grid.bounding_box()
+        visible_values = page.locator('.pp-favorites-list > .pp-page-btn').evaluate_all('''rows => {
+            const grid = document.getElementById('page-picker-grid').getBoundingClientRect();
+            return rows.filter(row => {
+                const rect = row.getBoundingClientRect();
+                return rect.top >= grid.top && rect.bottom <= grid.bottom;
+            }).map(row => row.dataset.favorite);
+        }''')
+        x, start_y = favorite_point(page, visible_values[-1])
+        end_y = bounds['y'] + 35
+        touch('touchStart', (x, start_y))
+        for step in range(1, 9):
+            touch('touchMove', (x, start_y + (end_y - start_y) * step / 8))
+            page.wait_for_timeout(20)
+        touch('touchEnd')
+        page.wait_for_function("document.getElementById('page-picker-grid').scrollTop > 0")
+
+    swipe_grid()
     assert favorite_order(page) == original
     assert saved_favorites(page) == original
     assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
     assert page.evaluate('window.pickerDestinations') == []
 
-    # A fresh tab isolates long press from Chromium's inertial swipe scrolling.
+    # A fresh tab isolates Reorder mode from Chromium's inertial swipe scrolling.
     page.close()
     page = context.new_page()
     mock_page(page)
@@ -300,36 +423,72 @@ def check_touch_favorite_drag(browser, origin):
     cdp = context.new_cdp_session(page)
     page.evaluate('() => { window.pickerDestinations = []; changePage = value => window.pickerDestinations.push(value); }')
     page.locator('#page-picker-btn').tap()
+    grid = page.locator('#page-picker-grid')
     page.wait_for_function("document.getElementById('page-picker-grid').scrollTop === 0")
+    page.locator('.pp-reorder-toggle').tap()
+    assert_reorder_mode(page, True)
     page.screenshot(path=str(Path(tempfile.gettempdir()) / 'page-picker-favorites-touch.png'))
     start = favorite_point(page, 'atgs')
     end = favorite_point(page, 'nba', 0.8)
     touch('touchStart', start)
-    page.wait_for_timeout(450)
     assert page.locator('#page-picker-grid.pp-dragging').count() == 1
+    assert displayed_favorite_order(page) == original
     for step in range(1, 7):
-        touch('touchMove', (start[0], start[1] + (end[1] - start[1]) * step / 6))
+        touch('touchMove', (start[0] + (end[0] - start[0]) * step / 6,
+                            start[1] + (end[1] - start[1]) * step / 6))
         page.wait_for_timeout(20)
-    touch('touchEnd')
     expected = ['nba', 'atgs', *original[2:]]
+    assert_stable_favorite_preview(page, expected, lambda: touch('touchMove', end))
+    assert saved_favorites(page) == original
+    touch('touchEnd')
     assert favorite_order(page) == expected
     assert saved_favorites(page) == expected
     assert page.evaluate('window.pickerDestinations') == []
     assert page.locator('#page-picker-panel').is_visible()
     assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
+    assert_reorder_mode(page, True)
+
+    # Move the right-hand card to the next row, preserving row-major order.
+    start = favorite_point(page, 'atgs')
+    end = favorite_point(page, 'dingers', 0.8)
+    touch('touchStart', start)
+    assert page.locator('#page-picker-grid.pp-dragging').count() == 1
+    for step in range(1, 7):
+        touch('touchMove', (start[0] + (end[0] - start[0]) * step / 6,
+                            start[1] + (end[1] - start[1]) * step / 6))
+        page.wait_for_timeout(20)
+    expected = ['nba', 'tds', 'dingers', 'atgs', *original[4:]]
+    assert_stable_favorite_preview(page, expected, lambda: touch('touchMove', end))
+    touch('touchEnd')
+    assert favorite_order(page) == expected
+    assert saved_favorites(page) == expected
+
     touch('touchStart', favorite_point(page, 'nba'))
-    page.wait_for_timeout(450)
+    assert page.locator('#page-picker-grid.pp-dragging').count() == 1
     touch('touchMove', favorite_point(page, 'atgs', 0.8))
     assert displayed_favorite_order(page) != expected
     touch('touchCancel')
     assert favorite_order(page) == expected
     assert saved_favorites(page) == expected
     assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
+    assert_reorder_mode(page, True)
+    page.locator('.pp-favorites-list .pp-page-link[data-page="atgs"]').tap()
+    assert page.evaluate('window.pickerDestinations') == []
+    assert page.locator('#page-picker-panel').is_visible()
+    page.locator('.pp-reorder-toggle').tap()
+    assert_reorder_mode(page, False)
     page.locator('.pp-favorites-list .pp-page-link[data-page="atgs"]').tap()
     assert page.evaluate('window.pickerDestinations') == ['atgs']
     assert not page.locator('#page-picker-panel').is_visible()
+    page.locator('#page-picker-btn').tap()
+    assert_reorder_mode(page, False)
+    swipe_grid()
+    assert favorite_order(page) == expected
+    assert saved_favorites(page) == expected
+    assert page.locator('.pp-drag-ghost, .pp-drag-source, .pp-dragging').count() == 0
+    assert page.evaluate('window.pickerDestinations') == ['atgs']
     context.close()
-    print('PASS: native touch swipe scrolls; long press/drag saves, touch cancel restores, and quick tap navigates', flush=True)
+    print('PASS: immediate two-column touch drag, stable previews, touch cancel, blocked navigation and restored taps/swipes after Done', flush=True)
 
 
 def check_routes(browser, origin):

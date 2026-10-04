@@ -827,7 +827,7 @@ function initDevigWindow() {
 	tabs.className = "dv-tabs";
 	tabs.setAttribute("role", "group");
 	tabs.setAttribute("aria-label", "Devig presets");
-	for (const [key, name] of [["all", "All"], ["favorites", "Favorites"], ["custom", "Custom"], ["single", "Single books"], ["blends", "Blends"]]) {
+	for (const [key, name] of [["all", "All"], ["favorites", "Favorites"], ["single", "Single books"], ["custom", "Custom"], ["blends", "Blends"]]) {
 		const button = document.createElement("button");
 		button.type = "button"; button.className = "dv-tab"; button.dataset.category = key;
 		button.textContent = name;
@@ -892,7 +892,7 @@ function renderDevigOptions(searchTerm = "") {
 	if (current) { current.textContent = currentName; current.title = currentName; }
 	devigModal.querySelectorAll(".dv-tab").forEach(tab => tab.setAttribute("aria-pressed", String(tab.dataset.category === devigWindowCategory)));
 	const words = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
-	const groups = new Map(["Default", "Favorites", "Your Custom Devigs", "100% Weight", "Split Weights"].map(name => [name, []]));
+	const groups = new Map(["Default", "Favorites", "100% Weight", "Your Custom Devigs", "Split Weights"].map(name => [name, []]));
 	for (const option of options.values()) {
 		const parts = devigBookWeights(option.value);
 		const custom = customKeys.has(option.value);

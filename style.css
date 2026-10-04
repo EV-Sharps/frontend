@@ -3764,6 +3764,110 @@ button#logout:hover {
 	background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px;
 }
 #filterbuilder-options hr { border: none; border-top: 1px solid #243449; margin: 6px 0; width: 100%; }
+#filterbuilder-options.fb-window {
+	--fb-window-height: min(580px, var(--fb-available-height, 70vh));
+	box-sizing: border-box;
+	width: 384px;
+	min-width: 0;
+	max-width: calc(100vw - 16px);
+	max-height: var(--fb-window-height);
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid #3a4c62;
+	border-radius: 9px;
+	background: #111b28;
+	box-shadow: 0 16px 48px #0009, 0 3px 10px #0005;
+	color: #e2eaf3;
+	font: 12px/1.4 system-ui, sans-serif;
+	text-align: left;
+	white-space: normal;
+	color-scheme: dark;
+}
+#filterbuilder-options.fb-window *,
+#filterbuilder-options.fb-window *::before,
+#filterbuilder-options.fb-window *::after { box-sizing: border-box; }
+#filterbuilder-options.fb-window [hidden] { display: none !important; }
+#filterbuilder-options.fb-window .fb-window-shell { display: flex; flex-direction: column; min-width: 0; min-height: 0; max-height: calc(var(--fb-window-height) - 2px); }
+#filterbuilder-options.fb-window .fb-window-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: 0 0 auto; padding: 10px 10px 10px 12px; border-bottom: 1px solid #2a3a4e; }
+#filterbuilder-options.fb-window .fb-title-wrap { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+#filterbuilder-options.fb-window #fb-window-title { margin: 0; padding: 0; color: #f0f5fb; font-size: 15px; font-weight: 650; line-height: 1.4; }
+#filterbuilder-options.fb-window .fb-count { color: #96abc1; font-size: 11px; white-space: nowrap; }
+#filterbuilder-options.fb-window button { min-height: 30px; margin: 0; padding: 5px 9px; border: 1px solid #354b63; border-radius: 5px; background: #192c40; color: #b9deff; font: inherit; font-size: 11px; line-height: 1.3; cursor: pointer; box-shadow: none; }
+#filterbuilder-options.fb-window button:hover { border-color: #6396c8; background: #25435f; }
+#filterbuilder-options.fb-window button:focus-visible,
+#filterbuilder-options.fb-window input:focus-visible,
+#filterbuilder-options.fb-window select:focus-visible { outline: 2px solid #8ac6ff; outline-offset: -3px; }
+#filterbuilder-options.fb-window .fb-close { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 30px; width: 30px; height: 30px; padding: 0; border-color: transparent; background: transparent; color: #9db0c4; font-size: 22px; line-height: 1; }
+#filterbuilder-options.fb-window .fb-window-body { flex: 1 1 auto; min-width: 0; min-height: 0; padding: 10px 12px 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #405772 transparent; scroll-padding: 6px; }
+#filterbuilder-options.fb-window .fb-section { min-width: 0; }
+#filterbuilder-options.fb-window .fb-section + .fb-section,
+#filterbuilder-options.fb-window .fb-presets { margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a3a4e; }
+#filterbuilder-options.fb-window h3,
+#filterbuilder-options.fb-window .fb-liquidity-group legend { margin: 0 0 6px; padding: 0; color: #91a7bf; font-size: 10px; font-weight: 650; line-height: 1.5; letter-spacing: 0.07em; text-transform: uppercase; }
+#filterbuilder-options.fb-window label { min-width: 0; margin: 0; padding: 0; color: #d5e1ef; font-size: 12px; }
+#filterbuilder-options.fb-window label:hover { background: transparent; }
+#filterbuilder-options.fb-window input:not([type="checkbox"]),
+#filterbuilder-options.fb-window select { width: 100%; min-width: 0; min-height: 32px; margin: 0; padding: 5px 7px; border: 1px solid #35475c; border-radius: 5px; background: #0b1420; color: #e2eaf3; font: inherit; font-size: 12px; line-height: 1.4; box-shadow: none; }
+#filterbuilder-options.fb-window input::placeholder { color: #8196ae; opacity: 1; }
+#filterbuilder-options.fb-window input[type="checkbox"] { flex: 0 0 14px; width: 14px; height: 14px; min-height: 0; margin: 0; padding: 0; accent-color: #8ac6ff; cursor: pointer; }
+#filterbuilder-options.fb-window input[type="number"] { appearance: textfield; }
+#filterbuilder-options.fb-window input[type="number"]::-webkit-inner-spin-button,
+#filterbuilder-options.fb-window input[type="number"]::-webkit-outer-spin-button { margin: 0; appearance: none; }
+#filterbuilder-options.fb-window .fb-rule { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 3px 0; border-radius: 5px; }
+#filterbuilder-options.fb-window .fb-rule.is-enabled { background: #20394f70; }
+#filterbuilder-options.fb-window .fb-rule.is-enabled .fb-rule-toggle { color: #e7f4ff; }
+#filterbuilder-options.fb-window .fb-rule-toggle { display: flex; align-items: center; gap: 6px; min-height: 32px; min-width: 0; margin: 0; padding: 0; cursor: pointer; }
+#filterbuilder-options.fb-window .fb-rule > .fb-rule-toggle { flex: 0 0 112px; }
+#filterbuilder-options.fb-window .fb-rule > .fb-rule-toggle:only-child { flex: 1 1 auto; }
+#filterbuilder-options.fb-window .fb-subrow { display: flex; align-items: center; gap: 6px; flex: 1 1 0; min-width: 0; margin: 0; }
+#filterbuilder-options.fb-window .fb-inline-label { color: #96abc1; font-size: 10px; }
+#filterbuilder-options.fb-window .fb-liquidity-group { position: relative; min-width: 0; margin: 0; padding: 34px 0 0; border: 0; border-radius: 0; }
+#filterbuilder-options.fb-window .fb-liquidity-group legend { position: absolute; top: 0; left: 0; margin: 0; line-height: 28px; }
+#filterbuilder-options.fb-window .fb-liquidity-logic { position: absolute; top: 0; right: 0; display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 11px; color: #96abc1; }
+#filterbuilder-options.fb-window .fb-liquidity-logic select { flex: 0 0 auto; width: auto; min-height: 28px; padding: 3px 5px; font-size: 11px; }
+#filterbuilder-options.fb-window .fb-liquidity-rule { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 6px; padding: 3px 0; }
+#filterbuilder-options.fb-window .fb-liquidity-fields { display: grid; grid-template-columns: minmax(0, 1fr) 78px; gap: 6px; }
+#filterbuilder-options.fb-window .fb-liquidity-fields > select { font-size: 11px; }
+#filterbuilder-options.fb-window .fb-amount-wrap { display: flex; align-items: center; gap: 3px; min-width: 0; min-height: 32px; padding-left: 7px; border: 1px solid #35475c; border-radius: 5px; background: #0b1420; }
+#filterbuilder-options.fb-window .fb-currency { flex: 0 0 auto; color: #8196ae; font-size: 11px; }
+#filterbuilder-options.fb-window .fb-amount-wrap input { min-height: 30px; padding: 4px 5px 4px 0; border: 0; background: transparent; }
+#filterbuilder-options.fb-window .fb-stat-hint { margin: 5px 0 0; color: #8ea4bc; font-size: 10px; line-height: 1.45; }
+#filterbuilder-options.fb-window .fb-liquidity-group .fb-stat-hint { margin: 6px 0 0; }
+#filterbuilder-options.fb-window .fb-stat-rule { display: block; padding: 5px 0; }
+#filterbuilder-options.fb-window .fb-rule-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+#filterbuilder-options.fb-window .fb-add-btn { flex: 0 0 auto; min-height: 28px; margin: 0; padding: 4px 7px; font-size: 11px; }
+#filterbuilder-options.fb-window .fb-stat-row-wrap { min-width: 0; margin: 6px 0 0; }
+#filterbuilder-options.fb-window .fb-stat-row-wrap .fb-subrow { margin: 0; }
+#filterbuilder-options.fb-window .fb-stat-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px 60px 28px; gap: 5px; }
+#filterbuilder-options.fb-window .fb-stat-row select,
+#filterbuilder-options.fb-window .fb-stat-row input { padding-right: 4px; padding-left: 5px; font-size: 11px; }
+#filterbuilder-options.fb-window .fb-row-remove { width: 28px; height: 32px; min-height: 32px; padding: 0; border-color: transparent; background: transparent; color: #df98a2; font-size: 16px; line-height: 1; }
+#filterbuilder-options.fb-window .fb-row-remove:hover { border-color: #925461; background: #542d39; color: #ffc4cd; }
+#filterbuilder-options.fb-window .fb-toprow { display: flex; gap: 6px; min-width: 0; margin: 6px 0 0; }
+#filterbuilder-options.fb-window .fb-toprow > button { flex: 0 0 66px; min-height: 32px; padding-right: 5px; padding-left: 5px; }
+#filterbuilder-options.fb-window #fb-save-status { display: block; margin-top: 6px; color: #99e4b8; font-size: 11px; line-height: 1.4; }
+#filterbuilder-options.fb-window #fb-save-status:empty { display: none; }
+#filterbuilder-options.fb-window .fb-window-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: 0 0 auto; padding: 10px 12px; border-top: 1px solid #2a3a4e; }
+#filterbuilder-options.fb-window #fb-draft-status { min-width: 0; color: #96abc1; font-size: 11px; line-height: 1.4; }
+#filterbuilder-options.fb-window #fb-draft-status.is-dirty { color: #edc665; }
+#filterbuilder-options.fb-window .fb-footer-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+#filterbuilder-options.fb-window .fb-footer-actions button { min-height: 34px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+#filterbuilder-options.fb-window .fb-clear { border-color: #35475c; background: transparent; color: #c1d0df; }
+#filterbuilder-options.fb-window .fb-apply { border-color: #8ac6ff; background: #8ac6ff; color: #112840; }
+#filterbuilder-options.fb-window .fb-apply.has-changes { border-color: #b9deff; background: #b9deff; }
+#filterbuilder-options.fb-window .fb-apply:hover { border-color: #b9deff; background: #b9deff; }
+@media (max-width: 380px) {
+	#filterbuilder-options.fb-window #fb-pitcherstat-rows .fb-stat-row,
+	#filterbuilder-options.fb-window #fb-batterstat-rows .fb-stat-row { grid-template-columns: minmax(0, 1fr) 70px 28px; }
+	#filterbuilder-options.fb-window #fb-pitcherstat-rows .fb-stat-field,
+	#filterbuilder-options.fb-window #fb-batterstat-rows .fb-stat-field { grid-column: 1 / 3; }
+	#filterbuilder-options.fb-window #fb-pitcherstat-rows .fb-row-remove,
+	#filterbuilder-options.fb-window #fb-batterstat-rows .fb-row-remove { grid-column: 3; grid-row: 1; }
+	#filterbuilder-options.fb-window #fb-pitcherstat-rows .fb-stat-cmp,
+	#filterbuilder-options.fb-window #fb-batterstat-rows .fb-stat-cmp { grid-column: 1; grid-row: 2; }
+	#filterbuilder-options.fb-window #fb-pitcherstat-rows .fb-stat-value,
+	#filterbuilder-options.fb-window #fb-batterstat-rows .fb-stat-value { grid-column: 2 / 4; grid-row: 2; }
+}
 
 /* Shared stacked odds layout. Compact retains the original table styling. */
 	#table.stacked-odds .tabulator-cell { height: 42px; }

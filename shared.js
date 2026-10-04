@@ -5986,6 +5986,240 @@ function initNhlFilterUI() {
 	else menu.prepend(section);
 }
 
+// Keep the original controls and handlers; pages expose different sets of criteria.
+function initFilterBuilderWindow() {
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu || menu.classList.contains('fb-window')) return;
+	const shell = document.createElement('div');
+	shell.className = 'fb-window-shell';
+	shell.innerHTML = `
+		<div class="fb-window-header">
+			<div class="fb-title-wrap"><h2 id="fb-window-title">Filters</h2><span id="fb-active-summary" class="fb-count"></span></div>
+			<button type="button" class="fb-close" aria-label="Close filters">&times;</button>
+		</div>
+		<div class="fb-window-body"></div>
+		<div class="fb-window-footer"><span id="fb-draft-status" role="status"></span><div class="fb-footer-actions"></div></div>`;
+	const getControl = id => shell.querySelector(`#${id}`) || menu.querySelector(`#${id}`) || document.getElementById(id);
+	const body = shell.querySelector('.fb-window-body');
+	const section = (title, className = '') => {
+		const el = document.createElement('section');
+		el.className = `fb-section ${className}`.trim();
+		if (title) {
+			const heading = document.createElement('h3');
+			heading.textContent = title;
+			el.appendChild(heading);
+		}
+		body.appendChild(el);
+		return el;
+	};
+	const liquidity = menu.querySelector('.fb-liquidity-group');
+	if (liquidity) {
+		section('', 'fb-liquidity-section').appendChild(liquidity);
+		[['liquidityOver', 'Over'], ['liquidity', 'Under'], ['liquidityEV', 'EV row']].forEach(([type, title]) => {
+			const ids = FB_FIELDS[type];
+			const checkbox = getControl(ids.enabled);
+			const label = checkbox.closest('label');
+			const fields = label.nextElementSibling;
+			const rule = document.createElement('div');
+			rule.className = 'fb-rule fb-liquidity-rule';
+			label.before(rule);
+			label.className = 'fb-rule-toggle';
+			label.replaceChildren(checkbox, document.createTextNode(title));
+			fields.classList.add('fb-liquidity-fields');
+			const book = getControl(ids.book);
+			book.setAttribute('aria-label', `${title} liquidity market`);
+			for (const option of book.options) {
+				if (option.value === 'either') option.textContent = 'Any market';
+				if (option.value === 'both') option.textContent = 'All markets';
+			}
+			book.title = 'Any market: NV, PX, or KAL. All markets: NV, PX, and KAL.';
+			const amount = getControl(ids.amount);
+			amount.setAttribute('aria-label', `${title} liquidity in dollars`);
+			const amountWrap = document.createElement('span');
+			amountWrap.className = 'fb-amount-wrap';
+			amountWrap.innerHTML = '<span class="fb-currency" aria-hidden="true">$</span>';
+			amountWrap.appendChild(amount);
+			fields.replaceChildren(book, amountWrap);
+			rule.append(label, fields);
+		});
+		liquidity.querySelector('.fb-stat-hint').textContent = "EV row follows the play's Over / Under side.";
+	}
+	const rules = section('Player & odds');
+	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position' };
+	const labels = {
+		'fb-line-min': 'Minimum American odds', 'fb-line-max': 'Maximum American odds',
+		'fb-homerrate-min': 'Minimum hits', 'fb-homerrate-window': 'Recent hit period', 'fb-bpp-min': 'Minimum BPP percentage'
+	};
+	['line', 'position', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
+		const checkbox = getControl(FB_FIELDS[type].enabled);
+		if (!checkbox) return;
+		const label = checkbox.closest('label');
+		const fields = label.nextElementSibling?.matches('.fb-subrow') ? label.nextElementSibling : null;
+		const rule = document.createElement('div');
+		rule.className = 'fb-rule';
+		label.className = 'fb-rule-toggle';
+		// The hit-count criterion is also used on non-HR pages.
+		const title = type === 'homerRate' && ['dingers', 'dingers2', 'barrels', 'charts'].includes(PAGE) ? 'Recent homers' : titles[type];
+		label.replaceChildren(checkbox, document.createTextNode(title));
+		if (type === 'line') label.title = 'Filter the play\'s American odds';
+		if (type === 'due') label.title = 'Positive HR gap z-score';
+		if (type === 'hrVsPitcher') label.title = 'Has hit a home run against this pitcher';
+		rule.appendChild(label);
+		if (fields) rule.appendChild(fields);
+		rules.appendChild(rule);
+	});
+	Object.entries(labels).forEach(([id, label]) => getControl(id)?.setAttribute('aria-label', label));
+	Object.entries(FB_STAT_TYPES).forEach(([type, def]) => {
+		const checkbox = getControl(def.enabledId);
+		const rows = getControl(def.rowsId);
+		if (!checkbox || !rows) return;
+		const label = checkbox.closest('label');
+		const addButton = rows.nextElementSibling;
+		const hint = addButton?.nextElementSibling?.matches('.fb-stat-hint') ? addButton.nextElementSibling : null;
+		const rule = document.createElement('div');
+		rule.className = 'fb-rule fb-stat-rule';
+		rule.dataset.statType = type;
+		const header = document.createElement('div');
+		header.className = 'fb-rule-header';
+		label.className = 'fb-rule-toggle';
+		header.appendChild(label);
+		if (addButton?.matches('.fb-add-btn')) header.appendChild(addButton);
+		rows.classList.add('fb-stat-rows');
+		rule.append(header, rows);
+		if (hint) rule.appendChild(hint);
+		rules.appendChild(rule);
+	});
+	if (rules.children.length === 1) rules.remove();
+	else if (!liquidity && !getControl('fb-line-enabled')) rules.querySelector('h3').textContent = 'Stats';
+
+	const presets = section('Saved filters', 'fb-presets');
+	menu.querySelectorAll('.fb-toprow').forEach(row => presets.appendChild(row));
+	const savedSelect = getControl('fb-saved-select');
+	savedSelect?.setAttribute('aria-label', 'Saved filter');
+	getControl('fb-name-input')?.setAttribute('aria-label', 'Filter name');
+	const saveStatus = getControl('fb-save-status');
+	if (saveStatus) {
+		saveStatus.setAttribute('role', 'status');
+		presets.appendChild(saveStatus);
+	}
+	const actions = shell.querySelector('.fb-footer-actions');
+	[['clearFilterBuilder()', 'fb-clear'], ['applyFilterBuilder()', 'fb-apply']].forEach(([handler, className]) => {
+		const button = menu.querySelector(`button[onclick="${handler}"]`);
+		if (button) { button.classList.add(className); actions.appendChild(button); }
+	});
+	menu.replaceChildren(shell);
+	menu.classList.add('fb-window');
+	['width', 'max-height', 'overflow-y'].forEach(property => menu.style.removeProperty(property));
+	menu.setAttribute('role', 'dialog');
+	menu.setAttribute('aria-labelledby', 'fb-window-title');
+	menu.tabIndex = -1;
+	menu.addEventListener('click', event => event.stopPropagation());
+	menu.addEventListener('input', refreshFilterBuilderWindow);
+	menu.addEventListener('change', refreshFilterBuilderWindow);
+	shell.querySelector('.fb-close').addEventListener('click', () => closeFilterBuilderWindow(true));
+	const button = getControl('filterbuilder-dd-button');
+	button.setAttribute('onclick', 'toggleFilterBuilderWindow(event)');
+	button.setAttribute('aria-haspopup', 'dialog');
+	button.setAttribute('aria-controls', menu.id);
+	button.setAttribute('aria-expanded', 'false');
+	document.addEventListener('click', event => {
+		if (menu.style.display === 'block' && !menu.contains(event.target) && !button.contains(event.target)) closeFilterBuilderWindow();
+	}, true);
+	document.addEventListener('keydown', event => {
+		if (event.key === 'Escape' && menu.style.display === 'block') {
+			event.preventDefault();
+			closeFilterBuilderWindow(true);
+		}
+	});
+	window.addEventListener('resize', positionFilterBuilderWindow);
+	window.visualViewport?.addEventListener('resize', positionFilterBuilderWindow);
+	new ResizeObserver(positionFilterBuilderWindow).observe(menu);
+	// Other dropdowns hide this menu too; keep the trigger's state in sync.
+	new MutationObserver(() => {
+		const expanded = String(menu.style.display === 'block');
+		button.setAttribute('aria-expanded', expanded);
+		getControl('filterbuilder-dd').setAttribute('aria-expanded', expanded);
+	}).observe(menu, { attributes: true, attributeFilter: ['style'] });
+}
+
+function filterBuilderRuleCount(config) {
+	let count = Object.keys(FB_FIELDS).filter(type => config[type]?.enabled).length;
+	Object.keys(FB_STAT_TYPES).forEach(type => {
+		if (config[type]?.enabled) count += Math.max(1, (config[type].rows || []).length);
+	});
+	return count;
+}
+
+function refreshFilterBuilderWindow() {
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu?.classList.contains('fb-window')) return;
+	menu.querySelectorAll('.fb-rule').forEach(rule => {
+		rule.classList.toggle('is-enabled', !!rule.querySelector('input[id$="-enabled"]')?.checked);
+	});
+	// Values in unchecked rules do not affect the table or mark the draft as changed.
+	const activeConfig = config => {
+		const enabled = {};
+		Object.keys({ ...FB_FIELDS, ...FB_STAT_TYPES }).forEach(type => {
+			if (config[type]?.enabled) enabled[type] = config[type];
+		});
+		if (['liquidity', 'liquidityOver', 'liquidityEV'].some(type => enabled[type])) enabled.liquidityMatch = config.liquidityMatch || 'all';
+		return JSON.stringify(enabled);
+	};
+	const dirty = activeConfig(readFilterBuilderFromDOM()) !== activeConfig(FB_CONFIG);
+	const count = filterBuilderRuleCount(FB_CONFIG);
+	document.getElementById('fb-active-summary').textContent = count ? `${count} active` : 'None active';
+	const status = document.getElementById('fb-draft-status');
+	status.textContent = dirty ? 'Changes not applied' : count ? 'Filters applied' : 'Choose rules above';
+	status.classList.toggle('is-dirty', dirty);
+	menu.querySelector('.fb-apply')?.classList.toggle('has-changes', dirty);
+}
+
+function positionFilterBuilderWindow() {
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu || menu.style.display !== 'block') return;
+	const anchor = document.getElementById('filterbuilder-dd-button').getBoundingClientRect();
+	const viewport = window.visualViewport;
+	const bottom = (viewport?.height || window.innerHeight) + (viewport?.offsetTop || 0);
+	const top = viewport?.offsetTop || 0;
+	const below = bottom - anchor.bottom - 14;
+	const above = anchor.top - top - 14;
+	const opensAbove = below < 200 && above > below;
+	const available = Math.max(100, Math.min(bottom - top - 16, opensAbove ? above : below));
+	menu.style.setProperty('--fb-available-height', `${available}px`);
+	const width = menu.getBoundingClientRect().width;
+	const rightAligned = window.innerWidth <= 600 || (typeof CURRENT_VIEW !== 'undefined' && CURRENT_VIEW === 'mobile');
+	const left = rightAligned ? window.innerWidth - width - 8 : Math.min(anchor.left, window.innerWidth - width - 8);
+	menu.style.left = `${Math.max(8, left)}px`;
+	menu.style.right = 'auto';
+	menu.style.top = `${Math.max(top + 8, opensAbove ? anchor.top - menu.offsetHeight - 6 : Math.min(anchor.bottom + 6, bottom - menu.offsetHeight - 8))}px`;
+}
+
+function closeFilterBuilderWindow(returnFocus = false) {
+	const menu = document.getElementById('filterbuilder-options');
+	const dd = document.getElementById('filterbuilder-dd');
+	if (!menu || !dd) return;
+	menu.style.display = 'none';
+	dd.appendChild(menu);
+	dd.setAttribute('aria-expanded', 'false');
+	const button = document.getElementById('filterbuilder-dd-button');
+	button?.setAttribute('aria-expanded', 'false');
+	if (returnFocus) button?.focus({ preventScroll: true });
+}
+
+function toggleFilterBuilderWindow(event) {
+	event?.stopPropagation();
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu) return;
+	if (menu.style.display === 'block') return closeFilterBuilderWindow();
+	document.querySelectorAll('.chkdd-menu').forEach(other => { other.style.display = 'none'; });
+	document.body.appendChild(menu);
+	menu.style.position = 'fixed';
+	menu.style.display = 'block';
+	refreshFilterBuilderWindow();
+	positionFilterBuilderWindow();
+	menu.focus({ preventScroll: true });
+}
+
 function matchesNhlPosition(value, selected) {
 	const aliases = { L: 'LW', R: 'RW', CENTER: 'C', CENTRE: 'C', 'LEFT WING': 'LW', 'RIGHT WING': 'RW', DEFENSEMAN: 'D', DEFENCEMAN: 'D', GOALIE: 'G' };
 	const positions = (Array.isArray(value) ? value : [value]).flatMap(pos => String(pos || '').toUpperCase().split(/[/,;|]/))
@@ -6056,6 +6290,12 @@ function createStatFilterRow(type, initial = {}) {
 		fieldSel.setAttribute('aria-label', 'Hit rate period');
 		cmpSel.setAttribute('aria-label', 'Hit rate comparison');
 	}
+	if (type !== 'hitRate') {
+		const prefix = type === 'pitcherStat' ? 'Pitcher' : 'Batter';
+		fieldSel.setAttribute('aria-label', `${prefix} stat`);
+		cmpSel.setAttribute('aria-label', `${prefix} stat comparison`);
+		valInput.setAttribute('aria-label', `${prefix} stat threshold`);
+	}
 	if (initial.value != null) valInput.value = initial.value;
 
 	const removeBtn = document.createElement("button");
@@ -6063,7 +6303,7 @@ function createStatFilterRow(type, initial = {}) {
 	removeBtn.className = "fb-row-remove";
 	removeBtn.title = "Remove this filter";
 	removeBtn.textContent = "✕";
-	removeBtn.addEventListener("click", e => { e.stopPropagation(); wrapper.remove(); });
+	removeBtn.addEventListener("click", e => { e.stopPropagation(); wrapper.remove(); refreshFilterBuilderWindow(); });
 
 	row.append(fieldSel, cmpSel, valInput, removeBtn);
 
@@ -6091,6 +6331,7 @@ function addStatFilterRow(type, initial) {
 	const container = document.getElementById(def?.rowsId);
 	if (!container) return;
 	container.appendChild(createStatFilterRow(type, initial));
+	refreshFilterBuilderWindow();
 }
 
 function readStatFilterRows(type) {
@@ -6230,11 +6471,7 @@ function passesFilterBuilder(row) {
 function updateFilterBuilderButtonLabel() {
 	const btn = document.getElementById("filterbuilder-dd-button");
 	if (!btn) return;
-	const c = FB_CONFIG;
-	let n = Object.keys(FB_FIELDS).filter(type => c[type]?.enabled).length;
-	Object.keys(FB_STAT_TYPES).forEach(type => {
-		if (c[type]?.enabled) n += Math.max(1, (c[type].rows || []).length);
-	});
+	const n = filterBuilderRuleCount(FB_CONFIG);
 	btn.textContent = n === 0 ? "None" : `${n} Filter${n === 1 ? "" : "s"}`;
 }
 
@@ -6323,6 +6560,7 @@ function clearFilterBuilder() {
 function applyFilterBuilder() {
 	FB_CONFIG = readFilterBuilderFromDOM();
 	updateFilterBuilderButtonLabel();
+	refreshFilterBuilderWindow();
 	if (typeof changeFilter === "function") return changeFilter();
 }
 
@@ -6332,6 +6570,7 @@ function initFilterBuilderUI() {
 	dd.dataset.filterBuilderInit = "1";
 	initLiquidityFilterUI();
 	initNhlFilterUI();
+	initFilterBuilderWindow();
 
 	// filter.js has a document-level "change" listener that treats any checkbox inside any
 	// .chkdd-menu as a Prop/Game filter checkbox (onChkddChange). This panel reuses .chkdd-menu
@@ -6348,6 +6587,7 @@ function initFilterBuilderUI() {
 	applyFilterBuilderToDOM(FB_CONFIG);
 	updateFilterBuilderButtonLabel();
 	populateSavedFilterBuilderSelect();
+	refreshFilterBuilderWindow();
 }
 
 function renderFilters() {

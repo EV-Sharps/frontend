@@ -789,256 +789,210 @@ function toggleFavorite(devigKey) {
 	renderDevigOptions(document.getElementById("devig-search").value);
 }
 
-function renderDevigOptions(searchTerm = "") {
-	const customDevigs = getCustomDevigs().map(key => ({
-		name: getDevigDisplayName(key),
-		value: key,
-		group: "Your Custom Devigs"
-	}));
+let devigWindowCategory = "all";
 
-	const currentFavorites = new Set(getFavoriteDevigs());
-
-	const favorites = getFavoriteDevigs().map(key => ({
-		name: getDevigDisplayName(key),
-		value: key,
-		group: "Favorites"
-	}));
-
-	const allOptions = [
-		{ name: "Market Avg", value: "", group: "Default" },
-		...favorites,
-		...DEFAULT_DEVIGS,
-		...customDevigs.filter(opt => !currentFavorites.has(opt.value))
-	];
-
-	const allLabels = getAllDevigLabels();
-	devigOptionsContainer.innerHTML = '';
-
-	const filteredOptions = allOptions.filter(opt => {
-		const nameMatch = opt.name.toLowerCase().includes(searchTerm.toLowerCase());
-		const devigLabels = allLabels[opt.value] || [];
-		const labelMatch = devigLabels.some(label => 
-			label.toLowerCase().includes(searchTerm.toLowerCase())
-		);
-		return nameMatch || labelMatch;
-	});
-
-	const groupedOptions = filteredOptions.reduce((acc, opt) => {
-		acc[opt.group] = acc[opt.group] || [];
-		acc[opt.group].push(opt);
-		return acc;
-	}, {});
-
-	for (const group in groupedOptions) {
-		// Create collapsible group header
-		const groupHeader = document.createElement('h4');
-		groupHeader.textContent = group == "Favorites" ? `Favorites (${MAX_FAVORITES} max)` : group;;
-		groupHeader.classList.add('devig-group-header');
-		devigOptionsContainer.appendChild(groupHeader);
-
-		// Create container for the options in this group
-		const groupContainer = document.createElement('div');
-		groupContainer.classList.add('devig-group-container');
-
-		if (group == "100% Weight") {
-			groupContainer.style.display = "flex";
-			groupContainer.style.flexWrap = "wrap";
-			groupContainer.style.justifyContent = "space-evenly";
-		}
-
-		groupedOptions[group].forEach(opt => {
-			let [books,weight] = opt.value.split(";");
-			const isChecked = (DEVIG === opt.value.split(";")[0] && (WEIGHT || "1") === (opt.value.split(";")[1] || "1"));
-			const isFavorite = currentFavorites.has(opt.value);
-			const isCustom = (opt.group === "Your Custom Devigs" || opt.group === "Favorites");
-
-			const labels = allLabels[opt.value] || [];
-
-			const labelsHTML = labels.map(label => {
-				const devigSport = getSportFromLabel(label);
-				const sportClass = devigSport ? ` sport-${devigSport}` : '';	
-				return `<span class="devig-label">${parseLabel(label)}</span>`
-			}).join('');
-
-			const item = document.createElement('label');
-			item.classList.add('devig-radio-item');
-			item.id = `devig-label-${opt.value}`;
-
-			let html = "";
-			if (opt.group == "100% Weight") {
-				item.style.width = "max-content";
-				item.style.border = "0";
-				item.style.flexDirection = "column";
-				html += `
-					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<span style="display:flex;gap:5px;align-items:center;">${opt.name} <img class='book-img' src='logos/${books}.png' alt='${books}' title='${books}' /></span>
-				`;
-			} else {
-				let booksHTML = books.replace("only+", "").split("+").map(book => {
-					if (book) {
-						return `<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' />`
-					}
-					return "";
-				});
-				const barHTML = renderWeightBar(books, weight);
-				html += `
-					<input type="radio" name="devig-selection" value="${opt.value}" ${isChecked ? 'checked' : ''}>
-					<div style="display:flex;flex-direction:column;width:80%">
-						<div class="devig-selection-container" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-							<div style="display:flex;align-items:center;gap:8px;min-width:0;">
-								<span class="devig-name-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-									${escapeHtml(opt.name)}
-								</span>
-
-								${isCustom ? `
-									<button class="devig-edit-btn"
-										data-devig="${opt.value}"
-										title="Rename"
-										style="background:none;border:none;cursor:pointer;opacity:0.85;font-size:14px;padding:2px 4px;">
-										✎
-									</button>
-
-									<span class="devig-edit-wrap" style="display:none;align-items:center;gap:6px;">
-										<input class="devig-name-input"
-											type="text"
-											value="${escapeHtml(opt.name)}"
-										/>
-										<button class="devig-save-btn"
-											title="Save"
-											style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">
-											✓
-										</button>
-										<button class="devig-cancel-btn"
-											title="Cancel"
-											style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">
-											✕
-										</button>
-									</span>
-								` : ``}
-							</div>
-
-							<!-- <div>${booksHTML.join("")}</div> -->
-						</div>
-						${barHTML}
-				`;
-
-				if (!["Default", "100% Weight"].includes(opt.group)) {
-					html += `
-					<div class="devig-labels-container">
-						${labelsHTML}
-						<button class="add-prop-btn" title="Add another prop to this devig" data-devig="${opt.value}">+</button>
-					</div>`;
-
-				}
-
-				html += "</div>";
-			}
-
-			if (!["Default", "100% Weight"].includes(group)) {
-				const starColor = isFavorite ? '#FFD700' : '#ccc';
-
-				html += `
-					<button 
-						onclick="event.stopPropagation(); toggleFavorite('${opt.value}');" 
-						style="position:absolute; right: ${opt.group == "Your Custom Devigs" ? '30px' : '0'}; 
-								 background: none; color: ${starColor}; border: none;
-								 padding: 4px 8px; cursor: pointer; font-size: 16px; 
-								 line-height: 1; z-index: 10;">
-						${isFavorite ? '★' : '☆'}
-					</button>
-				`;
-			}
-
-			if (opt.group == "Your Custom Devigs") {
-				html += `
-					<button 
-						onclick="event.stopPropagation(); deleteDevig('${opt.value}')" 
-						style="position:absolute;right:0;background-color: #f44336; color: white; border: none; 
-								 padding: 4px 8px; cursor: pointer; border-radius: 4px; 
-								 font-weight: bold; line-height: 1;">
-						&times;
-					</button>
-				`;
-			}
-			item.innerHTML = html;
-
-			if (["Your Custom Devigs", "Favorites"].includes(opt.group)) {
-				const editBtn = item.querySelector(".devig-edit-btn");
-				const editWrap = item.querySelector(".devig-edit-wrap");
-				const nameText = item.querySelector(".devig-name-text");
-				const input = item.querySelector(".devig-name-input");
-				const saveBtn = item.querySelector(".devig-save-btn");
-				const cancelBtn = item.querySelector(".devig-cancel-btn");
-
-				const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
-
-				[editBtn, input, saveBtn, cancelBtn].forEach(el => {
-					if (!el) return;
-					el.addEventListener("click", stop);
-					el.addEventListener("mousedown", stop);
-				});
-
-				editBtn?.addEventListener("click", () => {
-					editBtn.style.display = "none";
-					nameText.style.display = "none";
-					editWrap.style.display = "inline-flex";
-					input.focus();
-					input.select();
-				});
-
-				cancelBtn?.addEventListener("click", () => {
-					input.value = opt.name; // revert
-					editWrap.style.display = "none";
-					nameText.style.display = "";
-					editBtn.style.display = "";
-				});
-
-				saveBtn?.addEventListener("click", async () => {
-					const newName = input.value.trim();
-					await setDevigAlias(opt.value, newName);
-
-					const currentKey = `${DEVIG};${WEIGHT}`;
-					if (currentKey === opt.value) {
-						devigDisplay.textContent = newName || parseWeightKey(opt.value);
-					}
-
-					renderDevigOptions(document.getElementById("devig-search").value);
-				});
-			}
-
-			item.querySelector('input').addEventListener('change', (event) => {
-				const value = event.target.value;
-				[DEVIG, WEIGHT] = value.split(";");
-				DEVIG_EXCLUDED = [];
-				if (!DEVIG.includes("+")) {
-					WEIGHT = "1";
-				}
-
-				devigDisplay.textContent = opt.name;
-				REQUIRED = DEVIG.replace("only+", "").split("+");
-				updateRequiredDropdown();
-				changeFilter();
-				const el = document.getElementById(`devig-btn-${cssSafeId(DEVIG)}`);
-				if (el) {
-					document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === el));
-					el.scrollIntoView({ inline: 'nearest', block: 'nearest' });
-				}
-				devigModal.style.display = 'none';
-			});
-
-			groupContainer.appendChild(item);
-		});
-		
-		devigOptionsContainer.appendChild(groupContainer);
+function initDevigWindow() {
+	if (!devigModal || devigModal.classList.contains("devig-window")) return;
+	const panel = devigModal.querySelector(".devig-panel");
+	const header = panel?.querySelector(".modal-header");
+	const search = document.getElementById("devig-search");
+	const method = devigModal.querySelector("#method-select")?.closest(".select-wrapper");
+	const footer = panel?.querySelector(".action-footer");
+	if (!panel || !header || !search || !footer) return;
+	devigModal.classList.add("devig-window");
+	devigModal.setAttribute("role", "dialog");
+	devigModal.setAttribute("aria-modal", "true");
+	devigModal.setAttribute("aria-labelledby", "devig-window-title");
+	const title = header.querySelector("h3");
+	const heading = document.createElement("div");
+	if (title) { title.id = "devig-window-title"; title.textContent = "Devig reference"; heading.appendChild(title); }
+	const subtitle = document.createElement("p");
+	subtitle.className = "dv-subtitle";
+	subtitle.textContent = "Choose the books behind your fair odds.";
+	heading.appendChild(subtitle);
+	header.prepend(heading);
+	const close = document.getElementById("close-devig-modal");
+	close?.setAttribute("aria-label", "Close devig window");
+	if (close) close.type = "button";
+	const oldControls = search.parentElement;
+	const toolbar = document.createElement("div");
+	toolbar.className = "dv-toolbar";
+	if (method) toolbar.appendChild(method);
+	const current = document.createElement("div");
+	current.className = "dv-current";
+	current.innerHTML = '<span>Active</span><strong></strong>';
+	toolbar.appendChild(current);
+	header.after(toolbar);
+	const tabs = document.createElement("div");
+	tabs.className = "dv-tabs";
+	tabs.setAttribute("role", "group");
+	tabs.setAttribute("aria-label", "Devig presets");
+	for (const [key, name] of [["all", "All"], ["favorites", "Favorites"], ["custom", "Custom"], ["single", "Single books"], ["blends", "Blends"]]) {
+		const button = document.createElement("button");
+		button.type = "button"; button.className = "dv-tab"; button.dataset.category = key;
+		button.textContent = name;
+		button.addEventListener("click", () => { devigWindowCategory = key; renderDevigOptions(search.value); });
+		tabs.appendChild(button);
 	}
-
-	Array.from(document.querySelectorAll(".add-prop-btn")).map(btn => {
-		btn.onclick = function(event) {
-			event.stopPropagation();
-			renderPropOptions(btn.dataset.devig.replace("only+", ""));
-			openPropSelectorModal();
-		}
+	toolbar.after(tabs);
+	footer.classList.add("dv-footer");
+	const searchWrap = document.createElement("div");
+	searchWrap.className = "dv-search-wrap";
+	search.type = "search"; search.placeholder = "Search books or weights";
+	search.setAttribute("aria-label", "Search devig books, weights or tags");
+	search.autocomplete = "off";
+	searchWrap.appendChild(search); footer.prepend(searchWrap);
+	footer.querySelectorAll("button").forEach(button => {
+		button.type = "button";
+		if (button.id === "add-custom-devig") button.textContent = "+ Custom mix";
+		else if (button.id !== "load-predefined-devigs") button.remove();
 	});
+	if (oldControls !== panel && oldControls !== footer && !oldControls.children.length) oldControls.remove();
+	devigModal.addEventListener("click", event => { if (event.target === devigModal) closeDevig(); });
+	devigModal.addEventListener("keydown", event => {
+		if (event.key !== "Tab") return;
+		const controls = [...panel.querySelectorAll('button, input, select, a[href], [tabindex="0"]')]
+			.filter(el => !el.disabled && el.getClientRects().length);
+		const first = controls[0], last = controls[controls.length - 1];
+		if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+		else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+	});
+}
+
+function devigBookWeights(value) {
+	const [bookKey, weightKey = ""] = value.split(";");
+	const books = bookKey.replace(/^only\+/, "").split("+").filter(Boolean);
+	const weights = weightKey.split("+");
+	const values = books.map((book, index) => {
+		const weight = weights[index] == null || weights[index] === "" ? 1 : Number(weights[index]);
+		return { book, weight: Number.isFinite(weight) && weight > 0 ? weight : 0 };
+	});
+	const total = values.reduce((sum, item) => sum + item.weight, 0);
+	return values.map(item => ({ ...item, percent: total ? Math.round(item.weight * 100 / total) : 0 }));
+}
+
+function renderDevigOptions(searchTerm = "") {
+	if (!devigOptionsContainer) return;
+	initDevigWindow();
+	const customKeys = new Set(getCustomDevigs());
+	const favoriteKeys = getFavoriteDevigs();
+	const favorites = new Set(favoriteKeys);
+	const aliases = getDevigAlias();
+	const allLabels = getAllDevigLabels();
+	const options = new Map([["", { value: "", name: "Market Avg", group: "Default" }]]);
+	DEFAULT_DEVIGS.forEach(option => options.set(option.value, { ...option,
+		name: option.group === "100% Weight" ? parseBook(option.value.split(";")[0]) : option.name }));
+	[...customKeys, ...favoriteKeys].forEach(value => {
+		const preset = options.get(value);
+		options.set(value, preset || { value, name: getDevigDisplayName(value), group: "Your Custom Devigs" });
+	});
+	const currentKey = DEVIG ? `${DEVIG.replace(/^only\+/, "")};${WEIGHT || DEVIG.replace(/^only\+/, "").split("+").map(() => "1").join("+")}` : "";
+	const currentName = aliases[currentKey] || options.get(currentKey)?.name || getDevigDisplayName(currentKey);
+	const current = devigModal.querySelector(".dv-current strong");
+	if (current) { current.textContent = currentName; current.title = currentName; }
+	devigModal.querySelectorAll(".dv-tab").forEach(tab => tab.setAttribute("aria-pressed", String(tab.dataset.category === devigWindowCategory)));
+	const words = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
+	const groups = new Map(["Default", "Favorites", "Your Custom Devigs", "100% Weight", "Split Weights"].map(name => [name, []]));
+	for (const option of options.values()) {
+		const parts = devigBookWeights(option.value);
+		const custom = customKeys.has(option.value);
+		const favorite = favorites.has(option.value);
+		if (devigWindowCategory === "favorites" && !favorite || devigWindowCategory === "custom" && !custom
+			|| devigWindowCategory === "single" && parts.length !== 1 || devigWindowCategory === "blends" && parts.length < 2) continue;
+		const name = aliases[option.value] || option.name;
+		const labels = allLabels[option.value] || [];
+		const terms = `${name} ${option.value} ${labels.join(" ")} ${parts.map(part => `${parseBook(part.book)} ${part.percent}%`).join(" ")}`.toLowerCase();
+		if (!words.every(word => terms.includes(word))) continue;
+		const group = ["all", "favorites"].includes(devigWindowCategory) && favorite ? "Favorites" : custom ? "Your Custom Devigs" : option.group;
+		groups.get(group).push({ ...option, name, parts, labels, custom, favorite });
+	}
+	if (devigWindowCategory === "all" || devigWindowCategory === "favorites") {
+		groups.get("Favorites").sort((a, b) => favoriteKeys.indexOf(a.value) - favoriteKeys.indexOf(b.value));
+	}
+	devigOptionsContainer.replaceChildren();
+	let index = 0;
+	for (const [group, entries] of groups) {
+		if (!entries.length) continue;
+		const heading = document.createElement("h4");
+		heading.className = "devig-group-header";
+		heading.textContent = ({ Default: "Market", "Your Custom Devigs": "Custom mixes", "100% Weight": "Single books", "Split Weights": "Blends" }[group] || group) + ` (${entries.length})`;
+		devigOptionsContainer.appendChild(heading);
+		const container = document.createElement("div");
+		container.className = `devig-group-container${group === "100% Weight" ? " dv-single-books" : ""}`;
+		for (const option of entries) {
+			const item = document.createElement("div");
+			item.className = `devig-radio-item${option.value === currentKey ? " is-selected" : ""}`;
+			item.id = `devig-label-${option.value}`; item.dataset.value = option.value;
+			const id = `devig-choice-${index++}`;
+			const weights = option.parts.filter(part => part.weight > 0).map(part => `<span class="dv-book-weight" title="${escapeHtml(parseBook(part.book))}: ${part.percent}%"><img class="book-img" src="logos/${encodeURIComponent(part.book)}.png" alt="${escapeHtml(parseBook(part.book))}"><span>${part.percent}%</span></span>`).join("");
+			const labels = option.labels.map(label => `<span class="devig-label">${escapeHtml(parseLabel(label))}</span>`).join("");
+			item.innerHTML = `<label class="dv-option-main" for="${id}"><input id="${id}" type="radio" name="devig-selection" value="${escapeHtml(option.value)}"${option.value === currentKey ? " checked" : ""}><div class="dv-option-info"><span class="devig-name-text" title="${escapeHtml(option.name)}">${escapeHtml(option.name)}</span>${weights ? `<div class="dv-book-weights">${weights}</div>` : '<div class="dv-market-copy">Equal weight across eligible books</div>'}${labels ? `<div class="devig-labels-container">${labels}</div>` : ""}</div></label><div class="dv-option-actions"></div>`;
+			const actions = item.querySelector(".dv-option-actions");
+			function addAction(className, title, icon, handler) {
+				const button = document.createElement("button");
+				button.type = "button"; button.className = className; button.dataset.devig = option.value;
+				button.title = title; button.setAttribute("aria-label", `${title}: ${option.name}`); button.innerHTML = icon;
+				button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); handler(button); });
+				actions.appendChild(button); return button;
+			}
+			const star = addAction("dv-favorite-btn", option.favorite ? "Remove favorite" : "Add favorite", option.favorite ? "&#9733;" : "&#9734;", () => {
+				const scroll = devigOptionsContainer.scrollTop;
+				toggleFavorite(option.value);
+				devigOptionsContainer.scrollTop = scroll;
+				const updated = document.getElementById(`devig-label-${option.value}`)?.querySelector(".dv-favorite-btn");
+				(updated || devigModal.querySelector('.dv-tab[aria-pressed="true"]'))?.focus({ preventScroll: true });
+			});
+			star.setAttribute("aria-pressed", String(option.favorite));
+			if (option.custom || option.favorite) {
+				const editor = document.createElement("div"); editor.className = "devig-edit-wrap"; editor.hidden = true;
+				editor.innerHTML = `<input class="devig-name-input" type="text" value="${escapeHtml(option.name)}" aria-label="Devig name"><button type="button" class="devig-save-btn">Save</button><button type="button" class="devig-cancel-btn">Cancel</button>`;
+				item.appendChild(editor);
+				const input = editor.querySelector("input");
+				const edit = addAction("devig-edit-btn", "Rename", "&#9998;", () => { editor.hidden = false; input.focus(); input.select(); });
+				const cancel = () => { editor.hidden = true; input.value = option.name; edit.focus(); };
+				const save = async () => {
+					await setDevigAlias(option.value, input.value.trim());
+					if (currentKey === option.value && devigDisplay) devigDisplay.textContent = getDevigAlias()[option.value] || option.name;
+					renderDevigOptions(document.getElementById("devig-search").value);
+					document.getElementById(`devig-label-${option.value}`)?.querySelector(".devig-edit-btn")?.focus();
+				};
+				editor.querySelector(".devig-save-btn").addEventListener("click", save);
+				editor.querySelector(".devig-cancel-btn").addEventListener("click", cancel);
+				editor.addEventListener("keydown", event => {
+					if (event.key === "Enter") { event.preventDefault(); save(); }
+					if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancel(); }
+				});
+			}
+			if (option.parts.length > 1 || option.custom || option.favorite) addAction("add-prop-btn", "Prop tags", "+", () => {
+				renderPropOptions(option.value.replace("only+", "")); openPropSelectorModal();
+			});
+			if (option.custom && !option.favorite) addAction("dv-delete-btn", "Delete custom mix", "&times;", async () => {
+				await deleteDevig(option.value); renderDevigOptions(document.getElementById("devig-search").value);
+			});
+			item.querySelector('input[type="radio"]').addEventListener("change", () => {
+				[DEVIG, WEIGHT] = option.value.split(";");
+				DEVIG_EXCLUDED = [];
+				if (!DEVIG.includes("+")) WEIGHT = "1";
+				if (devigDisplay) devigDisplay.textContent = option.name;
+				REQUIRED = DEVIG.replace("only+", "").split("+").filter(Boolean);
+				updateRequiredDropdown(); changeFilter();
+				const chip = document.getElementById(`devig-btn-${cssSafeId(DEVIG)}`);
+				if (chip) {
+					document.querySelectorAll(".dev-chip").forEach(el => el.classList.toggle("active", el === chip));
+					chip.scrollIntoView({ inline: "nearest", block: "nearest" });
+				}
+				closeDevig();
+			});
+			container.appendChild(item);
+		}
+		devigOptionsContainer.appendChild(container);
+	}
+	if (!index) {
+		const empty = document.createElement("div"); empty.className = "dv-empty";
+		empty.textContent = words.length ? "No matching devigs. Try a book, percentage or prop tag."
+			: devigWindowCategory === "favorites" ? "Star a devig to keep it here." : devigWindowCategory === "custom" ? "Create a custom mix to choose your own book weights." : "No devigs in this category.";
+		devigOptionsContainer.appendChild(empty);
+	}
 }
 
 const propSelectorModal = document.getElementById('prop-selector-modal');
@@ -1151,30 +1105,29 @@ function renderPropOptions(devig) {
 }
 
 document.getElementById('devig-button')?.addEventListener('click', () => {
+	if (!devigModal) return;
+	devigWindowCategory = "all";
+	const search = document.getElementById("devig-search");
+	if (search) search.value = "";
 	renderDevigOptions();
 	devigModal.style.display = 'flex';
+	document.getElementById("close-devig-modal")?.focus({ preventScroll: true });
 });
 
 function closeDevig() {
+	if (!devigModal) return;
 	devigModal.style.display = 'none';
+	document.getElementById("devig-button")?.focus({ preventScroll: true });
 }
 document.getElementById('close-devig-modal')?.addEventListener('click', () => {
 	closeDevig();
 });
 
-// Close devig modal when clicking outside of it
-document.addEventListener('click', (e) => {
-	if (devigModal && devigModal.style.display === 'flex' && 
-	    !devigModal.contains(e.target) && !e.target.closest('#devig-button')) {
-		closeDevig();
-	}
-});
-
-// Close devig modal on escape key
-document.addEventListener('keydown', (e) => {
-	if (e.key === 'Escape' && devigModal && devigModal.style.display === 'flex') {
-		closeDevig();
-	}
+// Backdrop clicks are handled by the window; sibling dialogs keep their own clicks.
+document.addEventListener('keydown', (event) => {
+	if (event.key !== 'Escape' || !devigModal || devigModal.style.display !== 'flex') return;
+	if (propSelectorModal?.style.display === 'flex') closePropSelectorModal();
+	else closeDevig();
 });
 
 // 3. Search Filter

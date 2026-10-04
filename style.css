@@ -419,6 +419,147 @@ body::before {
 	border-top: 1px solid #eee;
 	text-align: center;
 }
+#devig-modal.devig-window {
+	box-sizing: border-box;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	overflow: hidden;
+	background: #030910b8;
+	color-scheme: dark;
+}
+#devig-modal.devig-window *,
+#devig-modal.devig-window *::before,
+#devig-modal.devig-window *::after { box-sizing: border-box; }
+#devig-modal.devig-window [hidden] { display: none !important; }
+#devig-modal.devig-window .devig-panel {
+	display: flex;
+	flex-direction: column;
+	width: 600px;
+	max-width: 100%;
+	min-width: 0;
+	min-height: 0;
+	max-height: min(640px, calc(100dvh - 32px));
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid #3a4c62;
+	border-radius: 10px;
+	background: #111b28;
+	box-shadow: 0 16px 48px #0009, 0 3px 10px #0005;
+	color: #e2eaf3;
+	font: 13px/1.4 system-ui, sans-serif;
+	text-align: left;
+}
+#devig-modal.devig-window button { margin: 0; font-family: inherit; cursor: pointer; box-shadow: none; }
+#devig-modal.devig-window button:focus-visible,
+#devig-modal.devig-window input:focus-visible,
+#devig-modal.devig-window select:focus-visible { outline: 2px solid #8ac6ff; outline-offset: -3px; }
+#devig-modal.devig-window .modal-header { flex: 0 0 auto; gap: 12px; padding: 15px 14px 12px 16px; }
+#devig-modal.devig-window .modal-header > div { min-width: 0; }
+#devig-modal.devig-window #devig-window-title { margin: 0; color: #f0f5fb; font-size: 16px; font-weight: 650; line-height: 1.4; }
+#devig-modal.devig-window .dv-subtitle { margin: 3px 0 0; color: #96abc1; font-size: 12px; }
+#devig-modal.devig-window #close-devig-modal {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 34px;
+	width: 34px;
+	height: 34px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	background: transparent;
+	color: #9db0c4;
+	font-size: 22px;
+	line-height: 1;
+}
+#devig-modal.devig-window #close-devig-modal:hover { background: #25364a; color: #f0f5fb; }
+#devig-modal.devig-window .dv-toolbar { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; padding: 0 16px 12px; }
+#devig-modal.devig-window .dv-toolbar .select-wrapper { flex: 0 0 150px; min-width: 0; }
+#devig-modal.devig-window .dv-toolbar select { width: 100%; min-width: 0; min-height: 36px; padding: 7px 28px 7px 10px; border-color: #35475c; background: #0b1420; color: #d5e1ef; font: inherit; font-size: 12px; }
+#devig-modal.devig-window .dv-toolbar .select-label { left: 7px; background: #111b28; color: #96abc1; font-size: 10px; }
+#devig-modal.devig-window .dv-current { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+#devig-modal.devig-window .dv-current > span { color: #8ea4bc; font-size: 10px; }
+#devig-modal.devig-window .dv-current strong { overflow: hidden; color: #b9deff; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+#devig-modal.devig-window .dv-tabs { display: flex; gap: 4px; flex: 0 0 auto; padding: 0 16px 12px; border-bottom: 1px solid #2a3a4e; }
+#devig-modal.devig-window .dv-tab { flex: 1 1 auto; min-width: 0; min-height: 34px; padding: 6px 8px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #a6b8cc; font-size: 12px; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+#devig-modal.devig-window .dv-tab:hover { background: #213044; color: #ecf3fb; }
+#devig-modal.devig-window .dv-tab[aria-pressed="true"] { background: #223f5b; border-color: #416b94; color: #b9deff; }
+#devig-modal.devig-window #devig-options-container {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 0;
+	padding: 12px 14px 12px 16px;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: #405772 transparent;
+	scroll-padding: 6px;
+}
+#devig-modal.devig-window .devig-group-header { margin: 16px 0 7px; padding: 0; color: #91a7bf; font-size: 10px; font-weight: 650; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; }
+#devig-modal.devig-window .devig-group-header:first-child { margin-top: 0; }
+#devig-modal.devig-window .devig-group-container { display: grid; gap: 6px; }
+#devig-modal.devig-window .dv-single-books { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#devig-modal.devig-window .devig-radio-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; min-width: 0; min-height: 54px; padding: 0; border: 1px solid #2b3b50; border-radius: 6px; background: #192535; color: #d5e1ef; }
+#devig-modal.devig-window .devig-radio-item:hover { border-color: #455f7c; background: #213248; }
+#devig-modal.devig-window .devig-radio-item.is-selected { border-color: #6396c8; background: #1b3550; color: #b9deff; }
+#devig-modal.devig-window .dv-option-main { display: flex; align-items: center; align-self: stretch; gap: 8px; min-width: 0; margin: 0; padding: 9px 0 9px 10px; cursor: pointer; }
+#devig-modal.devig-window .dv-option-main input[type="radio"] { flex: 0 0 14px; width: 14px; height: 14px; min-height: 0; margin: 0; padding: 0; accent-color: #8ac6ff; cursor: pointer; }
+#devig-modal.devig-window .dv-option-info { flex: 1 1 auto; min-width: 0; }
+#devig-modal.devig-window .devig-name-text { display: block; font-size: 12px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; white-space: normal; }
+#devig-modal.devig-window .dv-market-copy { margin-top: 3px; color: #a6b8cc; font-size: 11px; line-height: 1.4; }
+#devig-modal.devig-window .dv-book-weights { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; color: #a6b8cc; font-size: 10px; line-height: 1.4; }
+#devig-modal.devig-window .dv-book-weight { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+#devig-modal.devig-window .book-img { flex: 0 0 16px; width: 16px; height: 16px; margin: 0; object-fit: contain; }
+#devig-modal.devig-window .devig-labels-container { gap: 4px; margin-top: 5px; font-size: 9px; }
+#devig-modal.devig-window .devig-label { padding: 2px 5px; border-radius: 4px; line-height: 1.3; }
+#devig-modal.devig-window .dv-option-actions { display: flex; align-items: center; gap: 2px; padding: 5px; }
+#devig-modal.devig-window .dv-option-actions button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 30px; width: 30px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #94a9bf; font-size: 16px; line-height: 1; }
+#devig-modal.devig-window .dv-option-actions button:hover { border-color: #41607f; background: #2a3f56; color: #e5f0fb; }
+#devig-modal.devig-window .dv-option-actions svg { position: static; width: 15px; height: 15px; transform: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#devig-modal.devig-window .dv-favorite-btn[aria-pressed="true"] { color: #edc665; }
+#devig-modal.devig-window .dv-option-actions .dv-delete-btn:hover { border-color: #925461; background: #542d39; color: #ffc4cd; }
+#devig-modal.devig-window .devig-edit-wrap { display: flex; align-items: center; gap: 6px; grid-column: 1 / -1; min-width: 0; padding: 0 8px 8px; }
+#devig-modal.devig-window .devig-edit-wrap input { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 32px; margin: 0; padding: 6px 8px; border: 1px solid #547496; border-radius: 5px; background: #0b1420; color: #eef4fb; font: inherit; font-size: 12px; }
+#devig-modal.devig-window .devig-edit-wrap button { flex: 0 0 auto; min-height: 32px; padding: 5px 8px; border: 1px solid #416b94; border-radius: 5px; background: #192c40; color: #b9deff; font-size: 11px; }
+#devig-modal.devig-window .dv-footer { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 12px 16px; border-top: 1px solid #2a3a4e; text-align: left; }
+#devig-modal.devig-window .dv-search-wrap { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; min-height: 36px; border: 1px solid #35475c; border-radius: 6px; background: #0b1420; color: #94a9bf; }
+#devig-modal.devig-window .dv-search-wrap:focus-within { border-color: #78b5ef; box-shadow: 0 0 0 2px #78b5ef26; }
+#devig-modal.devig-window #devig-search { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 34px; margin: 0; padding: 7px 10px; border: 0; border-radius: 5px; outline: none; box-shadow: none; background: transparent; color: #eef4fb; font: inherit; font-size: 12px; appearance: none; }
+#devig-modal.devig-window #devig-search::placeholder { color: #8196ae; opacity: 1; }
+#devig-modal.devig-window .dv-footer > button { flex: 0 0 auto; min-height: 36px; padding: 7px 10px; border: 1px solid #416b94; border-radius: 6px; background: #192c40; color: #b9deff; font-size: 11px; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+#devig-modal.devig-window .dv-footer > button:hover,
+#devig-modal.devig-window .devig-edit-wrap button:hover { border-color: #6396c8; background: #25435f; }
+#devig-modal.devig-window .dv-empty { margin: 0; padding: 26px 12px; color: #9eb1c7; font-size: 12px; line-height: 1.7; text-align: center; overflow-wrap: anywhere; }
+@media (max-width: 500px) {
+	#devig-modal.devig-window { padding: 8px; }
+	#devig-modal.devig-window .devig-panel { max-height: min(640px, calc(100dvh - 16px)); border-radius: 8px; }
+	#devig-modal.devig-window .modal-header { padding: 12px 10px 12px 12px; }
+	#devig-modal.devig-window .dv-toolbar { gap: 10px; padding: 0 12px 12px; }
+	#devig-modal.devig-window .dv-toolbar .select-wrapper { flex-basis: 128px; }
+	#devig-modal.devig-window .dv-tabs { padding: 0 12px 10px; }
+	#devig-modal.devig-window .dv-tab { padding: 6px 4px; font-size: 11px; }
+	#devig-modal.devig-window #devig-options-container { padding: 10px 10px 10px 12px; }
+	#devig-modal.devig-window .dv-option-main { gap: 6px; padding-left: 8px; }
+	#devig-modal.devig-window .dv-option-actions { padding: 4px; }
+	#devig-modal.devig-window .dv-option-actions:has(.dv-delete-btn) { flex-wrap: wrap; justify-content: flex-end; max-width: 70px; }
+	#devig-modal.devig-window .dv-footer { flex-wrap: wrap; padding: 10px 12px; }
+	#devig-modal.devig-window .dv-search-wrap { flex-basis: 100%; }
+	#devig-modal.devig-window #devig-search,
+	#devig-modal.devig-window .devig-edit-wrap input { font-size: 16px; }
+	#devig-modal.devig-window .dv-footer > button { flex: 1 1 auto; }
+}
+@media (max-height: 440px) {
+	#devig-modal.devig-window .modal-header { padding-top: 6px; padding-bottom: 6px; }
+	#devig-modal.devig-window .dv-subtitle { display: none; }
+	#devig-modal.devig-window .dv-toolbar { padding-bottom: 8px; }
+	#devig-modal.devig-window .dv-tabs { padding-bottom: 8px; }
+	#devig-modal.devig-window .dv-footer { flex-wrap: nowrap; padding-top: 8px; padding-bottom: 8px; }
+	#devig-modal.devig-window .dv-search-wrap { flex-basis: auto; }
+	#devig-modal.devig-window .dv-footer > button { flex: 0 0 auto; padding-right: 7px; padding-left: 7px; }
+}
 #toggle-bookodds-btn {
 	padding: 3px 6px;
 	cursor: pointer;

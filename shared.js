@@ -3772,90 +3772,281 @@ function showHideUserTable(loaded) {
 	}
 }
 
+function customizeColumnField(id) {
+	return id.replace(/^custom_/, '').replace('bookOdds_', 'bookOdds.').replace('savant_', 'savant.')
+		.replace('batter_percs_', 'batter_percs.').replace('percs_', 'percs.').replace('pitcherData_', 'pitcherData.')
+		.replace('homerLogs_pa_', 'homerLogs.pa.').replace('hitRates_', 'hitRates.');
+}
+
+function decorateCustomizeColumnRow(checkbox) {
+	const row = checkbox.parentElement;
+	if (row.classList.contains('cx-column-row')) return;
+	const book = checkbox.id.startsWith('custom_bookOdds_');
+	row.classList.add('cx-column-row');
+	const label = row.querySelector(`label[for="${checkbox.id}"]`);
+	if (book && label) {
+		const img = document.createElement('img');
+		img.src = `logos/${checkbox.id.replace('custom_bookOdds_', '')}.png`;
+		img.alt = ''; img.width = 16; img.height = 16;
+		img.addEventListener('error', () => { img.hidden = true; });
+		label.prepend(img);
+	}
+	row.addEventListener('click', event => {
+		if (event.target.closest('input, label, button, a') || checkbox.disabled) return;
+		checkbox.click();
+	});
+}
+
+function initCustomizeWindow() {
+	const overlay = document.getElementById('overlay');
+	const panel = overlay?.querySelector('.overlay-content');
+	const items = panel?.querySelector('#items');
+	if (!panel || !items || overlay.classList.contains('customize-window')) return;
+	const originalRows = [...items.querySelectorAll('input[type="checkbox"]')].map(checkbox => {
+		const row = checkbox.parentElement;
+		const group = row.parentElement.querySelector('h3')?.textContent.trim() || 'Stats';
+		return { checkbox, row, group };
+	});
+	const selects = [...panel.querySelectorAll('select')];
+	const controls = selects.map(select => ({ select, label: panel.querySelector(`label[for="${select.id}"]`)?.textContent.trim() || select.id }));
+	const save = panel.querySelector('#save-table');
+	const status = panel.querySelector('#save-status');
+	const reorder = [...panel.querySelectorAll('button')].find(button => /openColReorder/.test(button.getAttribute('onclick') || ''));
+	const close = [...panel.querySelectorAll('button')].find(button => /closeOverlay/.test(button.getAttribute('onclick') || ''));
+	const guest = [...panel.querySelectorAll('.loggedOut')];
+	const shell = document.createElement('div');
+	shell.innerHTML = `
+		<header class="cx-header"><div><h2 id="cx-title">Customize</h2><p class="cx-subtitle">Your view, columns and saved defaults.</p></div><button type="button" class="cx-close" aria-label="Close customize">&times;</button></header>
+		<div class="cx-toolbar"></div>
+		<div class="cx-tabs" role="group" aria-label="Customize categories"></div>
+		<div class="cx-body"><p id="cx-empty" hidden>No matching columns.</p><section class="cx-defaults" hidden><h3>Saved defaults</h3><p>Use Save to keep these preferences for this page.</p><div class="cx-settings-grid"></div></section></div>
+		<footer class="cx-footer"><div class="cx-search-row"><input id="cx-column-search" type="search" placeholder="Search columns" aria-label="Find a column or book" autocomplete="off"><button type="button" class="cx-show-all" title="Show all matching columns" aria-label="Show matching columns">Show</button><button type="button" class="cx-hide-all" title="Hide all matching columns" aria-label="Hide matching columns">Hide</button></div><div class="cx-footer-bottom"><div class="cx-feedback"><span id="cx-column-count"></span></div><div class="cx-actions"></div></div></footer>`;
+	const toolbar = shell.querySelector('.cx-toolbar');
+	const defaults = shell.querySelector('.cx-settings-grid');
+	for (const { select, label } of controls) {
+		const wrap = document.createElement('label');
+		wrap.className = 'cx-setting';
+		wrap.htmlFor = select.id;
+		const name = document.createElement('span');
+		name.textContent = select.id === 'custom-devig-select' ? 'Default devig' : select.id === 'custom-ou-select' ? 'Side' : label;
+		wrap.append(name, select);
+		const live = ['custom-view-select', 'custom-ou-select'].includes(select.id);
+		(live ? toolbar : defaults).appendChild(wrap);
+	}
+	if (reorder) { reorder.classList.add('cx-reorder'); toolbar.appendChild(reorder); }
+	if (!toolbar.children.length) toolbar.hidden = true;
+	const tabs = shell.querySelector('.cx-tabs');
+	for (const [key, name] of [['all', 'All'], ['columns', 'Columns'], ['books', 'Books'], ['stats', 'Stats'], ['defaults', 'Defaults']]) {
+		if (key === 'defaults' && !defaults.children.length) continue;
+		const tab = document.createElement('button');
+		tab.type = 'button'; tab.dataset.category = key;
+		tab.textContent = name;
+		tab.setAttribute('aria-pressed', String(key === 'all'));
+		tab.addEventListener('click', () => {
+			overlay.dataset.category = key;
+			refreshCustomizeWindow();
+			panel.querySelector('.cx-body').scrollTop = 0;
+		});
+		tabs.appendChild(tab);
+	}
+	items.removeAttribute('style');
+	items.replaceChildren();
+	const groups = new Map();
+	for (const { checkbox, row, group } of originalRows) {
+		const book = checkbox.id.startsWith('custom_bookOdds_');
+		const basic = /^(custom_(ev|roiRecord|openingPrice|player|book|handicap|prop|opp|fairVal|implied|kelly|curr_implied|curr_kelly))$/.test(checkbox.id);
+		const category = book ? 'books' : basic || /expected value|player.*odds/i.test(group) ? 'columns' : 'stats';
+		const name = book ? 'Sportsbooks' : category === 'columns' ? 'Display' : group;
+		const key = `${category}:${name}`;
+		if (!groups.has(key)) {
+			const section = document.createElement('section');
+			section.className = 'cx-column-group'; section.dataset.category = category;
+			const heading = document.createElement('h3'); heading.textContent = name;
+			const grid = document.createElement('div'); grid.className = 'cx-column-grid';
+			section.append(heading, grid);
+			groups.set(key, section);
+		}
+		decorateCustomizeColumnRow(checkbox);
+		groups.get(key).querySelector('.cx-column-grid').appendChild(row);
+	}
+	// Put display controls before books, followed by each page's own stat sections.
+	for (const category of ['columns', 'books', 'stats']) {
+		for (const section of groups.values()) if (section.dataset.category === category) items.appendChild(section);
+	}
+	shell.querySelector('.cx-body').prepend(items);
+	const actions = shell.querySelector('.cx-actions');
+	if (save) { save.classList.add('cx-save'); actions.appendChild(save); }
+	if (close) actions.appendChild(close);
+	const feedback = shell.querySelector('.cx-feedback');
+	if (status) { status.setAttribute('role', 'status'); status.removeAttribute('style'); feedback.appendChild(status); }
+	for (const notice of guest) { notice.classList.add('cx-guest'); feedback.appendChild(notice); }
+	panel.replaceChildren(...shell.childNodes);
+	panel.classList.add('cx-panel');
+	panel.removeAttribute('style');
+	overlay.classList.add('customize-window');
+	// Some pages nest Customize inside the table's stacking context.
+	document.body.appendChild(overlay);
+	overlay.dataset.category = 'all';
+	overlay.setAttribute('role', 'dialog');
+	overlay.setAttribute('aria-modal', 'true');
+	overlay.setAttribute('aria-labelledby', 'cx-title');
+	panel.querySelector('.cx-close').addEventListener('click', closeOverlay);
+	panel.querySelector('#cx-column-search').addEventListener('input', refreshCustomizeWindow);
+	for (const [selector, checked] of [['.cx-show-all', true], ['.cx-hide-all', false]]) {
+		panel.querySelector(selector).addEventListener('click', () => {
+			items.querySelectorAll('.cx-column-group:not([hidden]) .cx-column-row:not([hidden]) input').forEach(input => {
+				if (!input.disabled && input.checked !== checked) {
+					input.checked = checked;
+					input.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			});
+			refreshCustomizeWindow();
+		});
+	}
+	const side = document.getElementById('custom-ou-select');
+	const mainSide = document.getElementById('ou-select');
+	if (side && mainSide) side.addEventListener('change', () => {
+		mainSide.value = side.value;
+		mainSide.dispatchEvent(new Event('change', { bubbles: true }));
+	});
+	overlay.addEventListener('change', refreshCustomizeWindow);
+	new MutationObserver(refreshCustomizeWindow).observe(items, { childList: true, subtree: true });
+	overlay.addEventListener('click', event => { if (event.target === overlay) closeOverlay(); });
+	const reorderModal = document.getElementById('col-reorder-modal');
+	if (reorderModal) {
+		document.body.appendChild(reorderModal);
+		reorderModal.classList.add('customize-reorder');
+		reorderModal.querySelector('.modal-content')?.style.removeProperty('max-width');
+		reorderModal.setAttribute('role', 'dialog'); reorderModal.setAttribute('aria-modal', 'true');
+		reorderModal.setAttribute('aria-label', 'Reorder columns');
+		reorderModal.addEventListener('click', event => { if (event.target === reorderModal) closeColReorderModal(); });
+		new MutationObserver(() => {
+			const open = reorderModal.style.display !== 'none' && reorderModal.getClientRects().length > 0;
+			panel.inert = open;
+			if (open) reorderModal.querySelector('button')?.focus({ preventScroll: true });
+			else if (overlay.style.display !== 'none') { refreshCustomizeWindow(); reorder?.focus({ preventScroll: true }); }
+		}).observe(reorderModal, { attributes: true, attributeFilter: ['style'] });
+	}
+	document.addEventListener('keydown', event => {
+		if (overlay.style.display === 'none' || !overlay.getClientRects().length) return;
+		const nested = reorderModal && reorderModal.style.display !== 'none' && reorderModal.getClientRects().length;
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			if (nested) closeColReorderModal(); else closeOverlay();
+		} else if (event.key === 'Tab') {
+			const activePanel = nested ? reorderModal : panel;
+			const focusable = [...activePanel.querySelectorAll('button, input, select, a[href]')].filter(el => !el.disabled && el.getClientRects().length);
+			const first = focusable[0], last = focusable.at(-1);
+			if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+			else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+		}
+	});
+}
+
+function refreshCustomizeWindow() {
+	const overlay = document.getElementById('overlay');
+	if (!overlay?.classList.contains('customize-window')) return;
+	// Late table initialization can add Open, Record, or Line controls.
+	overlay.querySelectorAll('#items input[type="checkbox"]').forEach(checkbox => {
+		decorateCustomizeColumnRow(checkbox);
+		if (!checkbox.closest('.cx-column-group')) overlay.querySelector('.cx-column-grid')?.appendChild(checkbox.parentElement);
+	});
+	const category = overlay.dataset.category || 'all';
+	const search = document.getElementById('cx-column-search');
+	const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+	// Keep the bottom search field still while the result list gets shorter.
+	const panel = overlay.querySelector('.cx-panel');
+	if (words.length) {
+		overlay._customizeSearchHeight ||= panel.getBoundingClientRect().height;
+		panel.style.height = category === 'defaults' ? '' : `${overlay._customizeSearchHeight}px`;
+	} else {
+		delete overlay._customizeSearchHeight;
+		panel.style.removeProperty('height');
+	}
+	let matches = 0, selected = 0, total = 0;
+	overlay.querySelectorAll('.cx-column-group').forEach(group => {
+		let count = 0;
+		group.querySelectorAll('.cx-column-row').forEach(row => {
+			const checkbox = row.querySelector('input[type="checkbox"]');
+			const text = `${row.textContent} ${checkbox.id.replace(/^custom_/, '').replaceAll('_', ' ')}`.toLowerCase();
+			const match = (category === 'all' || category === group.dataset.category) && words.every(word => text.includes(word));
+			row.hidden = !match;
+			row.classList.toggle('is-checked', checkbox.checked);
+			row.classList.toggle('is-disabled', checkbox.disabled);
+			if (match) count++;
+			if (checkbox.checked) selected++;
+			total++;
+		});
+		group.hidden = !count;
+		matches += count;
+	});
+	overlay.querySelectorAll('.cx-tabs button').forEach(tab => {
+		tab.setAttribute('aria-pressed', String(tab.dataset.category === category));
+		if (!['all', 'defaults'].includes(tab.dataset.category)) tab.hidden = !overlay.querySelector(`.cx-column-group[data-category="${tab.dataset.category}"]`);
+	});
+	overlay.querySelector('.cx-defaults').hidden = category !== 'defaults';
+	overlay.querySelector('.cx-search-row').hidden = category === 'defaults';
+	document.getElementById('items').hidden = category === 'defaults';
+	document.getElementById('cx-empty').hidden = matches > 0 || category === 'defaults';
+	document.getElementById('cx-column-count').textContent = category === 'defaults' ? 'Defaults for this page' : words.length ? `${matches} matching columns` : `${selected} of ${total} selected`;
+}
+
 function closeOverlay() {
-	document.querySelector("#overlay").style.display = "none";
-	//showHideUserTable();
+	const overlay = document.getElementById('overlay');
+	if (!overlay) return;
+	overlay.style.display = 'none';
+	if (overlay._customizeScrollLock != null) {
+		document.body.style.overflow = overlay._customizeScrollLock;
+		delete overlay._customizeScrollLock;
+	}
+	(overlay._customizeTrigger || document.getElementById('customize'))?.focus({ preventScroll: true });
 }
 
 function openOverlay() {
-	if (CURR_USER?.tier || "free" === "free") {
-		//return;
+	const overlay = document.getElementById('overlay');
+	if (!overlay) return;
+	const metadata = CURR_USER?.metadata || {};
+	const table = typeof TABLE !== 'undefined' ? TABLE : null;
+	if (table) {
+		ensureLineColumnControl();
+		ensureOpeningColumnControl();
 	}
-	const metadata = { ...(CURR_USER?.metadata || {}) };
-	if (!metadata[PAGE]) {
-		metadata[PAGE] = (typeof TABLE !== 'undefined' && TABLE)
-			? TABLE.getColumns().filter(c => c.isVisible()).map(c => c.getField()).filter(Boolean).map(f => f.replaceAll('.', '_'))
-			: DEFAULT_FIELDS[PAGE] || DEFAULT_SHARED;
-		if (MOBILE) {
-			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_kelly");
-			metadata[PAGE] = metadata[PAGE].filter(x => x != "curr_implied");
-		}
-	}
-	document.querySelector("#overlay").style.display = "flex";
-
-	const items = document.querySelector("#items");
-	//items.innerHTML = "";
-
-	for (field of metadata[PAGE] || []) {
-		const el = document.querySelector(`#custom_${field.replaceAll(".", "_")}`);
-		if (el) {
-			el.checked = true;
-		}
-	}
-	if (["ncaaf", "main"].includes(PAGE) && typeof TABLE !== 'undefined' && TABLE) {
-		const viewState = oddsTableViewStates.get(TABLE);
-		items.querySelectorAll('input[type="checkbox"]').forEach(input => {
-			const field = input.id.replace(/^custom_/, '').replace('bookOdds_', 'bookOdds.');
-			input.checked = viewState?.visibility[field] ?? TABLE.getColumn(field)?.isVisible() ?? false;
-		});
-	}
-	if (["mlb", "nfl"].includes(PAGE) && typeof TABLE !== 'undefined' && TABLE) {
-		getPropHitRateColumnItems().forEach(item => {
-			const checkbox = document.getElementById(`custom_${item.key}`);
-			if (checkbox) checkbox.checked = TABLE.getColumn(item.cols[0].field)?.isVisible() ?? false;
-		});
-	}
-	const opponentRateControl = document.getElementById('custom_hitRates_bvt');
-	if (opponentRateControl && typeof TABLE !== 'undefined' && TABLE) {
-		opponentRateControl.checked = TABLE.getColumn('hitRates.bvt')?.isVisible() ?? false;
-	}
-	ensureLineColumnControl();
-	ensureOpeningColumnControl();
+	const items = document.getElementById('items');
+	const fields = new Set(table ? getNestedFields(table.getColumnDefinitions()) : []);
+	const state = table ? oddsTableViewStates.get(table) : null;
+	const saved = new Set(metadata[PAGE] || DEFAULT_FIELDS[PAGE] || DEFAULT_SHARED);
+	items?.querySelectorAll('input[type="checkbox"]').forEach(input => {
+		const field = customizeColumnField(input.id);
+		input.checked = fields.has(field) ? state?.visibility[field] ?? table.getColumn(field).isVisible() : input.disabled || saved.has(input.id.replace(/^custom_/, ''));
+	});
 	syncOddsSummaryColumns();
-
-	const currentFavorites = new Set(getFavoriteDevigs());
-	let customDevigs = getCustomDevigs().map(key => ({
-		name: parseWeightKey(key),
-		value: key,
-		group: "custom"
-	}));;
-	let favorites = getFavoriteDevigs().map(key => ({
-		name: parseWeightKey(key),
-		value: key,
-		group: "favorites"
-	}));
-	const allOptions = [...DEFAULT_DEVIGS, ...favorites, ...customDevigs.filter(opt => !currentFavorites.has(opt.value))];
-
-	let customDevigSel = document.getElementById("custom-devig-select");
-	customDevigSel.innerHTML = "<option disabled style='font-weight:bold; color:#ccc;'>Default</option>";
-
-	for (opt of allOptions) {
-		let o = document.createElement("option");
-		o.value = opt.value;
-		o.textContent = opt.name;
-		customDevigSel.appendChild(o);
+	initCustomizeWindow();
+	const select = document.getElementById('custom-devig-select');
+	if (select) {
+		const favorites = typeof getFavoriteDevigs === 'function' ? getFavoriteDevigs() : [];
+		const custom = typeof getCustomDevigs === 'function' ? getCustomDevigs() : [];
+		const options = new Map([['', { value: '', name: 'Market Avg' }]]);
+		if (typeof DEFAULT_DEVIGS !== 'undefined') DEFAULT_DEVIGS.forEach(option => options.set(option.value, option));
+		[...favorites, ...custom].forEach(value => { if (!options.has(value)) options.set(value, { value, name: parseWeightKey(value) }); });
+		let preferred = metadata[`${PAGE}-devig`] || '';
+		if (preferred && !preferred.includes(';')) preferred += repeatOnes(preferred);
+		if (preferred && !options.has(preferred)) options.set(preferred, { value: preferred, name: parseWeightKey(preferred) });
+		select.replaceChildren();
+		options.forEach(option => { const el = document.createElement('option'); el.value = option.value; el.textContent = option.name; select.appendChild(el); });
+		select.value = preferred;
 	}
-
-	// legacy to transform saved devigs to new weighted
-	// fd+circa -> fd+circa;1+1
-	let oldCustomDevig = metadata[`${PAGE}-devig`] || "";
-	if (oldCustomDevig && !oldCustomDevig.includes(";")) {
-		oldCustomDevig += repeatOnes(oldCustomDevig);
-	}
-	customDevigSel.value = oldCustomDevig;
-	if (typeof renderWeightSettings === "function") {
-		renderWeightSettings();
-	}
+	const side = document.getElementById('custom-ou-select');
+	if (side && document.getElementById('ou-select')) side.value = document.getElementById('ou-select').value;
+	overlay._customizeTrigger = document.activeElement;
+	if (overlay._customizeScrollLock == null) overlay._customizeScrollLock = document.body.style.overflow;
+	document.body.style.overflow = 'hidden';
+	overlay.dataset.category = 'all';
+	const search = document.getElementById('cx-column-search');
+	if (search) search.value = '';
+	overlay.style.display = 'flex';
+	refreshCustomizeWindow();
+	overlay.querySelector('.cx-body')?.scrollTo(0, 0);
+	overlay.querySelector('.cx-close')?.focus({ preventScroll: true });
 }
 
 function repeatOnes(customDevig) {

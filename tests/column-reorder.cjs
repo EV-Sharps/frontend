@@ -8,6 +8,7 @@ const { test } = require('node:test');
 const source = fs.readFileSync(path.join(__dirname, '../shared.js'), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
 const canonical = ['ev', 'roiRecord', 'book', 'player', 'fairVal', 'implied', 'bookOdds_fd', 'logs'];
+const canonicalWithOpening = ['ev', 'roiRecord', 'book', 'openingPrice', 'player', 'fairVal', 'implied', 'bookOdds_fd', 'logs'];
 const items = canonical.map(key => ({ key, label: key, cols: [{ field: key.replace('bookOdds_', 'bookOdds.') }] }));
 
 function setup() {
@@ -21,6 +22,7 @@ function setup() {
     const state = { persisted: null, columns: null, cached: false };
     const context = vm.createContext({
         supportsOddsViews: () => false,
+        openingPriceColumn: () => ({ field: 'openingPrice' }),
         PAGE: 'dingers',
         CURR_USER: { metadata: {} },
         CURR_SESSION: { user: { id: 'fixture' } },
@@ -43,11 +45,11 @@ function setup() {
     return { context, list, modal, state, build };
 }
 
-test('legacy Stacked orders restore missing Best Book beside Player', () => {
+test('legacy Stacked orders restore Best Book alongside the inserted Open column', () => {
     const { build } = setup();
     const legacy = ['ev', 'roiRecord', 'player', 'bookOdds_fd', 'logs'];
     const fields = plain(build(legacy)).map(column => column.field);
-    assert.deepEqual(fields, ['ev', 'roiRecord', 'book', 'player', 'fairVal', 'implied', 'bookOdds.fd', 'logs']);
+    assert.deepEqual(fields, ['ev', 'book', 'openingPrice', 'roiRecord', 'player', 'fairVal', 'implied', 'bookOdds.fd', 'logs']);
     assert.deepEqual(legacy, ['ev', 'roiRecord', 'player', 'bookOdds_fd', 'logs'], 'Do not mutate saved metadata');
 });
 
@@ -101,17 +103,17 @@ test('saving a fresh Stacked reorder retains every hidden group in the persisted
     const { context, list, modal, state, build } = setup();
     const hidden = new Set(['book', 'fairVal', 'implied']);
     context.openColReorderModal(items, canonical, null, meta => !hidden.has(meta.key));
-    assert.deepEqual(list.children.map(node => node.dataset.key), ['ev', 'roiRecord', 'player', 'bookOdds_fd', 'logs']);
+    assert.deepEqual(list.children.map(node => node.dataset.key), ['ev', 'roiRecord', 'openingPrice', 'player', 'bookOdds_fd', 'logs']);
     // Simulate dragging the visible book prices before Player.
     const node = list.children.find(item => item.dataset.key === 'bookOdds_fd');
     list.children.splice(list.children.indexOf(node), 1);
-    list.children.splice(2, 0, node);
+    list.children.splice(list.children.findIndex(item => item.dataset.key === 'player'), 0, node);
     let restored = false;
     await context.saveColReorderModal('dingers-order', build, () => { restored = true; });
     const full = state.persisted['dingers-order'];
-    assert.deepEqual(full, ['ev', 'roiRecord', 'book', 'bookOdds_fd', 'fairVal', 'implied', 'player', 'logs']);
-    assert.equal(full.indexOf('book'), canonical.indexOf('book'));
-    assert.equal(full.indexOf('fairVal'), canonical.indexOf('fairVal'));
+    assert.deepEqual(full, ['ev', 'roiRecord', 'book', 'openingPrice', 'bookOdds_fd', 'fairVal', 'implied', 'player', 'logs']);
+    assert.equal(full.indexOf('book'), canonicalWithOpening.indexOf('book'));
+    assert.equal(full.indexOf('fairVal'), canonicalWithOpening.indexOf('fairVal'));
     assert.deepEqual(state.columns.map(column => column.field), full.map(key => key.replace('bookOdds_', 'bookOdds.')));
     assert.equal(restored, true);
     assert.equal(state.cached, true);
@@ -123,9 +125,9 @@ test('resaving a legacy Stacked profile repairs omission and retains an explicit
     const visible = meta => !['book', 'fairVal'].includes(meta.key);
     context.openColReorderModal(items, canonical, ['ev', 'player', 'bookOdds_fd', 'logs'], visible);
     await context.saveColReorderModal('dingers-order', build);
-    assert.deepEqual(state.persisted['dingers-order'], canonical);
+    assert.deepEqual(state.persisted['dingers-order'], canonicalWithOpening);
     const explicit = [...canonical.filter(key => key !== 'book'), 'book'];
     context.openColReorderModal(items, canonical, explicit, visible);
     await context.saveColReorderModal('dingers-order', build);
-    assert.deepEqual(state.persisted['dingers-order'], explicit);
+    assert.deepEqual(state.persisted['dingers-order'], [...explicit, 'openingPrice']);
 });

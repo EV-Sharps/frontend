@@ -592,7 +592,7 @@ function initPageFavoriteDrag(panel, grid, render, setReordering) {
 	document.addEventListener("pointerup", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(inside(event.clientX, event.clientY)); });
 	document.addEventListener("pointercancel", event => { if (session?.kind === "pointer" && session.id === event.pointerId) finish(false); });
 	grid.addEventListener("lostpointercapture", () => { if (session?.kind === "pointer") finish(false); });
-	// Browse mode keeps swipes native; Reorder mode starts touch dragging immediately.
+	// Browse mode keeps swipes native; Reorder mode starts touch dragging immediately. 
 	grid.addEventListener("touchstart", event => {
 		if (event.touches.length !== 1) { finish(false); return; }
 		const touch = event.touches[0];

@@ -3,6 +3,11 @@
   'use strict';
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const metrics = ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit_units', 'ev_sum'];
+  const propOrder = ['atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
+  const compareProps = (a, b) => {
+    const index = prop => propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
+    return index(a) - index(b) || a.localeCompare(b);
+  };
   function aggregate(cells) {
     const total = Object.fromEntries(metrics.map(key => [key, 0]));
     for (const cell of cells) for (const key of metrics) total[key] += number(cell[key]);
@@ -32,7 +37,13 @@
     const scope = report.cells.filter(cell => matches(cell, filters));
     const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
+    const byProp = [...new Set(scope.map(cell => cell.prop))].sort(compareProps).map(prop => {
+      const rows = chosen.filter(cell => cell.prop === prop);
+      const bookSamples = group(rows, ['book']), bandSamples = group(rows, ['odds_band']);
+      return { prop, total: aggregate(rows), books: rank(bookSamples), bands: rank(bandSamples), bookSamples, bandSamples };
+    });
     return {
+      byProp,
       total: aggregate(chosen),
       strategies: rank(group(scope, ['reference', 'method'])),
       books: rank(group(chosen, ['book'])),
@@ -83,14 +94,18 @@
     return '"' + text.replaceAll('"', '""') + '"';
   }
   function exportCSV(view, filters) {
-    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent'];
+    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop'];
     const line = (section, segment, row) => [section, segment, row.reference ?? filters.reference, row.method ?? filters.method,
       filters.start, filters.end, filters.book || 'all', filters.prop || 'all', row.selected, row.settled, row.wins, row.losses,
-      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi];
+      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || ''];
     const rows = [headings, line('summary', 'selected strategy', view.total)];
-    for (const [section, key, data] of [['strategies', 'reference', view.strategies], ['books', 'book', view.books],
-      ['odds_ranges', 'odds_band', view.bands], ['markets', 'prop', view.markets], ['days', 'date', view.days]]) {
+    for (const [section, key, data] of [['strategies', 'reference', view.strategies],
+      ['markets', 'prop', view.markets], ['days', 'date', view.days]]) {
       for (const row of data) rows.push(line(section, row[key], row));
+    }
+    for (const { prop, books, bands } of view.byProp) {
+      for (const row of books) rows.push(line('books', row.book, { ...row, prop }));
+      for (const row of bands) rows.push(line('odds_ranges', row.odds_band, { ...row, prop }));
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
@@ -112,10 +127,12 @@
     poly: 'Polymarket', hr: 'Hard Rock', br: 'BetRivers', kambi: 'Kambi', b365: 'bet365', espn: 'theScore Bet', cz: 'Caesars',
     mgm: 'BetMGM', fn: 'Fanatics', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
   const bookName = book => bookNames[book] || String(book).toUpperCase();
-  const propNames = { atgs: 'Anytime goals', fgs: 'First goal', '2+goals': '2+ goals', sog: 'Shots on goal', saves: 'Goalie saves', sv: 'Goalie saves', pts: 'Points',
+  const propNames = { atgs: 'ATGS (Anytime goalscorer)', no_goal: 'No goal (under 0.5)', fgs: 'First goal', '2+goals': '2+ goals', '3+goals': '3+ goals', sog: 'Shots on goal', saves: 'Goalie saves', sv: 'Goalie saves', pts: 'Points',
     ast: 'Assists', goals: 'Goals', assists: 'Assists', points: 'Points', ml: 'Moneyline', spread: 'Puck line', total: 'Game total', tt: 'Team total',
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
   const propName = prop => {
+    if (/^\d+\+goals$/.test(prop)) return prop.replace('+goals', '+ goals');
+    if (prop.startsWith('goals_under_')) return `Under ${prop.slice('goals_under_'.length)} goals`;
     const period = /^([123])p_(.+)$/.exec(prop);
     return period ? `P${period[1]} · ${propNames[period[2]] || period[2].replaceAll('_', ' ')}` : propNames[prop] || String(prop).replaceAll('_', ' ');
   };
@@ -162,6 +179,21 @@
   function renderRanks(id, rows, dimension, label) {
     if (!rows.length) return tableEmpty(id, 5);
     $(id).innerHTML = rows.map(row => `<tr><td>${esc(label(row[dimension]))}</td><td>${count(row.settled)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`).join('');
+  }
+  function renderPropRanks(id, dimension, label, f) {
+    if (!view.byProp.length) return tableEmpty(id, 5);
+    const isBook = dimension === 'book', kind = isBook ? 'books' : 'odds ranges';
+    $(id).innerHTML = view.byProp.map(group => {
+      const rows = isBook ? group.books : group.bands;
+      const samples = isBook ? group.bookSamples : group.bandSamples;
+      const smaller = ranked(samples, 1, f.profitableOnly).filter(row => row.settled < f.minimum);
+      const total = group.total;
+      const heading = `<tr class="dv-prop-group" data-prop="${esc(group.prop)}"><th colspan="5" scope="rowgroup"><button type="button" data-prop-filter="${esc(group.prop)}" title="Filter all results to ${esc(propName(group.prop))}">${esc(propName(group.prop))}</button><small>${count(total.settled)} settled offers · ${count(total.pending)} pending / ${count(total.ungraded)} ungraded</small></th></tr>`;
+      const rankedRows = rows.map(row => `<tr data-prop="${esc(group.prop)}" data-segment="${esc(row[dimension])}"><td>${esc(label(row[dimension]))}</td><td>${count(row.settled)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`).join('');
+      const empty = rows.length ? '' : `<tr><td colspan="5" class="dv-table-empty">${!total.selected ? 'No qualifying offers for this reference and method.' : !total.settled ? 'No settled offers yet.' : `No ${f.profitableOnly ? 'profitable ' : ''}${kind} reach ${count(f.minimum)} settled offers for this prop.`}</td></tr>`;
+      const more = smaller.length ? `<tr class="dv-small-samples"><td colspan="5">${count(smaller.length)} ${kind} have fewer than ${count(f.minimum)} settled offers. <button type="button" data-small-samples="${esc(group.prop)}">View smaller samples</button></td></tr>` : '';
+      return heading + rankedRows + empty + more;
+    }).join('');
   }
   function coverageDates() { return availableDates(report); }
   function renderDaily(f) {
@@ -218,8 +250,8 @@
       const selected = row.reference === f.reference && row.method === f.method;
       return `<tr class="${selected ? 'is-selected' : ''}"><td><button type="button" class="dv-strategy-button" data-index="${index}" aria-pressed="${selected}">${esc(referenceName(row.reference))}<span>${esc(methodName(row.method))}${selected ? ' · Selected' : ''}</span></button></td><td>${count(row.settled)}</td><td>${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`;
     }).join('');
-    renderRanks('odds-rows', view.bands, 'odds_band', value => value);
-    renderRanks('book-rows', view.books, 'book', bookName);
+    renderPropRanks('odds-rows', 'odds_band', value => value, f);
+    renderPropRanks('book-rows', 'book', bookName, f);
     renderRanks('market-rows', view.markets, 'prop', propName);
   }
   function renderMethodology() {
@@ -246,7 +278,7 @@
     $('generated').textContent = `Published ${timestamp(report.generated_at)}`;
     for (const id of ['date-start', 'date-end']) { $(id).min = report.window.start; $(id).max = report.window.end; }
     options('book-filter', [...new Set(report.cells.map(cell => cell.book))].sort().map(book => [book, bookName(book)]), 'All books · separate offers');
-    options('market-filter', [...new Set(report.cells.map(cell => cell.prop))].sort().map(prop => [prop, propName(prop)]), 'All markets');
+    options('market-filter', [...new Set(report.cells.map(cell => cell.prop))].sort(compareProps).map(prop => [prop, propName(prop)]), 'All markets');
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]));
     options('method-filter', report.methods.map(item => [item.id, item.name]));
     renderMethodology();
@@ -333,6 +365,11 @@
   $('refresh').addEventListener('click', refresh);
   $('reset-filters').addEventListener('click', resetFilters);
   for (const id of ['date-start', 'date-end', 'book-filter', 'market-filter', 'reference-filter', 'method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
+  for (const id of ['odds-rows', 'book-rows']) $(id).addEventListener('click', event => {
+    const prop = event.target.closest('[data-prop-filter]');
+    if (prop) { $('market-filter').value = prop.dataset.propFilter; render(); return; }
+    if (event.target.closest('[data-small-samples]')) { $('min-settled').value = '1'; render(); }
+  });
   $('strategy-rows').addEventListener('click', event => {
     const button = event.target.closest('[data-index]');
     const strategy = button && view?.strategies[Number(button.dataset.index)];

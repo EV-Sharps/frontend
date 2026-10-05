@@ -6,6 +6,7 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 from threading import Thread
 from urllib.parse import urlparse
 
@@ -97,10 +98,28 @@ try:
         assert page.locator('#report-notes img').count() == 0
         assert 'missing or unverified stat: 5' in page.locator('#coverage-reasons').text_content()
         assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
+        expect(page.locator('#market-filter option[value="atgs"]')).to_have_text(re.compile(r'ATGS.*Anytime goalscorer'))
+        for table in ('#odds-rows', '#book-rows'):
+            assert page.locator(f'{table} tr.dv-prop-group').count() == 2
+            expect(page.locator(f'{table} tr.dv-prop-group').first).to_have_attribute('data-prop', 'atgs')
+            expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*Anytime goalscorer'))
+            expect(page.locator(f'{table} tr[data-prop="atgs"][data-segment]')).to_contain_text('+7.00u')
+        expect(page.locator('#book-rows tr[data-prop="sog"][data-segment="dk"]')).to_contain_text('+5.00u')
+        expect(page.locator('#odds-rows tr[data-prop="sog"][data-segment]')).to_contain_text('+2.00u')
+        page.locator('#book-rows [data-prop-filter="atgs"]').click()
+        expect(page.locator('#market-filter')).to_have_value('atgs')
+        expect(page.locator('#summary-profit')).to_have_text('+7.00u')
+        for table in ('#odds-rows', '#book-rows'):
+            assert page.locator(f'{table} tr.dv-prop-group').count() == 1
+            assert page.locator(f'{table} tr[data-prop="sog"]').count() == 0
+        page.locator('#reset-filters').click()
 
         page.select_option('#book-filter', 'dk')
         page.select_option('#market-filter', 'sog')
         expect(page.locator('#summary-profit')).to_have_text('+5.00u')
+        assert page.locator('#book-rows tr.dv-prop-group').count() == 1
+        assert page.locator('#book-rows tr[data-prop="atgs"]').count() == 0
+        assert page.locator('#book-rows tr[data-segment="fd"]').count() == 0
         assert page.locator('#strategy-rows .dv-strategy-button').count() == 3
         page.locator('#strategy-rows .dv-strategy-button').first.click()
         expect(page.locator('#reference-filter')).to_have_value('fd;1')
@@ -114,6 +133,14 @@ try:
         page.locator('#min-settled').press('Tab')
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
         assert page.locator('#strategy-rows .dv-strategy-button').count() == 0
+        for table in ('#odds-rows', '#book-rows'):
+            assert page.locator(f'{table} tr[data-segment]').count() == 0
+            expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_be_visible()
+        page.locator('#book-rows [data-small-samples="atgs"]').click()
+        expect(page.locator('#min-settled')).to_have_value('1')
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        assert page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count() == 1
+        assert page.locator('#book-rows tr[data-prop="sog"][data-segment]').count() == 2
         page.locator('#min-settled').fill('10')
         page.locator('#min-settled').press('Tab')
         page.locator('#profitable-only').check()
@@ -125,6 +152,7 @@ try:
         expect(page.locator('#filter-status')).to_be_visible()
         expect(page.locator('#summary-roi')).to_have_text('—')
         expect(page.locator('#export')).to_be_disabled()
+        assert page.locator('.dv-prop-group').count() == 0
         page.locator('#reset-filters').click()
 
         for width in (390, 320):
@@ -132,10 +160,18 @@ try:
             assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), f'Page overflow at {width}px'
         page.set_viewport_size(dict(width=1440, height=1100))
 
-        state['payload']['cells'] = [cell(selected=3, wins=0, losses=0, pushes=0, pending=1, ungraded=2, profit_units=0)]
+        state['payload']['cells'] = [cell(), cell(prop='atgs', reference='fd;1')]
+        page.locator('#refresh').click()
+        expect(page.locator('#summary-profit')).to_have_text('+5.00u')
+        expect(page.locator('#book-rows tr.dv-prop-group[data-prop="atgs"]')).to_be_visible()
+        assert page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count() == 0
+
+        state['payload']['cells'] = [cell(prop='atgs', selected=3, wins=0, losses=0, pushes=0, pending=1, ungraded=2, profit_units=0)]
         page.locator('#refresh').click()
         expect(page.locator('#summary-unresolved')).to_have_text('1 / 2')
         expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#book-rows tr.dv-prop-group[data-prop="atgs"]')).to_be_visible()
+        assert page.locator('#book-rows tr[data-segment]').count() == 0
 
         for status in (401, 403):
             state.update(status=status)
@@ -144,6 +180,7 @@ try:
             expect(page.locator('#report-content')).to_be_hidden()
             assert page.locator('#strategy-rows tr').count() == 0
             assert page.locator('#coverage-files tr').count() == 0
+            assert page.locator('.dv-prop-group').count() == 0
             expect(page.locator('#summary-roi')).to_have_text('—')
             state.update(status=200, payload=fixture())
             page.locator('#refresh').click()
@@ -153,6 +190,7 @@ try:
         expect(page.locator('#access-panel')).to_be_visible()
         expect(page.locator('#report-content')).to_be_hidden()
         assert page.locator('#coverage-files tr').count() == 0
+        assert page.locator('.dv-prop-group').count() == 0
 
         state['signed_in'] = False
         before = len(state['requests'])
@@ -170,6 +208,10 @@ try:
             page.reload()
             expect(page.locator('#report-content')).to_be_visible()
             expect(page.locator('#summary-roi')).not_to_have_text('—')
+            for table in ('#odds-rows', '#book-rows'):
+                expect(page.locator(f'{table} tr.dv-prop-group').first).to_have_attribute('data-prop', 'atgs')
+                expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*Anytime goalscorer'))
+            assert page.locator('#odds-rows tr[data-prop="atgs"][data-segment]').count() > 0
             page.locator('#strategy-rows .dv-strategy-button').first.scroll_into_view_if_needed()
             assert page.locator('#strategy-rows .dv-strategy-button').first.evaluate('''el => {
               const r = el.getBoundingClientRect();
@@ -180,6 +222,7 @@ try:
               const r = el.getBoundingClientRect();
               return el.contains(document.elementFromPoint(r.left + 5, r.top + 5));
             }'''), 'Book rows must be reachable and visible'
+            page.locator('.dv-breakdowns').screenshot(path=str(STAGED / 'tests' / 'actual-prop-breakdowns-desktop.png'))
             page.evaluate('window.scrollTo(0, 0)')
             page.screenshot(path=str(STAGED / 'tests' / 'actual-desktop-viewport.png'))
             page.screenshot(path=str(STAGED / 'tests' / 'actual-desktop.png'), full_page=True)
@@ -190,9 +233,28 @@ try:
             page.evaluate('window.scrollTo(0, 0)')
             page.screenshot(path=str(STAGED / 'tests' / 'actual-mobile-viewport.png'))
             page.screenshot(path=str(STAGED / 'tests' / 'actual-mobile.png'), full_page=True)
+            small_atgs = page.locator('#book-rows [data-small-samples="atgs"]')
+            if small_atgs.count():
+                before = page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count()
+                small_atgs.click()
+                expect(page.locator('#min-settled')).to_have_value('1')
+                assert page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count() > before
+                assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+                page.locator('#book-rows [data-prop-filter="atgs"]').click()
+                expect(page.locator('#market-filter')).to_have_value('atgs')
+                expect(page.locator('#book-rows tr.dv-prop-group')).to_have_count(1)
+                assert page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count() > 0
+                page.locator('#book-rows').scroll_into_view_if_needed()
+                page.screenshot(path=str(STAGED / 'tests' / 'actual-atgs-mobile.png'))
+                page.set_viewport_size(dict(width=320, height=844))
+                assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+                page.locator('#book-rows tr[data-prop="atgs"][data-segment]').first.scroll_into_view_if_needed()
+                page.screenshot(path=str(STAGED / 'tests' / 'actual-atgs-mobile-320.png'))
+                page.set_viewport_size(dict(width=1440, height=1100))
+                page.locator('.dv-breakdowns').screenshot(path=str(STAGED / 'tests' / 'actual-atgs-small-samples-desktop.png'))
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: filters, reference isolation, rankings, invalid dates, null ROI, 401/403/signout clearing, 320/390px mobile, loopback-only preview; no page errors.')
+        print('PASS: prop-isolated rankings, ATGS discovery, small samples, filters, reference isolation, invalid dates, null ROI, 401/403/signout clearing, 320/390px mobile, loopback-only preview; no page errors.')
 finally:
     server.shutdown()

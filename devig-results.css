@@ -113,6 +113,13 @@ main.dv-main { display: block; overflow: visible; max-width: 1520px; margin: aut
 .dv-method-body p, .dv-method-body li { line-height: 1.8; overflow-wrap: anywhere; }
 .dv-method-body ul { padding-left: 17px; }
 .dv-method-body .dv-table-wrap { max-height: 270px; border: 1px solid #34434d; border-radius: 5px; }
+.dv-breakdowns .dv-table-wrap { max-height: 680px; overflow: auto; }
+.dv-breakdowns thead th { position: sticky; top: 0; z-index: 1; background: #222d34; }
+.dv-table .dv-prop-group th { text-align: left; background: #25333d; padding: 13px; border-top: 1px solid #49606e; white-space: normal; }
+.dv-prop-group button { border: 0; padding: 0; background: transparent; color: #a7dcff; font-size: 12px; font-weight: 650; text-align: left; }
+.dv-prop-group small { display: block; margin-top: 5px; font-size: 10px; color: #b2c1ca; font-weight: 400; }
+.dv-table .dv-small-samples td { white-space: normal; color: #aebec9; font-size: 10px; }
+.dv-small-samples button { margin-top: 6px; font-size: 10px; padding: 5px 8px; }
 .dv-footer { max-width: 1520px; margin: auto; padding: 23px 30px; color: #8da0ad; font-size: 10px; }
 .devig-page .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; border: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 1140px) { .dv-breakdowns { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dv-breakdowns > section:last-child { grid-column: 1 / -1; } .dv-strategy-row .dv-caption { width: 100%; margin: 0; } }

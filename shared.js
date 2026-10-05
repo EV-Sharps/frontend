@@ -218,6 +218,7 @@ const PAGE_SECTIONS = [
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl", tier: "free" },
 			{ label: "ATGS Parlays", value: "parlays?market=atgs", tier: "analyst" },
 			{ label: "Longshots", value: "longshots", tier: "sharp" },
+			{ label: "Devig Results", value: "devig-results", tier: "sharp" },
 			{ label: "Line Movement", value: "movement?sport=nhl", tier: "sharp" },
 			{ label: "📊 Results", value: "analysis?sport=nhl", tier: "free" },
 		]

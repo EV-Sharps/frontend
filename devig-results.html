@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Devig results | +EV Sharps</title>
+  <meta name="description" content="Explore NHL archived devig results by odds, method, reference and betting book.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="devig-results.css?v=20261005">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="devig-page">
+  <header class="dv-header">
+    <a class="dv-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation"><div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option value="devig-results">Devig results</option></select></div><a id="account-link" href="profile">Sign in</a></nav>
+  </header>
+  <main class="dv-main">
+    <div class="dv-intro">
+      <div><p class="dv-eyebrow">RESULTS LAB <span>NHL</span></p><h1>NHL devig results</h1><p class="dv-lede">Archived devig results, broken down by price, reference and betting book.</p></div>
+      <div class="dv-report-meta"><span id="report-window">Last 7 complete days · ET</span><small id="generated">Loading published results…</small><button id="refresh" type="button">Refresh results <span aria-hidden="true">↻</span></button></div>
+    </div>
+    <div id="request-status" class="dv-notice" role="status" hidden></div>
+    <section id="access-panel" class="dv-empty" hidden><h2>Devig results are included with Sharp</h2><p id="access-message">Sign in with your Sharp account to explore archived results.</p><a id="access-login" class="dv-button" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a></section>
+    <div id="report-content" aria-busy="true" hidden>
+      <section class="dv-controls" aria-label="Result filters">
+        <div class="dv-filter-row">
+          <label>From <input id="date-start" type="date" required></label><label>Through <input id="date-end" type="date" required></label>
+          <label>Betting book <select id="book-filter"><option value="">All books · separate offers</option></select></label>
+          <label>Market <select id="market-filter"><option value="">All markets</option></select></label>
+          <button id="reset-filters" type="button">Reset</button>
+        </div>
+        <div class="dv-filter-row dv-strategy-row">
+          <span class="dv-filter-title">Analyze one strategy</span>
+          <label>Devig reference <select id="reference-filter"></select></label><label>Method <select id="method-filter"></select></label>
+          <span id="strategy-note" class="dv-caption"></span>
+        </div>
+      </section>
+      <p id="filter-status" class="dv-notice" role="status" hidden></p>
+      <div class="dv-scope"><p><span class="dv-dot" aria-hidden="true"></span><strong id="selected-strategy"></strong><span id="selection-caption"></span></p><button id="export" type="button">Export CSV <span aria-hidden="true">↓</span></button></div>
+      <section class="dv-summary" aria-label="Selected strategy results">
+        <div class="dv-stat dv-stat-primary"><span>Observed ROI</span><strong id="summary-roi">—</strong><small>Net units / settled offers</small></div>
+        <div class="dv-stat"><span>Net profit</span><strong id="summary-profit">—</strong><small>1 unit risked per offer</small></div>
+        <div class="dv-stat"><span>Settled offers</span><strong id="summary-settled">—</strong><small id="summary-record">Wins · losses · pushes</small></div>
+        <div class="dv-stat"><span>Pending / ungraded</span><strong id="summary-unresolved">—</strong><small>Excluded from ROI</small></div>
+      </section>
+      <p id="offer-note" class="dv-caption">Offers at different books are alternative places to bet; this is not a unique-bet portfolio.</p>
+      <section id="empty-state" class="dv-empty" hidden><h2>No qualifying offers in this view</h2><p id="empty-message">Try another date, market or betting book. Check coverage below for missing archives.</p></section>
+      <div class="dv-overview">
+        <section class="dv-panel"><div class="dv-panel-head"><div><p class="dv-eyebrow">SELECTED STRATEGY</p><h2>Profit by day</h2></div><span class="dv-chip">Flat 1u</span></div><div id="daily-chart" class="dv-daily" role="list" aria-label="Daily net profit"></div></section>
+        <section class="dv-panel dv-coverage-panel"><div class="dv-panel-head"><div><p class="dv-eyebrow">DATA AVAILABILITY</p><h2>What this window includes</h2></div><span id="coverage-badge" class="dv-chip"></span></div><p id="coverage-summary"></p><div id="coverage-days" class="dv-coverage-days" aria-label="Archive availability by day"></div><p id="coverage-caution" class="dv-caption"></p><p id="coverage-latest" class="dv-caption"></p></section>
+      </div>
+      <div class="dv-rank-controls"><div><h2>Find the strongest results</h2><p class="dv-caption">Ranked by observed ROI. Minimum sample and profit filters apply to the tables below.</p></div><div><label>Min. settled <input id="min-settled" type="number" min="1" max="1000000" value="10" step="1"></label><label class="dv-checkbox"><input id="profitable-only" type="checkbox"> Profitable only</label></div></div>
+      <section class="dv-panel dv-strategies"><div class="dv-panel-head"><div><h2>Devig references &amp; methods</h2><p class="dv-caption">Compare each strategy independently for your dates, book and market. Scroll to see all strategies; select a row to explore it.</p></div><span id="strategy-count" class="dv-chip"></span></div><div class="dv-table-wrap" role="region" aria-label="Strategy rankings" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Reference / method</th><th scope="col">Settled</th><th scope="col">W–L–P</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="strategy-rows"></tbody></table></div></section>
+      <div class="dv-breakdowns">
+        <section class="dv-panel"><div class="dv-panel-head"><div><h2>Best odds ranges</h2><p class="dv-caption">American odds at the betting book</p></div></div><div class="dv-table-wrap" role="region" aria-label="Odds range rankings" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Odds range</th><th scope="col">Settled</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="odds-rows"></tbody></table></div></section>
+        <section class="dv-panel"><div class="dv-panel-head"><div><h2>Best betting books</h2><p class="dv-caption">Qualifying selections differ by book</p></div></div><div class="dv-table-wrap" role="region" aria-label="Betting book rankings" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Book</th><th scope="col">Settled</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="book-rows"></tbody></table></div></section>
+        <section class="dv-panel"><div class="dv-panel-head"><div><h2>Markets</h2><p class="dv-caption">Results for the selected strategy</p></div></div><div class="dv-table-wrap" role="region" aria-label="Market rankings" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Market</th><th scope="col">Settled</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="market-rows"></tbody></table></div></section>
+      </div>
+      <details class="dv-details"><summary>Methodology &amp; archive coverage</summary><div class="dv-method-body"><section><h3>How to read these results</h3><p id="config-note"></p><p>ROI is net profit divided by the number of settled offers, including pushes, at a flat 1 unit of risk. Pending and ungraded offers do not enter the denominator. The summary and breakdowns use exactly one reference and method.</p><p>Different strategies can qualify overlapping offers. Comparing them does not create independent samples. Odds, book and market rankings are descriptive results from this window; small samples and selecting past winners can overstate a repeatable edge.</p><ul id="report-notes"></ul></section><section><h3>Source coverage</h3><p id="coverage-totals"></p><ul id="coverage-reasons"></ul><div class="dv-table-wrap"><table class="dv-table"><caption class="sr-only">Archived files used by the report</caption><thead><tr><th scope="col">Date</th><th scope="col">Feed</th><th scope="col">Rows</th></tr></thead><tbody id="coverage-files"></tbody></table></div></section></div></details>
+    </div>
+  </main>
+  <footer class="dv-footer">Historical observed results. Past performance does not establish a future betting edge.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+  <script src="auth.js"></script>
+  <script src="devig-results.js?v=20261005"></script>
+</body>
+</html>

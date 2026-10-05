@@ -469,6 +469,13 @@ function buildPagePicker() {
 	window.addEventListener("resize", positionPanel);
 	window.visualViewport?.addEventListener("resize", positionPanel);
 	window.visualViewport?.addEventListener("scroll", positionPanel);
+	document.getElementById('header')?.addEventListener('scroll', event => {
+		if (panel.hidden) return;
+		const bounds = event.currentTarget.getBoundingClientRect();
+		const rect = btn.getBoundingClientRect();
+		if (rect.right <= bounds.left || rect.left >= bounds.right) closePicker();
+		else positionPanel();
+	}, { passive: true });
 }
 
 function initPageFavoriteDrag(panel, grid, render, setReordering) {
@@ -5802,16 +5809,19 @@ function renderBookSelect(availableBooks = null) {
 			setBookSelection(value);
 			bookSel.dispatchEvent(new Event("change", { bubbles: true }));
 		};
-		button.addEventListener("click", event => {
-			event.stopPropagation();
-			if (menu.style.display === "block") { close(); return; }
-			document.body.appendChild(menu);
-			menu.style.display = "block";
+		const position = () => {
 			const rect = button.getBoundingClientRect();
 			menu.style.top = `${rect.bottom + 6}px`;
 			menu.style.left = `${MOBILE || CURRENT_VIEW === "mobile" ? Math.max(8, window.innerWidth - menu.offsetWidth - 8)
 				: Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8))}px`;
 			menu.style.maxHeight = `${Math.max(80, window.innerHeight - rect.bottom - 14)}px`;
+		};
+		button.addEventListener("click", event => {
+			event.stopPropagation();
+			if (menu.style.display === "block") { close(); return; }
+			document.body.appendChild(menu);
+			menu.style.display = "block";
+			position();
 			button.setAttribute("aria-expanded", "true");
 			menu.querySelector("button")?.focus({ preventScroll: true });
 		});
@@ -5843,11 +5853,98 @@ function renderBookSelect(availableBooks = null) {
 			if (!wrapper.contains(event.target) && !menu.contains(event.target)) close();
 		});
 		window.addEventListener("resize", close);
+		const followScroll = event => {
+			if (menu.style.display !== 'block') return;
+			const bounds = event.currentTarget.getBoundingClientRect();
+			const rect = button.getBoundingClientRect();
+			if (rect.right <= bounds.left || rect.left >= bounds.right) close();
+			else position();
+		};
+		['center-dropdown', 'header'].forEach(id => {
+			document.getElementById(id)?.addEventListener('scroll', followScroll, { passive: true });
+		});
 	}
 	menu.innerHTML = `<p>${PAGE === "heatmap" ? "Show a chart for each checked book." : "Best price among checked books."} From All, pick one book, then add more.</p>
 		<div class="chkdd-actions"><button type="button" data-book-action="all">All</button><button type="button" data-book-action="none">None</button></div>
 		<div class="book-filter-list">${books.map(book => `<label><input type="checkbox" value="${book}">${book === "best" ? '<span aria-hidden="true" style="width:18px;text-align:center">★</span>Best book' : `<img src="logos/${book}.png" alt="">${parseBook(book)}`}</label>`).join("")}</div>`;
 	setBookSelection(BOOK || "");
+}
+
+function syncTopFilterStates() {
+	const header = document.querySelector('#header.table-filter-header');
+	if (!header) return;
+	const value = id => document.getElementById(id)?.value || '';
+	const text = id => document.getElementById(id)?.textContent.trim() || '';
+	const states = {
+		'book-filter-button': !!value('book-select'),
+		'devig-button': !!DEVIG,
+		'required-button': text('required-button') !== 'All',
+		'boost-select': !['', '0'].includes(value('boost-select')),
+		'prop-dd-button': !['', 'All Props'].includes(text('prop-dd-button')),
+		'ou-select': !['', 'ou'].includes(value('ou-select')),
+		'game-dd-button': !['', 'All Games'].includes(text('game-dd-button')),
+		'range-btn': !!(value('min-odds') || value('max-odds')),
+		'min-odds': !!value('min-odds'),
+		'max-odds': !!value('max-odds'),
+		'filterbuilder-dd-button': !['', 'None'].includes(text('filterbuilder-dd-button'))
+	};
+	Object.entries(states).forEach(([id, active]) => {
+		const control = document.getElementById(id);
+		if (control && header.contains(control)) (control.closest('.tf-field') || control).classList.toggle('tf-is-active', active);
+	});
+	const devig = document.getElementById('devig-button');
+	if (devig) devig.title = text('devig-display-text');
+}
+
+function initTopFilterLayout() {
+	const header = document.getElementById('header');
+	const strip = document.getElementById('center-dropdown');
+	if (!header || !strip || !header.contains(strip) || !document.getElementById('table') ||
+		!strip.querySelector('#devig-button') || header.classList.contains('table-filter-header')) return;
+	header.classList.add('table-filter-header');
+	strip.setAttribute('role', 'group');
+	strip.setAttribute('aria-label', 'Table filters');
+	const title = header.querySelector('#title');
+	const pages = document.getElementById('page-picker-btn');
+	if (title && pages) title.insertBefore(pages, title.querySelector('.help-btn'));
+	const view = header.querySelector('#view-toggle-container');
+	if (view) strip.insertBefore(view, strip.querySelector(':scope > #customize'));
+	const outerControl = control => {
+		if (!control || !strip.contains(control)) return null;
+		while (control.parentElement !== strip) control = control.parentElement;
+		return control;
+	};
+	// Keep market filters together, followed by pricing and display controls.
+	const boost = outerControl(document.getElementById('boost-select'));
+	const range = outerControl(document.getElementById('range-btn') || document.getElementById('min-odds'));
+	if (boost && range) {
+		strip.insertBefore(boost, range);
+		const customBoost = document.getElementById('boost-custom');
+		if (customBoost?.parentElement === strip) strip.insertBefore(customBoost, range);
+	}
+	for (const outer of strip.children) {
+		const field = outer.matches('.select-wrapper, .chkdd') ? outer : outer.querySelector(':scope > .select-wrapper, :scope > .chkdd');
+		if (field) {
+			const label = field.querySelector(':scope > .select-label');
+			if (label) field.classList.add('tf-field');
+			field.querySelectorAll(':scope > select, :scope > button, :scope > input').forEach(control => {
+				control.classList.add(label ? 'tf-input' : 'tf-action');
+				if (label && !label.htmlFor && control.id) label.htmlFor = control.id;
+			});
+		} else if (outer.matches('button')) outer.classList.add('tf-action');
+		else if (outer.matches('input')) outer.classList.add('tf-input', 'tf-standalone');
+	}
+	['devig-button', 'prop-dd-button', 'boost-select', 'header-view-select'].forEach(id => {
+		outerControl(document.getElementById(id))?.classList.add('tf-group-start');
+	});
+	strip.addEventListener('change', syncTopFilterStates);
+	strip.addEventListener('input', syncTopFilterStates);
+	strip.addEventListener('focusin', event => {
+		if (event.target.matches('.tf-input, .tf-action')) {
+			event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+		}
+	});
+	syncTopFilterStates();
 }
 
 // Older pages initialize data independently of renderFilters(). Upgrade their
@@ -5856,6 +5953,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (PAGE !== "heatmap" && document.getElementById("book-select") && !document.getElementById("book-filter-button")) {
 		renderBookSelect();
 	}
+	initTopFilterLayout();
 });
 
 // Devig keys are "+"-joined book lists (e.g. "circa+pn+kal"); the same set of
@@ -6341,6 +6439,7 @@ function initFilterBuilderWindow() {
 		}
 	});
 	window.addEventListener('resize', positionFilterBuilderWindow);
+	document.getElementById('header')?.addEventListener('scroll', positionFilterBuilderWindow, { passive: true });
 	window.visualViewport?.addEventListener('resize', positionFilterBuilderWindow);
 	new ResizeObserver(positionFilterBuilderWindow).observe(menu);
 	// Other dropdowns hide this menu too; keep the trigger's state in sync.

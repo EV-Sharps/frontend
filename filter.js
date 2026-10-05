@@ -160,29 +160,79 @@ const createOption = (val, container) => {
 	container.appendChild(label);
 };
 
+const FILTER_MENU_ANCHORS = new Map();
+const FILTER_MENU_SIZES = new WeakMap();
+
+function positionFilterMenu(anchor, panel) {
+	if (!FILTER_MENU_SIZES.has(panel)) {
+		FILTER_MENU_SIZES.set(panel, { maxWidth: panel.style.maxWidth, maxHeight: panel.style.maxHeight });
+	}
+	const original = FILTER_MENU_SIZES.get(panel);
+	panel.style.maxWidth = original.maxWidth;
+	panel.style.maxHeight = original.maxHeight;
+	panel.style.position = 'fixed';
+	panel.style.boxSizing = 'border-box';
+	panel.style.right = 'auto';
+	const viewport = window.visualViewport;
+	const viewportLeft = viewport?.offsetLeft || 0;
+	const viewportTop = viewport?.offsetTop || 0;
+	const viewportWidth = viewport?.width || window.innerWidth;
+	const viewportHeight = viewport?.height || window.innerHeight;
+	const viewportBottom = viewportTop + viewportHeight;
+	const styles = getComputedStyle(panel);
+	const maxWidth = parseFloat(styles.maxWidth);
+	const maxHeight = parseFloat(styles.maxHeight);
+	panel.style.maxWidth = `${Math.min(Number.isFinite(maxWidth) ? maxWidth : Infinity, Math.max(0, viewportWidth - 16))}px`;
+	// Clear the previous coordinates before measuring an already open menu.
+	panel.style.left = `${viewportLeft + 8}px`;
+	panel.style.top = `${viewportTop + 8}px`;
+	const rect = anchor.getBoundingClientRect();
+	const below = viewportBottom - rect.bottom - 14;
+	const above = rect.top - viewportTop - 14;
+	const opensAbove = below < Math.min(panel.offsetHeight, 200) && above > below;
+	const available = Math.max(0, Math.min(viewportHeight - 16, opensAbove ? above : below));
+	panel.style.maxHeight = `${Math.min(Number.isFinite(maxHeight) ? maxHeight : Infinity, available)}px`;
+	panel.style.overflowY = 'auto';
+	const bounds = panel.getBoundingClientRect();
+	const rightAligned = MOBILE || CURRENT_VIEW === 'mobile';
+	const rightEdge = viewportLeft + viewportWidth - bounds.width - 8;
+	panel.style.left = `${Math.max(viewportLeft + 8, rightAligned ? rightEdge : Math.min(rect.left, rightEdge))}px`;
+	const top = opensAbove ? rect.top - bounds.height - 6 : rect.bottom + 6;
+	panel.style.top = `${Math.max(viewportTop + 8, Math.min(top, viewportBottom - bounds.height - 8))}px`;
+	FILTER_MENU_ANCHORS.set(panel, anchor);
+}
+
 function closeDropdown(dd, menu) {
 	menu.style.display = "none";
 	dd.appendChild(menu);
 	dd.setAttribute('aria-expanded','false');
+	dd.querySelector('.chkdd-btn')?.setAttribute('aria-expanded', 'false');
+	FILTER_MENU_ANCHORS.delete(menu);
 }
 
 function openDropdown(id, menu) {
-	const r = document.getElementById(id).getBoundingClientRect();
-	const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
-	menu.style.position = "fixed";
-	menu.style.top = `${r.bottom + 6}px`;
-	menu.style.left = rightAligned ? 'auto' : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-	menu.style.right = rightAligned ? '8px' : 'auto';
+	const dropdown = document.getElementById(id);
+	const button = dropdown.querySelector('.chkdd-btn') || dropdown;
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
-	document.getElementById(id).setAttribute('aria-expanded','true');
+	positionFilterMenu(button, menu);
+	dropdown.setAttribute('aria-expanded','true');
+	button.setAttribute('aria-expanded', 'true');
 }
 
 function toggleDropdown(id, event) {
 	if (event) event.stopPropagation();
 	const menu = document.querySelector(`#${id.split("-")[0]}-options`);
 	const isVisible = menu.style.display === 'block';
-	document.querySelectorAll('.chkdd-menu').forEach(m => m.style.display = 'none');
+	document.querySelectorAll('.chkdd-menu').forEach(m => {
+		m.style.display = 'none';
+		const anchor = FILTER_MENU_ANCHORS.get(m);
+		const dropdown = anchor?.closest('.chkdd');
+		if (['prop-dd', 'game-dd', 'required-dd', 'exclude-dd'].includes(dropdown?.id)) {
+			dropdown.setAttribute('aria-expanded', 'false');
+			anchor.setAttribute('aria-expanded', 'false');
+		}
+	});
 	menu.style.display = isVisible ? 'none' : 'block';
 
 	isVisible ? closeDropdown(document.getElementById(id), menu) : openDropdown(id, menu);
@@ -314,21 +364,19 @@ document.getElementById('overlay')?.addEventListener('change', event => {
 });
 
 function openMenu() {
-	const r = excludeBtn.getBoundingClientRect();
-	const rightAligned = MOBILE || CURRENT_VIEW === "mobile";
-	menu.style.position = 'fixed';
-	menu.style.top = `${r.bottom + 6}px`;
-	menu.style.left = rightAligned ? 'auto' : `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)}px`;
-	menu.style.right = rightAligned ? '8px' : 'auto';
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
+	positionFilterMenu(excludeBtn, menu);
 	excludeBtn.setAttribute('aria-expanded','true');
+	dd.setAttribute('aria-expanded', 'true');
 }
 
 function closeMenu() {
 	menu.style.display = 'none';
 	dd.appendChild(menu);                  // put it back (optional)
 	excludeBtn.setAttribute('aria-expanded','false');
+	dd.setAttribute('aria-expanded', 'false');
+	FILTER_MENU_ANCHORS.delete(menu);
 }
 
 const boostSel = document.getElementById('boost-select');
@@ -355,12 +403,49 @@ function toggleRange(e) {
   if (!panel) return;
   const hidden = panel.classList.toggle("hidden");
   document.getElementById("range-btn")?.setAttribute("aria-expanded", String(!hidden));
+  if (hidden) {
+    FILTER_MENU_ANCHORS.delete(panel);
+  } else {
+    document.body.appendChild(panel);
+    positionFilterMenu(document.getElementById("range-btn"), panel);
+  }
 }
 
 function closeRange() {
   document.getElementById("range-panel")?.classList.add("hidden");
   document.getElementById("range-btn")?.setAttribute("aria-expanded", "false");
+  FILTER_MENU_ANCHORS.delete(document.getElementById("range-panel"));
 }
+
+function repositionFilterMenus() {
+  FILTER_MENU_ANCHORS.forEach((anchor, panel) => {
+    if (panel.getClientRects().length) positionFilterMenu(anchor, panel);
+  });
+}
+
+window.addEventListener('resize', repositionFilterMenus);
+window.visualViewport?.addEventListener('resize', repositionFilterMenus);
+window.visualViewport?.addEventListener('scroll', repositionFilterMenus);
+document.addEventListener('scroll', event => {
+  if (event.target !== document && event.target.id !== 'center-dropdown' &&
+      !event.target.matches?.('#header.table-filter-header')) return;
+  const visible = event.target === document
+    ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+    : event.target.getBoundingClientRect();
+  FILTER_MENU_ANCHORS.forEach((anchor, panel) => {
+    if (!panel.getClientRects().length) return;
+    const bounds = anchor.getBoundingClientRect();
+    if (bounds.right > visible.left && bounds.left < visible.right && bounds.bottom > visible.top && bounds.top < visible.bottom) {
+      positionFilterMenu(anchor, panel);
+      return;
+    }
+    if (panel.id === 'range-panel') closeRange();
+    else if (panel === menu) closeMenu();
+    else if (['prop-options', 'game-options', 'required-options'].includes(panel.id)) {
+      closeDropdown(anchor.closest('.chkdd'), panel);
+    }
+  });
+}, true);
 
 const rangeButton = document.getElementById("range-btn");
 rangeButton?.setAttribute("aria-controls", "range-panel");
@@ -443,7 +528,7 @@ if (document.getElementById("required-dd")) {
 
 		if (requiredMenu && requiredMenu.style.display === 'block' &&
 		    !requiredMenu.contains(e.target) && !requiredBtn.contains(e.target)) {
-			requiredMenu.style.display = "none";
+			closeDropdown(requiredDD, requiredMenu);
 		}
 	});
 }
@@ -1442,6 +1527,7 @@ function changeFilter(render = true) {
 	MIN = minOdds;
 	MAX = maxOdds;
 	syncDevPickerSelection();
+	if (typeof syncTopFilterStates === 'function') syncTopFilterStates();
 
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);

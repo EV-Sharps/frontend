@@ -4316,6 +4316,250 @@ button.watchlist-star:focus-visible { outline: 2px solid var(--accent); outline-
 	position: fixed; bottom: 16px; left: 16px; right: 16px; width: fit-content; max-width: calc(100% - 32px);
 	padding: 10px 14px; border: 1px solid #f87171; border-radius: 6px; background: #172027; color: #fff; z-index: 10002;
 }
+
+/* Compact filters belong to shared odds headers, not their popup contents. */
+#header.table-filter-header {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-rows: auto;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	padding: 4px 8px;
+	box-sizing: border-box;
+	background: #101c27;
+	border-bottom: 1px solid #2e3e4d;
+}
+#header.table-filter-header #title {
+	grid-column: 1;
+	grid-row: 1;
+	align-items: center;
+	gap: 7px;
+	min-width: 0;
+	white-space: nowrap;
+}
+#header.table-filter-header #title h1 { margin: 0; font-size: 18px; line-height: 1.2; }
+#header.table-filter-header #title .help-btn {
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border-radius: 5px;
+}
+#header.table-filter-header #title .help-label { display: none; }
+#header.table-filter-header #title .help-ic { width: 15px; height: 15px; }
+#header.table-filter-header #title #page-picker-btn {
+	min-height: 30px;
+	height: 30px;
+	gap: 5px;
+	padding: 4px 8px;
+	border-radius: 5px;
+	font-size: 11px;
+	box-sizing: border-box;
+}
+#header.table-filter-header #title #page-picker-btn svg { width: 13px; height: 13px; }
+#header.table-filter-header #auth-buttons {
+	grid-column: 3;
+	grid-row: 1;
+	position: static;
+	justify-self: stretch;
+	justify-content: safe flex-end;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 5px;
+	width: auto;
+	max-width: min(300px, 22vw);
+	min-width: 0;
+	height: 30px;
+	margin: 0;
+	padding: 0 2px;
+	box-sizing: border-box;
+	transform: none;
+	overflow-x: auto;
+	scrollbar-width: thin;
+	scrollbar-color: #3b4e61 transparent;
+}
+#header.table-filter-header #auth-buttons > * { flex: 0 0 auto; }
+#header.table-filter-header #auth-buttons > button {
+	height: 26px;
+	min-height: 26px;
+	margin: 0;
+	padding: 3px 7px;
+	border-radius: 5px;
+	font-size: 10px;
+	line-height: 1.2;
+	white-space: nowrap;
+	box-sizing: border-box;
+}
+#header.table-filter-header #auth-buttons #username {
+	max-width: 160px;
+	overflow: hidden;
+	font-size: 11px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+#header.table-filter-header #auth-buttons .discord-login { gap: 5px; }
+#header.table-filter-header #auth-buttons .discord-login img { width: 14px; height: 14px; }
+#header.table-filter-header #auth-buttons .gsi-material-button { width: 26px; min-width: 26px; padding: 0; }
+#header.table-filter-header #auth-buttons .gsi-material-button-icon { width: 16px; min-width: 16px; height: 16px; padding: 4px; }
+#header.table-filter-header #center-dropdown {
+	grid-column: 2;
+	grid-row: 1;
+	position: static;
+	display: flex;
+	align-items: center;
+	justify-content: safe center;
+	flex-wrap: nowrap;
+	gap: 5px;
+	width: 100%;
+	min-width: 0;
+	margin: 0;
+	padding: 2px;
+	box-sizing: border-box;
+	transform: none;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-padding-inline: 2px;
+	scrollbar-width: thin;
+	scrollbar-color: #3b4e61 transparent;
+}
+#header.table-filter-header #center-dropdown::-webkit-scrollbar,
+#header.table-filter-header #auth-buttons::-webkit-scrollbar { height: 3px; }
+#header.table-filter-header #center-dropdown::-webkit-scrollbar-thumb,
+#header.table-filter-header #auth-buttons::-webkit-scrollbar-thumb { background: #3b4e61; border-radius: 3px; }
+#header.table-filter-header #center-dropdown > * { flex: 0 0 auto; }
+#header.table-filter-header #center-dropdown .tf-field {
+	position: relative;
+	flex: 0 0 auto;
+	height: 34px;
+	min-width: 64px;
+	margin-top: 0;
+	margin-bottom: 0;
+	box-sizing: border-box;
+}
+#header.table-filter-header #center-dropdown .tf-field > .select-label {
+	top: 3px;
+	left: 8px;
+	z-index: 1;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	color: #96a9bb;
+	font-size: 9px;
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: 0;
+	white-space: nowrap;
+}
+#header.table-filter-header #center-dropdown .tf-input,
+#header.table-filter-header #center-dropdown .tf-action {
+	min-width: 0;
+	height: 34px;
+	min-height: 34px;
+	margin: 0;
+	padding: 6px 9px;
+	border: 1px solid #35495d;
+	border-radius: 5px;
+	box-sizing: border-box;
+	background: #172432;
+	color: #dce6f1;
+	font: 500 11px/16px system-ui, sans-serif;
+	text-align: left;
+	white-space: nowrap;
+	box-shadow: none;
+}
+#header.table-filter-header #center-dropdown .tf-field > .tf-input {
+	width: 100%;
+	max-width: none;
+	padding: 13px 22px 3px 8px;
+}
+#header.table-filter-header #center-dropdown .tf-field > input.tf-input { padding-right: 6px; }
+#header.table-filter-header #center-dropdown .tf-field > .select-arrow { top: 21px; right: 6px; width: 12px; height: 12px; }
+#header.table-filter-header #center-dropdown .tf-field > .tf-input:hover,
+#header.table-filter-header #center-dropdown .tf-action:hover { border-color: #6b879f; }
+#header.table-filter-header #center-dropdown #required-button.tf-input {
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
+	min-width: 82px;
+	background: var(--tf-surface, #172432) !important;
+}
+#header.table-filter-header #center-dropdown #required-button .devig-excluded-count { font-size: 9px; line-height: 16px; }
+#header.table-filter-header #center-dropdown #book-filter-button { min-width: 88px; }
+#header.table-filter-header #center-dropdown #devig-button { width: 158px; align-items: center; gap: 4px; padding-right: 8px; }
+#header.table-filter-header #center-dropdown #devig-display-text { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; }
+#header.table-filter-header #center-dropdown #devig-button .dropdown-arrow { flex: 0 0 auto; font-size: 8px; color: #96a9bb; }
+#header.table-filter-header #center-dropdown #boost-select { min-width: 68px; }
+#header.table-filter-header #center-dropdown #prop-dd-button { min-width: 78px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+#header.table-filter-header #center-dropdown #game-dd-button { min-width: 84px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+#header.table-filter-header #center-dropdown #header-view-select { min-width: 86px; }
+#header.table-filter-header #center-dropdown .tf-standalone { min-width: 70px; }
+#header.table-filter-header #center-dropdown .tf-group-start { position: relative; margin-left: 8px; }
+#header.table-filter-header #center-dropdown .tf-group-start::before {
+	content: "";
+	position: absolute;
+	top: 7px;
+	bottom: 7px;
+	left: -7px;
+	border-left: 1px solid #344656;
+}
+#header.table-filter-header #center-dropdown #view-toggle-container {
+	position: relative;
+	top: auto;
+	right: auto;
+	display: flex;
+	align-items: center;
+	padding: 0;
+	font-size: inherit;
+}
+#header.table-filter-header #center-dropdown .tf-field.tf-is-active > .tf-input,
+#header.table-filter-header #center-dropdown .tf-field[aria-expanded="true"] > .tf-input,
+#header.table-filter-header #center-dropdown .tf-field > .tf-input[aria-expanded="true"],
+#header.table-filter-header #center-dropdown .tf-action.tf-is-active,
+#header.table-filter-header #center-dropdown .tf-action[aria-expanded="true"] {
+	--tf-surface: #20384d;
+	border-color: #537ea4;
+	background: #20384d !important;
+	color: #c5e1fc;
+}
+#header.table-filter-header #center-dropdown .tf-field.tf-is-active > .select-label { color: #a5c8e9; }
+#header.table-filter-header #center-dropdown .tf-input:focus-visible,
+#header.table-filter-header #center-dropdown .tf-action:focus-visible,
+#header.table-filter-header #title button:focus-visible,
+#header.table-filter-header #auth-buttons > button:focus-visible {
+	outline: 2px solid #a0cfff;
+	outline-offset: 1px;
+	box-shadow: none;
+}
+@media (max-width: 600px) {
+	#header.table-filter-header {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		gap: 6px;
+		padding-right: 5px;
+		padding-left: 5px;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-padding-inline: 5px;
+		scrollbar-width: thin;
+		scrollbar-color: #3b4e61 transparent;
+	}
+	#header.table-filter-header #title { flex: 0 0 auto; gap: 5px; }
+	#header.table-filter-header #title h1 { font-size: 15px; }
+	#header.table-filter-header #title #page-picker-btn { padding: 4px 6px; gap: 4px; }
+	#header.table-filter-header #title #page-picker-btn > svg:first-child { display: none; }
+	#header.table-filter-header #center-dropdown {
+		flex: 0 0 auto;
+		width: max-content;
+		justify-content: flex-start;
+		overflow: visible;
+	}
+	#header.table-filter-header #auth-buttons { flex: 0 0 auto; gap: 4px; max-width: none; overflow: visible; }
+	#header.table-filter-header #auth-buttons #username { max-width: 95px; }
+}
 .custom-view-control { display: flex; justify-content: center; margin: 12px 0; }
 @media (max-width: 1430px) {
 	#header > .custom-view-control {

@@ -323,30 +323,34 @@ function buildSeasonRecord(propPrefix, sourceRecord) {
 	return filtered;
 }
 
-// Add Yest/Season buttons to the dev-picker-col, under dev-record-upd.
+// Keep summary actions in the picker toolbar across record-window changes.
 // containerEl: optional explicit container (used when dev-record-upd has been cleared)
 // showSportToggle: show the MLB/MLB_Open sport switcher in the modal when Season is opened
 function addRecordSummaryButtons(yesterdayRecord, seasonFn, { showSportToggle = false, containerEl = null } = {}) {
 	initRecordSummary();
-	const col = containerEl || document.getElementById('dev-record-upd')?.parentElement || document.querySelector('.dev-picker-col');
+	const col = containerEl || document.querySelector('#dev-picker-row .dev-picker-actions') || document.getElementById('dev-record-upd')?.parentElement || document.querySelector('.dev-picker-col');
 	if (!col) return;
 	col.querySelectorAll('.record-summary-btn').forEach(b => b.remove());
 
 	if (yesterdayRecord) {
 		const btn = document.createElement('button');
 		btn.className = 'record-summary-btn';
+		btn.type = 'button';
 		btn.textContent = 'Yest';
+		btn.setAttribute('aria-label', 'Yesterday');
+		btn.title = 'Yesterday';
 		btn.onclick = () => {
 			document.getElementById('record-sport-toggle').style.display = 'none';
 			renderRecordSummary(yesterdayRecord);
 			document.getElementById('record-summary-modal').classList.add('open');
 		};
-		col.appendChild(btn);
+		col.insertBefore(btn, col.querySelector('.dev-manage-btn'));
 	}
 
 	if (seasonFn) {
 		const btnSeason = document.createElement('button');
 		btnSeason.className = 'record-summary-btn';
+		btnSeason.type = 'button';
 		btnSeason.textContent = 'Season';
 		btnSeason.onclick = () => {
 			_summarySeasonFn = seasonFn;
@@ -356,6 +360,6 @@ function addRecordSummaryButtons(yesterdayRecord, seasonFn, { showSportToggle = 
 			renderRecordSummary(rec);
 			document.getElementById('record-summary-modal').classList.add('open');
 		};
-		col.appendChild(btnSeason);
+		col.insertBefore(btnSeason, col.querySelector('.dev-manage-btn'));
 	}
 }

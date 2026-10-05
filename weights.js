@@ -316,6 +316,7 @@ function getTopDevigs(bookArg = null) {
 		return { error: "RECORD not available" };
 	}
 	const list = [];
+	const recordNumber = value => value == null || String(value).trim() === "" ? null : Number(value);
 	const selectedBooks = bookArg ? String(bookArg).split(",") : [];
 	const books = RECORD[METHOD || "worst"];
 	if (!books) return list;
@@ -324,8 +325,11 @@ function getTopDevigs(bookArg = null) {
 		const devigs = books[book];
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
-			let stats = devigs[devigKey][DEV_WINDOW] || devigs[devigKey]["All"];
-			if (!stats) continue;
+			const stats = devigs[devigKey]?.[DEV_WINDOW];
+			const roi = recordNumber(stats?.roi);
+			const wins = recordNumber(stats?.wins ?? stats?.w);
+			const losses = recordNumber(stats?.losses ?? stats?.l);
+			const hasRecord = Number.isFinite(roi) && Number.isFinite(wins) && Number.isFinite(losses) && wins >= 0 && losses >= 0 && wins + losses > 0;
 			const parts = devigKey.split("-vs-");
 			const prop = parts[0] || devigKey;
 			
@@ -339,15 +343,17 @@ function getTopDevigs(bookArg = null) {
 				book,
 				devig: devigKey,
 				prop,
-				roi: typeof stats.roi === "number" ? stats.roi : Number(stats.roi),
-				wins: stats.wins,
-				losses: stats.losses,
-				profit: stats.profit,
-				kelly: stats.kelly,
+				recordWindow: DEV_WINDOW,
+				hasRecord,
+				roi: hasRecord ? roi : null,
+				wins: hasRecord ? wins : null,
+				losses: hasRecord ? losses : null,
+				profit: hasRecord ? stats.profit : null,
+				kelly: hasRecord ? stats.kelly : null,
 			});
 		}
 	}
-	list.sort((a,b) => b.roi - a.roi);
+	list.sort((a,b) => Number(b.hasRecord) - Number(a.hasRecord) || (a.hasRecord ? b.roi - a.roi : 0));
 	return list;
 }
 
@@ -390,7 +396,8 @@ function filterDevPickerByProps(selectedProps) {
 
 	picker.querySelectorAll('.dev-chip-wrap').forEach(wrap => {
 		const prop = wrap.dataset.prop;
-		wrap.style.display = (showAll || selectedProps.includes(prop)) ? '' : 'none';
+		const matches = selectedProps?.includes(prop) || (prop === 'team_total' && selectedProps?.some(value => ['away_total', 'home_total'].includes(value)));
+		wrap.style.display = (showAll || matches) ? '' : 'none';
 	});
 }
 
@@ -444,10 +451,10 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	minWrapper.innerHTML = `<label for="min-bets" class="select-label" style="font-size:.85rem">Min</label>`;
 	const minSelect = document.createElement("select");
 	minSelect.id = "min-bets";
-	[1,10,20,50,100,200].forEach(v => {
+	[0,1,10,20,50,100,200].forEach(v => {
 		const opt = document.createElement("option");
 		opt.value = v;
-		opt.text = v;
+		opt.text = v === 0 ? "All" : v;
 		if (v === 20) opt.selected = true;
 		minSelect.appendChild(opt);
 	});
@@ -478,7 +485,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 			return;
 		}
 
-		filtered.sort((a,b) => b.roi - a.roi).forEach((it, idx) => {
+		filtered.sort((a,b) => Number(b.hasRecord) - Number(a.hasRecord) || (a.hasRecord ? b.roi - a.roi : 0)).forEach((it, idx) => {
 			const row = document.createElement("div");
 			row.classList.add("preload-row");
 			row.style.display = "flex";
@@ -489,6 +496,10 @@ function renderPreloadsList(container, items, prop = "atgs") {
 
 			let [p,d] = (it.devig || "").split("-vs-");
 			const bookLabel = it.book ? it.book.toUpperCase() : "";
+			const recordWindow = it.recordWindow || DEV_WINDOW;
+			const recordMarkup = it.hasRecord
+				? `<div style="font-weight:600">${it.roi >= 0 ? '+' : ''}${it.roi}%</div><div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>`
+				: `<div style="font-size:.85rem;color:#666">${recordWindow === "All" ? "No record data" : `No ${recordWindow} data`}</div>`;
 
 			row.innerHTML = `
 				<div style="min-width:260px">
@@ -497,8 +508,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 				</div>
 				<div class="preload-right" style="display:flex;gap:.5rem;align-items:center">
 					<div class="preload-record">
-						<div style="font-weight:600">${it.roi >= 0 ? '+'+it.roi+'%' : it.roi+'%'}</div>
-						<div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>
+						${recordMarkup}
 					</div>
 					<button class="btn-secondary preload-add-btn" data-idx="${idx}">Apply</button>
 				</div>

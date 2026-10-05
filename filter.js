@@ -976,11 +976,7 @@ function renderDevigOptions(searchTerm = "") {
 				if (devigDisplay) devigDisplay.textContent = option.name;
 				REQUIRED = DEVIG.replace("only+", "").split("+").filter(Boolean);
 				updateRequiredDropdown(); changeFilter();
-				const chip = document.getElementById(`devig-btn-${cssSafeId(DEVIG)}`);
-				if (chip) {
-					document.querySelectorAll(".dev-chip").forEach(el => el.classList.toggle("active", el === chip));
-					chip.scrollIntoView({ inline: "nearest", block: "nearest" });
-				}
+				syncDevPickerSelection({ reveal: true });
 				closeDevig();
 			});
 			container.appendChild(item);
@@ -1104,20 +1100,23 @@ function renderPropOptions(devig) {
 	});
 }
 
-document.getElementById('devig-button')?.addEventListener('click', () => {
+let devigReturnFocus = null;
+function openDevig(trigger = document.getElementById('devig-button')) {
 	if (!devigModal) return;
+	devigReturnFocus = trigger;
 	devigWindowCategory = "all";
 	const search = document.getElementById("devig-search");
 	if (search) search.value = "";
 	renderDevigOptions();
 	devigModal.style.display = 'flex';
 	document.getElementById("close-devig-modal")?.focus({ preventScroll: true });
-});
+}
+document.getElementById('devig-button')?.addEventListener('click', event => openDevig(event.currentTarget));
 
 function closeDevig() {
 	if (!devigModal) return;
 	devigModal.style.display = 'none';
-	document.getElementById("devig-button")?.focus({ preventScroll: true });
+	(devigReturnFocus || document.getElementById("devig-button"))?.focus({ preventScroll: true });
 }
 document.getElementById('close-devig-modal')?.addEventListener('click', () => {
 	closeDevig();
@@ -1442,6 +1441,7 @@ function changeFilter(render = true) {
 	OU = ou;
 	MIN = minOdds;
 	MAX = maxOdds;
+	syncDevPickerSelection();
 
 	let url = new URL(window.location.href);
 	const params = new URLSearchParams(window.location.search);

@@ -5868,168 +5868,185 @@ function devigSetEquals(a, b) {
 	return setA.length === setB.length && setA.every((v, i) => v === setB[i]);
 }
 
-async function initDevPicker(data){
+let devPickerSelectionKey = '';
+
+function syncDevPickerSelection({ reveal = false } = {}) {
+	const picker = document.getElementById('dev-picker');
+	if (!picker || !picker.closest('#dev-picker-row')) return;
+	const buttons = [...picker.querySelectorAll('.dev-chip')];
+	const [dev, embeddedWeights] = String(DEVIG || '').split(';');
+	const weights = String(embeddedWeights || WEIGHT || '').split('+').map(Number);
+	const equalWeights = weights.length === dev.split('+').length && weights.every(w => w > 0 && w === weights[0]);
+	const books = parseBookFilter(BOOK);
+	const propInputs = [...document.querySelectorAll('#prop-options input[type="checkbox"]')];
+	const props = propInputs.filter(input => input.checked).map(input => input.value);
+	const candidates = equalWeights && !DEVIG_EXCLUDED.length ? buttons.filter(button => {
+		const propMatch = !propInputs.length || !props.length || (button.dataset.prop === 'team_total'
+			? props.includes('away_total') && props.includes('home_total') : props.includes(button.dataset.prop));
+		const bookMatch = books.length ? books.includes(button.dataset.book) : button.dataset.book === 'best';
+		return propMatch && bookMatch && devigSetEquals(button.dataset.value, dev);
+	}) : [];
+	const active = candidates.find(button => button.dataset.key === devPickerSelectionKey) || candidates[0];
+	buttons.forEach(button => {
+		const selected = button === active;
+		button.classList.toggle('active', selected);
+		button.setAttribute('aria-pressed', String(selected));
+	});
+	if (active) {
+		devPickerSelectionKey = active.dataset.key;
+		if (reveal) active.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+	}
+}
+
+async function initDevPicker(data) {
 	const picker = document.getElementById('dev-picker');
 	const hidden = document.getElementById('devig-select');
+	const recordNumber = value => value == null || String(value).trim() === '' ? null : Number(value);
 	if (!picker) return;
 
-	// Build flex row wrapper once (select | updated label | picker)
+	// Keep the toolbar mounted while the record window rebuilds the cards.
 	if (!document.getElementById('dev-picker-row')) {
-		const row = document.createElement('div');
-		row.id = 'dev-picker-row';
-		picker.parentElement.insertBefore(row, picker);
-
-		const col = document.createElement('div');
-		col.className = 'dev-picker-col';
-		row.appendChild(col);
-
-		const sel = document.createElement('select');
-		sel.id = 'dev-window-select';
-		sel.className = 'dev-window-select';
-		sel.innerHTML = ['All', 'L3', 'L7', 'L14','L30','L60'].map(w =>
-			`<option value="${w}"${w === DEV_WINDOW ? ' selected' : ''}>${w}</option>`
-		).join('');
-		sel.addEventListener('change', () => {
-			DEV_WINDOW = sel.value;
-			initDevPicker(getTopDevigs(BOOK || "best"));
+		const section = document.createElement('section');
+		section.id = 'dev-picker-row';
+		section.setAttribute('aria-label', 'Devig presets');
+		picker.parentElement.insertBefore(section, picker);
+		const toolbar = document.createElement('div');
+		toolbar.className = 'dev-picker-col';
+		toolbar.innerHTML = `<span class="dev-picker-title">Devig presets</span>
+			<label class="dev-window-control" for="dev-window-select"><span>Record window</span>
+				<select id="dev-window-select" class="dev-window-select"></select></label>
+			<span id="dev-record-upd" class="dev-record-upd"></span>
+			<div class="dev-picker-actions"><button type="button" class="dev-manage-btn" aria-label="Manage devig presets" aria-haspopup="dialog">Manage</button></div>`;
+		section.appendChild(toolbar);
+		const select = toolbar.querySelector('select');
+		select.innerHTML = ['All', 'L3', 'L7', 'L14', 'L30', 'L60'].map(value =>
+			`<option value="${value}">${value === 'All' ? 'All-time' : value}</option>`).join('');
+		select.addEventListener('change', () => {
+			DEV_WINDOW = select.value;
+			initDevPicker(getTopDevigs(BOOK || 'best'));
 		});
-		col.appendChild(sel);
-
-		const upd = document.createElement('span');
-		upd.id = 'dev-record-upd';
-		upd.className = 'dev-record-upd';
-		col.appendChild(upd);
-
-		row.appendChild(picker);
-	} else {
-		document.getElementById('dev-window-select').value = DEV_WINDOW;
+		toolbar.querySelector('.dev-manage-btn').addEventListener('click', event => openDevig(event.currentTarget));
+		picker.setAttribute('role', 'group');
+		picker.setAttribute('aria-label', 'Select a devig preset');
+		picker.addEventListener('keydown', event => {
+			if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || !event.target.matches('.dev-chip')) return;
+			const buttons = [...picker.querySelectorAll('.dev-chip')].filter(button => button.getClientRects().length);
+			const index = buttons.indexOf(event.target);
+			const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+				: Math.max(0, Math.min(buttons.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
+			event.preventDefault();
+			buttons[next]?.focus({ preventScroll: true });
+			buttons[next]?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+		});
+		section.appendChild(picker);
 	}
-
-	// Update the "Updated" label from RECORD_UPD global
-	const updEl = document.getElementById('dev-record-upd');
-	if (updEl) {
-		try {
-			if (typeof RECORD_UPD !== 'undefined' && RECORD_UPD) {
-				const d = new Date(RECORD_UPD);
-				const label = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour12: true });
-				updEl.textContent = `upd: ${label}`;
-			} else {
-				updEl.textContent = '';
-			}
-		} catch(e) { updEl.textContent = ''; }
+	document.getElementById('dev-window-select').value = DEV_WINDOW;
+	const updated = document.getElementById('dev-record-upd');
+	updated.textContent = '';
+	if (typeof RECORD_UPD !== 'undefined' && RECORD_UPD) {
+		const date = new Date(RECORD_UPD);
+		if (!Number.isNaN(date.getTime())) updated.textContent = `Updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 	}
-
-	picker.innerHTML = '';
+	document.getElementById('dev-window-select').title = ['Record window', updated.textContent].filter(Boolean).join(' · ');
+	document.getElementById('dev-window-select').setAttribute('aria-describedby', 'dev-record-upd');
+	picker.replaceChildren();
 	if (hidden) hidden.innerHTML = '';
-
-	if (!data || data.length === 0 || data.error) {
+	if (!Array.isArray(data) || !data.length) {
+		const empty = document.createElement('span');
+		empty.className = 'dev-picker-empty';
+		empty.textContent = 'No presets for these books. Choose a devig in Manage.';
+		picker.appendChild(empty);
 		return;
 	}
-	for (const row of data) {
-		let prop, dev;
-		if (!row.devig.includes("-vs-")) {
-			prop = "hr"; dev = row.devig;
-		} else {
-			[prop, dev] = row.devig.split("-vs-");
-		}
 
-		// wrapper holds the chip button and the small record line beneath
+	for (const row of data) {
+		const [prop, dev] = row.devig.includes('-vs-') ? row.devig.split('-vs-') : ['hr', row.devig];
+		if (PAGE === 'nhl' && ['atgs', 'fgs', 'lgs'].includes(prop)) continue;
+		if (PAGE === 'threes' && prop !== '3ptm') continue;
+		if (PAGE === 'pts' && !['pts', 'reb', 'ast'].includes(prop)) continue;
+		if (['dingers', 'dingers2', 'recap'].includes(PAGE) && prop !== 'hr') continue;
+		if (PAGE === 'mlb' && prop === 'hr') continue;
+		if (PAGE === 'strikeouts' && prop !== 'k') continue;
+
+		// A card keeps the mix, context and its record in one click target.
 		const wrap = document.createElement('div');
 		wrap.className = 'dev-chip-wrap';
 		wrap.dataset.prop = prop;
-
-		if (PAGE === "nhl" && ["atgs", "fgs", "lgs"].includes(prop)) {
-			continue; // skip atgs/fgs/lgs for nhl page
-		} else if (PAGE == "threes" && prop !== "3ptm") {
-			continue;
-		} else if (PAGE == "pts" && !["pts", "reb", "ast"].includes(prop)) {
-			continue;
-		} else if (["dingers", "dingers2", "recap"].includes(PAGE) && prop !== "hr") {
-			continue;
-		} else if (PAGE == "mlb" && prop === "hr") {
-			continue;
-		} else if (PAGE == "strikeouts" && prop !== "k") {
-			continue;
-		} else if (dev.includes("re")) {
-			//continue;
+		wrap.dataset.book = row.book;
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.id = `devig-btn-${cssSafeId(`${prop}-${row.book}-${dev}`)}`;
+		button.className = 'dev-chip';
+		button.dataset.value = dev;
+		button.dataset.prop = prop;
+		button.dataset.book = row.book;
+		button.dataset.key = `${prop}|${row.book}|${dev.split('+').sort().join('+')}`;
+		button.setAttribute('aria-pressed', 'false');
+		button.title = `${dev.split('+').map(parseBook).join(' + ')} · Equal weights`;
+		const heading = document.createElement('span');
+		heading.className = 'dev-chip-heading';
+		const name = document.createElement('span');
+		name.className = 'dev-chip-name';
+		name.textContent = dev.split('+').map(book => book.toLowerCase() === 'circa' ? 'Circa' : book.toUpperCase()).join(' + ');
+		const check = document.createElement('span');
+		check.className = 'dev-chip-check';
+		check.textContent = '✓';
+		check.setAttribute('aria-hidden', 'true');
+		heading.append(name, check);
+		button.appendChild(heading);
+		const context = [];
+		if (!['atgs', 'tds', 'tds2', 'dingers', 'dingers2', 'strikeouts', 'threes'].includes(PAGE)) context.push(prop.toUpperCase());
+		if (parseBookFilter(BOOK).length > 1) context.push(`Betting at ${row.book.toUpperCase()}`);
+		if (context.length) {
+			const label = document.createElement('span');
+			label.className = 'dev-chip-context';
+			label.textContent = context.join(' · ');
+			button.appendChild(label);
 		}
-
-		// Add prop tag
-		const propTag = document.createElement('div');
-		propTag.className = 'dev-prop-tag';
-		propTag.textContent = prop || '';
-		if (!["atgs", "tds", "tds2", "dingers"].includes(PAGE)) {
-			wrap.appendChild(propTag);
-		}
-
-		const btn = document.createElement('button');
-		btn.type = 'button';
-		btn.id = `devig-btn-${cssSafeId(dev)}`;
-		if (parseBookFilter(BOOK).length > 1) btn.id += `-${row.book}`;
-		btn.className = 'book-chip dev-chip';
-		btn.dataset.value = dev;
-		btn.textContent = dev.toUpperCase();
-		wrap.appendChild(btn);
-
-		// try to read record from RECORD global (by BOOK & dev key)
-		const info = document.createElement('div');
+		const info = document.createElement('span');
 		info.className = 'dev-subinfo';
-		let recText = '';
-		try {
-			let rec = (typeof RECORD !== 'undefined' && RECORD) ? RECORD[METHOD||"worst"]?.[row.book]?.[`${prop}-vs-${dev}`] : null;
-			if (rec) {
-				rec = rec[DEV_WINDOW] || rec["All"];
-				const wins = rec.wins ?? rec.w ?? 0;
-				const losses = rec.losses ?? rec.l ?? 0;
-				const roi = (typeof rec.roi === 'number') ? `${rec.roi > 0 ? '+' : ''}${rec.roi}%` : (rec.roi ?? '');
-				recText = `${wins}W-${losses}L <span class="roi ${rec.roi > 0 ? 'positive' : 'negative'}">${roi}</span>`;
-			}
-		} catch (e) {
-			recText = '';
+		const record = typeof RECORD !== 'undefined' ? RECORD?.[METHOD || 'worst']?.[row.book]?.[`${prop}-vs-${dev}`]?.[DEV_WINDOW] : null;
+		const wins = recordNumber(record?.wins ?? record?.w);
+		const losses = recordNumber(record?.losses ?? record?.l);
+		const roi = recordNumber(record?.roi);
+		if (Number.isFinite(roi) && Number.isFinite(wins) && Number.isFinite(losses) && wins >= 0 && losses >= 0 && wins + losses > 0) {
+			const roiLabel = document.createElement('span');
+			roiLabel.className = `dev-roi ${roi > 0 ? 'positive' : roi < 0 ? 'negative' : 'neutral'}`;
+			roiLabel.textContent = `${roi > 0 ? '+' : ''}${roi.toLocaleString('en-US', { maximumFractionDigits: 2 })}% ROI`;
+			const recordLabel = document.createElement('span');
+			recordLabel.className = 'dev-record';
+			recordLabel.textContent = `${wins}W–${losses}L`;
+			info.append(roiLabel, recordLabel);
+		} else {
+			info.classList.add('dev-no-record');
+			info.textContent = DEV_WINDOW === 'All' ? 'No record data' : `No ${DEV_WINDOW} data`;
 		}
-		info.innerHTML = recText && parseBookFilter(BOOK).length > 1 ? `${row.book.toUpperCase()}: ${recText}` : recText;
-		wrap.appendChild(info);
-
-		// default selection logic: preserve DEVIG or pick first available
-		if ((DEVIG === undefined && devigSetEquals(dev, hidden && hidden.querySelector('option[selected]') ? hidden.querySelector('option[selected]').value : null)) || (DEVIG && devigSetEquals(dev, DEVIG))) {
-			btn.classList.add('active');
-			DEVIG = dev;
-			if (hidden) hidden.value = dev;
-		}
-
-		btn.addEventListener('click', () => {
+		button.appendChild(info);
+		button.addEventListener('click', () => {
 			DEVIG = dev;
 			DEVIG_EXCLUDED = [];
 			if (hidden) hidden.value = dev;
-			// toggle active class only on buttons
-			document.querySelectorAll('.dev-chip').forEach(c => c.classList.toggle('active', c === btn));
-			btn.scrollIntoView({inline: 'nearest', block: 'nearest'});
-			
+			devPickerSelectionKey = button.dataset.key;
 			WEIGHT = repeatOnes(DEVIG).slice(1);
-			REQUIRED = DEVIG.split("+");
-			document.getElementById("devig-display-text").innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
-			// A devig chip changes the reference while retaining a selected book group.
-			if (parseBookFilter(BOOK).length <= 1) setBookSelection(row.book === "best" ? "" : row.book);
-			let props = [prop];
-			if (prop == "team_total") {
-				props = ["away_total", "home_total"];
-			}
-			setOptions("prop-options", props);
+			REQUIRED = DEVIG.split('+');
+			document.getElementById('devig-display-text').innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
+			// A preset retains a selected betting-book group.
+			if (parseBookFilter(BOOK).length <= 1) setBookSelection(row.book === 'best' ? '' : row.book);
+			const props = prop === 'team_total' ? ['away_total', 'home_total'] : [prop];
+			setOptions('prop-options', props);
 			updatePropLabel(props);
 			updateRequiredDropdown();
 			changeFilter();
+			syncDevPickerSelection({ reveal: true });
 		});
-
+		wrap.appendChild(button);
 		picker.appendChild(wrap);
 	}
-
-	// ensure active visible
-	const activeWrap = picker.querySelector('.dev-chip.active');
-	if (activeWrap) {
-		// if the active element is a button inside wrap, scroll its wrapper
-		const btn = picker.querySelector('.dev-chip.active');
-		if (btn && btn.parentElement) btn.parentElement.scrollIntoView({inline: 'nearest', block: 'nearest'});
+	const propInputs = [...document.querySelectorAll('#prop-options input[type="checkbox"]')];
+	if (propInputs.length && typeof filterDevPickerByProps === 'function') {
+		filterDevPickerByProps(propInputs.filter(input => input.checked).map(input => input.value));
 	}
+	syncDevPickerSelection({ reveal: true });
 }
 
 // ── Custom filter builder (Custom Filter dropdown) ──────────────────────────

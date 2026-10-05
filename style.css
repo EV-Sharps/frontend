@@ -4534,30 +4534,29 @@ button.watchlist-star:focus-visible { outline: 2px solid var(--accent); outline-
 }
 @media (max-width: 600px) {
 	#header.table-filter-header {
-		display: flex;
-		flex-direction: row;
-		flex-wrap: nowrap;
-		justify-content: flex-start;
-		gap: 6px;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 2px 6px;
 		padding-right: 5px;
 		padding-left: 5px;
-		overflow-x: auto;
-		overscroll-behavior-x: contain;
-		scroll-padding-inline: 5px;
-		scrollbar-width: thin;
-		scrollbar-color: #3b4e61 transparent;
 	}
-	#header.table-filter-header #title { flex: 0 0 auto; gap: 5px; }
+	#header.table-filter-header #title { gap: 3px; }
 	#header.table-filter-header #title h1 { font-size: 15px; }
 	#header.table-filter-header #title #page-picker-btn { padding: 4px 6px; gap: 4px; }
 	#header.table-filter-header #title #page-picker-btn > svg:first-child { display: none; }
 	#header.table-filter-header #center-dropdown {
-		flex: 0 0 auto;
-		width: max-content;
+		grid-column: 1 / -1;
+		grid-row: 2;
 		justify-content: flex-start;
-		overflow: visible;
 	}
-	#header.table-filter-header #auth-buttons { flex: 0 0 auto; gap: 4px; max-width: none; overflow: visible; }
+	/* Keep account controls beside navigation, above the full-width filters. */
+	#header.table-filter-header #auth-buttons {
+		grid-column: 2;
+		grid-row: 1;
+		justify-content: safe flex-end;
+		gap: 4px;
+		max-width: none;
+		height: 28px;
+	}
 	#header.table-filter-header #auth-buttons #username { max-width: 95px; }
 }
 .custom-view-control { display: flex; justify-content: center; margin: 12px 0; }

@@ -29,8 +29,9 @@ function initRecordSummary() {
 				<button data-sport="mlb"      onclick="_summarySport='mlb';      if(typeof _summarySeasonFn==='function'){var r=_summarySeasonFn();if(r)renderRecordSummary(r);}" style="${btnStyle}">MLB</button>
 				<button data-sport="mlb_open" onclick="_summarySport='mlb_open'; if(typeof _summarySeasonFn==='function'){var r=_summarySeasonFn();if(r)renderRecordSummary(r);}" style="${btnStyle}">MLB Open</button>
 			</div>
-			<div id="record-window-toggle" style="display:flex;gap:4px;margin-bottom:6px;">
+			<div id="record-window-toggle" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
 				<button data-window="All"  onclick="_summaryWindow='All'; _renderSummaryTable()" style="${btnStyle}">All</button>
+				<button data-window="SZN" title="Current season" onclick="_summaryWindow='SZN'; _renderSummaryTable()" style="${btnStyle}">SZN</button>
 				<button data-window="L3"   onclick="_summaryWindow='L3';  _renderSummaryTable()" style="${btnStyle}">L3</button>
 				<button data-window="L7"   onclick="_summaryWindow='L7';  _renderSummaryTable()" style="${btnStyle}">L7</button>
 				<button data-window="L14"  onclick="_summaryWindow='L14'; _renderSummaryTable()" style="${btnStyle}">L14</button>

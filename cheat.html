@@ -403,6 +403,7 @@
 		<label for="window-select" class="select-label">Window</label>
 		<select id="window-select" class="select" onchange="renderDashboard()">
 			<option value="All">All</option>
+			<option value="SZN" title="Current season">SZN</option>
 			<option value="L3">L3</option>
 			<option value="L7">L7</option>
 			<option value="L14">L14</option>
@@ -562,7 +563,7 @@
 		for (book in record) {
 			let arr = [];
 			for (key in record[book]) {
-				let j = record[book][key][window] || record[book][key]["All"];
+				let j = record[book][key][window];
 				if (!j) continue;
 				let [prop,devig] = key.split("-vs-");
 
@@ -689,6 +690,7 @@
 			btn.textContent = 'Matrix View';
 			expandBtn.style.display = '';
 			currentView = 'dashboard';
+			renderDashboard();
 		}
 	}
 
@@ -722,7 +724,7 @@
 			for (const [key, windows] of Object.entries(bookData)) {
 				const [prop, devig] = key.split('-vs-');
 				if (!activeProps.includes(prop) || !activeDevigs.includes(devig)) continue;
-				const j = windows[win] || windows['All'];
+				const j = windows[win];
 				if (!j) continue;
 				const w = j.wins ?? j.w ?? 0;
 				const l = j.losses ?? j.l ?? 0;

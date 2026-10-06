@@ -318,13 +318,14 @@ function cardHitRates(rowData) {
 	return rates;
 }
 
-function renderTrends(trends, prop) {
+function renderTrends(trends, prop, { handicap, under = false } = {}) {
 	const LABELS = {
 		lyr: "Last Yr",
 		szn: "Year"
 	};
 	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
-	const isHomer = prop === 'hr';
+	const isAnytimeGoal = prop === 'atgs' && Number(handicap) === 0.5 && !under;
+	const useScoringScale = prop === 'hr' || isAnytimeGoal;
 	const pills = ORDER
 		.filter(k => trends?.[k]?.p != null && trends[k].p !== "" && Number.isFinite(Number(trends[k].p)))
 		.map(k => {
@@ -334,7 +335,7 @@ function renderTrends(trends, prop) {
 			const counts = Number.isFinite(Number(w)) && Number(t) > 0 && w != null
 				? `<div class="trend-frac">${Number(w)}/${Number(t)}</div>` : "";
 
-			const tone = isHomer
+			const tone = useScoringScale
 				? (p >= 30 ? "good" : p >= 15 ? "mid" : "bad")
 				: (p >= 60 ? "good" : p >= 45 ? "mid" : "bad");
 
@@ -586,7 +587,8 @@ function renderCardRecord(rowData) {
 		if (!rec) return '';
 
 		const WINDOWS = [
-			{ key: "All", label: "Season" },
+			{ key: "All", label: "All-time" },
+			{ key: "SZN", label: "SZN" },
 			{ key: "L7", label: "L7" },
 			{ key: "L14", label: "L14" },
 			{ key: "L30", label: "L30" },
@@ -801,7 +803,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(cardHitRates(rowData), rowData.prop)}
+					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u' })}
 				</div>
 				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}

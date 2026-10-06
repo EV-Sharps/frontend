@@ -3,15 +3,23 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+import json
 import re
 import tempfile
 
 from playwright.sync_api import sync_playwright
 
-ROOT = Path(__file__).resolve().parents[1]
+STAGED = Path(__file__).resolve().parents[1]
+ROOT = STAGED if (STAGED / 'atgs.html').is_file() else STAGED.parents[1].parent / 'frontend'
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
+    def translate_path(self, path):
+        name = path.split('?', 1)[0].strip('/')
+        if '/' not in name and (STAGED / name).is_file():
+            return str(STAGED / name)
+        return super().translate_path(path)
+
     def log_message(self, *_args):
         pass
 
@@ -74,7 +82,7 @@ def check_atgs(browser, origin, width):
     page.evaluate("""async () => {
         const stats = (roi, wins, losses) => ({roi, wins, losses, profit: roi / 10, kelly: 1});
         RECORD = {worst: {best: {
-            'atgs-vs-fd+dk': {All: stats(91, 800, 500), L7: stats(8.4, 24, 18)},
+            'atgs-vs-fd+dk': {All: stats(91, 800, 500), SZN: stats(14, 12, 8), L7: stats(8.4, 24, 18)},
             'atgs-vs-pn+circa': {All: stats(80, 700, 500), L7: stats(-5.2, 19, 25)},
             'atgs-vs-b365': {All: stats(999, 600, 100)},
             'atgs-vs-cz': {All: stats(0, 5, 5), L7: stats(0, 5, 5)},
@@ -108,6 +116,29 @@ def check_atgs(browser, origin, width):
         assert index > negative_index and ranked[index]["hasRecord"] is False
         assert card(page, devig).locator(".dev-no-record").inner_text() == "No L7 data"
 
+    # Current-season data is a separate window; missing SZN never borrows All.
+    page.locator('#dev-window-select').select_option('SZN')
+    assert page.locator('#dev-window-select option[value="SZN"]').get_attribute('title') == 'Current season'
+    assert card(page, 'fd+dk').locator('.dev-roi').inner_text().startswith('+14%')
+    assert '12W' in card(page, 'fd+dk').locator('.dev-record').inner_text()
+    assert card(page, 'b365').locator('.dev-no-record').inner_text() == 'No SZN data'
+    missing = page.evaluate("getTopDevigs('best').find(row => row.devig === 'atgs-vs-b365')")
+    assert missing['hasRecord'] is False and missing['roi'] is None
+    assert missing['recordWindow'] == 'SZN'
+    pills = page.evaluate("""() => {
+        const host = document.createElement('div');
+        host.innerHTML = renderCardRecord({book: 'best', prop: 'atgs'});
+        return [...host.querySelectorAll('.trend-pill')].map(pill => ({
+            label: pill.querySelector('.trend-label').textContent,
+            record: pill.querySelector('.trend-frac').textContent,
+            roi: pill.querySelector('.trend-pct').textContent,
+        }));
+    }""")
+    assert {'label': 'SZN', 'record': '12-8', 'roi': '+14%'} in pills
+    assert {'label': 'All-time', 'record': '800-500', 'roi': '+91%'} in pills
+    assert all(pill['label'] != 'Season' for pill in pills)
+    page.locator('#dev-window-select').select_option('L7')
+
     # Navigation moves focus without changing the selected preset.
     first.focus()
     buttons = page.locator("#dev-picker .dev-chip")
@@ -140,6 +171,13 @@ def check_atgs(browser, origin, width):
     assert actions.locator(".record-summary-btn").count() == 2
     actions.get_by_role("button", name="Season", exact=True).click()
     assert page.locator("#record-summary-modal").is_visible()
+    page.evaluate("_summaryMethod = 'worst'; _renderSummaryTable();")
+    page.locator('#record-window-toggle button[data-window="SZN"]').click()
+    assert page.evaluate("_summaryCell(_summaryComputeGrid(), 'best', 'atgs-vs-fd+dk').val") == 14
+    assert page.evaluate("_summaryCell(_summaryComputeGrid(), 'best', 'atgs-vs-b365')") is None
+    assert 'SZN' in page.evaluate('_summaryFilterLabel()')
+    page.locator('#record-window-toggle button[data-window="L7"]').click()
+    assert page.evaluate("_summaryCell(_summaryComputeGrid(), 'best', 'atgs-vs-fd+dk').val") == 8.4
     page.evaluate("document.getElementById('record-summary-modal').classList.remove('open')")
     page.locator("#dev-window-select").select_option("L7")
     actions.locator(".record-summary-btn").first.click()
@@ -270,6 +308,54 @@ def check_recap_toolbar(browser, origin, name):
     print(f"PASS: {name} compact toolbar, summary actions and Manage", flush=True)
 
 
+def check_cheat_season(browser, origin):
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    errors = []
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    mock_page(page, ['atgs'])
+    stats = lambda roi, wins, losses: {'roi': roi, 'wins': wins, 'losses': losses, 'profit': roi / 10, 'kelly': .5}
+    record = {'nhl': {'probit': {'best': {
+        'atgs-vs-pn': {'All': stats(90, 80, 20), 'SZN': stats(12, 7, 3), 'L7': stats(3, 4, 2)},
+        'atgs-vs-fd': {'All': stats(800, 100, 10)},
+    }}}}
+    legacy_long = {'nhl': {'probit': {'best': {'atgs-vs-pn': {'All': stats(999, 100, 10)}}}}}
+    page.route('**/record.js', lambda route: route.fulfill(
+        body='var RECORD_UPD="2026-10-06T12:00:00Z"; var RECORD=' + json.dumps(record) + ';',
+        content_type='application/javascript'))
+    page.route('**/record_long.js', lambda route: route.fulfill(
+        body='var RECORD_LONG=' + json.dumps(legacy_long) + ';', content_type='application/javascript'))
+    page.goto(f'{origin}/cheat.html?sport=nhl')
+    page.locator('#min-bets').select_option('1')
+    page.locator('#window-select').select_option('SZN')
+    assert page.locator('#window-select option[value="SZN"]').get_attribute('title') == 'Current season'
+    rows = page.evaluate('parseRecord(RES).best')
+    assert len(rows) == 1 and rows[0]['vs'] == 'pn' and rows[0]['r'] == 12
+    assert '7W-3L' in page.locator('#dashboard').inner_text()
+    assert '100W' not in page.locator('#dashboard').inner_text()
+    page.locator('#view-toggle-btn').click()
+    assert page.locator('.matrix-table .matrix-cell:not(.empty)').count() == 1
+    assert '+12%' in page.locator('.matrix-table').inner_text()
+    assert '800%' not in page.locator('.matrix-table').inner_text()
+    page.locator('#window-select').select_option('L7')
+    assert '+3%' in page.locator('.matrix-table').inner_text()
+    assert page.locator('.matrix-table .matrix-cell:not(.empty)').count() == 1
+    page.locator('#window-select').select_option('SZN')
+    page.locator('#odds-type').select_option('longshots')
+    page.wait_for_function('RECORD_LONG_TMP !== null')
+    assert page.evaluate('parseRecord(RES).best') == []
+    assert page.locator('.matrix-table .matrix-cell:not(.empty)').count() == 0
+    page.locator('#view-toggle-btn').click()
+    assert page.locator('#dashboard .entry').count() == 0
+    page.locator('#window-select').select_option('All')
+    assert '100W-10L' in page.locator('#dashboard').inner_text()
+    page.locator('#window-select').select_option('SZN')
+    page.select_option('#odds-type', index=0)
+    assert '7W-3L' in page.locator('#dashboard').inner_text()
+    assert not errors, errors
+    page.close()
+    print('PASS: Cheat SZN/L7 exact windows in cards and matrix; legacy longshots never fall back to All', flush=True)
+
+
 def main():
     server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(ROOT)))
     Thread(target=server.serve_forever, daemon=True).start()
@@ -282,6 +368,7 @@ def main():
             check_context(browser, origin)
             for name in ["recap", "nfl_recap"]:
                 check_recap_toolbar(browser, origin, name)
+            check_cheat_season(browser, origin)
             browser.close()
     finally:
         server.shutdown()

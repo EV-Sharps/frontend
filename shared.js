@@ -1035,6 +1035,7 @@ function applyOddsTableView(table = TABLE) {
 	const tableElement = document.getElementById('table');
 	tableElement?.classList.toggle('stacked-odds', CURRENT_VIEW === 'table');
 	const mobile = CURRENT_VIEW === 'mobile';
+	document.getElementById('table-container')?.classList.toggle('card-view', mobile);
 	if (tableElement) tableElement.style.display = mobile ? 'none' : 'initial';
 	const cards = document.getElementById('card-container');
 	if (cards) cards.style.display = mobile ? 'grid' : 'none';
@@ -6065,8 +6066,8 @@ async function initDevPicker(data) {
 			<div class="dev-picker-actions"><button type="button" class="dev-manage-btn" aria-label="Manage devig presets" aria-haspopup="dialog">Manage</button></div>`;
 		section.appendChild(toolbar);
 		const select = toolbar.querySelector('select');
-		select.innerHTML = ['All', 'L3', 'L7', 'L14', 'L30', 'L60'].map(value =>
-			`<option value="${value}">${value === 'All' ? 'All-time' : value}</option>`).join('');
+		select.innerHTML = ['All', 'SZN', 'L3', 'L7', 'L14', 'L30', 'L60'].map(value =>
+			`<option value="${value}"${value === 'SZN' ? ' title="Current season"' : ''}>${value === 'All' ? 'All-time' : value}</option>`).join('');
 		select.addEventListener('change', () => {
 			DEV_WINDOW = select.value;
 			initDevPicker(getTopDevigs(BOOK || 'best'));

@@ -194,7 +194,7 @@ function positionFilterMenu(anchor, panel) {
 	panel.style.maxHeight = `${Math.min(Number.isFinite(maxHeight) ? maxHeight : Infinity, available)}px`;
 	panel.style.overflowY = 'auto';
 	const bounds = panel.getBoundingClientRect();
-	const rightAligned = MOBILE || CURRENT_VIEW === 'mobile';
+	const rightAligned = window.innerWidth <= MOBILE_BREAKPOINT;
 	const rightEdge = viewportLeft + viewportWidth - bounds.width - 8;
 	panel.style.left = `${Math.max(viewportLeft + 8, rightAligned ? rightEdge : Math.min(rect.left, rightEdge))}px`;
 	const top = opensAbove ? rect.top - bounds.height - 6 : rect.bottom + 6;

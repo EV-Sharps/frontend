@@ -334,6 +334,7 @@ function getTopDevigs(bookArg = null) {
 			const prop = parts[0] || devigKey;
 			
 			if (PAGE == "atgs" && prop !== "atgs") continue;
+			if (PAGE == "nhl" && ["2+goals", "3+goals", "no_goal"].includes(prop)) continue;
 			if (PAGE == "fgs" && !["fgs", "lgs"].includes(prop)) continue;
 			if (PAGE == "ftd" && !["ftd", "ltd"].includes(prop)) continue;
 			if (PAGE == "tds" && prop !== "attd") continue;

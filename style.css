@@ -1173,6 +1173,7 @@ body::before {
 
 #card-container {
 	display: grid;
+	justify-items: center;
 	gap: 10px;
 	padding: 0 10px;
 	grid-template-columns: 1fr; 

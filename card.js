@@ -263,7 +263,8 @@ function evCardFormatter(row) {
 		value = `+${value}`;
 	}
 	if (["outliers", "atgs2", "dingers2", "tds2"].includes(PAGE)) {
-		return `<span class="ev-value">${Math.round((row?.outlierPct || 0) * 100)}%</span><span style=""> from devig</span>`;
+		const percentage = Number.isFinite(row.outlierPct) ? `${(row.outlierPct * 100).toFixed(2)}%` : "-";
+		return `<span class="ev-value">${percentage}</span><span style=""> from devig</span>`;
 	}
 	return `<span class="ev-value ${colorClass}">${value}%</span><span style="">EV</span>`;
 }
@@ -833,10 +834,15 @@ function updateExistingCard(card, rowData) {
 }
 
 function renderCards(data) {
-	if (PAGE == "outliers") {
-		data = [...TABLE.getData()].sort((a,b) => {
-			return parseFloat(b.outlier) - parseFloat(a.outlier);
-		});
+	if (["outliers", "atgs2", "dingers2", "tds2"].includes(PAGE)) {
+		// Cards bypass Tabulator's outlier mutators. Recalculate from the current
+		// filtered rows so the percentage, selected quote, and order stay in sync.
+		data = data.map(row => {
+			const { book, value, pct } = computeOutlierFromBookOdds(row);
+			return { ...row, outlier: pct, outlierPct: pct, outlierBook: book,
+				outlierLine: value, book, line: value };
+		}).filter(row => row.book != null && Number.isFinite(row.outlierPct))
+			.sort((a, b) => b.outlierPct - a.outlierPct);
 	} else {
 		data = data.filter(r => r.ev != "" && r.ev != null).sort((a,b) => {
 			return parseFloat(b.ev) - parseFloat(a.ev);

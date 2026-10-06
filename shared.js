@@ -5907,6 +5907,29 @@ function initTopFilterLayout() {
 	const title = header.querySelector('#title');
 	const pages = document.getElementById('page-picker-btn');
 	if (title && pages) title.insertBefore(pages, title.querySelector('.help-btn'));
+	const discord = header.querySelector('#auth-buttons .discord-login');
+	const discordLabel = discord?.querySelector('.btn-text');
+	if (discordLabel) {
+		discord.setAttribute('aria-label', discordLabel.textContent.trim());
+		discordLabel.classList.add('tf-auth-label-full');
+		const mobileLabel = document.createElement('span');
+		mobileLabel.className = 'tf-auth-label-short';
+		mobileLabel.textContent = 'Sign in';
+		mobileLabel.setAttribute('aria-hidden', 'true');
+		discord.appendChild(mobileLabel);
+	}
+	const google = header.querySelector('#auth-buttons .gsi-material-button');
+	if (google) google.setAttribute('aria-label', 'Sign in with Google');
+	const hideAccount = header.querySelector('#auth-buttons #hide-username');
+	if (hideAccount) {
+		const auth = hideAccount.parentElement;
+		const originalNext = hideAccount.nextSibling;
+		const mobile = window.matchMedia('(max-width: 600px)');
+		// Keep keyboard navigation in the same order as the visible actions.
+		const placeHideAction = () => auth.insertBefore(hideAccount, mobile.matches ? null : originalNext);
+		placeHideAction();
+		mobile.addEventListener('change', placeHideAction);
+	}
 	const view = header.querySelector('#view-toggle-container');
 	if (view) strip.insertBefore(view, strip.querySelector(':scope > #customize'));
 	const outerControl = control => {

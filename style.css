@@ -4399,6 +4399,7 @@ button.watchlist-star:focus-visible { outline: 2px solid var(--accent); outline-
 	white-space: nowrap;
 }
 #header.table-filter-header #auth-buttons .discord-login { gap: 5px; }
+#header.table-filter-header .tf-auth-label-short { display: none; }
 #header.table-filter-header #auth-buttons .discord-login img { width: 14px; height: 14px; }
 #header.table-filter-header #auth-buttons .gsi-material-button { width: 26px; min-width: 26px; padding: 0; }
 #header.table-filter-header #auth-buttons .gsi-material-button-icon { width: 16px; min-width: 16px; height: 16px; padding: 4px; }
@@ -4535,29 +4536,50 @@ button.watchlist-star:focus-visible { outline: 2px solid var(--accent); outline-
 @media (max-width: 600px) {
 	#header.table-filter-header {
 		grid-template-columns: auto minmax(0, 1fr);
-		gap: 2px 6px;
-		padding-right: 5px;
-		padding-left: 5px;
+		gap: 6px 8px;
+		padding: 6px 5px 4px;
 	}
 	#header.table-filter-header #title { gap: 3px; }
 	#header.table-filter-header #title h1 { font-size: 15px; }
 	#header.table-filter-header #title #page-picker-btn { padding: 4px 6px; gap: 4px; }
 	#header.table-filter-header #title #page-picker-btn > svg:first-child { display: none; }
+	#header.table-filter-header #title .help-btn { background: transparent; color: #96a9bb; }
 	#header.table-filter-header #center-dropdown {
 		grid-column: 1 / -1;
 		grid-row: 2;
 		justify-content: flex-start;
+		gap: 8px;
+		padding: 7px 3px 5px;
+		border-top: 1px solid #304253;
+		background: #0a1722;
+		scroll-padding-inline: 3px;
+	}
+	#header.table-filter-header #center-dropdown .tf-group-start { margin-left: 12px; }
+	#header.table-filter-header #center-dropdown .tf-group-start::before {
+		top: 4px;
+		bottom: 4px;
+		left: -11px;
+		border-color: #496075;
 	}
 	/* Keep account controls beside navigation, above the full-width filters. */
 	#header.table-filter-header #auth-buttons {
 		grid-column: 2;
 		grid-row: 1;
 		justify-content: safe flex-end;
-		gap: 4px;
+		gap: 6px;
 		max-width: none;
-		height: 28px;
+		height: 30px;
+		padding-left: 7px;
+		border-left: 1px solid #304253;
 	}
+	#header.table-filter-header #auth-buttons .tf-auth-label-full { display: none; }
+	#header.table-filter-header #auth-buttons .tf-auth-label-short { display: inline; }
 	#header.table-filter-header #auth-buttons #username { max-width: 95px; }
+	#header.table-filter-header #auth-buttons :is(#hide-username, #pricing, #upgrade) {
+		border: 1px solid #35495d;
+		background: #172432;
+		color: #bccbda;
+	}
 }
 .custom-view-control { display: flex; justify-content: center; margin: 12px 0; }
 @media (max-width: 1430px) {

@@ -3,6 +3,7 @@
   'use strict';
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const metrics = ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit_units', 'ev_sum'];
+  const reportCells = report => [...report.cells, ...(report.best_cells || [])];
   const propOrder = ['atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
   const compareProps = (a, b) => {
     const index = prop => propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
@@ -17,7 +18,7 @@
   }
   function matches(cell, filters) {
     return (!filters.start || cell.date >= filters.start) && (!filters.end || cell.date <= filters.end)
-      && (!filters.book || cell.book === filters.book) && (!filters.prop || cell.prop === filters.prop);
+      && (filters.book ? cell.book === filters.book : cell.book !== 'best') && (!filters.prop || cell.prop === filters.prop);
   }
   function group(cells, keys) {
     const groups = new Map();
@@ -34,7 +35,7 @@
         || JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
   function buildView(report, filters) {
-    const scope = report.cells.filter(cell => matches(cell, filters));
+    const scope = reportCells(report).filter(cell => matches(cell, filters));
     const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
     const byProp = [...new Set(scope.map(cell => cell.prop))].sort(compareProps).map(prop => {
@@ -53,7 +54,7 @@
     };
   }
   function defaultStrategy(report) {
-    const pairs = new Set(report.cells.map(cell => JSON.stringify([cell.reference, cell.method])));
+    const pairs = new Set(reportCells(report).map(cell => JSON.stringify([cell.reference, cell.method])));
     if (pairs.has(JSON.stringify(['pn;1', 'worst']))) return { reference: 'pn;1', method: 'worst', fallback: false };
     for (const reference of report.references) for (const method of report.methods) {
       if (pairs.has(JSON.stringify([reference.id, method.id]))) return { reference: reference.id, method: method.id, fallback: true };
@@ -75,11 +76,22 @@
     const dates = Array.isArray(reported) ? reported : dateRange(data.window.start, data.window.end);
     return new Set(dates.filter(date => date >= data.window.start && date <= data.window.end && !missing.has(date)));
   }
+  function configDescription(c = {}) {
+    const ev = c.max_ev == null ? `EV ≥ ${c.min_ev ?? 0}%; no upper limit`
+      : `EV from ${c.min_ev ?? 0}% to ${c.max_ev}%`;
+    const oneSided = c.one_sided === 'site' ? 'missing opposite prices use the site’s 7% assumed vig'
+      : c.one_sided === 'exclude' ? 'excluded' : 'see report notes';
+    return `Archived NHL offers with estimated ${ev}. Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. `
+      + `One-sided reference prices: ${oneSided}. `
+      + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
+  }
   function validateReport(data) {
     if (data?.version !== 1 || data.sport !== 'nhl' || !validDate(data.window?.start) || !validDate(data.window?.end)
       || data.window.start > data.window.end || !Array.isArray(data.cells)
+      || (data.best_cells !== undefined && !Array.isArray(data.best_cells))
       || !Array.isArray(data.references) || !Array.isArray(data.methods)) throw new Error('The published report format is not supported. Refresh after the next report is published.');
-    for (const cell of data.cells) {
+    if ((data.best_cells || []).some(cell => cell?.book !== 'best')) throw new Error('The published report contains invalid best-available result rows. Please refresh after it is rebuilt.');
+    for (const cell of reportCells(data)) {
       if (!validDate(cell.date) || cell.date < data.window.start || cell.date > data.window.end
         || ['book', 'prop', 'reference', 'method', 'odds_band'].some(key => typeof cell[key] !== 'string')
         || metrics.some(key => typeof cell[key] !== 'number' || !Number.isFinite(cell[key]))
@@ -109,7 +121,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, defaultStrategy, dateRange, availableDates, validateReport, exportCSV };
+  const api = { aggregate, buildView, defaultStrategy, dateRange, availableDates, configDescription, validateReport, exportCSV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -123,7 +135,7 @@
   const signed = (value, suffix = '') => value === null ? '—' : `${value > 0 ? '+' : ''}${number(value).toFixed(2)}${suffix}`;
   const percent = value => value === null ? '—' : signed(value, '%');
   const tone = value => value > 0 ? 'dv-positive' : value < 0 ? 'dv-negative' : '';
-  const bookNames = { pn: 'Pinnacle', circa: 'Circa', dk: 'DraftKings', fd: 'FanDuel', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi',
+  const bookNames = { best: 'Best available', pn: 'Pinnacle', circa: 'Circa', dk: 'DraftKings', fd: 'FanDuel', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi',
     poly: 'Polymarket', hr: 'Hard Rock', br: 'BetRivers', kambi: 'Kambi', b365: 'bet365', espn: 'theScore Bet', cz: 'Caesars',
     mgm: 'BetMGM', fn: 'Fanatics', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
   const bookName = book => bookNames[book] || String(book).toUpperCase();
@@ -237,8 +249,12 @@
     $('summary-settled').textContent = count(total.settled);
     $('summary-record').textContent = `${count(total.wins)} W · ${count(total.losses)} L · ${count(total.pushes)} P`;
     $('summary-unresolved').textContent = `${count(total.pending)} / ${count(total.ungraded)}`;
-    $('offer-note').textContent = f.book ? `${count(total.selected)} qualifying offers at ${bookName(f.book)} for this strategy.`
+    $('offer-note').textContent = f.book === 'best' ? `${count(total.selected)} qualifying saved lines/sides, each counted once at the best payout after fees. Match reference, method, dates and book when comparing with Analysis.`
+      : f.book ? `${count(total.selected)} qualifying offers at ${bookName(f.book)} for this strategy. Match reference, method, dates and book when comparing with Analysis.`
       : `${count(total.selected)} qualifying offers. The same bet at different books is an alternative offer, not a unique-bet portfolio. Books can qualify different selections.`;
+    $('book-ranking-title').textContent = f.book === 'best' ? 'Best available by prop' : 'Best betting books by prop';
+    $('book-ranking-caption').textContent = f.book === 'best' ? 'One highest net payout per saved line/side, after fees.'
+      : 'Each prop is ranked separately. Qualifying selections differ by book.';
     $('empty-state').hidden = total.selected > 0;
     $('empty-message').textContent = 'Try another date, market, betting book or strategy. Check coverage below for missing archives.';
     $('export').disabled = false;
@@ -256,9 +272,7 @@
   }
   function renderMethodology() {
     const c = report.config || {}, coverage = report.coverage || {};
-    $('config-note').textContent = `Archived NHL offers with estimated EV from ${c.min_ev ?? 0}% to ${c.max_ev ?? 25}%. `
-      + `Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. One-sided reference prices: ${c.one_sided === 'exclude' ? 'excluded' : c.one_sided || 'see report notes'}. `
-      + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
+    $('config-note').textContent = configDescription(c);
     $('coverage-totals').textContent = `Full published window: ${count(coverage.raw_rows)} raw rows; ${count(coverage.valid_rows)} valid; ${count(coverage.graded_rows)} graded; ${count(coverage.unresolved_rows)} unresolved. Counts describe source rows, not sums across strategies.`;
     $('report-notes').replaceChildren(...(report.notes || []).map(note => { const li = document.createElement('li'); li.textContent = note; return li; }));
     const reasons = [['Archive', coverage.reasons || {}], ['Grading', coverage.grading_reasons || {}]];
@@ -277,8 +291,10 @@
     $('report-window').textContent = `${dayLabel(report.window.start)}–${dayLabel(report.window.end)} · ${report.window.days || dateRange(report.window.start, report.window.end).length} days · ET`;
     $('generated').textContent = `Published ${timestamp(report.generated_at)}`;
     for (const id of ['date-start', 'date-end']) { $(id).min = report.window.start; $(id).max = report.window.end; }
-    options('book-filter', [...new Set(report.cells.map(cell => cell.book))].sort().map(book => [book, bookName(book)]), 'All books · separate offers');
-    options('market-filter', [...new Set(report.cells.map(cell => cell.prop))].sort(compareProps).map(prop => [prop, propName(prop)]), 'All markets');
+    const cells = reportCells(report);
+    const books = [...new Set(cells.map(cell => cell.book))].sort((a, b) => a === 'best' ? -1 : b === 'best' ? 1 : a.localeCompare(b));
+    options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers');
+    options('market-filter', [...new Set(cells.map(cell => cell.prop))].sort(compareProps).map(prop => [prop, propName(prop)]), 'All markets');
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]));
     options('method-filter', report.methods.map(item => [item.id, item.name]));
     renderMethodology();

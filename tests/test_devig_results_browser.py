@@ -40,14 +40,16 @@ def fixture():
                 window=dict(start='2026-09-28', end='2026-10-04', days=7),
                 references=[dict(id='pn;1', name='Pinnacle', books=['pn']), dict(id='fd;1', name='FanDuel', books=['fd'])],
                 methods=[dict(id='worst', name='Worst-case'), dict(id='power', name='Power')],
-                config=dict(min_ev=0, max_ev=25, min_liquidity=50, one_sided='exclude', fee_policy='Estimated fees'),
+                config=dict(min_ev=0, max_ev=None, min_liquidity=50, one_sided='site', fee_policy='Estimated fees'),
                 coverage=dict(files=[dict(date='2026-10-01', feed='nhl', rows=25), dict(date='2026-10-02', feed='nhl', rows=25)],
                               raw_rows=50, valid_rows=25, graded_rows=20, unresolved_rows=5,
                               latest_archive_date='2026-10-02', missing_dates=['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-03', '2026-10-04'], reasons={'test_reason': 1},
                               grading_reasons={'missing_or_unverified_stat': 5}),
                 notes=['<img src=x onerror=alert(1)>'],
                 cells=[cell(), cell(book='fd', profit_units=-3), cell(date='2026-10-02', prop='atgs', profit_units=7),
-                       cell(reference='fd;1', profit_units=100), cell(method='power', profit_units=50)])
+                       cell(reference='fd;1', profit_units=100), cell(method='power', profit_units=50)],
+                best_cells=[cell(book='best', profit_units=12), cell(book='best', prop='atgs', profit_units=7),
+                       cell(book='best', reference='fd;1', profit_units=30), cell(book='best', method='power', profit_units=40)])
 
 
 server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(SITE)))
@@ -98,6 +100,24 @@ try:
         assert page.locator('#report-notes img').count() == 0
         assert 'missing or unverified stat: 5' in page.locator('#coverage-reasons').text_content()
         assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
+        config = page.locator('#config-note').text_content()
+        assert 'EV ≥ 0%; no upper limit' in config
+        assert '7% assumed vig' in config
+        assert '25%' not in config
+        expect(page.locator('#book-filter option[value="best"]')).to_have_text('Best available')
+        assert page.locator('#book-rows [data-segment="best"]').count() == 0
+        page.select_option('#book-filter', 'best')
+        expect(page.locator('#summary-profit')).to_have_text('+19.00u')
+        expect(page.locator('#summary-settled')).to_have_text('24')
+        expect(page.locator('#book-ranking-title')).to_have_text('Best available by prop')
+        expect(page.locator('#offer-note')).to_contain_text('each counted once at the best payout after fees')
+        expect(page.locator('#selection-caption')).to_contain_text('Best available')
+        assert page.locator('#book-rows [data-segment="best"]').count() == 2
+        assert page.locator('#book-rows [data-segment="dk"]').count() == 0
+        assert page.locator('#strategy-rows .dv-strategy-button').count() == 3
+        page.locator('#reset-filters').click()
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        expect(page.locator('#book-ranking-title')).to_have_text('Best betting books by prop')
         expect(page.locator('#market-filter option[value="atgs"]')).to_have_text(re.compile(r'ATGS.*Anytime goalscorer'))
         for table in ('#odds-rows', '#book-rows'):
             assert page.locator(f'{table} tr.dv-prop-group').count() == 2

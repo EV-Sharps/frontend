@@ -516,6 +516,7 @@ function hydrateAfterProfileLoad() {
 	// Refresh available presets without changing filters selected during this visit.
 	if (typeof populateSavedFilterBuilderSelect === "function") populateSavedFilterBuilderSelect();
 	if (typeof refreshWatchlistStars === "function") refreshWatchlistStars();
+	if (typeof restoreSavedColumnOrder === "function") restoreSavedColumnOrder();
 	if (typeof changeFilter === "function") changeFilter();
 }
 

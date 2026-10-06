@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { aggregate, buildView, defaultStrategy, dateRange, availableDates, validateReport, exportCSV } = require('../devig-results.js');
+const { aggregate, buildView, defaultStrategy, dateRange, availableDates, configDescription, validateReport, exportCSV } = require('../devig-results.js');
 
 const cell = (overrides = {}) => ({ date: '2026-10-01', book: 'dk', prop: 'sog', reference: 'pn;1', method: 'worst',
   odds_band: '+100 to +199', selected: 15, wins: 6, losses: 4, pushes: 2, pending: 1, ungraded: 2, profit_units: 5, ev_sum: 40, ...overrides });
@@ -25,6 +25,67 @@ test('one reference and method drive ROI; pushes count, unresolved offers do not
   assert.equal(view.strategies.length, 3);
   assert.equal(view.strategies[0].reference, 'fd;1');
   assert.equal(view.days.reduce((sum, row) => sum + row.profit_units, 0), 9);
+});
+test('all books excludes synthetic best offers in summaries, strategies, prop ranks and CSV', () => {
+  const data = report();
+  const before = buildView(data, filters);
+  data.cells.push(cell({ book: 'best', profit_units: 12 }), cell({ book: 'best', prop: 'atgs', profit_units: 7 }),
+    cell({ book: 'best', reference: 'fd;1', profit_units: 30 }), cell({ book: 'best', method: 'power', profit_units: 40 }));
+  const after = buildView(data, filters);
+  assert.deepEqual(after, before);
+  assert.deepEqual(csvRows(exportCSV(after, filters)), csvRows(exportCSV(before, filters)));
+  assert.equal(after.books.some(row => row.book === 'best'), false);
+});
+test('Best available uses only synthetic selected offers and preserves independent strategies', () => {
+  const data = report();
+  data.cells.push(cell({ book: 'best', profit_units: 12 }), cell({ book: 'best', prop: 'atgs', profit_units: 7 }),
+    cell({ book: 'best', reference: 'fd;1', profit_units: 30 }), cell({ book: 'best', method: 'power', profit_units: 40 }));
+  const f = { ...filters, book: 'best' }, view = buildView(data, f);
+  assert.equal(view.total.selected, 30);
+  assert.equal(view.total.settled, 24);
+  assert.equal(view.total.profit_units, 19);
+  assert.equal(view.strategies.length, 3);
+  assert.equal(view.strategies.find(row => row.reference === 'pn;1' && row.method === 'worst').profit_units, 19);
+  assert.deepEqual(view.books.map(row => row.book), ['best']);
+  assert.ok(view.byProp.every(prop => prop.books.every(row => row.book === 'best')));
+  assert.equal(view.days.reduce((sum, row) => sum + row.profit_units, 0), 19);
+  const csv = csvRows(exportCSV(view, f));
+  assert.ok(csv.every(row => row.book_filter === 'best'));
+  assert.ok(csv.filter(row => row.section === 'books').every(row => row.segment === 'best'));
+  assert.equal(buildView(data, { ...f, prop: 'atgs' }).total.profit_units, 7);
+  assert.equal(buildView(data, { ...f, end: '2026-09-30' }).total.selected, 0);
+  assert.equal(buildView(data, { ...filters, book: 'dk' }).total.profit_units, 12);
+});
+test('uncapped EV and site one-sided assumptions are explicit; finite caps stay accurate', () => {
+  const text = configDescription({ min_ev: 0, max_ev: null, one_sided: 'site' });
+  assert.match(text, /EV ≥ 0%; no upper limit/);
+  assert.match(text, /missing opposite prices use the site’s 7% assumed vig/);
+  assert.doesNotMatch(text, /25%/);
+  assert.match(configDescription({ min_ev: 2, max_ev: 15, one_sided: 'exclude' }), /EV from 2% to 15%/);
+  assert.match(configDescription({ one_sided: 'exclude' }), /One-sided reference prices: excluded/);
+});
+test('optional best_cells publishes a separate best view without changing individual-book totals', () => {
+  const data = report(), original = buildView(data, filters);
+  data.best_cells = [cell({ book: 'best', profit_units: 12 }), cell({ book: 'best', prop: 'atgs', profit_units: 7 })];
+  assert.equal(validateReport(data), data);
+  assert.deepEqual(buildView(data, filters), original);
+  const best = buildView(data, { ...filters, book: 'best' });
+  assert.equal(best.total.profit_units, 19);
+  assert.equal(best.total.settled, 24);
+  assert.deepEqual(best.books.map(row => row.book), ['best']);
+  data.cells = [];
+  assert.deepEqual(defaultStrategy(data), { reference: 'pn;1', method: 'worst', fallback: false });
+  assert.equal(buildView(data, filters).total.selected, 0);
+  assert.equal(buildView(data, { ...filters, book: 'best' }).total.selected, 30);
+});
+test('best_cells schema rejects nonarrays, non-best books and malformed metrics', () => {
+  const data = report();
+  data.best_cells = {};
+  assert.throws(() => validateReport(data), /format is not supported/);
+  data.best_cells = [cell()];
+  assert.throws(() => validateReport(data), /invalid best-available result rows/);
+  data.best_cells = [cell({ book: 'best', profit_units: null })];
+  assert.throws(() => validateReport(data), /invalid result rows/);
 });
 test('date, book and market filters also scope independent strategy comparisons', () => {
   const view = buildView(report(), { ...filters, start: '2026-10-01', end: '2026-10-01', book: 'dk', prop: 'sog' });

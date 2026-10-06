@@ -853,7 +853,8 @@ function openingColumnVisible() {
 	// Existing layouts opt in through Customize; a reorder includes hidden keys too.
 	if (metadata[PAGE] || metadata[`${PAGE}-opening-column-version`]) return false;
 	const orderKey = `${PAGE === 'preseason' ? 'main' : PAGE}-order`;
-	return !metadata[orderKey]?.length;
+	// NHL added reordering after Open, so an order alone is not a legacy layout.
+	return PAGE === 'nhl' || !metadata[orderKey]?.length;
 }
 
 function openingPriceQuote(data) {
@@ -2700,7 +2701,30 @@ function playerLinesName(data, label) {
 
 function openPlayerLines(data) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
+	if (PAGE === 'main') {
+		PlayerLines.open(data, Array.isArray(RES?.data) ? RES.data : [], {
+			mode: 'game', player: String(data.game || data.gameId || '').toUpperCase(), formatOdds: oddsDisplay
+		});
+		return;
+	}
 	PlayerLines.open(data, goalComparisonInputRows(data, RES), { player: title(data.player), formatProp: convertProp, formatOdds: oddsDisplay });
+}
+
+function lineComparisonFormatter(formatter) {
+	return (cell, params, rendered) => {
+		const content = formatter(cell, params, rendered);
+		const data = cell.getRow().getData();
+		if (typeof PlayerLines === 'undefined' || !PlayerLines.canOpen(PAGE, data)) return content;
+		if (typeof rendered === 'function') rendered(() => {
+			const trigger = cell.getElement().querySelector('.player-lines-trigger');
+			if (trigger) trigger.onclick = event => {
+				if (event.shiftKey || event.ctrlKey || event.metaKey) return;
+				event.stopPropagation();
+				openPlayerLines(cell.getRow().getData());
+			};
+		});
+		return `<button type="button" class="player-lines-trigger" aria-haspopup="dialog" title="Compare all lines and prices">${content}</button>`;
+	};
 }
 
 const basePlayerFormatter = function(cell, params, rendered) {

@@ -664,6 +664,13 @@ function updateExistingCard(card, rowData) {
 	} else if (PAGE.includes("ncaa")) {
 		teamImg = gameImg;
 	}
+	if (PAGE === 'main' && typeof PlayerLines !== 'undefined') {
+		player = PlayerLines.mainMarketLabel(rowData.prop, rowData);
+		if (/(?:^|_)(?:ml|spread)$/.test(rowData.prop)) player = `${String(team || '').toUpperCase()} ${player}`;
+	}
+	const lineDisplay = PAGE === 'main' && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
+		: PAGE === 'main' && /(?:^|_)spread$/.test(rowData.prop) ? addPlus(rowData.handicap)
+		: `${pre}${rowData.handicap}`;
 	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
 		{ quotePage: "", applyFees: false })?.outerHTML || "";
 	const snapsPill = ["tds", "tds2", "ftd", "nfl"].includes(PAGE)
@@ -680,7 +687,7 @@ function updateExistingCard(card, rowData) {
 			${_starSpan}
 		</div>
 		<div class="prop-content-stack">
-			<span class="prop-line">${pre}${rowData.handicap}</span>
+			<span class="prop-line">${lineDisplay}</span>
 			<span class="prop-type">${propDisplay}</span>
 		</div>
 	`;

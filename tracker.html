@@ -350,6 +350,13 @@
 							<div><input id="cust_kambi"  type="checkbox"><label for="cust_kambi">Kambi</label></div>
 							<div><input id="cust_bol"    type="checkbox"><label for="cust_bol">BetOnline</label></div>
 							<div><input id="cust_nv"     type="checkbox"><label for="cust_nv">NoVig</label></div>
+							<div><input id="cust_px"     type="checkbox"><label for="cust_px">ProphetX</label></div>
+							<div><input id="cust_poly"   type="checkbox"><label for="cust_poly">Polymarket</label></div>
+							<div><input id="cust_bv"     type="checkbox"><label for="cust_bv">Bovada</label></div>
+							<div><input id="cust_re"     type="checkbox"><label for="cust_re">Rebet</label></div>
+							<div><input id="cust_fl"     type="checkbox"><label for="cust_fl">Fliff</label></div>
+							<div><input id="cust_hr_oh"  type="checkbox"><label for="cust_hr_oh">Hard Rock OH</label></div>
+							<div><input id="cust_hr_az"  type="checkbox"><label for="cust_hr_az">Hard Rock AZ</label></div>
 						</div>
 					</div>
 					<div class="cust-actions">
@@ -553,6 +560,55 @@
 		let trackerPageShown = true;
 		let trackerResumePending = false;
 		const trackerIsVisible = () => trackerPageShown && document.visibilityState !== "hidden";
+		const trackerSourceRows = new Map();
+		let trackerSourceOwner;
+		const TRACKER_SOURCE_SPORTS = {
+			nhl: "nhl", atgs: "nhl", atgs2: "nhl", fgs: "nhl",
+			nfl: "nfl", tds: "nfl", tds2: "nfl", ftd: "nfl",
+			nba: "nba", pts: "nba", threes: "nba", kotc: "nba", wnba: "wnba",
+			mlb: "mlb", strikeouts: "mlb", dingers2: "mlb", wbc: "mlb",
+			ncaaf: "ncaaf", ncaafprops: "ncaaf", ncaab: "ncaab", baseball_ncaa: "baseball_ncaa", ufc: "ufc"
+		};
+
+		function trackerSources() {
+			const today = new Date().toISOString().slice(0, 10);
+			const metadata = CURR_USER?.metadata || {};
+			const sources = new Map();
+			for (const entry of [...(metadata.watchlist || []), ...(metadata.bets || [])]) {
+				if (!entry || entry.dt !== today) continue;
+				const page = watchlistPage(entry);
+				const sport = watchlistSport(entry.sport) || TRACKER_SOURCE_SPORTS[page];
+				let path;
+				if (Object.hasOwn(TRACKER_SOURCE_SPORTS, page)) {
+					path = page === "ncaafprops" ? "/api/ncaaf?props=true" : `/api/${page}`;
+				} else if (["outliers", "live"].includes(page) && sport) {
+					path = `/api/${page}?sport=${encodeURIComponent(sport)}`;
+				}
+				// The original tracker feed continues to supply Dingers and legacy MLB entries.
+				if (path) sources.set(path, { path, page, sport });
+			}
+			return [...sources.values()];
+		}
+
+		function trackerRowsFromData(data, source) {
+			const raw = data?.data ?? data;
+			if (!raw || typeof raw !== "object") throw new Error("Invalid tracker data response");
+			const rows = Array.isArray(raw) ? raw : Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
+			return rows.filter(row => row && typeof row === "object").map(row => ({
+				...row,
+				sport: watchlistSport(row.sport) || source?.sport || "mlb",
+				...(source ? { watchlistPage: source.page } : {}),
+				...(row.under == null && row.ouIdx != null ? { under: Number(row.ouIdx) === 1 } : {})
+			}));
+		}
+
+		function refreshTrackerFromProfile() {
+			// Profile hydration can finish after the initial market request.
+			// Queue a pass so newly saved sports also receive live book prices.
+			return trackerFetchPending
+				? trackerFetchPending.then(() => fetchTrackerData())
+				: fetchTrackerData();
+		}
 
 		function fetchTrackerData({ refreshProfile = false } = {}) {
 			if (!trackerIsVisible()) {
@@ -570,9 +626,21 @@
 			const user = CURR_USER;
 			const metadata = user?.metadata;
 			const token = ACCESS_TOKEN;
+			const owner = userId || token;
+			if (trackerSourceOwner !== owner) {
+				trackerSourceRows.clear();
+				trackerSourceOwner = owner;
+			}
 			const current = () => version === trackerFetchVersion && !controller.signal.aborted && trackerIsVisible()
 				&& (userId ? CURR_SESSION?.user?.id === userId : ACCESS_TOKEN === token);
 			const context = { signal: controller.signal, current };
+			const requestData = async path => {
+				const response = await fetch(API_BASE + path, {
+					headers: { Authorization: `Bearer ${token}` }, signal: controller.signal
+				});
+				if (!response.ok) throw new Error(`Tracker refresh failed (${response.status}): ${path}`);
+				return response.json();
+			};
 			const run = Promise.resolve().then(async () => {
 				if (!current()) return;
 				const profileRequest = async () => {
@@ -585,12 +653,7 @@
 				};
 				const popularResults = Promise.allSettled([fetchPopularBets(context), fetchPopularWatchlist(context)]);
 				const results = await Promise.race([Promise.allSettled([
-					fetch(API_BASE + "/api/tracker", {
-						headers: { Authorization: `Bearer ${token}` }, signal: controller.signal
-					}).then(response => {
-						if (!response.ok) throw new Error(`Tracker refresh failed (${response.status})`);
-						return response.json();
-					}),
+					requestData("/api/tracker"),
 					profileRequest()
 				]), aborted]);
 				if (!results || !current()) return;
@@ -607,14 +670,31 @@
 					const data = results[0].value;
 					RES = data;
 					UPDATED[PAGE] = data.updated || {};
-					const raw = data.data || data;
-					ALL_ROWS = Array.isArray(raw)
-						? raw
-						: Object.entries(raw).map(([key, row]) => ({ _key: key, ...row }));
+					trackerSourceRows.set("/api/tracker", trackerRowsFromData(data));
 				}
 				loadBetsFromMetadata();
 				await Promise.race([loadWatchlistFromMetadata(), aborted]);
-				if (current()) { refreshTable(); refreshWatchlist(); }
+				if (!current()) return;
+				const sources = trackerSources();
+				const publish = () => {
+					// Prefer each saved play's source feed; retain the original feed for search/legacy rows.
+					ALL_ROWS = [...sources.flatMap(source => trackerSourceRows.get(source.path) || []),
+						...(trackerSourceRows.get("/api/tracker") || [])];
+					refreshTable(); refreshWatchlist();
+				};
+				publish();
+				await Promise.race([Promise.allSettled(sources.map(async source => {
+					try {
+						const data = await requestData(source.path);
+						if (!current()) return;
+						trackerSourceRows.set(source.path, trackerRowsFromData(data, source));
+						publish();
+					} catch (error) {
+						// One unavailable sport must not erase the other feeds or saved quotes.
+						if (current() && error?.name !== "AbortError") console.error("Tracker book prices failed", error);
+					}
+				})), aborted]);
+				if (!current()) return;
 				// Popular lists are supplementary; their requests must not delay the main tables.
 				const popular = await Promise.race([popularResults, aborted]);
 				if (popular && current()) {
@@ -698,7 +778,23 @@
 		// ── EV helpers ───────────────────────────────────────────────────
 		let CIRCA_DEVIG = "circa"; // "market" = use fairVal, else a bookOdds key
 
-		const ALL_BOOK_KEYS = ["fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv","px","poly","bv","re","fl"];
+		const ALL_BOOK_KEYS = ["fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv","px","poly","bv","re","fl","hr_oh","hr_az"];
+		const TRACKER_BOOK_COLUMNS = [
+			["circa", "Circa"], ["fd", "FD", 60], ["b365", "B365"], ["dk", "DK", 60],
+			["mgm", "MGM"], ["espn", "ESPN"], ["cz", "CZ", 60], ["fn", "FN", 60],
+			["br", "BR"], ["hr", "HR"], ["pn", "PN"], ["kambi", "Kambi"],
+			["bol", "BOL"], ["nv", "NoVig"], ["kal", "Kalshi"], ["px", "PX"],
+			["poly", "Polymarket", 85], ["bv", "Bovada"], ["re", "Rebet"], ["fl", "Fliff"],
+			["hr_oh", "HR OH"], ["hr_az", "HR AZ"]
+		];
+
+		function trackerBookColumns() {
+			const visible = loadColumnPrefs();
+			return TRACKER_BOOK_COLUMNS.map(([book, title, width = 70]) => ({
+				title, field: `bookOdds.${book}`, width, sorter: "number", formatter: evOddsFormatter,
+				visible: visible.has(book)
+			}));
+		}
 
 		function toImplied(odds) {
 			if (!odds) return null;
@@ -919,7 +1015,7 @@
 						field: "player",
 						formatter: playerFormatter,
 						width: MOBILE ? 90 : 140,
-						formatterParams: { sport: "mlb" },
+						formatterParams: cell => ({ sport: cell.getRow().getData().sport || "mlb" }),
 						hozAlign: "left",
 						responsive: 0,
 						frozen: true
@@ -950,20 +1046,7 @@
 						},
 						responsive: 0
 					},
-					{ title: `Circa`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `FD`,    field: "bookOdds.fd",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: `B365`,  field: "bookOdds.b365",  width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `DK`,    field: "bookOdds.dk",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: `MGM`,   field: "bookOdds.mgm",   width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `ESPN`,  field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `CZ`,    field: "bookOdds.cz",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: `FN`,    field: "bookOdds.fn",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: `BR`,    field: "bookOdds.br",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `HR`,    field: "bookOdds.hr",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `PN`,    field: "bookOdds.pn",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `Kambi`, field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `BOL`,   field: "bookOdds.bol",   width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: `NoVig`, field: "bookOdds.nv",    width: 70, sorter: "number", formatter: evOddsFormatter },
+					...trackerBookColumns(),
 					{title: "<a href='https://www.x.com/BallparkPal' target='new'  onclick='event.stopPropagation()'>@BPP</a><br>Factor<br><a href='https://www.ballparkpal.com/Park-Factors.php' target='new'  onclick='event.stopPropagation()'>Src</a>", field: "bpp", width: 50, formatter: bppFormatter},
 					{ title: "Game",  field: "game", visible: false },
 				]
@@ -1014,7 +1097,8 @@
 				const row = ALL_ROWS.find(r => {
 					const rp = (r.player || "").toLowerCase().trim();
 					return rp && (watchlistSport(r.sport) || "mlb") === sport
-						&& watchlistProp({ prop: r.prop, page: "dingers" }) === prop
+						&& (!r.watchlistPage || r.watchlistPage === watchlistPage(w))
+						&& watchlistProp({ prop: r.prop, page: r.watchlistPage || "dingers" }) === prop
 						&& (rp === p || rp.includes(p) || p.includes(rp))
 						&& (!quote || trackerQuoteMatches(quote, r));
 				});
@@ -1230,20 +1314,7 @@
 						formatterParams: { book: BOOK },
 						cellClick: function(e, cell) { e.stopPropagation(); openWatchlistEdit(cell.getRow().getData()); }
 					},
-					{ title: "Circa", field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "FD",    field: "bookOdds.fd",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: "B365",  field: "bookOdds.b365",  width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "DK",    field: "bookOdds.dk",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: "MGM",   field: "bookOdds.mgm",   width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "ESPN",  field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "CZ",    field: "bookOdds.cz",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: "FN",    field: "bookOdds.fn",    width: 60, sorter: "number", formatter: evOddsFormatter },
-					{ title: "BR",    field: "bookOdds.br",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "HR",    field: "bookOdds.hr",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "PN",    field: "bookOdds.pn",    width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "Kambi", field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "BOL",   field: "bookOdds.bol",   width: 70, sorter: "number", formatter: evOddsFormatter },
-					{ title: "NoVig", field: "bookOdds.nv",    width: 70, sorter: "number", formatter: evOddsFormatter }
+					...trackerBookColumns()
 				]
 			});
 
@@ -1298,15 +1369,9 @@
 
 		const CUST_STORAGE_KEY = "tracker-columns";
 		// field id → table column field
-		const CUST_COLS = {
-			circa: "bookOdds.circa", fd: "bookOdds.fd", b365: "bookOdds.b365",
-			dk: "bookOdds.dk", mgm: "bookOdds.mgm", espn: "bookOdds.espn",
-			cz: "bookOdds.cz", fn: "bookOdds.fn", br: "bookOdds.br",
-			hr: "bookOdds.hr", kal: "bookOdds.kal", pn: "bookOdds.pn",
-			kambi: "bookOdds.kambi", bol: "bookOdds.bol", nv: "bookOdds.nv"
-		};
+		const CUST_COLS = Object.fromEntries(TRACKER_BOOK_COLUMNS.map(([book]) => [book, `bookOdds.${book}`]));
 		// default visible set
-		const CUST_DEFAULT = new Set(["circa","fd","b365","dk","mgm","espn","cz","fn","br","hr","kal","pn","kambi","bol","nv"]);
+		const CUST_DEFAULT = new Set(Object.keys(CUST_COLS));
 
 		function loadColumnPrefs() {
 			try {
@@ -1351,13 +1416,11 @@
 				const id = this.id.replace("cust_", "");
 				const field = CUST_COLS[id];
 				if (!field) return;
-				const col = TABLE?.getColumn(field);
-				if (!col) return;
-				this.checked ? col.show() : col.hide();
 				// persist
 				const visible = loadColumnPrefs();
 				this.checked ? visible.add(id) : visible.delete(id);
 				saveColumnPrefs(visible);
+				applyColumnPrefs(visible);
 			});
 		});
 

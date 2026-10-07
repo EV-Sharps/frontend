@@ -13,6 +13,35 @@ function load(page = 'nfl', sport) {
 	return context;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
+
+function loadOddsFormatter(format = 'american', page = 'nfl') {
+	const context = load(page);
+	context.CURR_USER = { metadata: { odds_format: format } };
+	context.isStackedOddsCell = () => false;
+	context.resolveLink = link => link;
+	vm.runInContext(source.slice(source.indexOf('function oddsAmericanToDecimal('), source.indexOf('function supportsOddsViews(')), context);
+	vm.runInContext(source.slice(source.indexOf('function numFrom('), source.indexOf('const LIQUIDITY_BOOKS =')), context);
+	vm.runInContext(source.slice(source.indexOf('const evOddsFormatter ='), source.indexOf('const oddsFormatter =')) + '\nglobalThis.formatOdds = evOddsFormatter;', context);
+	return context;
+}
+
+function formatOdds(context, options = {}) {
+	const { book, odds, under, fairVal, stackedOdds, ...extra } = {
+		book: 'kal', odds: '+456/-567', under: false, fairVal: 440, stackedOdds: false, ...options,
+	};
+	const row = Object.freeze({ prop: 'rec', sport: 'nfl', ev: 5, under, fairVal,
+		bookOdds: Object.freeze({ [book]: odds }), ...extra });
+	const original = JSON.stringify(row);
+	const output = context.formatOdds({
+		getRow: () => ({ getData: () => row }),
+		getValue: () => row.bookOdds[book],
+		getField: () => `bookOdds.${book}`,
+	}, { stackedOdds });
+	assert.equal(JSON.stringify(row), original, 'Rendering preserves the raw row and frozen bookOdds');
+	return output;
+}
+
+const greenPrices = html => html.match(/#00ff66|\bodds-positive\b/g)?.length || 0;
 const touchdown = {
 	player: 'saquon barkley', prop: 'attd', sport: 'nfl', book: 'kal', line: 104,
 	handicap: 0.5, under: false, game: 'phi @ dal', bookOdds: { kal: '+104/-108' },
@@ -201,4 +230,91 @@ test('Explicit quote page and outlier book selection preserve their fee context'
 	assert.deepEqual(plain(context.displayedBestBookQuote(outlier, 'tds2')), { book: 'kal', line: -104 });
 	assert.equal(context.watchlistQuote(outlier, 'tds2').odds, -104);
 	assert.equal(context.displayedBestBookQuote({ book: 'kal', line: 567, prop: 'hr', bookOdds: { kal: '+567' } }, 'dingers').line, 547);
+});
+
+test('Compact and stacked EV highlights compare each selected Kalshi side after fees', () => {
+	const context = loadOddsFormatter('american', 'main');
+	assert.equal(context.addKalshiFee('+456', { prop: 'rec', sport: 'nfl' }), '425');
+	for (const stackedOdds of [false, true]) {
+		for (const under of [false, true]) {
+			const odds = under ? '-567/+456' : '+456/-567';
+			const options = { odds, under, stackedOdds };
+			const losing = formatOdds(context, { ...options, fairVal: 440 });
+			assert.equal(greenPrices(losing), 0, `Raw +456 is below +440 after fees: ${JSON.stringify(options)}`);
+			const winning = formatOdds(context, { ...options, fairVal: 400 });
+			assert.equal(greenPrices(winning), 1, 'Only the selected side turns green when +425 beats fair value');
+			assert.match(winning, /\+456/, 'The visible market price stays raw');
+			assert.doesNotMatch(winning, /425/, 'The effective quote is used only for the comparison');
+			if (stackedOdds) {
+				assert.match(winning, new RegExp(`class="stacked-odds-line odds-positive" title="${under ? 'Under' : 'Over'}"`));
+			} else {
+				assert.match(winning, /style='color:#00ff66'>\+456<\/span>/);
+			}
+		}
+	}
+});
+
+test('Kalshi highlights handle fee adjustments crossing from positive to negative American odds', () => {
+	const context = loadOddsFormatter();
+	for (const stackedOdds of [false, true]) {
+		for (const under of [false, true]) {
+			const options = { odds: under ? '-108/+104' : '+104/-108', under, stackedOdds, prop: 'attd' };
+			assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: 100 })), 0,
+				'+104 becomes -104 after fees and cannot beat +100');
+			assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: -110 })), 1,
+				'-104 still beats -110');
+		}
+	}
+});
+
+test('Ordinary books retain EV highlighting and missing selections or fair values never turn green', () => {
+	const context = loadOddsFormatter();
+	for (const stackedOdds of [false, true]) {
+		for (const under of [false, true]) {
+			const options = { book: 'fd', odds: under ? '-567/+456' : '+456/-567', under, stackedOdds };
+			assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: 440 })), 1);
+			assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: 470 })), 0);
+			assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: 440, ev: -1 })), 0);
+			for (const fairVal of [undefined, null, '', '-', 'not a price', 0, NaN, Infinity]) {
+				assert.equal(greenPrices(formatOdds(context, { ...options, fairVal })), 0, `Invalid FV ${String(fairVal)}`);
+			}
+		}
+		for (const odds of ['+456', '+456/', '+456/-']) {
+			assert.equal(greenPrices(formatOdds(context, { odds, under: true, fairVal: 400, stackedOdds })), 0,
+				`Missing under cannot be highlighted: ${odds}`);
+		}
+		for (const odds of ['', '-', '/+456', '-/+456']) {
+			assert.equal(greenPrices(formatOdds(context, { odds, under: false, fairVal: 400, stackedOdds })), 0,
+				`Missing over cannot be highlighted: ${odds}`);
+		}
+		assert.equal(greenPrices(formatOdds(context, { book: 'fd', odds: '-100', fairVal: 100, stackedOdds })), 1,
+			'Both signs of even money have the same payout');
+	}
+});
+
+test('Odds highlighting follows the fee registry without enabling currently disabled commissions', () => {
+	const context = loadOddsFormatter();
+	for (const stackedOdds of [false, true]) {
+		assert.equal(greenPrices(formatOdds(context, { book: 'px', fairVal: 450, stackedOdds })), 1,
+			'PX keeps its current unregistered fee behavior');
+	}
+	vm.runInContext('BOOK_FEE_FUNCTIONS.px = addPXFee;', context);
+	for (const stackedOdds of [false, true]) {
+		assert.equal(greenPrices(formatOdds(context, { book: 'px', fairVal: 450, stackedOdds })), 0,
+			'A registered PX fee makes +456 effectively +446');
+		assert.equal(greenPrices(formatOdds(context, { book: 'px', fairVal: 440, stackedOdds })), 1);
+	}
+});
+
+test('Decimal display keeps raw odds while EV highlighting still uses effective American prices', () => {
+	const context = loadOddsFormatter('decimal');
+	for (const stackedOdds of [false, true]) {
+		for (const fairVal of [440, 400]) {
+			const output = formatOdds(context, { fairVal, stackedOdds });
+			assert.match(output, /5\.56/);
+			assert.match(output, /1\.18/);
+			assert.doesNotMatch(output, /5\.25|\+456/);
+			assert.equal(greenPrices(output), fairVal === 400 ? 1 : 0);
+		}
+	}
 });

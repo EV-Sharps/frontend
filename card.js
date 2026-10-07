@@ -25,7 +25,10 @@ function resolveOppRankValue(data) {
 }
 
 if (typeof tableReady !== "undefined") {
-	tableReady.then(() => initializeWatchlistTable(TABLE));
+	tableReady.then(() => {
+		initializeWatchlistTable(TABLE);
+		initializeCardBookOrder(TABLE);
+	});
 }
 
 let MASTER_DATA = [];
@@ -497,6 +500,7 @@ function createNewCard(rowData, uniqueId) {
 	card.appendChild(header);
 	
 	header.addEventListener('click', (e) => {
+		const rowData = card.playerLinesData;
 		if (e.target.closest('.watchlist-star')) return;
 		if (e.target.closest('.player-lines-trigger')) {
 			e.stopPropagation();
@@ -532,12 +536,62 @@ function createNewCard(rowData, uniqueId) {
 	return card;
 }
 
-function renderAllBooks(bookOdds, bestBook, links, liquidity) {
-	const orderedKeys = [
+const cardBookOrderTables = new WeakSet();
+let cardBookOrderOverride = null;
+
+function cardBookKeys(fields) {
+	return fields.filter(field => typeof field === 'string' && /^bookOdds[._]/.test(field))
+		.map(field => field.replace(/^bookOdds[._]/, ''));
+}
+
+function savedCardBookOrder() {
+	const order = CURR_USER?.metadata?.[`${PAGE === 'preseason' ? 'main' : PAGE}-order`];
+	return cardBookKeys(Array.isArray(order) ? order : []);
+}
+
+function tableCardBookOrder(table = TABLE) {
+	return cardBookKeys((table?.getColumns?.() || []).map(column => column.getField()));
+}
+
+function cardBookOrder(bookOdds) {
+	const defaults = [
 		'circa', 'fd', 'dk', 'mgm', 'espn', 'pn', 'br', 'b365',
 		'cz', 'fn', 'hr', 'bv', 'kambi', 'bol', 're', 'fl',
 		'nv', 'kal', 'px', 'poly'
 	];
+	const saved = savedCardBookOrder();
+	// A header drag takes effect immediately, until a different saved order arrives.
+	const moved = cardBookOrderOverride;
+	const preferred = moved && moved.table === TABLE && moved.saved === JSON.stringify(saved) ? moved.books : saved;
+	return [...new Set([...preferred, ...tableCardBookOrder(), ...defaults, ...Object.keys(bookOdds)])]
+		.filter(book => /^[a-z][a-z0-9_]*$/.test(book) && Object.hasOwn(bookOdds, book));
+}
+
+function refreshCardBookRows() {
+	document.querySelectorAll('.data-card').forEach(card => {
+		const row = card.playerLinesData;
+		const books = card.querySelector('.all-books-row');
+		if (!row || !books) return;
+		const scrollLeft = books.scrollLeft;
+		books.innerHTML = renderAllBooks(row.bookOdds, row.book, row.links, row.liquidity);
+		books.scrollLeft = scrollLeft;
+	});
+}
+
+function initializeCardBookOrder(table) {
+	if (!table || cardBookOrderTables.has(table)) return;
+	cardBookOrderTables.add(table);
+	table.on('columnMoved', () => {
+		cardBookOrderOverride = { table, saved: JSON.stringify(savedCardBookOrder()), books: tableCardBookOrder(table) };
+		refreshCardBookRows();
+	});
+	table.on('columnsLoaded', () => {
+		if (cardBookOrderOverride?.table === table) cardBookOrderOverride = null;
+		refreshCardBookRows();
+	});
+}
+
+function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 
 	let html = '';
 
@@ -549,7 +603,7 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 		? DEVIG.split(";")[0].split("+").filter(book => book && !DEVIG_EXCLUDED.includes(book))
 		: [];
 
-	for (const bookKey of orderedKeys) {
+	for (const bookKey of cardBookOrder(bookOdds)) {
 		const odds = bookOdds[bookKey];
 		if (odds !== null && odds !== undefined && odds !== "") {
 			const isBest = bookKey === bestBook ? 'is-best-book' : '';
@@ -564,7 +618,7 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 				: '';
 			html += `
 				<div class="book-odd-item ${isBest} ${isDevig}">
-					<img class="book-logo-small" src='logos/${bookKey}.png' alt='${bookKey}' title='${bookKey}' />
+					<img class="book-logo-small" src='logos/${['hr_oh', 'hr_az'].includes(bookKey) ? 'hr' : bookKey}.png' alt='${bookKey}' title='${bookKey}' />
 					<span style="display:flex;align-items:center;gap:2px;"><span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>${betslipLink}</span>
 					${liqHtml}
 				</div>

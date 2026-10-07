@@ -1061,6 +1061,7 @@ function applyOddsTableView(table = TABLE) {
 
 function initializeOddsTableView(table) {
 	if (!supportsOddsViews() || oddsTableViewStates.has(table)) return;
+	if (typeof initializeCardBookOrder === 'function') initializeCardBookOrder(table);
 	const state = { visibility: {}, widths: new Map(), syncing: false };
 	oddsTableViewStates.set(table, state);
 	let addingRecord = false;
@@ -1358,13 +1359,21 @@ const evOddsFormatter = function(cell, params = {}) {
 		link = resolveLink(data.links[book]) || null;
 	}
 
-	// Build odds display (highlight +EV side). Highlighting compares raw American values;
-	// only the rendered text is converted to decimal when the user has that preference set.
+	// Display the raw quote, but evaluate its selected side after the book's fees,
+	// using the same fee calculation and market context as Best Book.
 	const isPair = odds.includes("/");
 	const [oRaw, uRaw] = isPair ? odds.split("/") : [odds, null];
 	let res = isPair ? `${oddsDisplay(oRaw)}/${oddsDisplay(uRaw)}` : oddsDisplay(odds);
 	const idx = data.under ? 1 : 0;
-	if (data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0)) {
+	const feeFn = BOOK_FEE_FUNCTIONS[bookKey];
+	const bettingOdds = feeFn ? feeFn(odds, data) : odds;
+	const bettingPrice = Number(String(bettingOdds).split("/")[idx]);
+	const fairPrice = Number(data.fairVal);
+	const highlighted = data.ev && data.ev >= 0
+		&& Number.isFinite(bettingPrice) && Math.abs(bettingPrice) >= 100
+		&& Number.isFinite(fairPrice) && Math.abs(fairPrice) >= 100
+		&& americanToDecimal(bettingPrice) >= americanToDecimal(fairPrice);
+	if (highlighted) {
 		const cls = "#00ff66";
 		if (isPair) {
 			res = data.under
@@ -1376,7 +1385,6 @@ const evOddsFormatter = function(cell, params = {}) {
 	}
 
 	if (params.stackedOdds) {
-		const highlighted = data.ev && data.ev >= 0 && parseInt(odds.split("/")[idx]) >= parseInt(data.fairVal || 0);
 		const price = (raw, side) => {
 			const signed = Number(raw) > 0 && !String(raw).startsWith('+') ? `+${raw}` : raw;
 			const value = raw ? oddsDisplay(signed) : '-';
@@ -5921,6 +5929,61 @@ function syncTopFilterStates() {
 	if (devig) devig.title = text('devig-display-text');
 }
 
+// Reveal a control without letting scrollIntoView move the hidden page root.
+function revealHorizontalControl(container, control) {
+	if (!container || !control || !container.contains(control)) return;
+	const bounds = container.getBoundingClientRect();
+	const rect = control.getBoundingClientRect();
+	const left = bounds.left + container.clientLeft;
+	const right = left + container.clientWidth;
+	if (rect.left < left) container.scrollLeft += rect.left - left;
+	else if (rect.right > right) container.scrollLeft += Math.min(rect.left - left, rect.right - right);
+}
+
+function initOddsAppViewport() {
+	if (!document.querySelector('#app > main #table') ||
+		document.documentElement.classList.contains('odds-app')) return;
+	document.documentElement.classList.add('odds-app');
+	let frame = 0;
+	let retry;
+	const restoreRoot = () => {
+		frame = 0;
+		const viewport = window.visualViewport;
+		// Leave pinch zoom and the browser's keyboard/focus positioning alone.
+		if (viewport && Math.abs(viewport.scale - 1) > 0.01) return;
+		const active = document.activeElement;
+		if (active?.isContentEditable || (active?.matches('input, textarea') &&
+			!active.disabled && !active.readOnly &&
+			!['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'hidden'].includes(active.type))) return;
+		// overflow:hidden still permits focus and session restoration to scroll
+		// these ancestors, leaving the header unreachable by touch scrolling.
+		if (window.scrollX || window.scrollY || viewport?.offsetTop || viewport?.offsetLeft) {
+			window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+		}
+		for (const root of [document.documentElement, document.body]) {
+			if (root.scrollTop) root.scrollTop = 0;
+			if (root.scrollLeft) root.scrollLeft = 0;
+		}
+	};
+	const schedule = () => {
+		if (!frame) frame = requestAnimationFrame(restoreRoot);
+		clearTimeout(retry);
+		// iOS can finish restoring its viewport after pageshow/focusout fires.
+		retry = setTimeout(restoreRoot, 300);
+	};
+	window.addEventListener('pageshow', schedule);
+	window.addEventListener('resize', schedule);
+	window.addEventListener('scroll', schedule, { passive: true });
+	document.body.addEventListener('scroll', schedule, { passive: true });
+	document.addEventListener('focusout', schedule);
+	document.addEventListener('visibilitychange', () => {
+		if (!document.hidden) schedule();
+	});
+	window.visualViewport?.addEventListener('resize', schedule);
+	window.visualViewport?.addEventListener('scroll', schedule);
+	schedule();
+}
+
 function initTopFilterLayout() {
 	const header = document.getElementById('header');
 	const strip = document.getElementById('center-dropdown');
@@ -5989,7 +6052,7 @@ function initTopFilterLayout() {
 	strip.addEventListener('input', syncTopFilterStates);
 	strip.addEventListener('focusin', event => {
 		if (event.target.matches('.tf-input, .tf-action')) {
-			event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+			revealHorizontalControl(strip, event.target);
 		}
 	});
 	syncTopFilterStates();
@@ -6002,6 +6065,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		renderBookSelect();
 	}
 	initTopFilterLayout();
+	initOddsAppViewport();
 });
 
 // Devig keys are "+"-joined book lists (e.g. "circa+pn+kal"); the same set of
@@ -6041,7 +6105,7 @@ function syncDevPickerSelection({ reveal = false } = {}) {
 	});
 	if (active) {
 		devPickerSelectionKey = active.dataset.key;
-		if (reveal) active.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+		if (reveal) revealHorizontalControl(picker, active);
 	}
 }
 
@@ -6083,7 +6147,7 @@ async function initDevPicker(data) {
 				: Math.max(0, Math.min(buttons.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
 			event.preventDefault();
 			buttons[next]?.focus({ preventScroll: true });
-			buttons[next]?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+			revealHorizontalControl(picker, buttons[next]);
 		});
 		section.appendChild(picker);
 	}

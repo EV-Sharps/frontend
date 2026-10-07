@@ -87,6 +87,20 @@ body::before {
 	flex-direction: column;
 	height: 100vh;
 }
+/* Odds pages scroll inside the table/cards. Size their shell to the visible
+   browser area so mobile browser chrome cannot hide the navigation/footer. */
+html.odds-app, html.odds-app body {
+	height: 100vh;
+	height: 100dvh;
+}
+html.odds-app #app {
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+		env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+html.odds-app #app > main { min-height: 0; }
 .time-hdrs {
 	position: absolute;
 	bottom: 0;

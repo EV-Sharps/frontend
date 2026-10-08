@@ -5,6 +5,17 @@ let PAGE = "";
 let CURRENT_VIEW = "table";
 const MOBILE_BREAKPOINT = 600;
 let MOBILE = window.innerWidth <= MOBILE_BREAKPOINT;
+function getMobileDropdownAlignment() {
+	return typeof CURR_USER !== 'undefined' && CURR_USER?.metadata?.mobile_dropdown_alignment === 'left' ? 'left' : 'right';
+}
+function getDropdownLeft(anchorLeft, panelWidth, viewportLeft = 0, viewportWidth = window.innerWidth) {
+	const leftEdge = viewportLeft + 8;
+	const rightEdge = viewportLeft + viewportWidth - panelWidth - 8;
+	if (window.innerWidth <= MOBILE_BREAKPOINT) {
+		return getMobileDropdownAlignment() === 'left' ? leftEdge : Math.max(leftEdge, rightEdge);
+	}
+	return Math.max(leftEdge, Math.min(anchorLeft, rightEdge));
+}
 let ACCESS_TOKEN = "";
 const IS_PACKAGED_APP = window.EV_APP_CONFIG?.packaged === true;
 const IS_LOCALHOST = !IS_PACKAGED_APP && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
@@ -424,7 +435,7 @@ function buildPagePicker() {
 		panel.style.maxWidth = `${width - 16}px`;
 		panel.style.maxHeight = `${Math.min(680, Math.max(80, topOffset + height - top - 8))}px`;
 		panel.style.top = `${top}px`;
-		panel.style.left = `${window.innerWidth <= MOBILE_BREAKPOINT ? leftOffset + width - panel.offsetWidth - 8 : Math.max(leftOffset + 8, Math.min(rect.left, leftOffset + width - panel.offsetWidth - 8))}px`;
+		panel.style.left = `${getDropdownLeft(rect.left, panel.offsetWidth, leftOffset, width)}px`;
 	}
 	btn.addEventListener("click", event => {
 		event.stopPropagation();
@@ -5845,8 +5856,7 @@ function renderBookSelect(availableBooks = null) {
 		const position = () => {
 			const rect = button.getBoundingClientRect();
 			menu.style.top = `${rect.bottom + 6}px`;
-			menu.style.left = `${window.innerWidth <= MOBILE_BREAKPOINT ? Math.max(8, window.innerWidth - menu.offsetWidth - 8)
-				: Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+			menu.style.left = `${getDropdownLeft(rect.left, menu.offsetWidth)}px`;
 			menu.style.maxHeight = `${Math.max(80, window.innerHeight - rect.bottom - 14)}px`;
 		};
 		button.addEventListener("click", event => {
@@ -6621,9 +6631,7 @@ function positionFilterBuilderWindow() {
 	const available = Math.max(100, Math.min(bottom - top - 16, opensAbove ? above : below));
 	menu.style.setProperty('--fb-available-height', `${available}px`);
 	const width = menu.getBoundingClientRect().width;
-	const rightAligned = window.innerWidth <= MOBILE_BREAKPOINT;
-	const left = rightAligned ? window.innerWidth - width - 8 : Math.min(anchor.left, window.innerWidth - width - 8);
-	menu.style.left = `${Math.max(8, left)}px`;
+	menu.style.left = `${getDropdownLeft(anchor.left, width)}px`;
 	menu.style.right = 'auto';
 	menu.style.top = `${Math.max(top + 8, opensAbove ? anchor.top - menu.offsetHeight - 6 : Math.min(anchor.bottom + 6, bottom - menu.offsetHeight - 8))}px`;
 }

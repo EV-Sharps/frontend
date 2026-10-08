@@ -25,7 +25,7 @@ function showProfileState(state) {
 }
 
 function preferenceValues() {
-	return JSON.stringify(['state-select', 'odds-format-select', 'unit-size-input', 'profile-kelly-fraction', 'profile-kelly-custom'].map(id => document.getElementById(id).value));
+	return JSON.stringify(['state-select', 'odds-format-select', 'mobile-dropdown-alignment-select', 'unit-size-input', 'profile-kelly-fraction', 'profile-kelly-custom'].map(id => document.getElementById(id).value));
 }
 
 function updatePreferenceState() {
@@ -42,6 +42,7 @@ function loadProfilePreferences() {
 	document.getElementById('state-select').value = (metadata.state || '').toUpperCase();
 	document.getElementById('unit-size-input').value = metadata.unit_size || 100;
 	document.getElementById('odds-format-select').value = metadata.odds_format === 'decimal' ? 'decimal' : 'american';
+	document.getElementById('mobile-dropdown-alignment-select').value = getMobileDropdownAlignment();
 	const select = document.getElementById('profile-kelly-fraction');
 	select.innerHTML = kellyFractionOptions();
 	initKellyFractionFields(select, document.getElementById('profile-kelly-custom'), getProfileKellyFraction());
@@ -119,6 +120,7 @@ profileForm.addEventListener('submit', async event => {
 			...CURR_USER.metadata,
 			state: document.getElementById('state-select').value,
 			odds_format: document.getElementById('odds-format-select').value,
+			mobile_dropdown_alignment: document.getElementById('mobile-dropdown-alignment-select').value === 'left' ? 'left' : 'right',
 			unit_size: unitSize, kelly_fraction: fraction
 		};
 		savingPreferences = true;

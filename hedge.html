@@ -1,271 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="google" content="notranslate">
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Hedge | +EV Sharps</title>
-
-	<!--
-	<script type="text/javascript" src="test.js"></script>
-	-->
-
-	<script type="text/javascript" src="tabulator.min.js"></script>
-	<script type="text/javascript" src="peity-vanilla.min.js"></script>
-	<link href="tabulator.min.css" rel="stylesheet">
-	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
-	<script src="math.min.js"></script>
-	<style>
-		h1 {
-			display: none;
-		}
-		#sub-header {
-			flex-direction: row;
-		}
-		#header-container {
-			display: flex;
-			justify-content: space-around;
-			align-items: center;
-		}
-		.opp-cell .team-img {
-			margin-top: -1px;
-		}
-		@media (max-width: 600px) {
-			#sport-select {
-				min-width: 100px;
-			}
-			#header #donate {
-				position: relative;
-			}
-			#header-container {
-				display: none;
-			}
-			#sub-header {
-				margin: 0.5rem 0;
-			}
-			#table {
-				height: 95%;
-			}
-		}
-	</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bonus bet hedges | +EV Sharps</title>
+  <meta name="description" content="Compare bonus bet conversion by sportsbook, sized to your bonus amount and available hedge liquidity.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="hedge.css">
+  <link rel="icon" href="logos/icon2.png">
 </head>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FX06BZ5MRL"></script>
-<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'G-FX06BZ5MRL');
-</script>
-
-<body>
-	<div id="left-body" class="body">
-		<div id="header">
-			<div id="header-container">
-				<h1>+EV Sharps</h1>
-			</div>
-			<div id="sub-header">
-				<div class="dropdown">
-					<select id="page-select"></select>
-					<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="dropdown__arrow css-jbgpyq ehya2ln0" fill="#A4A4AA" stroke="#A4A4AA" stroke-width="0"><title>Right Arrow</title><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
-				</div>
-			</div>
-		</div>
-		<div id="table-container">
-			<div id="updated-container">
-				<div id="donate">
-					<div>Tip</div>
-					<div>
-						<a href="https://cash.app/$intersectinglines" target="_blank">
-							<img src="logos/cashapp.png" alt="cashapp" />
-						</a>
-						<a href="https://buymeacoffee.com/interlines" target="_blank">
-							<img src="logos/coffee.png" alt="coffee" />
-						</a>
-					</div>
-				</div>
-			</div>
-			<div id="table"></div>
-		</div>
-	</div>
-	<div id="right-body" class="body"></div>
-	<div id="tooltip"></div>
-	<script type="text/javascript" src="shared.js"></script>
-	<script type="text/javascript">
-		PAGE = "hedge";
-		let TABLE = null;
-		let HISTORICAL = {};
-		let RES = null;
-		let url = "";
-		const windowURL = new URL(window.location.href);
-		const URLParams = new URLSearchParams(windowURL.search);
-		let BOOK = URLParams.get("book");
-		let SPORT = URLParams.get("sport");
-		let PROP = URLParams.get("prop");
-		let LEADERS = URLParams.get("leaders");
-		let PLAYER = URLParams.get("player");
-		let BVP = URLParams.get("bvp");
-		let CUTOFF = URLParams.get("cutoff") || 10;
-		let YEAR = new Date();
-		YEAR = YEAR.getFullYear();
-
-		document.querySelectorAll("#donate img").forEach(btn => {
-			btn.addEventListener("click", () => {
-				const sport = btn.textContent;
-			});
-		});
-
-		window.addEventListener("resize", () => {
-			MOBILE = window.innerWidth <= 600;
-		});
-
-		fetchData();
-
-		function fetchData() {
-			let s = SPORT;
-			const url = `https://api.github.com/repos/dailyev/props/contents/hedge.json`;
-			fetch(url, {
-				headers: { "Accept": "application/vnd.github.v3.raw" }
-			}).then(response => response.json()).then(data => {
-				RES = data;
-				renderTable(data);
-				setTimeout(function() {
-
-				}, 200);
-			}).catch(err => console.log(err));
-		}
-
-		function renderTable(data) {
-			TABLE = new Tabulator("#table", {
-				tooltipsHeader: true,
-				layout: "fitDataFill",
-				responsiveLayout: MOBILE ? "" : "hide",
-				autoResize: true,
-				data: data,
-				initialSort: [
-				],
-				columnDefaults: {
-					vertAlign: "middle",
-					hozAlign: "center",
-					resizable: false,
-					headerSortStartingDir: "desc"
-				},
-				columns: [
-					//{title: "Confirmed", field: "confirmed", formatter:"tickCross", width: 30, hozAlign: "center"},
-					{title: "%", field: "conversion",  width: MOBILE ? 20 : 40, sorter: "number", formatter: percentFormatter},
-					{title: "Book", field: "book",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: evBookFormatter, formatterParams:{book:BOOK}, responsive: 0},
-					{title: "Sport", field: "sport", width: 30, formatter: sportFormatter},
-					{
-						title: "Player",
-						field: "player",
-						headerFilter: "input",
-						formatter: playerFormatter,
-						width: MOBILE ? 130 : 180,
-						hozAlign: "left",
-						responsive: 0,
-						frozen: MOBILE ? true : false
-					},
-					{title: "Hedge", field: "hedgeLine",  vertAlign:"bottom", width: MOBILE ? 65 : 70, formatter: hedgeBookFormatter, responsive: 0},
-					{title: "Bet", field: "hedge", width: 60, formatter: hedgeFormatter},
-				]
-			});
-
-			TABLE.on("rowClick", function(e, row) {
-				rowClick(row);
-			});
-		}
-
-		let hiddenCols = [];
-		function rowClick(row) {
-			if (SPORT.includes("futures")) {
-				return;
-			}
-			if (PROP == "k") {
-				return;
-			}
-
-			const sel = TABLE.getSelectedRows();
-			TABLE.deselectRow();
-			const cols = ["logs", "weather", "opp", "bvp"];
-			if (sel.length > 0 && sel[0] == row) {
-				//cols.forEach(col => TABLE.showColumn(col));
-				document.querySelector("#right-body").style.display = "none";
-				//document.querySelector("#table").style["max-width"] = "1400px";
-				document.querySelector("#left-body").style.width = "100%";
-				if (MOBILE) {
-					document.querySelector("#table").style.height = "initial";
-				}
-			} else {
-				//cols.forEach(col => TABLE.hideColumn(col));
-				//document.querySelector("#table").style["max-width"] = "720px";
-				row.select();
-				showPlayerInfo(row);
-				TABLE.scrollToRow(row, "center");
-				if (MOBILE) {
-					document.querySelector("#table").style.height = "200px";
-				}
-			}
-		}
-
-		function groupByGameStats() {
-			if (!TABLE.options.groupBy) {
-				TABLE.setGroupBy("game");
-				TABLE.setSort([
-					{column: "hitRate", dir: "desc"},
-					{column: "hitRateL10", dir: "desc"},
-					{column: "startSortable", dir: "asc"},
-				]);
-			} else {
-				TABLE.setGroupBy();
-				TABLE.setSort(TABLE.getSorters().filter(s => s.field != "startSortable"));
-			}
-		}
-
-		function toggleSummary() {
-
-		}
-
-		function filterConfirmed() {
-			//TABLE.setFilter("order", "!=", "-");
-			if (!IS_PITCHER) {
-				TABLE.setFilter("daily.book", "!=", undefined);
-				if (TABLE.getRows("active").length == 0) {
-					TABLE.setFilter("daily.book", "==", undefined);
-				}
-			}
-		}
-
-		function hoverPitcher() {
-			const cells = document.querySelectorAll(".opp-cell");
-			const rows = TABLE.getRows();
-			for (cell of cells) {
-				const label = cell.getAttribute("aria-label");
-				cell.addEventListener("mousemove", function(event) {
-					const el = document.querySelector("#tooltip");
-					el.style.left = event.pageX + 10 + "px";
-					el.style.top = event.pageY + 10 + "px";
-					el.style.display = "block";
-					el.innerText = label;
-				});
-
-				cell.addEventListener("mouseleave", function() {
-					document.querySelector("#tooltip").style.display = "none";
-				})
-			}
-		}
-
-		function pretty_() {
-			TABLE.getColumns().map(col => {
-				if (col.getField().includes("pitcherData") || col.getField().includes("savant")) {
-					col.hide()
-				}
-			});
-			//["oppRank", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
-			["order", "book", "oppRankPer6", "gameLines.tt", "gameLines.total", "gameLines.ml"].forEach(col => TABLE.hideColumn(col));
-		}
-	</script>
+<body class="hedge-page">
+  <header class="hedge-header">
+    <a class="brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Bonus bet hedges</option></select></div>
+      <a id="account-link" href="profile">Sign in</a>
+    </nav>
+  </header>
+  <main class="hedge-main">
+    <div class="hedge-intro">
+      <div><p class="eyebrow">BONUS BET / CASH CONVERSION</p><h1>Find a hedge that fits.</h1>
+        <p>Your best conversions at each bonus book, after fees and available liquidity. Change the amount to see which hedges can cover the full bet.</p>
+      </div>
+      <div class="hedge-refresh"><span id="updated">Waiting for prices</span><button type="button" id="refresh">Refresh prices</button><small>Refreshes every minute</small></div>
+    </div>
+    <form id="hedge-filters" class="hedge-panel" aria-label="Hedge filters">
+      <div class="filter-grid">
+        <label for="bonus-amount">Bonus amount ($)<input id="bonus-amount" type="number" min="1" max="100000" step="0.01" value="100" required inputmode="decimal"></label>
+        <label for="market-filter">Market<select id="market-filter"><option value="all">All three markets</option><option value="hr">MLB home runs</option><option value="atgs">NHL anytime goalscorers</option><option value="attd">NFL anytime touchdowns</option></select></label>
+        <label for="top-limit">Top plays per book<input id="top-limit" type="number" min="1" max="50" step="1" value="10" required inputmode="numeric"></label>
+        <label for="liquidity-filter">Hedge liquidity<select id="liquidity-filter"><option value="verified">Verified amount only</option><option value="any">Also include unknown limits</option></select></label>
+      </div>
+      <div class="filter-grid secondary-filters">
+        <details class="hedge-book-picker" id="bonus-picker"><summary><span>Bonus books</span><strong id="bonus-summary">All books</strong></summary><div class="book-menu"><button type="button" id="all-bonus-books">Use all books</button><div id="bonus-book-options"><p class="muted">Loading books...</p></div></div></details>
+        <details class="hedge-book-picker" id="hedge-picker"><summary><span>Hedge books</span><strong id="hedge-summary">All books</strong></summary><div class="book-menu"><button type="button" id="all-hedge-books">Use all books</button><div id="hedge-book-options"><p class="muted">Loading books...</p></div></div></details>
+        <label for="min-conversion">Minimum conversion (%)<input id="min-conversion" type="number" min="0" max="1000" step="0.1" value="0" required inputmode="decimal"></label>
+        <label for="max-cash">Maximum hedge cash ($)<input id="max-cash" type="number" min="0.01" max="10000000" step="0.01" placeholder="No cash cap" inputmode="decimal"></label>
+      </div>
+      <div class="filter-footer"><p class="muted">Bonus stake is <strong>not returned</strong>. Verified liquidity requires enough quoted capacity for your entire hedge.</p><button type="submit" class="primary">Find hedges</button></div>
+    </form>
+    <p id="request-status" class="hedge-notice" role="status" hidden></p>
+    <section id="access-panel" class="hedge-panel access-panel" hidden><h2 id="access-title">Sign in to find bonus bet hedges</h2><p id="access-message">Included with Analyst and Sharp.</p><a id="access-login" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a></section>
+    <section id="hedge-results" aria-label="Hedge rankings" aria-live="polite" aria-busy="false" hidden>
+      <p id="coverage-status" class="hedge-notice" hidden></p>
+      <p id="unknown-warning" class="hedge-notice" hidden>Unknown limits are included. Those hedges have no verified capacity; confirm the full amount is accepted before relying on the conversion.</p>
+      <div class="hedge-summary"><div><span>Bonus amount</span><strong id="summary-amount"></strong></div><div><span>Matching plays</span><strong id="summary-plays"></strong></div><div><span>Bonus books</span><strong id="summary-books"></strong></div><p id="ranking-note"></p></div>
+      <nav id="book-jumps" class="book-jumps" aria-label="Jump to bonus book"></nav>
+      <div id="empty-results" class="hedge-panel empty-results" hidden><h2>No hedges fit these filters</h2><p id="empty-message"></p></div>
+      <div id="book-groups"></div>
+      <p id="excluded-note" class="muted"></p>
+      <p id="coverage-detail" class="muted"></p>
+    </section>
+    <details class="hedge-panel methodology"><summary>How conversion and liquidity work</summary>
+      <p>Use the bonus on YES (1+ home run, goal or touchdown), then cash on the same player's NO outcome at another book. The bonus stake is not returned. Conversion is the smaller of the cash retained in the two outcomes, divided by your bonus amount.</p>
+      <p>Each play uses the best hedge that fits your amount, liquidity setting and cash cap. Rankings include the modeled hedge fees and stake rounding. A larger bonus can change the chosen hedge book or remove a play entirely.</p>
+      <p>Kalshi estimates use whole contracts and fees rounded up to cents: 3.5% &times; contracts &times; price &times; (1 &minus; price) for MLB home runs, and 7% for NFL and NHL. ProphetX includes a 2% fee on net winnings. Novig sizing reserves $0.50 because its quoted depth is rounded to whole dollars. Displayed prices are rounded, so actual order costs can differ. Fee sources: <a href="https://kalshi.com/docs/kalshi-fee-schedule.pdf" target="_blank" rel="noopener noreferrer">Kalshi</a> and <a href="https://www.prophetx.co/lobby/t-c/trading-fees" target="_blank" rel="noopener noreferrer">ProphetX</a>.</p>
+      <p>Verified capacity is the quoted stake available at the displayed price; it is not reserved for you. Missing limits stay unknown. Capacity is checked separately for each play; multiple plays may compete for the same funds or liquidity. No missing NO price is inferred.</p>
+      <p>Quotes more than 10 minutes old and games that have started are excluded. Timestamps reflect a book's feed update, not a guaranteed update of every selection. Check both betslips, fees, bonus eligibility and settlement or void rules before placing anything. Open-market links may start on YES; select NO for the hedge.</p>
+    </details>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="hedge.js"></script>
 </body>
 </html>

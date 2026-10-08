@@ -238,6 +238,7 @@ const PAGE_SECTIONS = [
 		key: "other", label: "🌐 Other",
 		pages: [
 			{ label: "🎯 Recommendations", value: "recommendations", tier: "sharp" },
+			{ label: "Bonus Bet Hedges", value: "hedge", tier: "analyst" },
 			{ label: "Line Movement / All Sports", value: "movement?sport=soccer", tier: "sharp" },
 			{ label: "⚾ NCAA", value: "baseball_ncaa", tier: "sharp" },
 			{ label: "⚽ Soccer", value: "soccer", tier: "analyst" },

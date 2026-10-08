@@ -70,3 +70,35 @@ test('NHL criteria combine with existing liquidity rules and disabled filters ha
     assert.equal(matches({ hitRate: { enabled: false, rows: [rate('L10', 50)] } }, {}), true);
     assert.equal(matches({}, {}), true);
 });
+
+test('ATGS team goals and TTOI minima include the boundary and combine with other rules', () => {
+    const config = { teamTotal: { enabled: true, min: '3' }, ttoi: { enabled: true, min: '20' } };
+    assert.equal(matches(config, { teamTotal: 3, avgTOI: 20 }), true);
+    assert.equal(matches(config, { teamTotal: '3.15', avgTOI: '20.5' }), true);
+    assert.equal(matches(config, { teamTotal: 2.99, avgTOI: 25 }), false);
+    assert.equal(matches(config, { teamTotal: 4, avgTOI: 19.99 }), false);
+    assert.equal(matches({ ...config, position: { enabled: true, value: 'C' } },
+        { teamTotal: 3, avgTOI: 20, pos: 'D' }), false);
+    assert.equal(matches({ teamTotal: { enabled: false, min: 3 }, ttoi: { enabled: false, min: 20 } }, {}), true);
+});
+
+test('ATGS minima reject missing or invalid data instead of treating it as zero', () => {
+    for (const [type, field] of [['teamTotal', 'teamTotal'], ['ttoi', 'avgTOI']]) {
+        const config = { [type]: { enabled: true, min: 0 } };
+        assert.equal(matches(config, { [field]: 0 }), true);
+        for (const value of [undefined, null, '', ' ', 'bad', NaN, Infinity, -Infinity]) {
+            assert.equal(matches(config, { [field]: value }), false, `${type}: ${String(value)}`);
+        }
+    }
+});
+
+test('ATGS minima use the requested defaults for empty thresholds and permit custom thresholds', () => {
+    for (const min of [undefined, null, '']) {
+        const config = { teamTotal: { enabled: true, min }, ttoi: { enabled: true, min } };
+        assert.equal(matches(config, { teamTotal: 3, avgTOI: 20 }), true);
+        assert.equal(matches(config, { teamTotal: 2.99, avgTOI: 20 }), false);
+        assert.equal(matches(config, { teamTotal: 3, avgTOI: 19.99 }), false);
+    }
+    assert.equal(matches({ teamTotal: { enabled: true, min: 2.5 }, ttoi: { enabled: true, min: 18.5 } },
+        { teamTotal: 2.5, avgTOI: 18.5 }), true);
+});

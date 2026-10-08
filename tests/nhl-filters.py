@@ -48,6 +48,11 @@ def payload_for(page_name):
     rows = [fixture(name, prop, pos, l10, lyr, liquidity,
                     under=page_name == "nhl" and name == "center match", handicap=handicap)
             for name, pos, l10, lyr, liquidity in specs]
+    if page_name == "atgs":
+        measurements = [(3, 20), (2.99, 21), (3.15, 19.99), (None, 21),
+                        (3.15, None), (3.4, 22), (3.15, 21), (3.15, 21)]
+        for row, (goals, toi) in zip(rows, measurements):
+            row.update(teamTotal=goals, avgTOI=toi)
     return {"data": rows, "props": [prop], "games": ["tor @ bos"], "updated": {},
             "times": {"tor @ bos": "2099-10-01T23:00:00Z"}}
 
@@ -56,9 +61,10 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Quiet, directory=str(ROOT
 Thread(target=server.serve_forever, daemon=True).start()
 try:
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = playwright.chromium.launch(headless=True, args=["--disable-logging", "--log-file=" +
+            str(Path(tempfile.gettempdir()) / "nhl-filters-browser.log")])
         for name, width, view in [("nhl", 1440, "compact"), ("nhl", 390, "mobile"),
-                                  ("atgs", 1440, "compact"), ("atgs2", 390, "mobile"),
+                                  ("atgs", 1440, "compact"), ("atgs", 390, "mobile"), ("atgs2", 390, "mobile"),
                                   ("fgs", 1440, "compact")]:
             page = browser.new_page(viewport={"width": width, "height": 900})
             page.set_default_timeout(5000)
@@ -114,6 +120,8 @@ try:
             all_names = sorted(row["player"] for row in payload["data"])
             expect(all_names)
             assert page.locator("#fb-hitrate-enabled").count() == 1
+            assert page.locator("#fb-teamtotal-enabled").count() == int(name == "atgs")
+            assert page.locator("#fb-ttoi-enabled").count() == int(name == "atgs")
             assert page.locator("#fb-position-value option").evaluate_all("options => options.map(option => option.value)") == ["C", "LW", "RW", "D", "G", "W", "F"]
             initial_prop = prop_state()
             rule()
@@ -195,10 +203,73 @@ try:
 
             clear()
             expect(all_names)
+            if name == "atgs":
+                menu()
+                for prefix, default in [("fb-teamtotal", "3"), ("fb-ttoi", "20")]:
+                    assert not page.locator(f"#{prefix}-enabled").is_checked()
+                    assert page.locator(f"#{prefix}-min").input_value() == default
+                # Older saved combinations do not activate newly added rules or erase defaults.
+                page.evaluate("applyFilterBuilderToDOM({position:{enabled:true,value:'C'}})")
+                for prefix, default in [("fb-teamtotal", "3"), ("fb-ttoi", "20")]:
+                    assert not page.locator(f"#{prefix}-enabled").is_checked()
+                    assert page.locator(f"#{prefix}-min").input_value() == default
+                clear()
+                for prefix in ["fb-teamtotal", "fb-ttoi"]:
+                    page.locator(f"#{prefix}-enabled").check()
+                assert names() == all_names, "ATGS minima applied before Apply"
+                apply()
+                matching = ["center match", "missing history", "zero goalie", "right wing"]
+                expect(matching)
+                assert page.locator("#filterbuilder-dd-button").inner_text() == "2 Filters"
+                page.evaluate("changeView(CURRENT_VIEW === 'mobile' ? 'compact' : 'mobile')")
+                expect(matching)
+                page.evaluate("changeView(CURRENT_VIEW === 'mobile' ? 'compact' : 'mobile')")
+                expect(matching)
+                page.evaluate("changeFilter()")
+                expect(matching)
+                menu()
+                page.locator("#fb-teamtotal-min").fill("3.3")
+                page.locator("#fb-ttoi-min").fill("21.5")
+                assert names() == sorted(matching), "Editing active minima applied before Apply"
+                apply()
+                expect(["missing history"])
+                page.evaluate("""() => {
+                    CURR_USER = {id:'fixture', metadata:{}};
+                    CURR_SESSION = {user:{id:'fixture'}};
+                    SB = {from:() => ({update:payload => ({eq:async () => {
+                        window.savedFilterMetadata = payload.metadata;
+                        return {error:null};
+                    }})})};
+                }""")
+                menu()
+                page.locator("#fb-name-input").fill("Goals and ice time")
+                page.locator('#filterbuilder-options button[onclick="saveFilterBuilder()"]').click()
+                page.wait_for_function("window.savedFilterMetadata?.['atgs-savedFilters']?.length === 1")
+                saved = page.evaluate("savedFilterMetadata['atgs-savedFilters'][0].config")
+                assert saved["teamTotal"] == {"enabled": True, "min": "3.3"}
+                assert saved["ttoi"] == {"enabled": True, "min": "21.5"}
+                clear()
+                expect(all_names)
+                assert not page.locator("#fb-teamtotal-enabled").is_checked()
+                assert not page.locator("#fb-ttoi-enabled").is_checked()
+                menu()
+                page.locator("#fb-saved-select").select_option("0")
+                expect(["missing history"])
+                assert page.locator("#fb-teamtotal-min").input_value() == "3.3"
+                assert page.locator("#fb-ttoi-min").input_value() == "21.5"
+                clear()
+                expect(all_names)
+                page.reload()
+                page.wait_for_function("document.getElementById('data-status')?.hidden === true")
+                expect(all_names)
+                assert page.locator("#filterbuilder-dd-button").inner_text() == "None"
+                assert page.locator("#fb-teamtotal-min").input_value() == "3"
+                assert page.locator("#fb-ttoi-min").input_value() == "20"
             assert prop_state() == initial_prop
             assert not errors, errors
             print(f"{name} {width}px: hit-rate and position UI, Apply/Clear, prop isolation passed" +
-                  ("; combined criteria, cards/table parity, zero/missing data, presets/reload passed" if name == "nhl" else ""))
+                  ("; combined criteria, cards/table parity, zero/missing data, presets/reload passed" if name == "nhl" else
+                   "; team goals/TTOI defaults, boundaries, missing data, drafts, view parity, presets/reload passed" if name == "atgs" else ""))
             page.close()
         browser.close()
 finally:

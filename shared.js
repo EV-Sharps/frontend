@@ -6355,6 +6355,8 @@ const FB_FIELDS = {
 	line:        { enabled: "fb-line-enabled", min: "fb-line-min", max: "fb-line-max" },
 	hrVsPitcher: { enabled: "fb-hrvspitcher-enabled" },
 	position:    { enabled: "fb-position-enabled", value: "fb-position-value" },
+	teamTotal:   { enabled: "fb-teamtotal-enabled", min: "fb-teamtotal-min" },
+	ttoi:        { enabled: "fb-ttoi-enabled", min: "fb-ttoi-min" },
 };
 
 const NHL_HIT_RATE_WINDOWS = { szn: 'Season', L5: 'Last 5', L10: 'Last 10', L20: 'Last 20', lyr: 'Last year', career: 'Career' };
@@ -6388,7 +6390,16 @@ function initNhlFilterUI() {
 				<option value="W">Wings (LW / RW)</option>
 				<option value="F">All forwards (C / LW / RW)</option>
 			</select>
-		</div><hr>`;
+		</div>
+		${PAGE === 'atgs' ? `
+			<label><input type="checkbox" id="fb-teamtotal-enabled"> Est. Team Goals</label>
+			<div class="fb-subrow">
+				<input id="fb-teamtotal-min" type="number" value="3" min="0" step="0.1" placeholder="Min">
+			</div>
+			<label><input type="checkbox" id="fb-ttoi-enabled"> TTOI (min)</label>
+			<div class="fb-subrow">
+				<input id="fb-ttoi-min" type="number" value="20" min="0" step="0.1" placeholder="Min">
+			</div>` : ''}<hr>`;
 	section.addEventListener('click', event => event.stopPropagation());
 	const enabled = section.querySelector('#fb-hitrate-enabled');
 	section.querySelector('.fb-add-btn').addEventListener('click', () => {
@@ -6464,12 +6475,13 @@ function initFilterBuilderWindow() {
 		liquidity.querySelector('.fb-stat-hint').textContent = "EV row follows the play's Over / Under side.";
 	}
 	const rules = section('Player & odds');
-	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position' };
+	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position', teamTotal: 'Est. Team Goals', ttoi: 'TTOI (min)' };
 	const labels = {
 		'fb-line-min': 'Minimum American odds', 'fb-line-max': 'Maximum American odds',
-		'fb-homerrate-min': 'Minimum hits', 'fb-homerrate-window': 'Recent hit period', 'fb-bpp-min': 'Minimum BPP percentage'
+		'fb-homerrate-min': 'Minimum hits', 'fb-homerrate-window': 'Recent hit period', 'fb-bpp-min': 'Minimum BPP percentage',
+		'fb-teamtotal-min': 'Minimum estimated team goals', 'fb-ttoi-min': 'Minimum L5 average time on ice in minutes'
 	};
-	['line', 'position', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
+	['line', 'position', 'teamTotal', 'ttoi', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
 		const checkbox = getControl(FB_FIELDS[type].enabled);
 		if (!checkbox) return;
 		const label = checkbox.closest('label');
@@ -6483,6 +6495,8 @@ function initFilterBuilderWindow() {
 		if (type === 'line') label.title = 'Filter the play\'s American odds';
 		if (type === 'due') label.title = 'Positive HR gap z-score';
 		if (type === 'hrVsPitcher') label.title = 'Has hit a home run against this pitcher';
+		if (type === 'teamTotal') label.title = 'Minimum estimated full-game goals for the player\'s team';
+		if (type === 'ttoi') label.title = 'Minimum L5 average time on ice per game, in minutes';
 		rule.appendChild(label);
 		if (fields) rule.appendChild(fields);
 		rules.appendChild(rule);
@@ -6815,6 +6829,12 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
+	for (const [type, field, defaultMin] of [['teamTotal', 'teamTotal', 3], ['ttoi', 'avgTOI', 20]]) {
+		if (!c[type]?.enabled) continue;
+		const min = numFrom(c[type].min) ?? defaultMin;
+		const value = numFrom(row[field]);
+		if (!Number.isFinite(value) || !Number.isFinite(min) || value < min) return false;
+	}
 	if (c.position?.enabled && !matchesNhlPosition(row.pos, c.position.value)) return false;
 	if (c.hitRate?.enabled) {
 		for (const rule of (c.hitRate.rows || [])) {

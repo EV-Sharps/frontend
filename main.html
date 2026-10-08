@@ -611,7 +611,7 @@
 			const src = `record_${sport}_main.js`;
 			const script = document.createElement('script');
 			script.src = src;
-			script.onload = () => initDevPicker(getTopDevigs(BOOK || "best"));
+			script.onload = () => tableReady.then(() => initDevPicker(getTopDevigs(BOOK || "best")));
 			script.onerror = () => console.warn(`No record file for ${src}`);
 			document.head.appendChild(script);
 		})();

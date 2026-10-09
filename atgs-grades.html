@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATGS grades | +EV Sharps</title>
+  <meta name="description" content="NHL anytime goalscorer grades against sharp books and liquid prediction markets, with historical and forward records.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="recommendations.css">
+  <link rel="stylesheet" href="atgs-grades.css?v=1">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="recommendations-page grades-page">
+  <header class="rec-header">
+    <a class="rec-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation"><div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>ATGS grades</option></select></div><a id="account-link" href="profile">Sign in</a></nav>
+  </header>
+  <main class="rec-main">
+    <div class="rec-intro">
+      <div><p class="rec-eyebrow">NHL ANYTIME GOALSCORER <span>ANALYST</span></p><h1>ATGS grades</h1><p class="rec-lede">Price strength against sharp books and prediction markets with verified depth. Track what each grade returns.</p><p class="ag-model-status">Initial rules / not yet validated</p></div>
+      <div class="rec-refresh"><span id="policy-label">Fixed grading policy</span><small id="generated">Loading published grades...</small><button id="refresh" type="button">Refresh grades <span aria-hidden="true">&#8635;</span></button></div>
+    </div>
+    <div id="request-status" class="rec-notice" role="status" hidden></div>
+    <section id="access-panel" class="rec-empty" hidden><h2 id="access-title">ATGS grades are included with Analyst and Sharp</h2><p id="access-message">Sign in with your account to view grades and records.</p><a id="access-login" class="rec-button" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a></section>
+    <section id="unpublished-panel" class="rec-empty" hidden><h2>No grade report has been published</h2><p>Current grades and historical records will appear here after the first report is published.</p></section>
+    <div id="report-content" aria-busy="true" hidden>
+      <div class="rec-summary ag-summary" aria-label="Current grade coverage"><div><strong id="current-count">0</strong><span>Fresh selections</span></div><div><strong id="graded-count">0</strong><span>Rated A–D</span></div><div><strong id="a-count">0</strong><span>Grade A</span></div><div><strong id="depth-amount">$100</strong><span>Required depth / side</span></div></div>
+      <div class="rec-filters ag-filters"><label>Betting book<select id="book-filter"><option value="best">Best available / one per player</option></select></label><label>Grade<select id="grade-filter"><option value="all">All grades</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="U">U / insufficient evidence</option></select></label><p id="scope-note">Best available selects the strongest grade, then EV score and price, once per player and game.</p></div>
+      <section class="ag-records" aria-labelledby="records-heading">
+        <div class="ag-section-heading"><div><h2 id="records-heading">Grade records</h2><p id="record-window" class="rec-caption"></p></div><div class="rec-filters"><label>Record source<select id="record-source"><option value="historical">Historical backtest</option><option value="prospective">Forward tracking</option></select></label><label id="split-label">Historical period<select id="split-filter"><option value="evaluation">Later evaluation</option><option value="development">Earlier period</option><option value="all">All history</option></select></label></div></div>
+        <p id="record-context" class="ag-context"></p>
+        <div id="records-empty" class="rec-empty" hidden><h3>No records in this view yet</h3><p id="records-empty-message">The report has not accumulated results for these filters.</p></div>
+        <div id="records-wrap" class="ag-records-wrap" role="region" aria-label="Grade performance records" tabindex="0"><table class="ag-records-table"><caption class="sr-only">Grade performance, one unit per selected bet after fees</caption><thead><tr><th scope="col">Grade</th><th scope="col">W–L</th><th scope="col">ROI</th><th scope="col">Profit</th><th scope="col">Settled / selected</th><th scope="col">Pending / ungraded</th><th scope="col">Days / games</th><th scope="col">ROI interval</th></tr></thead><tbody id="records"></tbody></table></div>
+        <p class="rec-caption">One unit per selection, after fees. Pushes return the stake. The 95% ROI interval resamples game dates and is shown only with at least 10 settled dates; it is not a profit forecast.</p>
+      </section>
+      <section class="ag-current" aria-labelledby="current-heading"><div class="ag-section-heading"><h2 id="current-heading">Current offers</h2><p id="current-caption" class="rec-caption" aria-live="polite"></p></div><div id="freshness-status" class="rec-notice" role="status" hidden></div><div id="offers-empty" class="rec-empty" hidden><h3>No fresh offers match</h3><p>Grades require a future game and quotes no older than 10 minutes. Refresh after current prices are published.</p></div><div id="offers-wrap" class="ag-offers-wrap" role="region" aria-label="Current ATGS grades" tabindex="0"><table class="ag-offers-table"><caption class="sr-only">Anytime goalscorer offer grades with sharp book and prediction market evidence</caption><thead><tr><th scope="col">Grade</th><th scope="col">Player / game</th><th scope="col">Betting book / odds</th><th scope="col">Sharp EV</th><th scope="col">Liquid market EV</th><th scope="col">Evidence</th></tr></thead><tbody id="offers"></tbody></table></div><button id="show-more" type="button" hidden>Show more</button></section>
+      <aside class="rec-sidebar ag-method"><details class="rec-method" open><summary><strong>How grades work</strong><span>Fixed before reviewing results</span></summary><div class="rec-method-body"><dl class="ag-legend"><div><dt><span class="ag-grade ag-A">A</span> Strong agreement</dt><dd>At least +5% EV against both reference families, with positive EV against every included reference.</dd></div><div><dt><span class="ag-grade ag-B">B</span> Positive agreement</dt><dd>At least +2% EV against both reference families.</dd></div><div><dt><span class="ag-grade ag-C">C</span> Small edge</dt><dd>Positive EV against both reference families, below the B threshold.</dd></div><div><dt><span class="ag-grade ag-D">D</span> No shared edge</dt><dd>At least one reference family has EV of zero or below.</dd></div><div><dt><span class="ag-grade ag-U">U</span> Insufficient evidence</dt><dd>Required sharp or liquid prediction market evidence is missing. Unknown depth never qualifies a prediction market.</dd></div></dl><p id="policy-detail"></p><p>These are grades of the quoted price, not the probability a player scores. High EV does not mean a high win rate. Grade boundaries remain fixed; a profitable historical A record is not guaranteed.</p><p id="archive-caveat">Historical archives may lack quote timestamps or depth. Their results are historical context, with missing required liquidity left unrated. Forward tracking freezes the first fully rateable A–D selection successfully published before the game. Unrated observations do not reserve a record; later results cannot change the original grade.</p></div></details><details class="rec-coverage"><summary>Coverage and report notes</summary><div id="coverage"></div></details></aside>
+    </div>
+  </main>
+  <footer class="rec-footer">Verify the current price, available stake and market at your book. Estimated EV and historical returns do not promise profit.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="shared.js"></script><script src="auth.js"></script><script src="atgs-grades.js?v=1"></script>
+</body>
+</html>

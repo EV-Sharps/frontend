@@ -19,7 +19,6 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   $('touchdown-close').setAttribute('aria-label', `Close ${scoreTitle.toLowerCase()}`);
   if (hockey) {
     $('tracker-tagline').textContent = 'EVERY GAME, ONE SCREEN';
-    $('tracker-lede').textContent = 'Scores. Shots. Goals. What just happened.';
   }
   $('tracker-footer-label').textContent = `${league} Game Tracker`;
   $('games').setAttribute('aria-label', `${league} games`);

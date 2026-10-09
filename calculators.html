@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="calculators-root">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculators | +EV Sharps</title>
+  <meta name="description" content="Use +EV Sharps calculators to balance arbitrage stakes, convert odds, and calculate winnings and payouts.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="calculators.css">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="calculators-page">
+  <header class="calc-header">
+    <a class="calc-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation">
+      <div class="select-wrapper"><label class="calc-sr-only" for="page-select">Page</label><select id="page-select"><option>Calculators</option></select></div>
+      <a id="account-link" href="profile.html">Sign in</a>
+    </nav>
+  </header>
+  <main class="calc-main">
+    <div class="calc-intro"><h1>Calculators</h1><p>Work out your stakes, payouts, and profit.</p></div>
+    <div class="calc-tabs" role="tablist" aria-label="Calculators">
+      <button type="button" id="calc-tab-arbitrage" role="tab" aria-controls="calc-arbitrage" aria-selected="true">Arbitrage</button>
+      <button type="button" id="calc-tab-odds-converter" role="tab" aria-controls="calc-odds-converter" aria-selected="false" tabindex="-1">Odds Converter</button>
+    </div>
+    <section id="calc-arbitrage" class="calc-section" role="tabpanel" aria-labelledby="calc-tab-arbitrage" tabindex="0">
+      <div class="calc-section-heading"><div><h2 id="arb-heading">Arbitrage</h2><p>Enter American odds and either stake to balance both payouts.</p></div></div>
+      <form id="arb-form" class="calc-card" novalidate aria-labelledby="arb-heading">
+        <div class="calc-card-top"><span>Two outcomes</span><button id="arb-reset" type="button">Reset</button></div>
+        <div class="calc-grid">
+          <span></span><span class="calc-side">Side 1</span><span class="calc-side">Side 2</span>
+          <span class="calc-row-label">Odds</span>
+          <input id="arb-odds-0" type="number" step="1" value="-150" required aria-label="Side 1 American odds" aria-describedby="arb-help arb-status">
+          <input id="arb-odds-1" type="number" step="1" value="200" required aria-label="Side 2 American odds" aria-describedby="arb-help arb-status">
+          <span class="calc-row-label">Stake</span>
+          <div class="calc-money"><span aria-hidden="true">$</span><input id="arb-stake-0" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" value="200" required aria-label="Side 1 stake in dollars" aria-describedby="arb-help arb-status"></div>
+          <div class="calc-money"><span aria-hidden="true">$</span><input id="arb-stake-1" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" value="111.11" required aria-label="Side 2 stake in dollars" aria-describedby="arb-help arb-status"></div>
+          <span class="calc-row-label">Payout</span>
+          <div class="calc-money calc-readonly"><span aria-hidden="true">$</span><input id="arb-payout-0" type="text" readonly aria-label="Side 1 payout in dollars" tabindex="-1"></div>
+          <div class="calc-money calc-readonly"><span aria-hidden="true">$</span><input id="arb-payout-1" type="text" readonly aria-label="Side 2 payout in dollars" tabindex="-1"></div>
+        </div>
+        <div class="calc-summary" aria-label="Arbitrage results">
+          <div><span>Total Stake</span><output id="arb-total-stake" for="arb-stake-0 arb-stake-1">&mdash;</output></div>
+          <div><span>Total Payout</span><output id="arb-total-payout" for="arb-odds-0 arb-odds-1 arb-stake-0 arb-stake-1">&mdash;</output></div>
+          <div class="calc-profit"><span>Profit <span id="arb-profit-percent"></span></span><output id="arb-profit" for="arb-odds-0 arb-odds-1 arb-stake-0 arb-stake-1">&mdash;</output></div>
+        </div>
+        <p id="arb-status" class="calc-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </form>
+      <p id="arb-help" class="calc-help">Change either stake; the other updates automatically.</p>
+      <details class="calc-explanation"><summary>How it works</summary><p>Use two opposing outcomes where exactly one bet wins. Payout includes the winning stake. Stakes are rounded to cents, and Total Payout uses the smaller of the two returns.</p><p>Profit is Total Payout minus Total Stake. The percentage is profit divided by payout. This calculator uses cash bets and excludes fees, pushes, and voids.</p></details>
+    </section>
+    <section id="calc-odds-converter" class="calc-section calc-converter" role="tabpanel" aria-labelledby="calc-tab-odds-converter" tabindex="0" hidden>
+      <div class="calc-section-heading"><h2 id="odds-heading">Odds Converter</h2><p>Enter your bet amount and any odds format. The rest fills in automatically.</p></div>
+      <form id="odds-form" class="calc-card" novalidate aria-labelledby="odds-heading">
+        <div class="calc-card-top"><span>Convert from any format</span><button id="odds-reset" type="button">Reset</button></div>
+        <div class="odds-grid">
+          <div class="odds-field odds-full"><label for="odds-amount">Bet Amount</label><div class="calc-money"><span aria-hidden="true">$</span><input id="odds-amount" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" value="100" required aria-describedby="odds-status"></div></div>
+          <div class="odds-field"><label for="odds-fraction">Fraction</label><input id="odds-fraction" type="number" min="0" step="any" inputmode="decimal" value="2.00" required aria-describedby="odds-help odds-status"></div>
+          <div class="odds-field"><label for="odds-decimal">Decimal</label><input id="odds-decimal" type="number" min="1" step="any" inputmode="decimal" value="3.00" required aria-describedby="odds-status"></div>
+          <div class="odds-field"><label for="odds-american">American</label><input id="odds-american" type="number" step="any" value="200" required aria-describedby="odds-status"></div>
+          <div class="odds-field"><label for="odds-probability">Probability %</label><div class="calc-percent"><input id="odds-probability" type="number" min="0" max="100" step="any" inputmode="decimal" value="33.33" required aria-describedby="odds-help odds-status"><span aria-hidden="true">%</span></div></div>
+          <div class="odds-field odds-half"><label for="odds-to-win">To Win</label><div class="calc-money calc-readonly"><span aria-hidden="true">$</span><input id="odds-to-win" type="text" readonly tabindex="-1"></div></div>
+          <div class="odds-field odds-half"><label for="odds-payout">Payout</label><div class="calc-money calc-readonly"><span aria-hidden="true">$</span><input id="odds-payout" type="text" readonly tabindex="-1"></div></div>
+        </div>
+        <p id="odds-status" class="calc-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      </form>
+      <p id="odds-help" class="calc-help">Fraction 2.00 means 2/1. Probability is implied by the odds. Payout includes your stake; fees are excluded.</p>
+    </section>
+    <noscript><p class="calc-noscript">Enable JavaScript to use the calculators.</p></noscript>
+  </main>
+  <footer class="calc-footer"><span>+EV Sharps</span><a href="/disclaimer">Terms</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+  <script src="auth.js"></script>
+  <script src="calculators-math.js"></script>
+  <script src="calculators.js"></script>
+</body>
+</html>

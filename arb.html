@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arbs &amp; middles | +EV Sharps</title>
+  <meta name="description" content="Compare cash arbitrage and player prop middles, sized to your budget with fees and quoted liquidity included.">
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="arb.css">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="arb-page">
+  <header class="arb-header">
+    <a class="brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation"><div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Arbs &amp; middles</option></select></div><a id="account-link" href="profile">Sign in</a></nav>
+  </header>
+  <main class="arb-main">
+    <div class="arb-intro">
+      <div><p class="eyebrow">CASH BETS / TWO SIDES</p><h1>Arbs &amp; middles</h1><p>Find opposing prices that fit your budget. Ranked by the lowest profit across all outcomes, after fees and stake rounding.</p></div>
+      <div class="arb-refresh"><span id="updated">Waiting for prices</span><button type="button" id="refresh">Refresh prices</button><small>Refreshes every minute</small></div>
+    </div>
+    <form id="arb-filters" class="arb-panel" aria-label="Arbitrage filters">
+      <div class="filter-grid">
+        <label for="amount">Total cash budget ($)<input id="amount" type="number" min="1" max="100000" step="0.01" value="100" required inputmode="decimal"></label>
+        <label for="type-filter">Opportunity<select id="type-filter"><option value="arb">Arbs</option><option value="middle">Middles</option><option value="all">Arbs &amp; middles</option></select></label>
+        <label for="sport-filter">Sport<select id="sport-filter"><option value="all">All sports</option><option value="mlb">MLB</option><option value="nfl">NFL</option><option value="nhl">NHL</option><option value="nba">NBA</option><option value="wnba">WNBA</option><option value="ncaaf">NCAAF</option></select></label>
+        <label for="prop-filter">Prop<select id="prop-filter"><option value="all">All props</option></select></label>
+      </div>
+      <div class="filter-grid secondary-filters">
+        <details class="book-picker" id="book-picker"><summary><span>Betting books</span><strong id="book-summary">All books</strong></summary><div class="book-menu"><button type="button" id="all-books">Use all books</button><div id="book-options"><p class="muted">Loading books...</p></div></div></details>
+        <label for="liquidity-filter">Exchange liquidity<select id="liquidity-filter"><option value="verified">Require quoted capacity</option><option value="any">Include unknown capacity</option></select></label>
+        <label for="limit">Top opportunities<input id="limit" type="number" min="1" max="200" step="1" value="50" required inputmode="numeric"></label>
+        <label for="min-profit">Minimum worst-case return (%)<input id="min-profit" type="number" min="-100" max="1000" step="0.1" value="0" required inputmode="decimal"></label>
+      </div>
+      <div class="filter-footer"><p class="muted">Your budget covers <strong>both cash bets and fees</strong>. Book selections apply to both legs. Sportsbook limits may be unknown.</p><button type="submit" class="primary">Find opportunities</button></div>
+    </form>
+    <p id="request-status" class="arb-notice" role="status" hidden></p>
+    <section id="access-panel" class="arb-panel access-panel" hidden><h2 id="access-title">Sign in to find arbs and middles</h2><p id="access-message">Live rankings are included with Sharp. The manual calculator is available to everyone.</p><a id="access-login" href="profile">Sign in</a><a id="access-pricing" href="pricing">View plans</a></section>
+    <section id="arb-results" aria-label="Arbitrage and middle rankings" aria-live="polite" aria-busy="false" hidden>
+      <p id="coverage-status" class="arb-notice" hidden></p>
+      <p id="middle-note" class="arb-notice" hidden>A middle can lose outside the overlap. Compare the worst-case return with the both-win profit; the latter is not guaranteed.</p>
+      <div class="result-summary"><div><span>Total budget</span><strong id="summary-amount"></strong></div><div><span>Matching opportunities</span><strong id="summary-plays"></strong></div><p id="ranking-note"></p></div>
+      <div id="empty-results" class="arb-panel empty-results" hidden><h2>No opportunities fit these filters</h2><p id="empty-message"></p></div>
+      <div id="plays"></div>
+      <p id="excluded-note" class="muted"></p><p id="coverage-detail" class="muted"></p>
+    </section>
+    <details class="arb-panel manual-panel" id="manual-panel">
+      <summary>Calculate your own two prices <span>Including games outside the current feeds</span></summary>
+      <p class="muted">Enter two cash sportsbook bets on the same player's stat in the same game. For whole-number stats, <strong>3+ touchdowns is over 2.5</strong>. These are manual inputs, not live offers; this calculator excludes exchange fees.</p>
+      <form id="manual-form">
+        <div class="manual-top"><label for="manual-amount">Total cash budget ($)<input id="manual-amount" type="number" min="1" max="100000" step="0.01" value="100" required inputmode="decimal"></label><div class="example-buttons"><button type="button" id="example-arb">Load +240 / −120 example</button><button type="button" id="example-middle">Load over 40 / under 45</button></div></div>
+        <div class="manual-legs"><fieldset><legend>Over bet</legend><label for="over-line">Over line<input id="over-line" type="number" min="-100000" max="100000" step="0.5" value="2.5" required inputmode="decimal"></label><label for="over-odds">American odds<input id="over-odds" type="number" min="-100000" max="100000" step="1" value="240" required inputmode="numeric"></label></fieldset><fieldset><legend>Under bet</legend><label for="under-line">Under line<input id="under-line" type="number" min="-100000" max="100000" step="0.5" value="2.5" required inputmode="decimal"></label><label for="under-odds">American odds<input id="under-odds" type="number" min="-100000" max="100000" step="1" value="-120" required inputmode="numeric"></label></fieldset></div>
+        <div class="filter-footer"><p class="muted">Uses whole-number stat outcomes and includes pushes on integer lines. Both bets must have matching settlement and void rules.</p><button class="primary" type="submit" id="calculate">Calculate stakes</button></div>
+      </form>
+      <p id="manual-status" class="arb-notice" role="status" hidden></p><div id="manual-result" hidden></div>
+    </details>
+    <details class="arb-panel methodology"><summary>How profit, middles and capacity work</summary>
+      <p>An arb has positive net profit in every modeled outcome. Cash stakes are returned on winning bets. The ranking uses the lowest outcome profit divided by the total cash used, including applicable fees. Unused budget stays in your balance.</p>
+      <p>A middle uses different lines on the same stat. Over 40 and under 45 both win at 41–44; a result of 40 or 45 can push one side. All outcomes, including pushes, count toward the worst-case return. The both-win profit is a conditional payout, not an expected return.</p>
+      <p>Quoted exchange liquidity must cover each order when “Require quoted capacity” is selected. Ordinary sportsbook limits can be unknown and need checking in the betslip. Prices and capacity are not reserved; multiple opportunities may use the same funds or liquidity.</p>
+      <p>Quotes older than 10 minutes and games that have started are excluded. Feed timestamps do not guarantee every individual selection was just updated. Open-market links may start on a different side or line; check the exact selections and matching settlement rules on both betslips.</p>
+    </details>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="shared.js"></script><script src="auth.js"></script><script src="arb.js"></script>
+</body>
+</html>

@@ -228,6 +228,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏒 Main", value: "main?sport=nhl", tier: "sharp" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl", tier: "free" },
 			{ label: "ATGS Parlays", value: "parlays?market=atgs", tier: "analyst" },
+			{ label: "ATGS Grades", value: "atgs-grades", tier: "analyst" },
 			{ label: "Longshots", value: "longshots", tier: "sharp" },
 			{ label: "Devig Results", value: "devig-results", tier: "sharp" },
 			{ label: "Line Movement", value: "movement?sport=nhl", tier: "sharp" },
@@ -239,6 +240,8 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "🎯 Recommendations", value: "recommendations", tier: "sharp" },
 			{ label: "Bonus Bet Hedges", value: "hedge", tier: "analyst" },
+			{ label: "Arbs & Middles", value: "arb", tier: "sharp" },
+			{ label: "Calculators", value: "calculators", tier: "free" },
 			{ label: "Line Movement / All Sports", value: "movement?sport=soccer", tier: "sharp" },
 			{ label: "⚾ NCAA", value: "baseball_ncaa", tier: "sharp" },
 			{ label: "⚽ Soccer", value: "soccer", tier: "analyst" },
@@ -391,7 +394,7 @@ function buildPagePicker() {
 		if (activeTab === "account") return "Your account";
 		if (["live", "nfl_tracker", "feed"].includes(route)) return "Live & tracking";
 		if (["recap", "main_recap", "analysis", "bets"].includes(route)) return "Results";
-		if (["bvp", "matchups", "stats", "barrels", "preview", "preview_k", "pitcher_mix", "top_pitches", "trends", "movement", "longshots", "kotc", "recommendations", "heatmap", "cheat", "outliers"].includes(route)) return "Research & tools";
+		if (["bvp", "matchups", "stats", "barrels", "preview", "preview_k", "pitcher_mix", "top_pitches", "trends", "movement", "longshots", "kotc", "recommendations", "heatmap", "cheat", "outliers", "atgs-grades", "arb", "calculators"].includes(route)) return "Research & tools";
 		return "Markets";
 	}
 	function renderGrid(key = activeTab) {

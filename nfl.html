@@ -486,6 +486,10 @@
 								<label for="custom_player">Player</label>
 							</div>
 							<div>
+								<input id="custom_teamTotal" type="checkbox">
+								<label for="custom_teamTotal">Est. Team Pts</label>
+							</div>
+							<div>
 								<input id="custom_logs" type="checkbox">
 								<label for="custom_logs">Game Logs</label>
 							</div>
@@ -717,7 +721,7 @@
 		}, refreshDataTimestamps);
 
 		const NFL_DEFAULT_COL_ORDER = [
-			'ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', ...NflDefense.keys, 'oppRank',
+			'ev', 'book', 'player', 'teamTotal', 'handicap', 'prop', 'fairVal', 'implied', 'kelly', 'opp', ...NflDefense.keys, 'oppRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px',
@@ -737,6 +741,7 @@
 					title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140,
 					formatterParams:{ sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true
 				}] },
+				{ key: 'teamTotal', label: 'Est. Team Pts', cols: [getFootballTeamTotalColumn()] },
 				{ key: 'handicap', label: 'Line', cols: [{
 					title: "Line", field: "handicap",
 					formatter: function(cell) {

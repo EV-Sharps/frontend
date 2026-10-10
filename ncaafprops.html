@@ -404,6 +404,10 @@
 								<label for="custom_player">Player</label>
 							</div>
 							<div>
+								<input id="custom_teamTotal" type="checkbox">
+								<label for="custom_teamTotal">Est. Team Pts</label>
+							</div>
+							<div>
 								<input id="custom_book" type="checkbox" checked disabled>
 								<label for="custom_book">EV Book</label>
 							</div>
@@ -599,6 +603,7 @@
 						responsive: 0,
 						frozen: true
 					},
+					getFootballTeamTotalColumn(),
 					{
 						title: "Line",
 						field: "handicap",

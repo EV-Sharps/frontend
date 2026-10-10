@@ -2917,6 +2917,14 @@ function getNhlTeamTotalColumn() {
 	};
 }
 
+function getFootballTeamTotalColumn() {
+	return {
+		...getNhlTeamTotalColumn(),
+		title: "Est. Team<br>Pts",
+		headerTooltip: "Estimated full-game points for the player's team, derived from the main game total and spread at each book. The median across books is shown."
+	};
+}
+
 const goalieFormatter = function(cell, params, rendered) {
 	const data = cell.getRow().getData();
 	let goalie = cell.getValue();
@@ -3624,13 +3632,13 @@ const DEFAULT_SHARED = [
 ]
 const DEFAULT_FIELDS = {
 	dingers: [...DEFAULT_SHARED],
-	tds: [...DEFAULT_SHARED, "oppRank", "snaps"],
-	ftd: [...DEFAULT_SHARED, "oppRank", "snaps"],
-	tds2: [...DEFAULT_SHARED, "oppRank", "snaps"],
+	tds: [...DEFAULT_SHARED, "oppRank", "snaps", "teamTotal"],
+	ftd: [...DEFAULT_SHARED, "oppRank", "snaps", "teamTotal"],
+	tds2: [...DEFAULT_SHARED, "oppRank", "snaps", "teamTotal"],
 	atgs: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine"],
 	atgs2: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine"],
 	fgs: [...DEFAULT_SHARED, "hitRateCareer", "hitRates_bvt", "oppRank", "dvpRank", "goalie", "ppLine", "teamTotal"],
-	nfl: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", "oppRank", "snaps", ...getPropHitRateColumnItems().map(item => item.key)],
+	nfl: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "teamTotal", "handicap", "oppRank", "snaps", ...getPropHitRateColumnItems().map(item => item.key)],
 	nhl: [...DEFAULT_SHARED, "hitRates_bvt", "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", ...getPropHitRateColumnItems().map(item => item.key)],
@@ -3785,7 +3793,7 @@ function showHideUserTable(loaded) {
 		if (PAGE === "ncaaf" && !CURR_USER.metadata['ncaaf-carries-version'] && allowed.has('logs')) {
 			allowed.add('carries');
 		}
-		if (["nhl", "atgs", "fgs"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-team-total-version`]) {
+		if (["nhl", "atgs", "fgs", "nfl", "tds", "tds2", "ftd", "ncaaf", "ncaafprops"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-team-total-version`]) {
 			allowed.add("teamTotal");
 		}
 
@@ -6383,6 +6391,23 @@ const FB_STAT_TYPES = {
 	hitRate:     { enabledId: "fb-hitrate-enabled", rowsId: "fb-hitrate-rows", fields: () => Object.keys(NHL_HIT_RATE_WINDOWS), labels: NHL_HIT_RATE_WINDOWS },
 };
 
+function isFootballTeamTotalPage() {
+	return typeof PAGE !== 'undefined' && ['nfl', 'tds', 'tds2', 'ftd', 'ncaaf', 'ncaafprops'].includes(PAGE);
+}
+
+function initFootballTeamTotalFilterUI() {
+	if (!isFootballTeamTotalPage() || document.getElementById('fb-teamtotal-enabled')) return;
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu) return;
+	const section = document.createElement('div');
+	section.innerHTML = `
+		<label><input type="checkbox" id="fb-teamtotal-enabled"> Est. Team Pts</label>
+		<div class="fb-subrow">
+			<input id="fb-teamtotal-min" type="number" value="24" min="0" step="0.25" placeholder="Min">
+		</div>`;
+	menu.prepend(section);
+}
+
 function initNhlFilterUI() {
 	if (!["nhl", "atgs", "atgs2", "fgs"].includes(PAGE) || document.getElementById('fb-hitrate-enabled')) return;
 	const menu = document.getElementById('filterbuilder-options');
@@ -6489,11 +6514,11 @@ function initFilterBuilderWindow() {
 		liquidity.querySelector('.fb-stat-hint').textContent = "EV row follows the play's Over / Under side.";
 	}
 	const rules = section('Player & odds');
-	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position', teamTotal: 'Est. Team Goals', ttoi: 'TTOI (min)' };
+	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position', teamTotal: isFootballTeamTotalPage() ? 'Est. Team Pts' : 'Est. Team Goals', ttoi: 'TTOI (min)' };
 	const labels = {
 		'fb-line-min': 'Minimum American odds', 'fb-line-max': 'Maximum American odds',
 		'fb-homerrate-min': 'Minimum hits', 'fb-homerrate-window': 'Recent hit period', 'fb-bpp-min': 'Minimum BPP percentage',
-		'fb-teamtotal-min': 'Minimum estimated team goals', 'fb-ttoi-min': 'Minimum L5 average time on ice in minutes'
+		'fb-teamtotal-min': isFootballTeamTotalPage() ? 'Minimum estimated team points' : 'Minimum estimated team goals', 'fb-ttoi-min': 'Minimum L5 average time on ice in minutes'
 	};
 	['line', 'position', 'teamTotal', 'ttoi', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
 		const checkbox = getControl(FB_FIELDS[type].enabled);
@@ -6509,7 +6534,7 @@ function initFilterBuilderWindow() {
 		if (type === 'line') label.title = 'Filter the play\'s American odds';
 		if (type === 'due') label.title = 'Positive HR gap z-score';
 		if (type === 'hrVsPitcher') label.title = 'Has hit a home run against this pitcher';
-		if (type === 'teamTotal') label.title = 'Minimum estimated full-game goals for the player\'s team';
+		if (type === 'teamTotal') label.title = `Minimum estimated full-game ${isFootballTeamTotalPage() ? 'points' : 'goals'} for the player's team`;
 		if (type === 'ttoi') label.title = 'Minimum L5 average time on ice per game, in minutes';
 		rule.appendChild(label);
 		if (fields) rule.appendChild(fields);
@@ -6841,7 +6866,7 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row) {
 	const c = FB_CONFIG;
-	for (const [type, field, defaultMin] of [['teamTotal', 'teamTotal', 3], ['ttoi', 'avgTOI', 20]]) {
+	for (const [type, field, defaultMin] of [['teamTotal', 'teamTotal', isFootballTeamTotalPage() ? 24 : 3], ['ttoi', 'avgTOI', 20]]) {
 		if (!c[type]?.enabled) continue;
 		const min = numFrom(c[type].min) ?? defaultMin;
 		const value = numFrom(row[field]);
@@ -7022,6 +7047,7 @@ function initFilterBuilderUI() {
 	dd.dataset.filterBuilderInit = "1";
 	initLiquidityFilterUI();
 	initNhlFilterUI();
+	initFootballTeamTotalFilterUI();
 	initFilterBuilderWindow();
 
 	// filter.js has a document-level "change" listener that treats any checkbox inside any

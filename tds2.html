@@ -453,6 +453,10 @@
 								<label for="custom_player">Player</label>
 							</div>
 							<div>
+								<input id="custom_teamTotal" type="checkbox">
+								<label for="custom_teamTotal">Est. Team Pts</label>
+							</div>
+							<div>
 								<input id="custom_book" type="checkbox" checked disabled>
 								<label for="custom_book">EV Book</label>
 							</div>
@@ -677,7 +681,7 @@
 
 		let loaded = false;
 		const TDS2_DEFAULT_COL_ORDER = [
-			'ev', 'outlier', 'book', 'player', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
+			'ev', 'outlier', 'book', 'player', 'teamTotal', 'prop', 'fairVal', 'implied', 'kelly', 'opp', 'oppRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm', 'bookOdds_espn',
 			'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr', 'bookOdds_bv', 'bookOdds_re',
 			'bookOdds_fl', 'bookOdds_kambi', 'bookOdds_bol', 'bookOdds_px', 'bookOdds_nv', 'bookOdds_poly',
@@ -713,6 +717,7 @@
 					title: "Player", field: "player", headerFilter: "input", formatter: playerFormatter, width: MOBILE ? 100 : 140,
 					formatterParams:{ sport: SPORT, noProp: true, fullName: true }, hozAlign: "left", responsive: 0, frozen: true
 				}] },
+				{ key: 'teamTotal', label: 'Est. Team Pts', cols: [getFootballTeamTotalColumn()] },
 				{ key: 'prop', label: 'Prop', cols: [{
 					title: "Prop", field: "prop",
 					formatter: function(cell) {
@@ -841,7 +846,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`ev`, "implied", "prop", "kelly", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "implied", "prop", "kelly", "player", "teamTotal", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.pn"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 
@@ -849,7 +854,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "opp"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "teamTotal", "book", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "opp"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}

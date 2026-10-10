@@ -205,7 +205,7 @@ async function saveTableSettings() {
 	const fields = {};
 	fields[PAGE] = [];
 	if (document.getElementById('custom_handicap')) fields[`${PAGE}-line-column-version`] = 1;
-	if (["nhl", "atgs", "fgs"].includes(PAGE)) fields[`${PAGE}-team-total-version`] = 1;
+	if (["nhl", "atgs", "fgs", "nfl", "tds", "tds2", "ftd", "ncaaf", "ncaafprops"].includes(PAGE)) fields[`${PAGE}-team-total-version`] = 1;
 	if (document.getElementById('custom_roiRecord')) fields[`${PAGE}-record-column-version`] = 1;
 	if (document.getElementById('custom_openingPrice')) fields[`${PAGE}-opening-column-version`] = 1;
 	if (["ncaaf", "main"].includes(PAGE)) fields[`${PAGE}-columns-version`] = 1;

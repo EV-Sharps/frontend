@@ -52,19 +52,26 @@
       <section id="results" class="panel" aria-live="polite" hidden>
         <div class="section-heading"><div><p class="eyebrow">BEST ESTIMATED PRICE</p><h2 id="best-parlay-price"></h2></div><span id="price-count"></span></div>
         <p id="result-selections"></p>
-        <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, best first" tabindex="0">
-          <table><caption id="price-caption" class="sr-only">Estimated parlay prices from each book's current homer odds</caption><thead id="price-head"></thead><tbody id="price-rows"></tbody></table>
-        </div>
-        <p class="muted">Totals multiply each book's current prices for every selected leg. EV compares each total with Circa and Pinnacle fair odds using your selected devig method. Final betslip prices may differ.</p>
-        <div class="results">
-          <div class="section-heading"><div><p class="eyebrow">REFERENCE COMPARISON</p><h2>Fair parlay odds</h2></div><span id="result-method"></span></div>
-          <div class="table-wrap" role="region" aria-label="Fair parlay odds by reference book" tabindex="0">
-            <table><caption id="reference-caption" class="sr-only">Devigged homer parlay prices</caption><thead id="reference-head"></thead><tbody id="reference-rows"></tbody></table>
+        <div class="book-prices-heading"><h3>Parlay odds by book</h3><span>Highest odds first</span></div>
+        <ol id="parlay-book-prices" class="parlay-book-grid" aria-label="Estimated parlay odds by book, highest first"></ol>
+        <p id="book-prices-empty" class="muted" hidden></p>
+        <p class="muted book-prices-help">Estimated from each book's prices for all selected legs. Final betslip odds may differ.</p>
+        <details id="parlay-breakdown" class="parlay-breakdown">
+          <summary>Leg prices &amp; fair odds</summary>
+          <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, best first" tabindex="0">
+            <table><caption id="price-caption" class="sr-only">Estimated parlay prices from each book's current homer odds</caption><thead id="price-head"></thead><tbody id="price-rows"></tbody></table>
           </div>
-          <button type="button" id="show-unavailable" aria-expanded="false" aria-controls="reference-rows" hidden>Show unavailable books</button>
-          <p id="result-status" class="muted"></p>
-          <p class="muted">Each row uses only that book's prices for every leg. Circa and Pinnacle are references, not betting destinations.</p>
-        </div>
+          <p class="muted">Totals multiply each book's current prices for every selected leg. EV compares each total with Circa and Pinnacle fair odds using your selected devig method.</p>
+          <div class="results">
+            <div class="section-heading"><div><p class="eyebrow">REFERENCE COMPARISON</p><h2>Fair parlay odds</h2></div><span id="result-method"></span></div>
+            <div class="table-wrap" role="region" aria-label="Fair parlay odds by reference book" tabindex="0">
+              <table><caption id="reference-caption" class="sr-only">Devigged homer parlay prices</caption><thead id="reference-head"></thead><tbody id="reference-rows"></tbody></table>
+            </div>
+            <button type="button" id="show-unavailable" aria-expanded="false" aria-controls="reference-rows" hidden>Show unavailable books</button>
+            <p id="result-status" class="muted"></p>
+            <p class="muted">Each row uses only that book's prices for every leg. Circa and Pinnacle are references, not betting destinations.</p>
+          </div>
+        </details>
       </section>
       <details class="panel methodology"><summary>How the fair price is calculated</summary>
         <p>Estimated book prices multiply the decimal odds for all two to four legs at that book, then convert the total to American odds. The highest total appears first. A book needs a current over price for every leg; prices from different books are never mixed into one parlay.</p>

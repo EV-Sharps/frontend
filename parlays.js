@@ -62,6 +62,7 @@
     $('results').hidden = true;
     $('reference-rows').replaceChildren();
     $('price-rows').replaceChildren();
+    $('parlay-book-prices').replaceChildren();
   }
   function selectionError() {
     const legs = selectedLegs();
@@ -124,7 +125,8 @@
     return validPrice(quote?.over) && ['available', 'Missing under price'].includes(priceStatus(quote, maxAge)) ? Number(quote.over) : null;
   }
   function parlayPrices(data) {
-    if (Array.isArray(data.prices)) return data.prices;
+    const highestFirst = (a, b) => b.decimal - a.decimal || a.name.localeCompare(b.name);
+    if (Array.isArray(data.prices)) return [...data.prices].sort(highestFirst);
     // Older API responses still include every book's leg quotes, including over-only markets.
     return (data.references || []).flatMap(ref => {
       if (referenceBooks.has(ref.book) || ref.legs?.length !== data.legs.length) return [];
@@ -135,7 +137,7 @@
       return [{ book: ref.book, name: ref.name, decimal: combined,
         odds: combined >= 2 ? (combined - 1) * 100 : -100 / (combined - 1),
         legs: legs.map((leg, index) => ({ id: leg.id, player: leg.player, over: overs[index], updated_at: leg.updated_at })) }];
-    }).sort((a, b) => b.decimal - a.decimal || a.name.localeCompare(b.name));
+    }).sort(highestFirst);
   }
   function averageOver(leg, books) {
     const prices = books.map(book => currentOver(leg.quotes?.[book])).filter(price => price !== null);
@@ -271,6 +273,15 @@
     });
     $('best-parlay-price').innerHTML = best ? `${esc(odds(best.odds))} <span>${prices.filter(price => price.decimal === best.decimal).map(price => `${bookLogo(price.book)} ${esc(price.name)}`).join(' / ')}</span>` : 'No complete book prices';
     $('price-count').textContent = `${count} legs / ${prices.length} book${prices.length === 1 ? '' : 's'}`;
+    $('parlay-book-prices').innerHTML = prices.map(price => {
+      const isBest = price.decimal === best.decimal;
+      return `<li class="parlay-book-card${isBest ? ' is-best' : ''}" data-price-tile="${esc(price.book)}">
+        <span class="parlay-book-name">${bookLogo(price.book)}<span>${esc(price.name)}</span></span>
+        <strong class="parlay-book-odds">${esc(odds(price.odds))}</strong>
+        ${isBest ? '<span class="book-price-best">Best price</span>' : '<span class="book-price-note">Est. parlay</span>'}
+      </li>`;
+    }).join('');
+    notice('book-prices-empty', prices.length ? '' : `No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.`);
     $('price-head').innerHTML = `<tr><th scope="col">Book</th><th scope="col">Est. parlay odds</th>${benchmarks.map(ref => `<th scope="col" data-ev-reference="${ref.book}"><span class="book-name">${bookLogo(ref.book)}${ref.name} EV</span><small>Fair ${ref.probability === null ? '-' : esc(odds(ref.fairOdds))}</small></th>`).join('')}${data.legs.map(leg => `<th scope="col">${esc(title(leg.player))}</th>`).join('')}</tr>`;
     $('price-rows').innerHTML = prices.map(price => `<tr data-price-book="${esc(price.book)}" class="${price.decimal === best.decimal ? 'best-parlay' : ''}">
       <th scope="row"><span class="book-name">${bookLogo(price.book)}${esc(price.name)}</span>${price.decimal === best.decimal ? '<small class="best-label">Best price</small>' : ''}</th>

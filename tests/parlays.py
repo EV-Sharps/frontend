@@ -1,4 +1,4 @@
-"""Check the parlay price table, selection constraints and quote request flow."""
+"""Check ranked parlay book cards, price breakdowns, selections and quote requests."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -82,7 +82,7 @@ try:
         errors, posts, gets = [], [], []
         state = {'catalog': deepcopy(CATALOG), 'denied': False, 'hold_next': False, 'held': None, 'fail_next': False, 'legacy': False}
         state.update(attd_catalog=deepcopy(ATTD_CATALOG), atgs_catalog=deepcopy(ATGS_CATALOG), hold_catalog=None, held_catalog=None,
-                     wrong_catalog=False, wrong_quote=False)
+                     wrong_catalog=False, wrong_quote=False, price_overrides=None)
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.route('https://**/*', lambda route: route.fulfill(
@@ -137,7 +137,11 @@ try:
                 prices.append({'book': book, 'name': name, 'decimal': decimal, 'odds': (decimal - 1) * 100,
                                'legs': [dict(q, player=leg['player'], id=leg['id']) for leg, q in zip(selected, quotes)]})
             prices.sort(key=lambda price: -price['decimal'])
-            response = {'legs': selected, 'references': references, 'prices': prices,
+            if state['price_overrides'] is not None:
+                prices = [dict(prices[0], book=book, name=name, decimal=decimal,
+                               odds=(decimal - 1) * 100) for book, name, decimal in state['price_overrides']]
+            # The API may return books in arbitrary order. The page owns its ranking.
+            response = {'legs': selected, 'references': references, 'prices': list(reversed(prices)),
                         'best_price': prices[0] if prices else None,
                         'offered_odds': payload['offered_odds'], 'max_age_minutes': 10}
             if payload['market'] != 'hr':
@@ -186,6 +190,31 @@ try:
             ids = page.locator('#catalog-rows tr[data-leg-row]').evaluate_all("rows => rows.map(row => row.dataset.legRow)")
             assert ids == [f'{index:024x}' for index in expected], ids
 
+        def book_cards(expected, best):
+            cards = page.locator('#parlay-book-prices [data-price-tile]')
+            assert cards.evaluate_all("cards => cards.map(card => card.dataset.priceTile)") == expected
+            assert page.locator('#parlay-book-prices .is-best').evaluate_all(
+                "cards => cards.map(card => card.dataset.priceTile)") == best
+            assert page.locator('#parlay-book-prices .book-price-best').count() == len(best)
+            assert page.locator('#parlay-book-prices .parlay-book-logo').count() == len(expected)
+            assert page.locator('#book-prices-empty').is_hidden() == bool(expected)
+            assert not set(expected) & {'circa', 'pn'}
+
+        def grid_fits():
+            assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            dimensions = page.locator('#parlay-book-prices').evaluate("""grid => ({
+                left: grid.getBoundingClientRect().left, right: grid.getBoundingClientRect().right,
+                width: grid.clientWidth, scrollWidth: grid.scrollWidth,
+                cards: [...grid.children].map(card => {
+                    const rect = card.getBoundingClientRect();
+                    return {left: rect.left, right: rect.right, width: card.clientWidth, scrollWidth: card.scrollWidth};
+                })
+            })""")
+            assert dimensions['scrollWidth'] <= dimensions['width'] + 1, dimensions
+            for card in dimensions['cards']:
+                assert dimensions['left'] - 1 <= card['left'] < card['right'] <= dimensions['right'] + 1, dimensions
+                assert card['scrollWidth'] <= card['width'] + 1, dimensions
+
         count(0)
         expect(page.locator('#parlay-market')).to_have_value('hr')
         assert page.locator('#catalog-rows tr').count() == 7
@@ -214,6 +243,13 @@ try:
         pick(3).click()
         count(2)
         calculated([1, 3])
+        book_cards(['dk', 'fd'], ['dk'])
+        expect(page.locator('[data-price-tile="dk"] .parlay-book-odds')).to_have_text('+2,375')
+        expect(page.locator('[data-price-tile="fd"] .parlay-book-odds')).to_have_text('+1,900')
+        assert page.locator('#parlay-breakdown').get_attribute('open') is None
+        expect(page.locator('#price-rows')).to_be_hidden()
+        page.locator('#parlay-breakdown summary').first.click()
+        expect(page.locator('#price-rows')).to_be_visible()
         assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+2,375'
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+1,900'
         assert page.locator('[data-price-book="dk"] [data-ev-book="circa"]').inner_text() == '-50.5%'
@@ -222,10 +258,39 @@ try:
         pick(3).click()
         count(1)
         assert page.locator('#results').is_hidden()
+        assert page.locator('#parlay-book-prices [data-price-tile]').count() == 0
         assert page.locator('#calculate').is_disabled()
         assert len(posts) == post_count
         pick(3).click()
         calculated([1, 3])
+
+        # Rank using exact decimal values, even if both displayed American prices round alike.
+        state['price_overrides'] = [('fd', 'FanDuel', 24.7502), ('dk', 'DraftKings', 24.7501)]
+        page.evaluate('window.refreshParlays()')
+        calculated([1, 3])
+        book_cards(['fd', 'dk'], ['fd'])
+        assert page.locator('#parlay-book-prices .parlay-book-odds').all_text_contents() == ['+2,375', '+2,375']
+        assert 'FanDuel' in page.locator('#best-parlay-price').inner_text()
+        assert page.locator('#price-rows tr').first.get_attribute('data-price-book') == 'fd'
+
+        # Exact ties share the best treatment and use book names for deterministic ordering.
+        state['price_overrides'] = [('fd', 'FanDuel', 24.75), ('dk', 'DraftKings', 24.75),
+                                    ('br', 'BetRivers', 20), ('b365', 'Bet365', 15),
+                                    ('mgm', 'BetMGM', 14), ('cz', 'Caesars', 13)]
+        page.evaluate('window.refreshParlays()')
+        book_cards(['dk', 'fd', 'br', 'b365', 'mgm', 'cz'], ['dk', 'fd'])
+        page.wait_for_function("Array.from(document.querySelectorAll('#parlay-book-prices img')).every(img => img.complete && img.naturalWidth > 0)")
+        page.locator('#parlay-breakdown summary').first.click()
+        expect(page.locator('#price-rows')).to_be_hidden()
+        for width in (1440, 390, 320):
+            page.set_viewport_size({'width': width, 'height': 1080 if width == 1440 else 844})
+            grid_fits()
+            page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / f'parlays-book-grid-{width}.png'))
+        page.set_viewport_size({'width': 1440, 'height': 1080})
+        page.locator('#parlay-breakdown summary').first.click()
+        state['price_overrides'] = None
+        page.evaluate('window.refreshParlays()')
+        book_cards(['dk', 'fd'], ['dk'])
         pick(4).click()
         count(3)
         calculated([1, 3, 4])
@@ -235,6 +300,7 @@ try:
         assert page.locator('#price-rows tr').first.locator('.parlay-total').inner_text() == '+17,225'
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+12,900'
         assert 'DraftKings' in page.locator('#best-parlay-price').inner_text()
+        book_cards(['dk', 'fd'], ['dk'])  # Fresh over-only DK quotes remain usable.
 
         # Compare each book's full-precision estimated product with each distinct reference probability.
         assert page.locator('[data-ev-reference="circa"] small').inner_text() == 'Fair +4,900'
@@ -271,6 +337,7 @@ try:
         assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+17,225'
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+12,900'
         assert page.locator('[data-price-book="br"]').count() == 0
+        book_cards(['dk', 'fd'], ['dk'])
 
         # Automatic refresh must retain visible results, expanded books, and page/table scroll positions.
         page.locator('#show-unavailable').click()
@@ -296,6 +363,7 @@ try:
         expect(page.locator('#calculate')).to_have_text('Calculating...')
         assert state['held'] is not None
         assert page.locator('#results').is_visible()
+        book_cards(['dk', 'fd'], ['dk'])
         during_refresh = scroll_position()
         assert all(abs(before_refresh[key] - during_refresh[key]) <= 1 for key in before_refresh), (before_refresh, during_refresh)
         held_route, held_response = state['held']
@@ -304,6 +372,8 @@ try:
         after_refresh = scroll_position()
         assert all(abs(before_refresh[key] - after_refresh[key]) <= 1 for key in before_refresh), (before_refresh, after_refresh)
         assert page.locator('#show-unavailable').get_attribute('aria-expanded') == 'true'
+        assert page.locator('#parlay-breakdown').get_attribute('open') is not None
+        book_cards(['dk', 'fd'], ['dk'])
         assert page.locator('[data-book="dk"]').is_visible()
         page.locator('#show-unavailable').click()
         page.evaluate("document.getElementById('catalog-wrap').style.maxHeight=''")
@@ -315,6 +385,7 @@ try:
         calculated([1, 3, 4, 5])
         assert page.locator('#price-rows tr').count() == 1  # DK has a stale fourth-leg price.
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+103,900'
+        book_cards(['fd'], ['fd'])
         state['legacy'] = False
         page.evaluate('window.refreshParlays()')
         assert page.locator('#reference-rows .reference-leg').count() == 8
@@ -416,6 +487,8 @@ try:
         page.evaluate('window.refreshParlays()')
         expect(page.locator('#best-parlay-price')).to_have_text('No complete book prices')
         assert 'No book has current homer prices' in page.locator('#price-rows').inner_text()
+        book_cards([], [])
+        expect(page.locator('#book-prices-empty')).to_contain_text('No book has current homer prices')
         state['catalog']['legs'][4]['quotes']['fd'] = quote(700)
         page.evaluate('window.refreshParlays()')
         calculated([1, 3, 4, 5])
@@ -432,6 +505,7 @@ try:
         calculated([1, 3, 4, 5])
         page.locator('#clear').click()
         assert page.locator('#results').is_hidden()
+        assert page.locator('#parlay-book-prices [data-price-tile]').count() == 0
         count(0)
 
         page.locator('#player-search').fill('missing player')
@@ -443,10 +517,11 @@ try:
         pick(4).click()
         calculated([1, 3, 4])
         page.wait_for_function("Array.from(document.querySelectorAll('.parlay-book-logo')).every(img => img.complete && img.naturalWidth > 0)")
-        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-table-desktop.png'), full_page=True)
+        page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-table-desktop.png'))
 
         page.set_viewport_size({'width': 390, 'height': 844})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        grid_fits()
         before = row(1).locator('.catalog-player').bounding_box()['x']
         page.evaluate("document.getElementById('catalog-wrap').scrollLeft=200")
         after = row(1).locator('.catalog-player').bounding_box()['x']
@@ -456,12 +531,12 @@ try:
         calculated([1, 3, 4, 5])
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.wait_for_function("Array.from(document.querySelectorAll('.parlay-book-logo')).every(img => img.complete && img.naturalWidth > 0)")
-        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-four-legs-mobile.png'), full_page=True)
+        page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-four-legs-mobile.png'))
         page.locator('#leg-inputs').get_by_role('button', name='Remove Pete Alonso', exact=True).click()
         count(3)
         calculated([1, 3, 5])
         page.evaluate("document.getElementById('catalog-wrap').scrollLeft=0")
-        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-table-mobile.png'), full_page=True)
+        page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-table-mobile.png'))
         pick(5).click()
         count(2)
         calculated([1, 3])
@@ -469,7 +544,7 @@ try:
         first_leg, second_leg = [cell.bounding_box() for cell in page.locator('[data-book="circa"] .reference-leg').all()]
         assert abs(first_leg['y'] - second_leg['y']) < 1
         assert second_leg['x'] > first_leg['x']
-        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-two-legs-mobile.png'), full_page=True)
+        page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-two-legs-mobile.png'))
 
         # Switching markets discards the old ticket, filters and quoted price, even mid-calculation.
         page.set_viewport_size({'width': 1440, 'height': 1080})
@@ -550,7 +625,7 @@ try:
 
         page.set_viewport_size({'width': 390, 'height': 844})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-        page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-attd-four-legs-mobile.png'), full_page=True)
+        page.locator('#results').screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-attd-four-legs-mobile.png'))
 
         # A slow catalog cannot prevent a later mode change or replace its newer slate.
         state['hold_catalog'] = 'hr'
@@ -585,6 +660,8 @@ try:
         calculated([101, 103])
         assert posts[-1]['market'] == 'attd'
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        book_cards(['dk', 'fd'], ['dk'])
+        grid_fits()
 
         # A new NHL ticket cannot inherit an in-flight NFL quote or its selections.
         state['hold_next'] = True
@@ -613,7 +690,9 @@ try:
         calculated([201, 203])
         assert posts[-1]['market'] == 'atgs'
         assert '1+ Goal' in page.locator('#leg-inputs').inner_text()
-        assert page.locator('[data-price-book="dk"] .parlay-total').inner_text() == '+950'
+        expect(page.locator('[data-price-book="dk"] .parlay-total')).to_have_text('+950')
+        book_cards(['dk', 'fd'], ['dk'])
+        expect(page.locator('[data-price-tile="dk"] .parlay-book-odds')).to_have_text('+950')
         assert page.locator('[data-ev-reference="circa"]').count() == 1
         assert page.locator('[data-ev-reference="pn"]').count() == 1
         assert page.locator('#betting-book option[value="circa"], #betting-book option[value="pn"]').count() == 0
@@ -657,7 +736,7 @@ try:
         assert page.locator('#calculator').is_hidden()
         assert page.locator('#access-panel').is_visible()
         assert not errors, errors
-        print('Homer/ATTD/ATGS markets, NHL navigation order, switching/reset, direct links, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches, scroll, mobile and access checks passed.')
+        print('Ranked book cards, shuffled/full-precision/tied prices, empty/updating/cleared cards, 320/390/1440 layouts, expanded breakdown scroll, Homer/ATTD/ATGS markets, navigation, switching/reset, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches and access checks passed.')
         browser.close()
 finally:
     server.shutdown()

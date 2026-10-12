@@ -4,7 +4,9 @@
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const metrics = ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit_units', 'ev_sum'];
   const reportCells = report => [...report.cells, ...(report.best_cells || [])];
-  const propOrder = ['atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
+  const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
+  const supportedSports = ['nhl', 'nfl'];
+  const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
   const compareProps = (a, b) => {
     const index = prop => propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
     return index(a) - index(b) || a.localeCompare(b);
@@ -76,20 +78,42 @@
     const dates = Array.isArray(reported) ? reported : dateRange(data.window.start, data.window.end);
     return new Set(dates.filter(date => date >= data.window.start && date <= data.window.end && !missing.has(date)));
   }
-  function configDescription(c = {}) {
+  function chartDates(data, start, end) {
+    const days = dateRange(start, end), available = availableDates(data);
+    return days.length > 31 ? days.filter(day => available.has(day)) : days;
+  }
+  function easternDate(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+    const part = type => parts.find(value => value.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+  function offsetDate(day, offset) { return new Date(Date.parse(day + 'T12:00:00Z') + offset * 86400000).toISOString().slice(0, 10); }
+  function presetRange(preset, data, now = new Date()) {
+    const today = easternDate(now), end = offsetDate(today, -1);
+    // Match Analysis's July 1 season boundary for NFL and NHL, including Jan-June.
+    const year = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0);
+    const seasonStart = `${year}-07-01`;
+    const ranges = { yesterday: { start: end, end }, l7: { start: offsetDate(end, -6), end },
+      season: { start: seasonStart, end }, published: { start: data.window.start, end: data.window.end } };
+    const range = ranges[preset];
+    if (!range) return null;
+    return { ...range, available: range.start <= range.end && range.start >= data.window.start && range.end <= data.window.end };
+  }
+  function configDescription(c = {}, sport = 'nhl') {
     const ev = c.max_ev == null ? `EV ≥ ${c.min_ev ?? 0}%; no upper limit`
       : `EV from ${c.min_ev ?? 0}% to ${c.max_ev}%`;
     const oneSided = c.one_sided === 'site' ? 'missing opposite prices use the site’s 7% assumed vig'
       : c.one_sided === 'exclude' ? 'excluded' : 'see report notes';
-    return `Archived NHL offers with estimated ${ev}. Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. `
+    return `Archived ${sport.toUpperCase()} offers with estimated ${ev}. Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. `
       + `One-sided reference prices: ${oneSided}. `
       + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
   }
-  function validateReport(data) {
-    if (data?.version !== 1 || data.sport !== 'nhl' || !validDate(data.window?.start) || !validDate(data.window?.end)
+  function validateReport(data, expectedSport) {
+    if (data?.version !== 1 || !supportedSports.includes(data.sport) || !validDate(data.window?.start) || !validDate(data.window?.end)
       || data.window.start > data.window.end || !Array.isArray(data.cells)
       || (data.best_cells !== undefined && !Array.isArray(data.best_cells))
       || !Array.isArray(data.references) || !Array.isArray(data.methods)) throw new Error('The published report format is not supported. Refresh after the next report is published.');
+    if (expectedSport && data.sport !== expectedSport) throw new Error(`The server returned a different sport. Refresh to load the ${expectedSport.toUpperCase()} report.`);
     if ((data.best_cells || []).some(cell => cell?.book !== 'best')) throw new Error('The published report contains invalid best-available result rows. Please refresh after it is rebuilt.');
     for (const cell of reportCells(data)) {
       if (!validDate(cell.date) || cell.date < data.window.start || cell.date > data.window.end
@@ -121,12 +145,14 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, defaultStrategy, dateRange, availableDates, configDescription, validateReport, exportCSV };
+  const api = { aggregate, buildView, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
 
   PAGE = 'devig-results';
+  let sport = sportFromSearch(location.search);
+  SPORT = sport;
   const localPreview = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
     && new URLSearchParams(location.search).get('preview') === '1';
   const $ = id => document.getElementById(id);
@@ -139,10 +165,11 @@
     poly: 'Polymarket', hr: 'Hard Rock', br: 'BetRivers', kambi: 'Kambi', b365: 'bet365', espn: 'theScore Bet', cz: 'Caesars',
     mgm: 'BetMGM', fn: 'Fanatics', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
   const bookName = book => bookNames[book] || String(book).toUpperCase();
-  const propNames = { atgs: 'ATGS (Anytime goalscorer)', no_goal: 'No goal (under 0.5)', fgs: 'First goal', '2+goals': '2+ goals', '3+goals': '3+ goals', sog: 'Shots on goal', saves: 'Goalie saves', sv: 'Goalie saves', pts: 'Points',
+  const propNames = { attd: 'ATTD (Anytime touchdown)', no_td: 'No touchdown (under 0.5)', ftd: 'First touchdown', '2+td': '2+ touchdowns', '3+td': '3+ touchdowns', pass_yds: 'Passing yards', rush_yds: 'Rushing yards', rec_yds: 'Receiving yards', rec: 'Receptions', pass_td: 'Passing touchdowns', atgs: 'ATGS (Anytime goalscorer)', no_goal: 'No goal (under 0.5)', fgs: 'First goal', '2+goals': '2+ goals', '3+goals': '3+ goals', sog: 'Shots on goal', saves: 'Goalie saves', sv: 'Goalie saves', pts: 'Points',
     ast: 'Assists', goals: 'Goals', assists: 'Assists', points: 'Points', ml: 'Moneyline', spread: 'Puck line', total: 'Game total', tt: 'Team total',
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
   const propName = prop => {
+    if (prop === 'spread' && sport === 'nfl') return 'Point spread';
     if (/^\d+\+goals$/.test(prop)) return prop.replace('+goals', '+ goals');
     if (prop.startsWith('goals_under_')) return `Under ${prop.slice('goals_under_'.length)} goals`;
     const period = /^([123])p_(.+)$/.exec(prop);
@@ -170,8 +197,16 @@
     const strategy = defaultStrategy(report);
     $('date-start').value = report.window.start;
     $('date-end').value = report.window.end;
+    $('date-preset').value = 'published';
+    const initialPreset = sport === 'nfl' ? 'season' : 'l7';
+    const initialRange = presetRange(initialPreset, report);
+    if (initialRange.available) {
+      $('date-preset').value = initialPreset;
+      $('date-start').value = initialRange.start;
+      $('date-end').value = initialRange.end;
+    }
     $('book-filter').value = '';
-    $('market-filter').value = '';
+    $('market-filter').value = sport === 'nfl' ? 'attd' : '';
     $('reference-filter').value = strategy.reference;
     $('method-filter').value = strategy.method;
     $('min-settled').value = '10';
@@ -179,9 +214,15 @@
     $('strategy-note').textContent = strategy.fallback ? 'Pinnacle / Worst-case unavailable; using the first available strategy.' : 'Default: Pinnacle / Worst-case';
     render();
   }
+  function applyDatePreset() {
+    if (!report) return;
+    const range = presetRange($('date-preset').value, report);
+    if (range) { $('date-start').value = range.start; $('date-end').value = range.end; }
+    render();
+  }
   function filterError(f) {
     if (!validDate(f.start) || !validDate(f.end) || f.start > f.end) return 'Choose a valid date range with From on or before Through.';
-    if (f.start < report.window.start || f.end > report.window.end) return `The published report covers ${report.window.start} through ${report.window.end}. Choose dates inside that window.`;
+    if (f.start < report.window.start || f.end > report.window.end) return `The requested dates (${f.start} through ${f.end}) are not fully available. The published ${sport.toUpperCase()} report covers ${report.window.start} through ${report.window.end}. Choose Published window or dates inside that window.`;
     if (!$('min-settled').checkValidity()) return 'Minimum settled must be a whole number from 1 to 1,000,000.';
     return '';
   }
@@ -209,7 +250,10 @@
   }
   function coverageDates() { return availableDates(report); }
   function renderDaily(f) {
-    const days = dateRange(f.start, f.end), available = coverageDates(), results = new Map(view.days.map(day => [day.date, day]));
+    const days = chartDates(report, f.start, f.end), available = coverageDates(), results = new Map(view.days.map(day => [day.date, day]));
+    const condensed = dateRange(f.start, f.end).length > 31;
+    $('daily-caption').hidden = !condensed;
+    $('daily-caption').textContent = condensed ? 'Long windows show every date with archived event data, including dates with no qualifying offers. See coverage for dates without event data.' : '';
     const maximum = Math.max(1, ...view.days.map(day => Math.abs(day.profit_units)));
     $('daily-chart').innerHTML = days.map(date => {
       const day = results.get(date), profit = day?.profit_units || 0, missing = !available.has(date);
@@ -222,9 +266,9 @@
     const days = dateRange(f.start, f.end), available = coverageDates(), missing = days.filter(date => !available.has(date));
     const covered = days.length - missing.length, coverage = report.coverage || {};
     $('coverage-badge').textContent = `${covered} / ${days.length} days`;
-    $('coverage-summary').textContent = covered ? `${covered} of ${days.length} selected event dates have usable archived offers.` : 'No usable archived offers are available for these event dates.';
+    $('coverage-summary').textContent = covered ? `${covered} of ${days.length} calendar dates have archived event offers.` : 'No archived event offers are available for these calendar dates.';
     $('coverage-days').innerHTML = days.map(date => `<span class="dv-coverage-day ${available.has(date) ? '' : 'is-missing'}" title="${esc(date)}: ${available.has(date) ? 'Event data available' : 'Event data missing'}"><i aria-hidden="true"></i><span>${esc(dayLabel(date))}</span><span class="sr-only">${available.has(date) ? 'Event data available' : 'Event data missing'}</span></span>`).join('');
-    $('coverage-caution').textContent = missing.length ? `Missing: ${missing.map(dayLabel).join(', ')}. Missing event data is not a zero-profit day.` : 'Event-date coverage does not guarantee every market or book was captured.';
+    $('coverage-caution').textContent = missing.length ? `Dates without archived offers (including off days): ${missing.map(dayLabel).join(', ')}. An absence of archived offers is not a zero-profit result.` : 'Event-date coverage does not guarantee every market or book was captured.';
     $('coverage-latest').textContent = coverage.latest_archive_date ? `Latest archive: ${coverage.latest_archive_date}. Dates use Eastern time.` : 'No latest archive date was reported. Dates use Eastern time.';
   }
   function render() {
@@ -272,7 +316,7 @@
   }
   function renderMethodology() {
     const c = report.config || {}, coverage = report.coverage || {};
-    $('config-note').textContent = configDescription(c);
+    $('config-note').textContent = configDescription(c, sport);
     $('coverage-totals').textContent = `Full published window: ${count(coverage.raw_rows)} raw rows; ${count(coverage.valid_rows)} valid; ${count(coverage.graded_rows)} graded; ${count(coverage.unresolved_rows)} unresolved. Counts describe source rows, not sums across strategies.`;
     $('report-notes').replaceChildren(...(report.notes || []).map(note => { const li = document.createElement('li'); li.textContent = note; return li; }));
     const reasons = [['Archive', coverage.reasons || {}], ['Grading', coverage.grading_reasons || {}]];
@@ -284,7 +328,7 @@
   }
   function acceptReport(data) {
     const previous = report ? filters() : null;
-    report = validateReport(data);
+    report = validateReport(data, sport);
     $('report-content').hidden = false;
     $('report-content').setAttribute('aria-busy', 'false');
     $('access-panel').hidden = true;
@@ -294,16 +338,17 @@
     const cells = reportCells(report);
     const books = [...new Set(cells.map(cell => cell.book))].sort((a, b) => a === 'best' ? -1 : b === 'best' ? 1 : a.localeCompare(b));
     options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers');
-    options('market-filter', [...new Set(cells.map(cell => cell.prop))].sort(compareProps).map(prop => [prop, propName(prop)]), 'All markets');
+    const props = [...new Set([...(sport === 'nfl' ? ['attd'] : []), ...cells.map(cell => cell.prop)])].sort(compareProps);
+    options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets');
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]));
     options('method-filter', report.methods.map(item => [item.id, item.name]));
     renderMethodology();
     if (!previous) resetFilters();
     else {
-      $('date-start').value = previous.start >= report.window.start && previous.start <= report.window.end ? previous.start : report.window.start;
-      $('date-end').value = previous.end >= report.window.start && previous.end <= report.window.end ? previous.end : report.window.end;
-      if ($('date-start').value > $('date-end').value) $('date-start').value = report.window.start;
-      render();
+      // Retain custom dates exactly; a narrower replacement report must not silently clip them.
+      $('date-start').value = previous.start;
+      $('date-end').value = previous.end;
+      applyDatePreset();
     }
   }
   function clearResults() {
@@ -311,6 +356,8 @@
     for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved']) { $(id).textContent = '—'; $(id).className = ''; }
     for (const id of ['strategy-rows', 'odds-rows', 'book-rows', 'market-rows', 'daily-chart', 'coverage-days']) $(id).replaceChildren();
     for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record']) $(id).textContent = '';
+    $('daily-caption').textContent = '';
+    $('daily-caption').hidden = true;
     $('export').disabled = true;
   }
   function clearReport() {
@@ -323,7 +370,8 @@
     for (const id of ['book-filter', 'market-filter', 'reference-filter', 'method-filter']) $(id).replaceChildren();
     $('date-start').value = '';
     $('date-end').value = '';
-    $('report-window').textContent = 'Last 7 complete days · ET';
+    $('report-window').textContent = sport === 'nfl' ? 'Current season · ET' : 'Last 7 complete days · ET';
+    $('date-preset').value = 'published';
     notice('filter-status', '');
   }
   function deny(status) {
@@ -337,6 +385,7 @@
     if (pending) return pending;
     if (!ACCESS_TOKEN && !localPreview) { deny(401); return Promise.resolve(); }
     const version = authVersion;
+    const requestedSport = sport;
     controller = new AbortController();
     const activeController = controller;
     const timeout = setTimeout(() => activeController.abort(), 20000);
@@ -344,10 +393,10 @@
     $('report-content').setAttribute('aria-busy', 'true');
     pending = (async () => {
       try {
-        const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=nhl`, { headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}, cache: 'no-store', signal: activeController.signal });
+        const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=${requestedSport}`, { headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}, cache: 'no-store', signal: activeController.signal });
         if (version !== authVersion) return;
         if ([401, 403].includes(response.status)) { deny(response.status); return; }
-        if (response.status === 404 || response.status === 503) throw new Error('No NHL devig report has been published yet. Results appear after the archived report is built.');
+        if (response.status === 404 || response.status === 503) throw new Error(`No ${requestedSport.toUpperCase()} devig report has been published yet. Results appear after the archived report is built.`);
         if (!response.ok) throw new Error('Unable to load the published results. Please try again.');
         const data = await response.json();
         if (version !== authVersion) return;
@@ -378,9 +427,39 @@
     $('refresh').disabled = false;
     refresh();
   }
+  function sportHeading() {
+    SPORT = sport;
+    $('sport-filter').value = sport;
+    $('sport-label').textContent = sport.toUpperCase();
+    $('page-title').textContent = `${sport.toUpperCase()} devig results`;
+    document.title = `${sport.toUpperCase()} devig results | +EV Sharps`;
+    $('report-window').textContent = sport === 'nfl' ? 'Current season · ET' : 'Last 7 complete days · ET';
+  }
+  function setSport(next) {
+    if (!supportedSports.includes(next) || next === sport) return;
+    authVersion++;
+    controller?.abort();
+    controller = null;
+    pending = null;
+    sport = next;
+    clearReport();
+    $('access-panel').hidden = true;
+    notice('request-status', '');
+    $('generated').textContent = 'Loading published results…';
+    $('refresh').disabled = false;
+    const url = new URL(location.href); url.searchParams.set('sport', sport);
+    history.replaceState(null, '', url);
+    sportHeading();
+    refresh();
+  }
+  sportHeading();
+  $('sport-filter').addEventListener('change', () => setSport($('sport-filter').value));
+  window.addEventListener('popstate', () => setSport(sportFromSearch(location.search)));
   $('refresh').addEventListener('click', refresh);
   $('reset-filters').addEventListener('click', resetFilters);
-  for (const id of ['date-start', 'date-end', 'book-filter', 'market-filter', 'reference-filter', 'method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
+  $('date-preset').addEventListener('change', applyDatePreset);
+  for (const id of ['date-start', 'date-end']) $(id).addEventListener('change', () => { $('date-preset').value = 'custom'; render(); });
+  for (const id of ['book-filter', 'market-filter', 'reference-filter', 'method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
   for (const id of ['odds-rows', 'book-rows']) $(id).addEventListener('click', event => {
     const prop = event.target.closest('[data-prop-filter]');
     if (prop) { $('market-filter').value = prop.dataset.propFilter; render(); return; }
@@ -397,7 +476,7 @@
   $('export').addEventListener('click', () => {
     if (!view || !report) return;
     const f = filters(), url = URL.createObjectURL(new Blob([exportCSV(view, f)], { type: 'text/csv;charset=utf-8;' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `nhl-devig-results-${f.start}-${f.end}.csv`; anchor.click();
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}.csv`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   for (const id of ['account-link', 'access-login']) $(id).href = `profile${HTML}`;

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { aggregate, buildView, defaultStrategy, dateRange, availableDates, configDescription, validateReport, exportCSV } = require('../devig-results.js');
+const { aggregate, buildView, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV } = require('../devig-results.js');
 
 const cell = (overrides = {}) => ({ date: '2026-10-01', book: 'dk', prop: 'sog', reference: 'pn;1', method: 'worst',
   odds_band: '+100 to +199', selected: 15, wins: 6, losses: 4, pushes: 2, pending: 1, ungraded: 2, profit_units: 5, ev_sum: 40, ...overrides });
@@ -234,4 +234,59 @@ test('event coverage uses missing event dates even when an archive filename exis
   assert.equal(dates.size, 6);
   data.coverage.event_dates = ['2026-10-01'];
   assert.deepEqual([...availableDates(data)], ['2026-10-01']);
+});
+
+test('NFL validation requires matching sport and keeps ATTD separate from other markets', () => {
+  const data = report(); data.sport = 'nfl';
+  data.cells = [cell({ prop: 'attd', profit_units: 8 }), cell({ prop: 'rush_yds', profit_units: 100 })];
+  assert.equal(validateReport(data, 'nfl'), data);
+  assert.throws(() => validateReport(data, 'nhl'), /different sport/);
+  assert.throws(() => validateReport(report(), 'nfl'), /different sport/);
+  assert.throws(() => validateReport({ ...data, sport: 'mlb' }), /format is not supported/);
+  assert.match(configDescription({}, 'nfl'), /Archived NFL offers/);
+  assert.deepEqual(buildView(data, filters).byProp.map(row => row.prop), ['attd', 'rush_yds']);
+  assert.equal(buildView(data, { ...filters, prop: 'attd' }).total.profit_units, 8);
+  assert.equal(buildView(data, { ...filters, prop: 'attd' }).strategies.length, 1);
+});
+
+test('sport query only accepts supported sport values and defaults to NHL', () => {
+  assert.equal(sportFromSearch('?sport=nfl&preview=1'), 'nfl');
+  for (const search of ['', '?sport=nhl', '?sport=mlb', '?sport=nfl%26evil=1']) assert.equal(sportFromSearch(search), 'nhl');
+});
+
+test('presets use Eastern calendar dates, not UTC or the report end date', () => {
+  const data = report(); data.window = { start: '2026-07-01', end: '2026-10-11' };
+  const now = new Date('2026-10-12T03:59:59Z');
+  assert.equal(easternDate(now), '2026-10-11');
+  assert.deepEqual(presetRange('yesterday', data, now), { start: '2026-10-10', end: '2026-10-10', available: true });
+  assert.deepEqual(presetRange('l7', data, now), { start: '2026-10-04', end: '2026-10-10', available: true });
+  assert.deepEqual(presetRange('season', data, now), { start: '2026-07-01', end: '2026-10-10', available: true });
+  assert.deepEqual(presetRange('yesterday', data, new Date('2026-10-12T04:00:00Z')), { start: '2026-10-11', end: '2026-10-11', available: true });
+  assert.deepEqual(presetRange('published', data, now), { start: '2026-07-01', end: '2026-10-11', available: true });
+  assert.equal(presetRange('custom', data, now), null);
+});
+
+test('season matches Analysis July rollover and calendar presets survive DST', () => {
+  const data = report(); data.window = { start: '2026-07-01', end: '2027-06-30' };
+  assert.deepEqual(presetRange('season', data, new Date('2027-01-04T16:00:00Z')), { start: '2026-07-01', end: '2027-01-03', available: true });
+  assert.deepEqual(presetRange('l7', data, new Date('2026-11-02T05:01:00Z')), { start: '2026-10-26', end: '2026-11-01', available: true });
+  assert.equal(presetRange('season', data, new Date('2027-07-01T16:00:00Z')).available, false);
+});
+
+test('presets never silently clip missing dates or relabel a partial report as a full season', () => {
+  const data = report(), now = new Date('2026-10-12T12:00:00Z');
+  assert.deepEqual(presetRange('season', data, now), { start: '2026-07-01', end: '2026-10-11', available: false });
+  assert.deepEqual(presetRange('yesterday', data, now), { start: '2026-10-11', end: '2026-10-11', available: false });
+  assert.deepEqual(presetRange('l7', data, now), { start: '2026-10-05', end: '2026-10-11', available: false });
+});
+
+test('long charts include every archived event date regardless of selected offers or profit', () => {
+  const data = report();
+  data.window = { start: '2026-07-01', end: '2026-10-11' };
+  data.coverage = { event_dates: ['2026-09-10', '2026-10-01', '2026-10-11'] };
+  data.cells = [cell({ profit_units: -3 })];
+  assert.deepEqual(chartDates(data, '2026-07-01', '2026-10-11'), ['2026-09-10', '2026-10-01', '2026-10-11']);
+  assert.deepEqual(chartDates(data, '2026-10-05', '2026-10-11'), dateRange('2026-10-05', '2026-10-11'));
+  data.cells = [];
+  assert.equal(chartDates(data, '2026-07-01', '2026-10-11').length, 3);
 });

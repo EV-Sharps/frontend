@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Devig results | +EV Sharps</title>
-  <meta name="description" content="Explore NHL archived devig results by odds, method, reference and betting book.">
+  <meta name="description" content="Explore NFL ATTD and NHL archived devig results by date, odds, method, reference and betting book.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="devig-results.css?v=20261005-props">
+  <link rel="stylesheet" href="devig-results.css?v=20261012-nfl">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="devig-page">
@@ -16,7 +16,7 @@
   </header>
   <main class="dv-main">
     <div class="dv-intro">
-      <div><p class="dv-eyebrow">RESULTS LAB <span>NHL</span></p><h1>NHL devig results</h1><p class="dv-lede">Archived devig results, broken down by price, reference and betting book.</p></div>
+      <div><p class="dv-eyebrow">RESULTS LAB <span id="sport-label">NHL</span></p><h1 id="page-title">NHL devig results</h1><p class="dv-lede">Archived devig results, broken down by price, reference and betting book.</p><label class="dv-sport-control">Sport <select id="sport-filter"><option value="nhl">NHL</option><option value="nfl">NFL</option></select></label></div>
       <div class="dv-report-meta"><span id="report-window">Last 7 complete days · ET</span><small id="generated">Loading published results…</small><button id="refresh" type="button">Refresh results <span aria-hidden="true">↻</span></button></div>
     </div>
     <div id="request-status" class="dv-notice" role="status" hidden></div>
@@ -24,6 +24,7 @@
     <div id="report-content" aria-busy="true" hidden>
       <section class="dv-controls" aria-label="Result filters">
         <div class="dv-filter-row">
+          <label>Window <select id="date-preset"><option value="yesterday">Yesterday</option><option value="l7">L7</option><option value="season">SZN</option><option value="published" selected>Published window</option><option value="custom">Custom dates</option></select></label>
           <label>From <input id="date-start" type="date" required></label><label>Through <input id="date-end" type="date" required></label>
           <label>Betting book <select id="book-filter"><option value="">All books · separate offers</option></select></label>
           <label>Market <select id="market-filter"><option value="">All markets</option></select></label>
@@ -46,7 +47,7 @@
       <p id="offer-note" class="dv-caption">Offers at different books are alternative places to bet; this is not a unique-bet portfolio.</p>
       <section id="empty-state" class="dv-empty" hidden><h2>No qualifying offers in this view</h2><p id="empty-message">Try another date, market or betting book. Check coverage below for missing archives.</p></section>
       <div class="dv-overview">
-        <section class="dv-panel"><div class="dv-panel-head"><div><p class="dv-eyebrow">SELECTED STRATEGY</p><h2>Profit by day</h2></div><span class="dv-chip">Flat 1u</span></div><div id="daily-chart" class="dv-daily" role="list" aria-label="Daily net profit"></div></section>
+        <section class="dv-panel"><div class="dv-panel-head"><div><p class="dv-eyebrow">SELECTED STRATEGY</p><h2>Profit by day</h2></div><span class="dv-chip">Flat 1u</span></div><div id="daily-chart" class="dv-daily" role="list" aria-label="Daily net profit"></div><p id="daily-caption" class="dv-caption" hidden></p></section>
         <section class="dv-panel dv-coverage-panel"><div class="dv-panel-head"><div><p class="dv-eyebrow">DATA AVAILABILITY</p><h2>What this window includes</h2></div><span id="coverage-badge" class="dv-chip"></span></div><p id="coverage-summary"></p><div id="coverage-days" class="dv-coverage-days" aria-label="Archive availability by day"></div><p id="coverage-caution" class="dv-caption"></p><p id="coverage-latest" class="dv-caption"></p></section>
       </div>
       <div class="dv-rank-controls"><div><h2>Find the strongest results</h2><p class="dv-caption">Ranked by observed ROI. Minimum sample and profit filters apply to the tables below.</p></div><div><label>Min. settled <input id="min-settled" type="number" min="1" max="1000000" value="10" step="1"></label><label class="dv-checkbox"><input id="profitable-only" type="checkbox"> Profitable only</label></div></div>
@@ -61,8 +62,8 @@
   </main>
   <footer class="dv-footer">Historical observed results. Past performance does not establish a future betting edge.</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script>
+  <script src="shared.js?v=20261012-devig-nfl"></script>
   <script src="auth.js"></script>
-  <script src="devig-results.js?v=20261006-align"></script>
+  <script src="devig-results.js?v=20261012-nfl"></script>
 </body>
 </html>

@@ -62,6 +62,11 @@ try:
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.add_init_script('window.EventSource = undefined;')
+        page.add_init_script('''const RealDate = Date;
+          window.Date = class extends RealDate {
+            constructor(...args) { super(...(args.length ? args : ['2026-10-12T12:00:00Z'])); }
+            static now() { return RealDate.parse('2026-10-12T12:00:00Z'); }
+          };''')
 
         def intercept(route):
             url = route.request.url
@@ -222,6 +227,121 @@ try:
         assert state['requests'][-1]['url'].startswith(f'http://127.0.0.1:{server.server_port}/api/')
         assert state['requests'][-1]['auth'] is None
 
+        # A season report defaults to ATTD, while all-market and book views remain available.
+        nfl = fixture()
+        nfl.update(sport='nfl', window=dict(start='2026-07-01', end='2026-10-11', season_start='2026-07-01'),
+                   cells=[cell(date='2026-10-11', prop='attd', profit_units=8),
+                          cell(date='2026-10-04', prop='attd', profit_units=-2),
+                          cell(date='2026-10-11', prop='rush_yds', profit_units=100)],
+                   best_cells=[cell(date='2026-10-11', prop='attd', book='best', profit_units=9)])
+        nfl['coverage'].update(event_dates=['2026-10-04', '2026-10-09', '2026-10-11'], missing_dates=[])
+        state.update(signed_in=True, payload=nfl)
+        page.goto(url + '?sport=nfl')
+        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        expect(page.locator('#sport-filter')).to_have_value('nfl')
+        expect(page.locator('#market-filter')).to_have_value('attd')
+        expect(page.locator('#page-title')).to_have_text('NFL devig results')
+        expect(page.locator('#date-preset')).to_have_value('season')
+        expect(page.locator('#date-start')).to_have_value('2026-07-01')
+        expect(page.locator('#daily-chart .dv-day')).to_have_count(3)
+        expect(page.locator('#daily-chart .dv-day').nth(1)).to_contain_text('No settled offers')
+        expect(page.locator('#daily-caption')).to_contain_text('including dates with no qualifying offers')
+        assert 'sport=nfl' in state['requests'][-1]['url']
+        assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
+        assert 'Archived NFL offers' in page.locator('#config-note').text_content()
+        assert page.locator('#book-rows [data-prop="rush_yds"]').count() == 0
+        page.select_option('#date-preset', 'yesterday')
+        expect(page.locator('#daily-chart .dv-day')).to_have_count(1)
+        expect(page.locator('#daily-caption')).to_be_hidden()
+        expect(page.locator('#date-start')).to_have_value('2026-10-11')
+        expect(page.locator('#date-end')).to_have_value('2026-10-11')
+        expect(page.locator('#summary-profit')).to_have_text('+8.00u')
+        page.select_option('#book-filter', 'best')
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        page.select_option('#book-filter', '')
+        page.select_option('#market-filter', '')
+        expect(page.locator('#summary-profit')).to_have_text('+108.00u')
+        page.select_option('#market-filter', 'attd')
+        page.select_option('#date-preset', 'l7')
+        expect(page.locator('#date-start')).to_have_value('2026-10-05')
+        expect(page.locator('#summary-profit')).to_have_text('+8.00u')
+        with page.expect_download() as download:
+            page.locator('#export').click()
+        assert download.value.suggested_filename == 'nfl-devig-results-2026-10-05-2026-10-11.csv'
+        page.locator('#date-start').fill('2026-10-04')
+        page.locator('#date-start').press('Tab')
+        expect(page.locator('#date-preset')).to_have_value('custom')
+        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        for width in (390, 320):
+            page.set_viewport_size(dict(width=width, height=844))
+            assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), f'NFL overflow at {width}px'
+        page.set_viewport_size(dict(width=1440, height=1100))
+
+        # Never call a clipped date window a full season or silently change a custom range.
+        state['payload'] = dict(nfl, window=dict(start='2026-10-05', end='2026-10-11'),
+                                cells=[row for row in nfl['cells'] if row['date'] >= '2026-10-05'])
+        page.locator('#refresh').click()
+        expect(page.locator('#filter-status')).to_contain_text('not fully available')
+        expect(page.locator('#date-start')).to_have_value('2026-10-04')
+        expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#export')).to_be_disabled()
+        page.select_option('#date-preset', 'season')
+        expect(page.locator('#filter-status')).to_contain_text('2026-07-01 through 2026-10-11')
+        expect(page.locator('#date-start')).to_have_value('2026-07-01')
+        page.select_option('#date-preset', 'published')
+        expect(page.locator('#summary-profit')).to_have_text('+8.00u')
+
+        # Clear the previous sport immediately, including when its replacement is missing or wrong.
+        state.update(status=503)
+        page.select_option('#sport-filter', 'nhl')
+        expect(page.locator('#report-content')).to_be_hidden()
+        expect(page.locator('#request-status')).to_contain_text('No NHL devig report')
+        assert 'sport=nhl' in page.url
+        assert page.locator('#book-rows tr').count() == 0
+        state.update(status=200, payload=nfl)
+        page.locator('#refresh').click()
+        expect(page.locator('#request-status')).to_contain_text('different sport')
+        expect(page.locator('#report-content')).to_be_hidden()
+        state['payload'] = fixture()
+        page.locator('#refresh').click()
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        page.select_option('#date-preset', 'yesterday')
+        expect(page.locator('#filter-status')).to_contain_text('2026-10-11 through 2026-10-11')
+        expect(page.locator('#summary-roi')).to_have_text('—')
+        page.select_option('#date-preset', 'published')
+
+        # A completed old HTTP response, delayed beyond a sport change, cannot restore old data.
+        page.evaluate('''window.originalFetch = window.fetch;
+          window.fetch = async (...args) => {
+            const response = await window.originalFetch(...args);
+            if (String(args[0]).includes('sport=nhl') && window.delayNhl) {
+              await new Promise(resolve => window.releaseNhl = resolve);
+            }
+            return response;
+          };
+          window.delayNhl = true;''')
+        page.locator('#refresh').click()
+        page.wait_for_function('typeof window.releaseNhl === "function"')
+        state['payload'] = nfl
+        page.select_option('#sport-filter', 'nfl')
+        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        page.evaluate('window.releaseNhl(); window.delayNhl = false;')
+        expect(page.locator('#page-title')).to_have_text('NFL devig results')
+        expect(page.locator('#market-filter')).to_have_value('attd')
+        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        for status in (401, 403):
+            state['status'] = status
+            page.locator('#refresh').click()
+            expect(page.locator('#access-panel')).to_be_visible()
+            expect(page.locator('#report-content')).to_be_hidden()
+            assert page.locator('#book-rows tr').count() == 0
+            state['status'] = 200
+            page.locator('#refresh').click()
+            expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        state.update(payload=fixture(), signed_in=False)
+        page.goto(url + '?preview=1')
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+
         actual = ROOT / 'static' / 'analysis' / 'devig_results' / 'nhl.json'
         if actual.is_file():
             state['payload'] = json.loads(actual.read_text(encoding='utf-8'))
@@ -275,6 +395,6 @@ try:
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: prop-isolated rankings, ATGS discovery, small samples, filters, reference isolation, invalid dates, null ROI, 401/403/signout clearing, 320/390px mobile, loopback-only preview; no page errors.')
+        print('PASS: NHL regressions; NFL ATTD defaults, all-market/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile, loopback-only preview; no page errors.')
 finally:
     server.shutdown()

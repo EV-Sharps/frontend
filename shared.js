@@ -210,6 +210,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf", tier: "free" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nfl", tier: "sharp" },
+			{ label: "Devig Results", value: "devig-results?sport=nfl", tier: "sharp" },
 			{ label: "🏈 Preseason", value: "preseason", tier: "sharp" },
 			{ label: "🔮 Futures", value: "nfl_futures", tier: "free" },
 			{ label: "🏈 CFB", value: "ncaaf", tier: "sharp" },
@@ -319,6 +320,7 @@ function pagePickerValue() {
 		return `${page}?sport=${SPORT || new URLSearchParams(window.location.search).get("sport") || "mlb"}`;
 	}
 	if (page === "nfl_tracker" && ["nhl", "ncaaf"].includes(SPORT)) return `${page}?sport=${SPORT}`;
+	if (page === "devig-results" && (SPORT || new URLSearchParams(window.location.search).get("sport")) === "nfl") return "devig-results?sport=nfl";
 	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : "parlays";
 	return page;
 }

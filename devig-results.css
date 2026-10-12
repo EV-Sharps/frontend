@@ -21,6 +21,8 @@ main.dv-main { display: block; overflow: visible; max-width: 1520px; margin: aut
 .dv-eyebrow > span { color: #90d0ff; background: #22313d; border: 1px solid #3d596c; border-radius: 4px; padding: 2px 6px; margin-left: 6px; letter-spacing: .5px; }
 .dv-intro h1 { font-size: clamp(26px, 3vw, 35px); letter-spacing: -1px; line-height: 1.2; margin: 0 0 10px; text-align: left; }
 .dv-lede { color: #a8b4bd; font-size: 13px; margin: 0; }
+.dv-sport-control { display: flex; align-items: center; gap: 10px; margin-top: 15px; color: #a6b4be; font-size: 11px; font-weight: 600; }
+.dv-sport-control select { min-width: 110px; font-size: 12px; }
 .dv-report-meta { display: grid; justify-items: end; gap: 4px; flex-shrink: 0; font-size: 12px; }
 .dv-report-meta small { color: #92a1ab; font-size: 10px; }
 .dv-report-meta button { margin-top: 6px; font-size: 11px; }
@@ -59,7 +61,8 @@ main.dv-main { display: block; overflow: visible; max-width: 1520px; margin: aut
 .dv-panel-head .dv-caption { margin: 5px 0 0; font-size: 10px; }
 .dv-panel-head .dv-eyebrow { font-size: 9px; margin-bottom: 5px; }
 .dv-chip { color: #a9bac6; background: #232e36; border: 1px solid #3b4c57; border-radius: 4px; padding: 3px 7px; font-size: 9px; white-space: nowrap; }
-.dv-daily { padding: 1px 19px 17px; display: grid; gap: 8px; }
+.dv-daily { padding: 1px 19px 17px; display: grid; gap: 8px; max-height: 360px; overflow-y: auto; }
+#daily-caption { margin: 0 19px 17px; }
 .dv-day { display: grid; grid-template-columns: 52px minmax(0, 1fr) 76px; gap: 12px; align-items: center; font-size: 10px; font-variant-numeric: tabular-nums; min-height: 19px; }
 .dv-day > span:first-child { color: #a6b7c3; }
 .dv-day > span:last-child { text-align: right; white-space: nowrap; }

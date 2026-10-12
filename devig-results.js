@@ -55,6 +55,15 @@
       days: group(chosen, ['date']).sort((a, b) => a.date.localeCompare(b.date)),
     };
   }
+  function buildPerformers(report, filters, { limit = 10 } = {}) {
+    const rows = reportCells(report).filter(cell => matches(cell, filters));
+    // Keep books and markets separate. Reference/method selection belongs to
+    // the main detail view; this leaderboard compares each complete strategy.
+    const combinations = group(rows, ['prop', 'book', 'reference', 'method']);
+    return ranked(combinations, filters.minimum ?? 10, filters.profitableOnly)
+      .slice(0, [5, 10, 15].includes(Number(limit)) ? Number(limit) : 10)
+      .map((row, index) => ({ ...row, rank: index + 1 }));
+  }
   function defaultStrategy(report) {
     const pairs = new Set(reportCells(report).map(cell => JSON.stringify([cell.reference, cell.method])));
     if (pairs.has(JSON.stringify(['pn;1', 'worst']))) return { reference: 'pn;1', method: 'worst', fallback: false };
@@ -145,7 +154,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
+  const api = { aggregate, buildView, buildPerformers, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -180,6 +189,83 @@
   let report = null, view = null, authVersion = 0, controller = null, pending = null;
   const referenceName = id => { const reference = report?.references.find(item => item.id === id); return reference?.books?.length === 1 ? bookName(reference.books[0]) : reference?.name || id; };
   const methodName = id => report?.methods.find(item => item.id === id)?.name || id;
+  let performersModel = null, performersRevision = 0;
+  function closePerformers() {
+    performersRevision++;
+    performersModel = null;
+    if ($('performers-dialog').open) $('performers-dialog').close();
+    $('performers-rows').replaceChildren();
+    for (const id of ['performers-subtitle', 'performers-period', 'performers-generated', 'performers-scope', 'performers-criteria', 'performers-status', 'performers-footnotes']) $(id).textContent = '';
+    $('performers-copy').disabled = $('performers-download').disabled = true;
+  }
+  function renderPerformers() {
+    if (!report || filterError(filters())) { closePerformers(); return; }
+    performersRevision++;
+    const f = filters(), limit = Number($('performers-limit').value);
+    const rows = buildPerformers(report, f, { limit });
+    const prettyDate = day => new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
+    const windowName = $('date-preset').selectedOptions[0]?.textContent || 'Custom dates';
+    performersModel = {
+      sport, title: 'Best performers', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
+      period: (f.start === f.end ? prettyDate(f.start) : `${prettyDate(f.start)} – ${prettyDate(f.end)}`) + ' · ET',
+      scope: `${f.book ? bookName(f.book) : 'All betting books · ranked separately'} · All devig references & methods`,
+      criteria: `Ranked by observed ROI · Min. ${count(f.minimum)} settled · Top ${limit}${f.profitableOnly ? ' · Profitable only' : ''}`,
+      generated: `Updated ${timestamp(report.generated_at)}`,
+      footnotes: [
+        'Historical replay · 1u risk per settled offer · Modeled fees included.',
+        'Pending / ungraded offers are excluded from ROI. W–L–P includes pushes.',
+        'Rows can overlap and are not a combined betting record. Past results do not establish a future edge.',
+      ],
+      rows: rows.map(row => ({ ...row, bookLabel: bookName(row.book), marketLabel: propName(row.prop),
+        referenceLabel: referenceName(row.reference), methodLabel: methodName(row.method),
+        recordLabel: `${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}`,
+        profit: row.profit_units, profitLabel: signed(row.profit_units, 'u'), roiLabel: percent(row.roi),
+        unresolvedLabel: `${count(row.pending + row.ungraded)} unresolved` })),
+    };
+    for (const [id, key] of [['subtitle', 'subtitle'], ['period', 'period'], ['generated', 'generated'], ['scope', 'scope'], ['criteria', 'criteria']]) $('performers-' + id).textContent = performersModel[key];
+    $('performers-rows').innerHTML = performersModel.rows.map(row =>
+      `<tr data-prop="${esc(row.prop)}" data-book="${esc(row.book)}" data-reference="${esc(row.reference)}" data-method="${esc(row.method)}"><td>${row.rank}</td><td><strong>${esc(row.bookLabel)}</strong><small>${esc(row.marketLabel)}</small></td><td><strong>${esc(row.referenceLabel)}</strong><small>${esc(row.methodLabel)}</small></td><td><strong>${esc(row.recordLabel)}</strong><small>${count(row.settled)} settled · ${esc(row.unresolvedLabel)}</small></td><td class="${tone(row.profit)}">${esc(row.profitLabel)}</td><td class="${tone(row.roi)}">${esc(row.roiLabel)}</td></tr>`
+    ).join('') || '<tr><td colspan="6" class="dv-share-empty">No performers meet these filters. Lower Min. settled or turn off Profitable only on the page.</td></tr>';
+    $('performers-footnotes').replaceChildren(...performersModel.footnotes.map(text => { const li = document.createElement('li'); li.textContent = text; return li; }));
+    $('performers-status').textContent = '';
+    $('performers-copy').disabled = $('performers-download').disabled = !rows.length;
+  }
+  function downloadPerformers(blob, filename) {
+    const url = URL.createObjectURL(blob), anchor = document.createElement('a');
+    anchor.href = url; anchor.download = filename; document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function exportPerformers(copy) {
+    if (!performersModel?.rows.length || !report || !$('performers-dialog').open) return;
+    const revision = performersRevision, model = performersModel, f = filters();
+    const current = () => revision === performersRevision && report && $('performers-dialog').open;
+    $('performers-copy').disabled = $('performers-download').disabled = true;
+    $('performers-status').textContent = 'Preparing image…';
+    try {
+      const canvas = root.DevigResultsShare.drawCard(model);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image unavailable')), 'image/png'));
+      if (!current()) return;
+      const filename = `${model.sport}-best-performers-${f.start}-${f.end}.png`;
+      if (copy) {
+        try {
+          if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Clipboard unavailable');
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          if (current()) $('performers-status').textContent = 'Image copied. Paste it into your post.';
+        } catch (_) {
+          if (!current()) return;
+          downloadPerformers(blob, filename);
+          $('performers-status').textContent = 'Clipboard unavailable; PNG downloaded.';
+        }
+      } else {
+        downloadPerformers(blob, filename);
+        $('performers-status').textContent = 'PNG downloaded.';
+      }
+    } catch (_) {
+      if (current()) $('performers-status').textContent = 'Could not create the image. Try again or screenshot the table.';
+    } finally {
+      if (current()) $('performers-copy').disabled = $('performers-download').disabled = false;
+    }
+  }
   function notice(id, text) { $(id).textContent = text; $(id).hidden = !text; }
   function filters() {
     return { start: $('date-start').value, end: $('date-end').value, book: $('book-filter').value, prop: $('market-filter').value,
@@ -276,6 +362,7 @@
     const f = filters(), error = filterError(f);
     notice('filter-status', error);
     $('export').disabled = Boolean(error);
+    $('best-performers').disabled = Boolean(error);
     if (error) {
       clearResults();
       $('empty-state').hidden = false;
@@ -313,6 +400,7 @@
     renderPropRanks('odds-rows', 'odds_band', value => value, f);
     renderPropRanks('book-rows', 'book', bookName, f);
     renderRanks('market-rows', view.markets, 'prop', propName);
+    if ($('performers-dialog').open) renderPerformers();
   }
   function renderMethodology() {
     const c = report.config || {}, coverage = report.coverage || {};
@@ -353,6 +441,8 @@
   }
   function clearResults() {
     view = null;
+    closePerformers();
+    $('best-performers').disabled = true;
     for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved']) { $(id).textContent = '—'; $(id).className = ''; }
     for (const id of ['strategy-rows', 'odds-rows', 'book-rows', 'market-rows', 'daily-chart', 'coverage-days']) $(id).replaceChildren();
     for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record']) $(id).textContent = '';
@@ -455,6 +545,16 @@
   sportHeading();
   $('sport-filter').addEventListener('change', () => setSport($('sport-filter').value));
   window.addEventListener('popstate', () => setSport(sportFromSearch(location.search)));
+  $('best-performers').addEventListener('click', () => {
+    if (!report || filterError(filters())) return;
+    renderPerformers();
+    $('performers-dialog').showModal();
+  });
+  $('performers-limit').addEventListener('change', renderPerformers);
+  $('performers-close').addEventListener('click', closePerformers);
+  $('performers-dialog').addEventListener('cancel', event => { event.preventDefault(); closePerformers(); });
+  $('performers-copy').addEventListener('click', () => exportPerformers(true));
+  $('performers-download').addEventListener('click', () => exportPerformers(false));
   $('refresh').addEventListener('click', refresh);
   $('reset-filters').addEventListener('click', resetFilters);
   $('date-preset').addEventListener('change', applyDatePreset);

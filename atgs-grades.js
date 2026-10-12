@@ -10,10 +10,10 @@
     kambi: 'Kambi', re: 'Rebet', fl: 'Fliff', mb: 'Matchbook' };
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const numeric = value => (typeof value === 'number' || typeof value === 'string' && value.trim() !== '') && Number.isFinite(Number(value));
-  const number = (value, places = 1) => numeric(value) ? Number(value).toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: places }) : '—';
-  const pct = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${number(value)}%` : '—';
+  const number = (value, places = 1) => numeric(value) ? Number(value).toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: places }) : '-';
+  const pct = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${number(value)}%` : '-';
   const money = value => numeric(value) ? `$${number(value, 0)}` : 'Unknown';
-  const odds = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}` : '—';
+  const odds = value => numeric(value) ? `${Number(value) > 0 ? '+' : ''}${Math.round(Number(value))}` : '-';
   const title = value => String(value || '').replace(/\b[a-z]/g, c => c.toUpperCase());
   const bookName = book => books[book] || String(book || '').toUpperCase();
   const grade = row => grades.includes(row?.grade) ? row.grade : 'U';
@@ -108,7 +108,7 @@
     const settled = numeric(row.settled) ? Number(row.settled) : 0;
     const interval = array(row.roi_interval);
     const ci = interval.length === 2 && interval.every(numeric) ? `${pct(interval[0])} to ${pct(interval[1])}` : 'Not enough independent dates';
-    return `<tr data-grade="${grade(row)}"><td>${badge(grade(row))}</td><td>${settled ? `${number(row.wins, 0)}–${number(row.losses, 0)}` : '—'}${Number(row.pushes) > 0 ? `<small>${number(row.pushes, 0)} pushes</small>` : ''}</td><td class="${settled ? signClass(row.roi_pct) : ''}"><strong>${settled ? esc(pct(row.roi_pct)) : '—'}</strong></td><td>${settled ? `${esc(number(row.profit_units, 2))}u` : '—'}</td><td>${esc(number(row.settled, 0))} / ${esc(number(row.selected, 0))}</td><td>${esc(number(row.pending, 0))} / ${esc(number(row.ungraded, 0))}</td><td>${esc(number(row.days, 0))} / ${esc(number(row.games, 0))}</td><td>${chosenBook === 'best' ? esc(ci) : 'Best-available scope only'}</td></tr>`;
+    return `<tr data-grade="${grade(row)}"><td>${badge(grade(row))}</td><td>${settled ? `${number(row.wins, 0)}–${number(row.losses, 0)}` : '-'}${Number(row.pushes) > 0 ? `<small>${number(row.pushes, 0)} pushes</small>` : ''}</td><td class="${settled ? signClass(row.roi_pct) : ''}"><strong>${settled ? esc(pct(row.roi_pct)) : '-'}</strong></td><td>${settled ? `${esc(number(row.profit_units, 2))}u` : '-'}</td><td>${esc(number(row.settled, 0))} / ${esc(number(row.selected, 0))}</td><td>${esc(number(row.pending, 0))} / ${esc(number(row.ungraded, 0))}</td><td>${esc(number(row.days, 0))} / ${esc(number(row.games, 0))}</td><td>${chosenBook === 'best' ? esc(ci) : 'Best-available scope only'}</td></tr>`;
   }
   function renderRecords() {
     if (!report) return;

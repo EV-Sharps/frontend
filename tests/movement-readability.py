@@ -118,7 +118,7 @@ try:
         assert abs(initial["data"][0]["y"][0] - 10000 / 550) < .000001
         assert_ticks(page)
         px = page.locator('.movement-book[data-book="px"] .book-price')
-        assert px.inner_text() in ["-", "—", "N/A", "No quote"], px.inner_text()
+        assert px.inner_text() in ["-", "-", "N/A", "No quote"], px.inner_text()
         fd_price = page.locator('.movement-book[data-book="fd"] .book-price')
         expect(fd_price).to_have_text("+459")
         latest_time = page.locator('#book-price-time').inner_text()
@@ -135,7 +135,7 @@ try:
         page.evaluate("document.getElementById('movement-chart').emit('plotly_unhover', {})")
         expect(fd_price).to_have_text("+459")
         assert page.locator('#book-price-time').inner_text() == latest_time
-        assert px.inner_text() in ["-", "—", "N/A", "No quote"]
+        assert px.inner_text() in ["-", "-", "N/A", "No quote"]
 
         focus = page.locator('.book-focus[data-focus-book="fd"]')
         focus.click()

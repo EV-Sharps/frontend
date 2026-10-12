@@ -269,7 +269,7 @@ try:
         state['status'] = 503
         page.clock.run_for(120000)
         expect(page.locator('#catalog-rows tr').first).to_contain_text('Game started')
-        assert page.locator('#catalog-rows tr').first.locator('td').nth(3).locator('strong').inner_text() == '—'
+        assert page.locator('#catalog-rows tr').first.locator('td').nth(3).locator('strong').inner_text() == '-'
         expect(page.locator('#selection-metrics')).to_contain_text('Game started')
         state['status'] = 200
         state['payload']['rows'][0].update(start=(NOW+timedelta(days=1)).isoformat(), last_at=(NOW-timedelta(hours=2)).isoformat())
@@ -278,7 +278,7 @@ try:
         expect(page.locator('#catalog-rows tr').first).to_contain_text('Capture out of date')
         state['status'] = 503
         page.evaluate('window.refreshMovement()')
-        assert page.locator('#catalog-rows tr').first.locator('td').nth(3).locator('strong').inner_text() == '—'
+        assert page.locator('#catalog-rows tr').first.locator('td').nth(3).locator('strong').inner_text() == '-'
 
         # Eastern midnight clears private history before any successful refresh.
         state['status'] = 503

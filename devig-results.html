@@ -6,7 +6,7 @@
   <title>Devig results | +EV Sharps</title>
   <meta name="description" content="Explore NFL ATTD and NHL archived devig results by date, odds, method, reference and betting book.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="devig-results.css?v=20261012-share">
+  <link rel="stylesheet" href="devig-results.css?v=20261012-dense-matrix">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="devig-page">
@@ -39,10 +39,10 @@
       <p id="filter-status" class="dv-notice" role="status" hidden></p>
       <div class="dv-scope"><p><span class="dv-dot" aria-hidden="true"></span><strong id="selected-strategy"></strong><span id="selection-caption"></span></p><div class="dv-scope-actions"><button id="best-performers" type="button" aria-haspopup="dialog" disabled>Best performers</button><button id="export" type="button">Export CSV <span aria-hidden="true">↓</span></button></div></div>
       <section class="dv-summary" aria-label="Selected strategy results">
-        <div class="dv-stat dv-stat-primary"><span>Observed ROI</span><strong id="summary-roi">—</strong><small>Net units / settled offers</small></div>
-        <div class="dv-stat"><span>Net profit</span><strong id="summary-profit">—</strong><small>1 unit risked per offer</small></div>
-        <div class="dv-stat"><span>Settled offers</span><strong id="summary-settled">—</strong><small id="summary-record">Wins · losses · pushes</small></div>
-        <div class="dv-stat"><span>Pending / ungraded</span><strong id="summary-unresolved">—</strong><small>Excluded from ROI</small></div>
+        <div class="dv-stat dv-stat-primary"><span>Observed ROI</span><strong id="summary-roi">-</strong><small>Net units / settled offers</small></div>
+        <div class="dv-stat"><span>Net profit</span><strong id="summary-profit">-</strong><small>1 unit risked per offer</small></div>
+        <div class="dv-stat"><span>Settled offers</span><strong id="summary-settled">-</strong><small id="summary-record">Wins · losses · pushes</small></div>
+        <div class="dv-stat"><span>Pending / ungraded</span><strong id="summary-unresolved">-</strong><small>Excluded from ROI</small></div>
       </section>
       <p id="offer-note" class="dv-caption">Offers at different books are alternative places to bet; this is not a unique-bet portfolio.</p>
       <section id="empty-state" class="dv-empty" hidden><h2>No qualifying offers in this view</h2><p id="empty-message">Try another date, market or betting book. Check coverage below for missing archives.</p></section>
@@ -61,14 +61,16 @@
     </div>
   </main>
   <dialog id="performers-dialog" class="dv-share-dialog" aria-labelledby="performers-dialog-title">
-    <div class="dv-share-toolbar"><h2 id="performers-dialog-title">Best performers</h2><label>Rows <select id="performers-limit"><option value="5">Top 5</option><option value="10" selected>Top 10</option><option value="15">Top 15</option></select></label><button id="performers-copy" type="button">Copy Image</button><button id="performers-download" type="button">Download PNG</button><button id="performers-close" type="button" aria-label="Close best performers">Close</button></div>
-    <p class="dv-share-help">Compares all devigs and methods within your date, market, book and sample filters. Copy or download the card to share.</p>
+    <div class="dv-share-toolbar"><h2 id="performers-dialog-title">Devig performance</h2><label>Method <select id="performers-method"><option value="probit" selected>Probit</option></select></label><label>Odds range <select id="performers-range"><option value="all" selected>All odds</option><option value="short">Short EV: below +400</option><option value="mid">Mid EV: +400 to +1000</option><option value="long">Long EV: above +1000</option></select></label><label>Books per image <select id="performers-limit"><option value="1">1 book</option><option value="3">3 books</option><option value="6">6 books</option><option value="all" selected>All books</option></select></label><label>Devigs per image <select id="performers-columns"><option value="4">4 devigs</option><option value="8" selected>8 devigs</option><option value="12">12 devigs</option></select></label><button id="performers-copy" type="button">Copy Image</button><button id="performers-download" type="button">Download PNG</button><button id="performers-close" type="button" aria-label="Close best performers">Close</button></div>
+    <div id="performers-books-pagination" class="dv-share-pagination" aria-label="Betting book pages"><button id="performers-prev" type="button" disabled>Previous books</button><span id="performers-page" aria-live="polite"></span><button id="performers-next" type="button" disabled>Next books</button></div>
+    <div class="dv-share-pagination" aria-label="Devig column pages"><button id="performers-devigs-prev" type="button" disabled>Previous devigs</button><span id="performers-devigs-page" aria-live="polite"></span><button id="performers-devigs-next" type="button" disabled>Next devigs</button></div>
+    <p class="dv-share-help">Betting books down the left; sharp devigs first across the top. Small samples are shown. Your date, market, book and profitable-only filters apply.</p>
     <div id="performers-status" class="dv-share-status" role="status" aria-live="polite"></div>
     <div class="dv-share-scroll" role="region" aria-label="Best performers share card" tabindex="0">
       <article id="performers-card" class="dv-share-card">
-        <header class="dv-share-heading"><div><p class="dv-share-brand">+EV <span>Sharps</span></p><h3>Best performers</h3><p id="performers-subtitle"></p></div><div><p id="performers-period"></p><p id="performers-generated"></p></div></header>
-        <p id="performers-scope" class="dv-share-scope"></p><p id="performers-criteria" class="dv-share-criteria"></p>
-        <table class="dv-share-table"><caption class="sr-only">Betting book, market, devig reference and method combinations ranked by observed ROI</caption><thead><tr><th scope="col">#</th><th scope="col">Betting book / market</th><th scope="col">Devig / method</th><th scope="col">W–L–P / settled</th><th scope="col">Net units</th><th scope="col">ROI</th></tr></thead><tbody id="performers-rows"></tbody></table>
+        <header class="dv-share-heading"><div><p class="dv-share-brand">+EV <span>Sharps</span></p><h3>Devig performance</h3><p id="performers-subtitle"></p></div><div><p id="performers-period"></p><p id="performers-generated"></p></div></header>
+        <p id="performers-description"></p><p id="performers-scope" class="dv-share-scope"></p><p id="performers-criteria" class="dv-share-criteria"></p>
+        <table class="dv-share-table"><caption class="sr-only">Betting books as rows and devigs as columns, using one selected method and odds range</caption><thead><tr id="performers-head"><th scope="col">Betting book</th></tr></thead><tbody id="performers-rows"></tbody></table>
         <footer><ul id="performers-footnotes"></ul><span>evsharps.com</span></footer>
       </article>
     </div>
@@ -77,7 +79,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js?v=20261012-devig-nfl"></script>
   <script src="auth.js"></script>
-  <script src="devig-results-share.js?v=20261012-share"></script>
-  <script src="devig-results.js?v=20261012-share"></script>
+  <script src="devig-results-share.js?v=20261012-dense-matrix"></script>
+  <script src="devig-results.js?v=20261012-dense-matrix"></script>
 </body>
 </html>

@@ -55,14 +55,91 @@
       days: group(chosen, ['date']).sort((a, b) => a.date.localeCompare(b.date)),
     };
   }
-  function buildPerformers(report, filters, { limit = 10 } = {}) {
-    const rows = reportCells(report).filter(cell => matches(cell, filters));
-    // Keep books and markets separate. Reference/method selection belongs to
-    // the main detail view; this leaderboard compares each complete strategy.
-    const combinations = group(rows, ['prop', 'book', 'reference', 'method']);
-    return ranked(combinations, filters.minimum ?? 10, filters.profitableOnly)
-      .slice(0, [5, 10, 15].includes(Number(limit)) ? Number(limit) : 10)
-      .map((row, index) => ({ ...row, rank: index + 1 }));
+  const shareBookOrder = ['fd', 'dk', 'b365', 'mgm', 'cz', 'hr', 'fn', 'br', 'espn'];
+  const compareShareBooks = (a, b) => {
+    const order = book => shareBookOrder.includes(book) ? shareBookOrder.indexOf(book) : shareBookOrder.length;
+    return order(a) - order(b) || a.localeCompare(b);
+  };
+  const shareBuckets = [
+    { id: 'short', label: 'Short EV', description: 'Odds below +400' },
+    { id: 'mid', label: 'Mid EV', description: 'Odds +400 through +1000' },
+    { id: 'long', label: 'Long EV', description: 'Odds above +1000' },
+  ];
+  const legacyBuckets = { 'Below -200': 'short', '-200 to -101': 'short', '+100 to +199': 'short',
+    '+200 to +399': 'short', '+400 to +699': 'mid', '+700 to +999': 'mid' };
+  function shareBucket(cell, report) {
+    const legacy = legacyBuckets[cell.odds_band];
+    if (report.share_odds_version !== 1) return legacy || null;
+    const bucket = cell.share_odds_bucket;
+    if (!shareBuckets.some(item => item.id === bucket)) return null;
+    if (legacy) return bucket === legacy ? bucket : null;
+    return cell.odds_band === '+1000 and above' && ['mid', 'long'].includes(bucket) ? bucket : null;
+  }
+  function validBestHit(cell) {
+    const hit = cell.best_hit;
+    if (!hit || cell.wins <= 0 || typeof hit.player !== 'string' || (!hit.player.trim() && (typeof hit.game !== 'string' || !hit.game.trim()))
+      || !validDate(hit.date) || hit.date !== cell.date || hit.prop !== cell.prop
+      || typeof hit.book !== 'string' || !hit.book || hit.book === 'best'
+      || (cell.book !== 'best' && hit.book !== cell.book)
+      || typeof hit.odds !== 'number' || !Number.isFinite(hit.odds) || Math.abs(hit.odds) < 100
+      || typeof hit.profit_units !== 'number' || !Number.isFinite(hit.profit_units) || hit.profit_units <= 0
+      || typeof hit.under !== 'boolean'
+      || !['number', 'string'].includes(typeof hit.line) || !Number.isFinite(Number(hit.line)) || String(hit.line).trim() === '') return null;
+    return { player: hit.player.trim(), player_id: typeof hit.player_id === 'string' ? hit.player_id : '',
+      date: hit.date, game: typeof hit.game === 'string' ? hit.game : '', prop: hit.prop,
+      line: hit.line, under: hit.under, odds: hit.odds, profit_units: hit.profit_units, book: hit.book };
+  }
+  function bestHit(rows, report, bucket = 'all') {
+    const wins = rows.filter(cell => cell.wins > 0);
+    if (!wins.length) return { best_hit: null, hit_status: 'none' };
+    if (report.best_hit_version !== 1) return { best_hit: null, hit_status: 'rebuild' };
+    const hits = wins.map(cell => {
+      const hit = validBestHit(cell);
+      const hitBucket = hit ? hit.odds < 400 ? 'short' : hit.odds <= 1000 ? 'mid' : 'long' : null;
+      const cellBucket = shareBucket(cell, report);
+      const legacyLong = report.share_odds_version !== 1 && cell.odds_band === '+1000 and above' && hit?.odds >= 1000;
+      return hit && (hitBucket === cellBucket || bucket === 'all' && legacyLong) ? hit : null;
+    });
+    if (hits.some(hit => !hit)) return { best_hit: null, hit_status: 'unavailable' };
+    hits.sort((a, b) => b.profit_units - a.profit_units
+      || JSON.stringify([a.date, a.player, a.book, a.prop, a.line, a.under, a.odds]).localeCompare(JSON.stringify([b.date, b.player, b.book, b.prop, b.line, b.under, b.odds])));
+    return { best_hit: hits[0], hit_status: 'available' };
+  }
+  function shareReferencePriority(reference) {
+    const books = [...new Set(reference.books || reference.id.split(';')[0].split('+'))].sort();
+    const key = books.join('+');
+    const preferred = ['circa', 'pn', 'circa+pn', 'kal', 'nv', 'px', 'poly', 'mb'];
+    const index = preferred.indexOf(key);
+    return index >= 0 ? index : books.some(book => book === 'circa' || book === 'pn') ? 8 : 9;
+  }
+  function buildPerformers(report, filters = {}) {
+    const method = filters.method || 'probit', bucket = filters.bucket || 'all';
+    const columns = [...report.references].sort((a, b) => shareReferencePriority(a) - shareReferencePriority(b) || a.id.localeCompare(b.id));
+    const cells = reportCells(report);
+    const books = filters.book ? [filters.book] : [...new Set(cells.filter(cell => cell.book !== 'best'
+      && (!filters.prop || cell.prop === filters.prop)).map(cell => cell.book))].sort(compareShareBooks);
+    const combinations = new Map(), ambiguous = new Set();
+    for (const cell of cells.filter(cell => matches(cell, filters) && cell.method === method)) {
+      const cellBucket = shareBucket(cell, report), key = JSON.stringify([cell.book, cell.reference]);
+      if (bucket !== 'all' && !cellBucket) {
+        // Old +1000-and-above cells cannot reveal which offers were exactly
+        // +1000. Never shift them into the wrong column or omit them silently.
+        const affected = cell.odds_band === '+1000 and above' ? ['mid', 'long'] : shareBuckets.map(item => item.id);
+        if (affected.includes(bucket)) ambiguous.add(key);
+        continue;
+      }
+      if (bucket !== 'all' && cellBucket !== bucket) continue;
+      if (!combinations.has(key)) combinations.set(key, []);
+      combinations.get(key).push(cell);
+    }
+    return { method, bucket, columns, rows: books.map(book => ({ book, cells: columns.map(({ id: reference }) => {
+      const key = JSON.stringify([book, reference]);
+      if (ambiguous.has(key)) return { reference, row: null, reason: 'rebuild' };
+      const rows = combinations.get(key) || [], total = aggregate(rows);
+      if (!total.settled) return { reference, row: null, reason: 'empty' };
+      if (filters.profitableOnly && total.profit_units <= 0) return { reference, row: null, reason: 'unprofitable' };
+      return { reference, reason: null, row: { book, reference, method, bucket, ...total, ...bestHit(rows, report, bucket) } };
+    }) })) };
   }
   function defaultStrategy(report) {
     const pairs = new Set(reportCells(report).map(cell => JSON.stringify([cell.reference, cell.method])));
@@ -154,7 +231,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -162,18 +239,25 @@
   PAGE = 'devig-results';
   let sport = sportFromSearch(location.search);
   SPORT = sport;
-  const localPreview = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
-    && new URLSearchParams(location.search).get('preview') === '1';
+  const localPreview = IS_LOCALHOST && new URLSearchParams(location.search).get('preview') === '1';
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
   const count = value => number(value).toLocaleString('en-US');
-  const signed = (value, suffix = '') => value === null ? '—' : `${value > 0 ? '+' : ''}${number(value).toFixed(2)}${suffix}`;
-  const percent = value => value === null ? '—' : signed(value, '%');
+  const signed = (value, suffix = '') => value === null ? '-' : `${value > 0 ? '+' : ''}${number(value).toFixed(2)}${suffix}`;
+  const percent = value => value === null ? '-' : signed(value, '%');
   const tone = value => value > 0 ? 'dv-positive' : value < 0 ? 'dv-negative' : '';
   const bookNames = { best: 'Best available', pn: 'Pinnacle', circa: 'Circa', dk: 'DraftKings', fd: 'FanDuel', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi',
     poly: 'Polymarket', hr: 'Hard Rock', br: 'BetRivers', kambi: 'Kambi', b365: 'bet365', espn: 'theScore Bet', cz: 'Caesars',
     mgm: 'BetMGM', fn: 'Fanatics', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
   const bookName = book => bookNames[book] || String(book).toUpperCase();
+  const shareBookNames = { best: 'Best available', fd: 'FD', dk: 'DK', b365: 'bet365', mgm: 'MGM', cz: 'Caesars', hr: 'HR',
+    fn: 'Fanatics', br: 'BetRivers', espn: 'theScore', pn: 'Pinnacle', circa: 'Circa', nv: 'Novig', px: 'ProphetX',
+    kal: 'Kalshi', poly: 'Polymarket', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
+  const shareBookName = book => shareBookNames[book] || bookName(book);
+  const sharePlayerName = name => name === name.toLowerCase() ? name.split(' ').map(word => {
+    if (['aj', 'cj', 'dj', 'dk', 'jj', 'pj', 'tj', 'ii', 'iii', 'iv', 'vi'].includes(word)) return word.toUpperCase();
+    return word.replace(/(^|[-'])[a-z]/g, letter => letter.toUpperCase()).replace(/^Mc([a-z])/, (_, letter) => 'Mc' + letter.toUpperCase());
+  }).join(' ') : name;
   const propNames = { attd: 'ATTD (Anytime touchdown)', no_td: 'No touchdown (under 0.5)', ftd: 'First touchdown', '2+td': '2+ touchdowns', '3+td': '3+ touchdowns', pass_yds: 'Passing yards', rush_yds: 'Rushing yards', rec_yds: 'Receiving yards', rec: 'Receptions', pass_td: 'Passing touchdowns', atgs: 'ATGS (Anytime goalscorer)', no_goal: 'No goal (under 0.5)', fgs: 'First goal', '2+goals': '2+ goals', '3+goals': '3+ goals', sog: 'Shots on goal', saves: 'Goalie saves', sv: 'Goalie saves', pts: 'Points',
     ast: 'Assists', goals: 'Goals', assists: 'Assists', points: 'Points', ml: 'Moneyline', spread: 'Puck line', total: 'Game total', tt: 'Team total',
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
@@ -189,46 +273,107 @@
   let report = null, view = null, authVersion = 0, controller = null, pending = null;
   const referenceName = id => { const reference = report?.references.find(item => item.id === id); return reference?.books?.length === 1 ? bookName(reference.books[0]) : reference?.name || id; };
   const methodName = id => report?.methods.find(item => item.id === id)?.name || id;
-  let performersModel = null, performersRevision = 0;
+  let performersModel = null, performersRevision = 0, performersPage = 0, performersDevigPage = 0, performersFilterKey = '';
+  let performersBackdropPressed = false;
+  const performerReferenceName = reference => {
+    const books = reference.books || [];
+    if (books.length === 1) return bookName(books[0]);
+    if (books.length === 2 && books.includes('circa') && books.includes('pn') && reference.id.split(';')[1] === '1+1') return 'Circa + Pinnacle';
+    return reference.name || reference.id;
+  };
   function closePerformers() {
+    performersBackdropPressed = false;
     performersRevision++;
     performersModel = null;
+    performersPage = 0; performersDevigPage = 0; performersFilterKey = '';
     if ($('performers-dialog').open) $('performers-dialog').close();
     $('performers-rows').replaceChildren();
-    for (const id of ['performers-subtitle', 'performers-period', 'performers-generated', 'performers-scope', 'performers-criteria', 'performers-status', 'performers-footnotes']) $(id).textContent = '';
+    $('performers-head').replaceChildren();
+    for (const id of ['performers-subtitle', 'performers-period', 'performers-generated', 'performers-scope', 'performers-criteria', 'performers-status', 'performers-footnotes', 'performers-page', 'performers-description']) $(id).textContent = '';
     $('performers-copy').disabled = $('performers-download').disabled = true;
+    $('performers-prev').disabled = $('performers-next').disabled = true;
+    $('performers-devigs-prev').disabled = $('performers-devigs-next').disabled = true;
+    $('performers-devigs-page').textContent = '';
   }
   function renderPerformers() {
     if (!report || filterError(filters())) { closePerformers(); return; }
     performersRevision++;
-    const f = filters(), limit = Number($('performers-limit').value);
-    const rows = buildPerformers(report, f, { limit });
+    const f = { ...filters(), method: $('performers-method').value || 'probit', bucket: $('performers-range').value || 'all' };
+    const filterKey = JSON.stringify([f.start, f.end, f.book, f.prop, f.profitableOnly, f.method, f.bucket]);
+    if (filterKey !== performersFilterKey) { performersPage = 0; performersDevigPage = 0; }
+    performersFilterKey = filterKey;
+    const matrix = buildPerformers(report, f), groups = matrix.rows, requested = $('performers-limit').value;
+    const requestedColumns = Number($('performers-columns').value);
+    const devigsPerPage = [4, 8, 12].includes(requestedColumns) ? requestedColumns : 8;
+    const devigPageCount = Math.max(1, Math.ceil(matrix.columns.length / devigsPerPage));
+    performersDevigPage = Math.max(0, Math.min(performersDevigPage, devigPageCount - 1));
+    const columns = matrix.columns.slice(performersDevigPage * devigsPerPage, (performersDevigPage + 1) * devigsPerPage);
+    const pageSize = [1, 3, 6].includes(Number(requested)) ? Number(requested) : Math.max(1, groups.length);
+    const pageCount = Math.max(1, Math.ceil(groups.length / pageSize));
+    performersPage = Math.max(0, Math.min(performersPage, pageCount - 1));
+    const pageGroups = groups.slice(performersPage * pageSize, (performersPage + 1) * pageSize);
     const prettyDate = day => new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
     const windowName = $('date-preset').selectedOptions[0]?.textContent || 'Custom dates';
+    const range = shareBuckets.find(item => item.id === f.bucket);
+    const rangeLabel = range ? `${range.label} · ${range.description}` : 'All odds';
+    const devigPageLabel = `Devigs ${matrix.columns.length ? performersDevigPage * devigsPerPage + 1 : 0}–${Math.min((performersDevigPage + 1) * devigsPerPage, matrix.columns.length)} of ${matrix.columns.length}`;
+    const hitLabels = row => {
+      const hit = row.best_hit;
+      if (!hit) return { hitLabel: { rebuild: 'Rebuild report for best hits', none: 'No settled wins', unavailable: 'Best hit unavailable' }[row.hit_status] || 'Best hit unavailable', hitDetail: '' };
+      const odds = `${hit.odds > 0 ? '+' : ''}${hit.odds}`;
+      const market = hit.prop.replace(/^[123]p_/, '');
+      const lineLabel = market === 'ml' ? '' : market === 'spread'
+        ? ` ${Number(hit.line) > 0 ? '+' : ''}${hit.line}` : ` ${hit.under ? 'u' : 'o'}${hit.line}`;
+      return { hitLabel: `${hit.player ? sharePlayerName(hit.player) : hit.game} ${odds}`, hitDetail: `${propName(hit.prop).replace(/ \(.*\)$/, '')}${lineLabel} · ${dayLabel(hit.date)}${row.book === 'best' ? ` · ${shareBookName(hit.book)}` : ''}` };
+    };
     performersModel = {
-      sport, title: 'Best performers', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
+      sport, method: f.method, bucket: f.bucket, title: 'Devig performance', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
       period: (f.start === f.end ? prettyDate(f.start) : `${prettyDate(f.start)} – ${prettyDate(f.end)}`) + ' · ET',
-      scope: `${f.book ? bookName(f.book) : 'All betting books · ranked separately'} · All devig references & methods`,
-      criteria: `Ranked by observed ROI · Min. ${count(f.minimum)} settled · Top ${limit}${f.profitableOnly ? ' · Profitable only' : ''}`,
+      scope: `${f.book ? bookName(f.book) : 'All betting books'} · ${devigPageLabel}`,
+      description: `${methodName(f.method)} · ${rangeLabel}`,
+      criteria: `${groups.length ? `Books ${performersPage * pageSize + 1}–${Math.min((performersPage + 1) * pageSize, groups.length)} of ${groups.length}` : 'No books in this market'}${f.profitableOnly ? ' · Profitable only' : ''}`,
       generated: `Updated ${timestamp(report.generated_at)}`,
+      pageNumber: performersPage + 1, pageCount, devigPageNumber: performersDevigPage + 1,
+      pageLabel: `Book page ${performersPage + 1} of ${pageCount} · Devig page ${performersDevigPage + 1} of ${devigPageCount}`,
+      columns: columns.map(column => ({ id: column.id, label: performerReferenceName(column) })),
       footnotes: [
         'Historical replay · 1u risk per settled offer · Modeled fees included.',
+        'Each cell uses the selected method and odds range for that betting book and devig.',
         'Pending / ungraded offers are excluded from ROI. W–L–P includes pushes.',
-        'Rows can overlap and are not a combined betting record. Past results do not establish a future edge.',
+        'Strategies can overlap and are not a combined betting record. Past results do not establish a future edge.',
       ],
-      rows: rows.map(row => ({ ...row, bookLabel: bookName(row.book), marketLabel: propName(row.prop),
-        referenceLabel: referenceName(row.reference), methodLabel: methodName(row.method),
-        recordLabel: `${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}`,
-        profit: row.profit_units, profitLabel: signed(row.profit_units, 'u'), roiLabel: percent(row.roi),
-        unresolvedLabel: `${count(row.pending + row.ungraded)} unresolved` })),
+      rows: pageGroups.map(group => ({ book: group.book, bookLabel: shareBookName(group.book), bookName: bookName(group.book),
+        cells: columns.map(column => {
+          const cell = group.cells.find(item => item.reference === column.id), row = cell.row;
+          return { reference: column.id,
+          emptyLabel: cell.reason === 'rebuild' ? 'Rebuild report' : '-',
+          emptyDetail: cell.reason === 'rebuild' ? 'Rebuild report to separate +1000 from higher odds.'
+            : cell.reason === 'unprofitable' ? 'Not profitable in this selection.' : 'No settled offers in this selection.',
+          entry: row ? { ...row, referenceLabel: performerReferenceName(column), methodLabel: methodName(row.method),
+            recordLabel: `${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}`,
+            profit: row.profit_units, profitLabel: signed(row.profit_units, 'u'), roiLabel: percent(row.roi),
+            unresolvedLabel: `${count(row.pending + row.ungraded)} unresolved`, ...hitLabels(row) } : null,
+        }; }),
+      })),
     };
-    for (const [id, key] of [['subtitle', 'subtitle'], ['period', 'period'], ['generated', 'generated'], ['scope', 'scope'], ['criteria', 'criteria']]) $('performers-' + id).textContent = performersModel[key];
-    $('performers-rows').innerHTML = performersModel.rows.map(row =>
-      `<tr data-prop="${esc(row.prop)}" data-book="${esc(row.book)}" data-reference="${esc(row.reference)}" data-method="${esc(row.method)}"><td>${row.rank}</td><td><strong>${esc(row.bookLabel)}</strong><small>${esc(row.marketLabel)}</small></td><td><strong>${esc(row.referenceLabel)}</strong><small>${esc(row.methodLabel)}</small></td><td><strong>${esc(row.recordLabel)}</strong><small>${count(row.settled)} settled · ${esc(row.unresolvedLabel)}</small></td><td class="${tone(row.profit)}">${esc(row.profitLabel)}</td><td class="${tone(row.roi)}">${esc(row.roiLabel)}</td></tr>`
-    ).join('') || '<tr><td colspan="6" class="dv-share-empty">No performers meet these filters. Lower Min. settled or turn off Profitable only on the page.</td></tr>';
+    for (const [id, key] of [['subtitle', 'subtitle'], ['period', 'period'], ['generated', 'generated'], ['scope', 'scope'], ['criteria', 'criteria'], ['description', 'description']]) $('performers-' + id).textContent = performersModel[key];
+    $('performers-page').textContent = `Books: page ${performersPage + 1} of ${pageCount}`;
+    $('performers-books-pagination').hidden = pageCount <= 1;
+    $('performers-devigs-page').textContent = devigPageLabel;
+    $('performers-devigs-prev').disabled = performersDevigPage === 0;
+    $('performers-devigs-next').disabled = performersDevigPage >= devigPageCount - 1;
+    $('performers-prev').disabled = performersPage === 0;
+    $('performers-next').disabled = performersPage >= pageCount - 1;
+    $('performers-card').style.setProperty('--dv-share-min-width', `${Math.max(760, 142 + columns.length * 132)}px`);
+    $('performers-head').innerHTML = '<th scope="col">Betting book</th>' + performersModel.columns.map(column => `<th scope="col" data-reference="${esc(column.id)}">${esc(column.label)}</th>`).join('');
+    $('performers-rows').innerHTML = performersModel.rows.map(group => `<tr data-book="${esc(group.book)}"><th scope="row"><strong>${esc(group.bookLabel)}</strong>${group.bookName !== group.bookLabel ? `<small>${esc(group.bookName)}</small>` : ''}</th>${group.cells.map(cell => {
+      const row = cell.entry;
+      return `<td data-reference="${esc(cell.reference)}">${row ? `<div class="dv-share-leader" data-reference="${esc(row.reference)}" data-method="${esc(row.method)}"><div class="dv-share-financials"><b class="${tone(row.profit)}">${esc(row.profitLabel)}</b><span class="${tone(row.roi)}">${esc(row.roiLabel)} ROI</span></div><small>${esc(row.recordLabel)} · ${count(row.settled)} settled</small><div class="dv-share-hit" title="${esc(row.hitDetail)}">Best hit: ${esc(row.hitLabel)}</div></div>`
+        : `<p class="dv-share-missing" title="${esc(cell.emptyDetail)}">${esc(cell.emptyLabel)}</p>`}</td>`;
+    }).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length + 1}" class="dv-share-empty">No betting books have archived offers for this market.</td></tr>`;
     $('performers-footnotes').replaceChildren(...performersModel.footnotes.map(text => { const li = document.createElement('li'); li.textContent = text; return li; }));
     $('performers-status').textContent = '';
-    $('performers-copy').disabled = $('performers-download').disabled = !rows.length;
+    $('performers-copy').disabled = $('performers-download').disabled = !performersModel.rows.some(row => row.cells.some(cell => cell.entry));
   }
   function downloadPerformers(blob, filename) {
     const url = URL.createObjectURL(blob), anchor = document.createElement('a');
@@ -236,7 +381,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   async function exportPerformers(copy) {
-    if (!performersModel?.rows.length || !report || !$('performers-dialog').open) return;
+    if (!performersModel?.rows.some(row => row.cells.some(cell => cell.entry)) || !report || !$('performers-dialog').open) return;
     const revision = performersRevision, model = performersModel, f = filters();
     const current = () => revision === performersRevision && report && $('performers-dialog').open;
     $('performers-copy').disabled = $('performers-download').disabled = true;
@@ -245,7 +390,7 @@
       const canvas = root.DevigResultsShare.drawCard(model);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image unavailable')), 'image/png'));
       if (!current()) return;
-      const filename = `${model.sport}-best-performers-${f.start}-${f.end}.png`;
+      const filename = `${model.sport}-devigs-${model.method}-${model.bucket}-${f.start}-${f.end}-books-${model.pageNumber}-devigs-${model.devigPageNumber}.png`;
       if (copy) {
         try {
           if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Clipboard unavailable');
@@ -430,6 +575,13 @@
     options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets');
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]));
     options('method-filter', report.methods.map(item => [item.id, item.name]));
+    const shareMethod = previous ? $('performers-method').value || 'probit' : 'probit';
+    const shareMethods = report.methods.map(item => [item.id, item.name]);
+    for (const id of new Set(['probit', shareMethod])) {
+      if (!shareMethods.some(item => item[0] === id)) shareMethods.push([id, `${id === 'probit' ? 'Probit' : id} (not in report)`]);
+    }
+    options('performers-method', shareMethods, null, shareMethod);
+    if (!previous) $('performers-range').value = 'all';
     renderMethodology();
     if (!previous) resetFilters();
     else {
@@ -443,7 +595,7 @@
     view = null;
     closePerformers();
     $('best-performers').disabled = true;
-    for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved']) { $(id).textContent = '—'; $(id).className = ''; }
+    for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved']) { $(id).textContent = '-'; $(id).className = ''; }
     for (const id of ['strategy-rows', 'odds-rows', 'book-rows', 'market-rows', 'daily-chart', 'coverage-days']) $(id).replaceChildren();
     for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record']) $(id).textContent = '';
     $('daily-caption').textContent = '';
@@ -473,7 +625,7 @@
   }
   function refresh() {
     if (pending) return pending;
-    if (!ACCESS_TOKEN && !localPreview) { deny(401); return Promise.resolve(); }
+    if (!ACCESS_TOKEN && !IS_LOCALHOST) { deny(401); return Promise.resolve(); }
     const version = authVersion;
     const requestedSport = sport;
     controller = new AbortController();
@@ -550,9 +702,26 @@
     renderPerformers();
     $('performers-dialog').showModal();
   });
-  $('performers-limit').addEventListener('change', renderPerformers);
+  $('performers-limit').addEventListener('change', () => { performersPage = 0; renderPerformers(); });
+  $('performers-columns').addEventListener('change', () => { performersDevigPage = 0; renderPerformers(); });
+  $('performers-prev').addEventListener('click', () => { performersPage--; renderPerformers(); });
+  $('performers-next').addEventListener('click', () => { performersPage++; renderPerformers(); });
+  $('performers-devigs-prev').addEventListener('click', () => { performersDevigPage--; renderPerformers(); });
+  $('performers-devigs-next').addEventListener('click', () => { performersDevigPage++; renderPerformers(); });
+  for (const id of ['performers-method', 'performers-range']) $(id).addEventListener('change', renderPerformers);
   $('performers-close').addEventListener('click', closePerformers);
   $('performers-dialog').addEventListener('cancel', event => { event.preventDefault(); closePerformers(); });
+  const outsidePerformers = event => {
+    const dialog = $('performers-dialog'), rect = dialog.getBoundingClientRect();
+    return event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom);
+  };
+  $('performers-dialog').addEventListener('pointerdown', event => { performersBackdropPressed = event.button === 0 && outsidePerformers(event); });
+  $('performers-dialog').addEventListener('pointercancel', () => { performersBackdropPressed = false; });
+  $('performers-dialog').addEventListener('click', event => {
+    const dismiss = performersBackdropPressed && outsidePerformers(event);
+    performersBackdropPressed = false;
+    if (dismiss) closePerformers();
+  });
   $('performers-copy').addEventListener('click', () => exportPerformers(true));
   $('performers-download').addEventListener('click', () => exportPerformers(false));
   $('refresh').addEventListener('click', refresh);
@@ -582,7 +751,7 @@
   for (const id of ['account-link', 'access-login']) $(id).href = `profile${HTML}`;
   $('access-pricing').href = `pricing${HTML}`;
   async function boot() {
-    if (localPreview) { $('account-link').textContent = 'Local preview'; await refresh(); return; }
+    if (IS_LOCALHOST) { $('account-link').textContent = localPreview ? 'Local preview' : 'Local development'; await refresh(); return; }
     try {
       if (typeof SB === 'undefined' || !SB) throw new Error('Sign-in unavailable');
       const { data, error } = await SB.auth.getSession();

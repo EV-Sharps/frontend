@@ -102,7 +102,7 @@ with sync_playwright() as p:
     expect(page.locator('#selection-metrics')).to_contain_text('Single book · Circa')
     expect(page.locator('#chart-status')).to_contain_text('Independent endpoint fair values')
     expect(page.locator('#selection-metrics')).to_contain_text('No matched comparison')
-    assert page.locator('#selection-metrics > div').nth(2).locator('strong').inner_text() == '—'
+    assert page.locator('#selection-metrics > div').nth(2).locator('strong').inner_text() == '-'
     assert page.evaluate("document.getElementById('movement-chart').data.every(t => !t.meta?.fair)")
     expect(page.locator('#chart-footnote')).to_contain_text('not connected')
     output = Path(tempfile.mkdtemp(prefix='movement-fair-'))
@@ -127,7 +127,7 @@ with sync_playwright() as p:
     expect(page.locator('#chart-status')).to_contain_text('not the latest capture')
     cards = page.locator('#selection-metrics > div')
     expect(cards.nth(0).locator('strong')).to_have_text('+400')
-    expect(cards.nth(1).locator('strong')).to_have_text('—')
+    expect(cards.nth(1).locator('strong')).to_have_text('-')
     expect(cards.nth(1)).to_contain_text('No paired quotes')
     page.wait_for_function("document.getElementById('movement-chart').data?.some(t => t.meta?.fair)")
     assert page.evaluate("document.getElementById('movement-chart').data.find(t => t.meta?.fair).y") == [None, 20, None]
@@ -141,7 +141,7 @@ with sync_playwright() as p:
     page.locator('#catalog-rows tr').first.locator('button').click()
     expect(page.locator('#selection-metrics')).to_contain_text('Awaiting next fair capture')
     expect(page.locator('#chart-status')).to_contain_text('First usable fair capture')
-    assert page.locator('#selection-metrics > div').nth(2).locator('strong').inner_text() == '—'
+    assert page.locator('#selection-metrics > div').nth(2).locator('strong').inner_text() == '-'
 
     # Client filtering of an old paginated response keeps the server's offsets.
     state['payload']['total'] = 200

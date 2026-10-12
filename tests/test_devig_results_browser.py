@@ -7,6 +7,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+from tempfile import TemporaryDirectory
 from threading import Thread
 from urllib.parse import urlparse
 
@@ -16,6 +17,8 @@ STAGED = Path(__file__).resolve().parents[1]
 ROOT = next((parent for parent in STAGED.parents if (parent / 'devig_results.py').is_file()),
             STAGED.parent / 'odds')
 SITE = ROOT.parent / 'frontend'
+ARTIFACTS = TemporaryDirectory(prefix='devig-results-browser-')
+OUTPUT = Path(ARTIFACTS.name)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -54,10 +57,10 @@ def fixture():
 
 server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(SITE)))
 Thread(target=server.serve_forever, daemon=True).start()
-state = dict(status=200, payload=fixture(), signed_in=True, requests=[])
+state = dict(status=200, payload=fixture(), signed_in=True, supabase_available=True, requests=[])
 try:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, args=['--disable-logging', f'--log-file={OUTPUT / "chromium.log"}'])
         page = browser.new_page(viewport=dict(width=1440, height=1100))
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -74,6 +77,9 @@ try:
                 state['requests'].append(dict(url=url, auth=route.request.headers.get('authorization')))
                 route.fulfill(status=state['status'], json=state['payload'])
             elif 'cdn.jsdelivr.net' in url:
+                if not state['supabase_available']:
+                    route.fulfill(content_type='application/javascript', body='')
+                    return
                 session = "{access_token: 'fixture-token'}" if state['signed_in'] else 'null'
                 route.fulfill(content_type='application/javascript', body='''
                   window.supabase = {createClient: () => ({auth: {
@@ -82,7 +88,7 @@ try:
                   }})};'''.replace('SESSION', session))
             elif url.startswith(f'http://127.0.0.1:{server.server_port}/'):
                 route.continue_()
-            elif 'public-preview.test' in url:
+            elif urlparse(url).hostname in ('public-preview.test', 'localhost', '::1'):
                 name = urlparse(url).path.strip('/')
                 path = STAGED / name if (STAGED / name).is_file() else SITE / name
                 if path.is_file() and '..' not in name:
@@ -93,7 +99,8 @@ try:
                 route.fulfill(status=404, body='')
 
         page.route('**/*', intercept)
-        url = f'http://127.0.0.1:{server.server_port}/devig-results.html'
+        url = 'http://public-preview.test/devig-results.html'
+        local_url = f'http://127.0.0.1:{server.server_port}/devig-results.html'
         page.goto(url)
         expect(page.locator('#summary-roi')).to_have_text('+25.00%')
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
@@ -175,7 +182,7 @@ try:
         page.locator('#date-end').fill('2026-10-01')
         page.locator('#date-end').press('Tab')
         expect(page.locator('#filter-status')).to_be_visible()
-        expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#summary-roi')).to_have_text('-')
         expect(page.locator('#export')).to_be_disabled()
         assert page.locator('.dv-prop-group').count() == 0
         page.locator('#reset-filters').click()
@@ -194,7 +201,7 @@ try:
         state['payload']['cells'] = [cell(prop='atgs', selected=3, wins=0, losses=0, pushes=0, pending=1, ungraded=2, profit_units=0)]
         page.locator('#refresh').click()
         expect(page.locator('#summary-unresolved')).to_have_text('1 / 2')
-        expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#summary-roi')).to_have_text('-')
         expect(page.locator('#book-rows tr.dv-prop-group[data-prop="atgs"]')).to_be_visible()
         assert page.locator('#book-rows tr[data-segment]').count() == 0
 
@@ -206,7 +213,7 @@ try:
             assert page.locator('#strategy-rows tr').count() == 0
             assert page.locator('#coverage-files tr').count() == 0
             assert page.locator('.dv-prop-group').count() == 0
-            expect(page.locator('#summary-roi')).to_have_text('—')
+            expect(page.locator('#summary-roi')).to_have_text('-')
             state.update(status=200, payload=fixture())
             page.locator('#refresh').click()
             expect(page.locator('#summary-profit')).to_have_text('+9.00u')
@@ -222,10 +229,57 @@ try:
         page.goto('http://public-preview.test/devig-results.html?preview=1')
         expect(page.locator('#access-panel')).to_be_visible()
         assert len(state['requests']) == before, 'A public host must not bypass auth via preview=1'
-        page.goto(url + '?preview=1')
+        page.goto(url)
+        expect(page.locator('#access-panel')).to_be_visible()
+        assert len(state['requests']) == before, 'A public host must still require a session'
+
+        # Ordinary local development does not need a session, an auth SDK, or a preview flag.
+        state['supabase_available'] = False
+        for host in ('localhost', '127.0.0.1', '[::1]'):
+            page.goto(f'http://{host}:{server.server_port}/devig-results.html')
+            expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+            expect(page.locator('#account-link')).to_have_text('Local development')
+            assert page.evaluate('typeof window.supabase') == 'undefined'
+            assert state['requests'][-1] == dict(url='http://localhost:5001/api/devig-results?sport=nhl', auth=None)
+            before = len(state['requests'])
+            page.locator('#refresh').click()
+            page.wait_for_function("!document.querySelector('#refresh').disabled")
+            assert len(state['requests']) == before + 1
+            assert state['requests'][-1] == dict(url='http://localhost:5001/api/devig-results?sport=nhl', auth=None)
+
+        local_nfl = fixture()
+        local_nfl.update(sport='nfl', cells=[cell(prop='attd', profit_units=8)])
+        state['payload'] = local_nfl
+        page.select_option('#sport-filter', 'nfl')
+        expect(page.locator('#page-title')).to_have_text('NFL devig results')
+        expect(page.locator('#summary-profit')).to_have_text('+8.00u')
+        assert state['requests'][-1] == dict(url='http://localhost:5001/api/devig-results?sport=nfl', auth=None)
+        state['payload'] = fixture()
+        page.select_option('#sport-filter', 'nhl')
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        assert state['requests'][-1] == dict(url='http://localhost:5001/api/devig-results?sport=nhl', auth=None)
+
+        # The explicit fixture-preview path retains its same-origin endpoint.
+        page.goto(local_url + '?preview=1')
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        expect(page.locator('#account-link')).to_have_text('Local preview')
         assert state['requests'][-1]['url'].startswith(f'http://127.0.0.1:{server.server_port}/api/')
         assert state['requests'][-1]['auth'] is None
+        state['supabase_available'] = True
+
+        # A packaged app can use a loopback document origin without becoming local development.
+        packaged = browser.new_page()
+        packaged.add_init_script("window.EV_APP_CONFIG = {packaged: true, apiBase: 'https://packaged-api.test'}; window.EventSource = undefined;")
+        packaged.route('**/*', intercept)
+        before = len(state['requests'])
+        packaged.goto(local_url + '?preview=1')
+        expect(packaged.locator('#access-panel')).to_be_visible()
+        assert len(state['requests']) == before, 'Packaged loopback pages must still require a session'
+        state['signed_in'] = True
+        packaged.reload()
+        expect(packaged.locator('#summary-profit')).to_have_text('+9.00u')
+        assert state['requests'][-1] == dict(url='https://packaged-api.test/api/devig-results?sport=nhl', auth='Bearer fixture-token')
+        packaged.close()
 
         # A season report defaults to ATTD, while all-market and book views remain available.
         nfl = fixture()
@@ -283,7 +337,7 @@ try:
         page.locator('#refresh').click()
         expect(page.locator('#filter-status')).to_contain_text('not fully available')
         expect(page.locator('#date-start')).to_have_value('2026-10-04')
-        expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#summary-roi')).to_have_text('-')
         expect(page.locator('#export')).to_be_disabled()
         page.select_option('#date-preset', 'season')
         expect(page.locator('#filter-status')).to_contain_text('2026-07-01 through 2026-10-11')
@@ -307,7 +361,7 @@ try:
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
         page.select_option('#date-preset', 'yesterday')
         expect(page.locator('#filter-status')).to_contain_text('2026-10-11 through 2026-10-11')
-        expect(page.locator('#summary-roi')).to_have_text('—')
+        expect(page.locator('#summary-roi')).to_have_text('-')
         page.select_option('#date-preset', 'published')
 
         # A completed old HTTP response, delayed beyond a sport change, cannot restore old data.
@@ -339,7 +393,7 @@ try:
             page.locator('#refresh').click()
             expect(page.locator('#summary-profit')).to_have_text('+6.00u')
         state.update(payload=fixture(), signed_in=False)
-        page.goto(url + '?preview=1')
+        page.goto(local_url + '?preview=1')
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
 
         actual = ROOT / 'static' / 'analysis' / 'devig_results' / 'nhl.json'
@@ -347,7 +401,7 @@ try:
             state['payload'] = json.loads(actual.read_text(encoding='utf-8'))
             page.reload()
             expect(page.locator('#report-content')).to_be_visible()
-            expect(page.locator('#summary-roi')).not_to_have_text('—')
+            expect(page.locator('#summary-roi')).not_to_have_text('-')
             for table in ('#odds-rows', '#book-rows'):
                 expect(page.locator(f'{table} tr.dv-prop-group').first).to_have_attribute('data-prop', 'atgs')
                 expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*Anytime goalscorer'))
@@ -362,17 +416,17 @@ try:
               const r = el.getBoundingClientRect();
               return el.contains(document.elementFromPoint(r.left + 5, r.top + 5));
             }'''), 'Book rows must be reachable and visible'
-            page.locator('.dv-breakdowns').screenshot(path=str(STAGED / 'tests' / 'actual-prop-breakdowns-desktop.png'))
+            page.locator('.dv-breakdowns').screenshot(path=str(OUTPUT / 'actual-prop-breakdowns-desktop.png'))
             page.evaluate('window.scrollTo(0, 0)')
-            page.screenshot(path=str(STAGED / 'tests' / 'actual-desktop-viewport.png'))
-            page.screenshot(path=str(STAGED / 'tests' / 'actual-desktop.png'), full_page=True)
+            page.screenshot(path=str(OUTPUT / 'actual-desktop-viewport.png'))
+            page.screenshot(path=str(OUTPUT / 'actual-desktop.png'), full_page=True)
             page.set_viewport_size(dict(width=390, height=844))
             assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
             page.locator('#book-rows tr').first.scroll_into_view_if_needed()
             assert page.evaluate('window.scrollY > 0'), 'Mobile page must scroll to the book results'
             page.evaluate('window.scrollTo(0, 0)')
-            page.screenshot(path=str(STAGED / 'tests' / 'actual-mobile-viewport.png'))
-            page.screenshot(path=str(STAGED / 'tests' / 'actual-mobile.png'), full_page=True)
+            page.screenshot(path=str(OUTPUT / 'actual-mobile-viewport.png'))
+            page.screenshot(path=str(OUTPUT / 'actual-mobile.png'), full_page=True)
             small_atgs = page.locator('#book-rows [data-small-samples="atgs"]')
             if small_atgs.count():
                 before = page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count()
@@ -385,16 +439,17 @@ try:
                 expect(page.locator('#book-rows tr.dv-prop-group')).to_have_count(1)
                 assert page.locator('#book-rows tr[data-prop="atgs"][data-segment]').count() > 0
                 page.locator('#book-rows').scroll_into_view_if_needed()
-                page.screenshot(path=str(STAGED / 'tests' / 'actual-atgs-mobile.png'))
+                page.screenshot(path=str(OUTPUT / 'actual-atgs-mobile.png'))
                 page.set_viewport_size(dict(width=320, height=844))
                 assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
                 page.locator('#book-rows tr[data-prop="atgs"][data-segment]').first.scroll_into_view_if_needed()
-                page.screenshot(path=str(STAGED / 'tests' / 'actual-atgs-mobile-320.png'))
+                page.screenshot(path=str(OUTPUT / 'actual-atgs-mobile-320.png'))
                 page.set_viewport_size(dict(width=1440, height=1100))
-                page.locator('.dv-breakdowns').screenshot(path=str(STAGED / 'tests' / 'actual-atgs-small-samples-desktop.png'))
+                page.locator('.dv-breakdowns').screenshot(path=str(OUTPUT / 'actual-atgs-small-samples-desktop.png'))
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: NHL regressions; NFL ATTD defaults, all-market/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile, loopback-only preview; no page errors.')
+        print('PASS: NHL regressions; NFL ATTD defaults, all-market/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
 finally:
     server.shutdown()
+    ARTIFACTS.cleanup()

@@ -137,6 +137,7 @@ const createGameOption = (val, gameTime, container) => {
 	content.className = 'game-option-content';
 	const matchup = document.createElement('span');
 	matchup.className = 'game-option-matchup';
+	matchup.title = game.toUpperCase();
 	const teams = game.split(/\s*@\s*|\s+vs\.?\s+/i);
 	if (teams.length === 2 && teams.every(team => team.trim())) {
 		const sport = typeof SPORT === 'string' ? SPORT.toLowerCase() : '';

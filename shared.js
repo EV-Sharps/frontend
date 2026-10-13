@@ -350,6 +350,16 @@ function buildPagePicker() {
 	btn.setAttribute("aria-expanded", "false");
 	btn.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg><span>Pages</span><svg class="pp-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg>';
 	wrapper.replaceWith(btn);
+	// Keep site navigation beside the brand on every header, including pages
+	// without the shared odds filters.
+	const header = btn.closest('header');
+	const title = header?.querySelector('#title');
+	if (title) {
+		title.classList.add('page-picker-title');
+		title.insertBefore(btn, title.querySelector(':scope > .help-btn'));
+	} else if (header) {
+		header.classList.add('page-picker-header');
+	}
 	const panel = document.createElement("div");
 	panel.id = "page-picker-panel";
 	panel.className = "pp-menu";
@@ -6016,9 +6026,6 @@ function initTopFilterLayout() {
 	header.classList.add('table-filter-header');
 	strip.setAttribute('role', 'group');
 	strip.setAttribute('aria-label', 'Table filters');
-	const title = header.querySelector('#title');
-	const pages = document.getElementById('page-picker-btn');
-	if (title && pages) title.insertBefore(pages, title.querySelector('.help-btn'));
 	const discord = header.querySelector('#auth-buttons .discord-login');
 	const discordLabel = discord?.querySelector('.btn-text');
 	if (discordLabel) {

@@ -249,10 +249,11 @@ function initExcluded() {
 	if (!CURR_USER) return;
 
 	let excluded = CURR_USER?.metadata?.[`${PAGE}-exclude`] || [];
-	const checkboxes = document.querySelectorAll('#exclude-dd input[type="checkbox"]');
+	const checkboxes = document.querySelectorAll('#exclude-options input[type="checkbox"], #exclude-dd input[type="checkbox"]');
 	checkboxes.forEach(checkbox => {
 		checkbox.checked = excluded.includes(checkbox.value);
 	});
+	if (typeof syncExcludePicker === 'function') syncExcludePicker();
 }
 
 async function saveExcludeHelper(key) {

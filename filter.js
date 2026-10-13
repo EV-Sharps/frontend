@@ -17,6 +17,16 @@ function wireChkddMenu(menu, onChange = onChkddChange) {
 	// prevent duplicate listeners when menu is rebuilt/refreshed
 	if (menu.dataset.wired === "1") return;
 	menu.dataset.wired = "1";
+	if (menu.id === 'game-options') {
+		document.addEventListener('keydown', event => {
+			if (event.key !== 'Escape' || menu.style.display !== 'block') return;
+			const dropdown = document.getElementById('game-dd');
+			if (!dropdown) return;
+			event.preventDefault();
+			closeDropdown(dropdown, menu);
+			dropdown.querySelector('.chkdd-btn')?.focus({ preventScroll: true });
+		});
+	}
 
 	menu.addEventListener("click", (e) => {
 		const act = e.target?.dataset?.act; // "all" | "none" | "today" | "attd"
@@ -76,8 +86,9 @@ document.addEventListener("change", (e) => {
 });
 
 function updateGameLabel(props) {
-	const all_props = document.querySelectorAll("#game-options input").length;
+	const all_props = document.querySelectorAll('#game-options input[type="checkbox"]').length;
 	const btn = document.getElementById("game-dd-button");
+	if (!btn) return;
 
 	if (props.length == 0) {
 		btn.innerText = "No Games";
@@ -109,51 +120,109 @@ function updatePropLabel(props) {
 
 const createGameOption = (val, gameTime, container) => {
 	const label = document.createElement('label');
-	label.setAttribute("onclick", "event.stopPropagation()")
+	label.className = 'game-option';
+	label.addEventListener('click', event => event.stopPropagation());
 
-	let display = val.toUpperCase();
-	if (gameTime) {
-		let dt = new Date(gameTime);
-		dt = dt.toLocaleString("en-US", {
-			timeZone: "America/New_York",
-			hour: "numeric",
-			minute: "numeric",
-			hour12: true
-		}).split(", ").at(-1);
-		display += ` (${dt})`;
+	const game = String(val ?? '');
+	const date = gameTime ? new Date(gameTime) : null;
+	const hasTime = date && Number.isFinite(date.getTime());
+	const checkbox = document.createElement('input');
+	checkbox.type = 'checkbox';
+	checkbox.value = game;
+	checkbox.checked = true;
+	checkbox.dataset.date = hasTime ? date.toLocaleDateString('en-US', { timeZone: 'America/New_York' }) : '';
+	label.appendChild(checkbox);
+
+	const content = document.createElement('span');
+	content.className = 'game-option-content';
+	const matchup = document.createElement('span');
+	matchup.className = 'game-option-matchup';
+	const teams = game.split(/\s*@\s*|\s+vs\.?\s+/i);
+	if (teams.length === 2 && teams.every(team => team.trim())) {
+		const sport = typeof SPORT === 'string' ? SPORT.toLowerCase() : '';
+		const logoSport = ({ dingers: 'mlb', k: 'mlb', feed: 'mlb', props: 'nfl', atgs: 'nhl', ncaaf: 'ncaab', baseball_ncaa: 'ncaab' })[sport] || sport;
+		teams.forEach((team, index) => {
+			if (index) {
+				const separator = document.createElement('span');
+				separator.className = 'game-option-versus';
+				separator.textContent = game.includes('@') ? '@' : 'vs';
+				matchup.appendChild(separator);
+			}
+			const teamCode = team.trim().toLowerCase().replace(/-gm2\b/g, '');
+			const teamLabel = document.createElement('span');
+			teamLabel.className = 'game-option-team';
+			if (logoSport && teamCode) {
+				const cupCode = sport === 'soccer' && typeof CUP_TEAMS !== 'undefined' ? CUP_TEAMS[teamCode] : null;
+				const logo = document.createElement('img');
+				logo.className = 'game-option-logo';
+				logo.alt = '';
+				logo.setAttribute('aria-hidden', 'true');
+				logo.width = 24;
+				logo.height = 24;
+				logo.addEventListener('error', () => logo.remove(), { once: true });
+				logo.src = `logos/${encodeURIComponent(cupCode ? 'cup' : logoSport)}/${encodeURIComponent(cupCode || teamCode)}.png`;
+				teamLabel.appendChild(logo);
+			}
+			const name = document.createElement('span');
+			name.className = 'game-option-name';
+			name.textContent = teamCode.toUpperCase();
+			teamLabel.appendChild(name);
+			matchup.appendChild(teamLabel);
+		});
+	} else {
+		matchup.textContent = game.toUpperCase() || 'Unknown matchup';
 	}
-	const dateStr = gameTime ? new Date(gameTime).toLocaleDateString("en-US", { timeZone: "America/New_York" }) : "";
-	label.innerHTML = `<input type="checkbox" value="${val}" checked data-date="${dateStr}"> ${display}`;
+	content.appendChild(matchup);
+
+	const meta = document.createElement('span');
+	meta.className = 'game-option-meta';
+	const time = document.createElement('span');
+	time.className = 'game-option-time';
+	time.textContent = hasTime ? `${date.toLocaleTimeString('en-US', {
+		timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true
+	})} ET` : 'Time TBD';
+	meta.appendChild(time);
+	if (/-gm2\b/i.test(game)) {
+		const badge = document.createElement('span');
+		badge.className = 'game-option-badge';
+		badge.textContent = 'Game 2';
+		meta.appendChild(badge);
+	}
+	content.appendChild(meta);
+	label.appendChild(content);
 	container.appendChild(label);
 };
 
 const populateGameOptions = (games, times, container) => {
 	let lastDate = null;
 	[...games].sort((a, b) => {
-		const ta = new Date(times?.[a]).getTime();
-		const tb = new Date(times?.[b]).getTime();
-		if (isNaN(ta)) return 1;
+		const ta = times?.[a] ? new Date(times[a]).getTime() : NaN;
+		const tb = times?.[b] ? new Date(times[b]).getTime() : NaN;
+		if (isNaN(ta)) return isNaN(tb) ? 0 : 1;
 		if (isNaN(tb)) return -1;
 		return ta - tb;
 	}).forEach(p => {
 		const t = times?.[p];
-		if (t) {
-			const dateLabel = new Date(t).toLocaleDateString("en-US", {
-				timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric"
-			});
-			if (dateLabel !== lastDate) {
-				const sep = document.createElement('div');
-				sep.className = 'chkdd-date-sep';
-				sep.textContent = dateLabel;
-				container.appendChild(sep);
-				lastDate = dateLabel;
-			}
+		const date = t ? new Date(t) : null;
+		const dateLabel = date && Number.isFinite(date.getTime()) ? date.toLocaleDateString('en-US', {
+			timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric'
+		}) : 'Start time TBD';
+		if (dateLabel !== lastDate) {
+			const sep = document.createElement('div');
+			sep.className = 'chkdd-date-sep';
+			sep.textContent = dateLabel;
+			container.appendChild(sep);
+			lastDate = dateLabel;
 		}
 		createGameOption(p, t, container);
 	});
 };
 
 const createOption = (val, container) => {
+	if (container.id === 'game-options') {
+		createGameOption(val, typeof RES === 'undefined' ? null : RES?.times?.[val], container);
+		return;
+	}
 	const label = document.createElement('label');
 	label.setAttribute("onclick", "event.stopPropagation()")
 	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val.toUpperCase()}`;
@@ -234,6 +303,9 @@ function toggleDropdown(id, event) {
 	menu.style.display = isVisible ? 'none' : 'block';
 
 	isVisible ? closeDropdown(document.getElementById(id), menu) : openDropdown(id, menu);
+	if (!isVisible && id === 'game-dd' && event?.detail === 0) {
+		menu.querySelector('input[type="checkbox"]')?.focus({ preventScroll: true });
+	}
 }
 
 function toggleBookOddsColumns() {
@@ -300,26 +372,105 @@ if (dd) {
 	boxes = [...dd.querySelectorAll('input[type="checkbox"]')];
 }
 
-// Wrap scrollable content so action buttons stay visible
-if (menu && !menu.querySelector('.chkdd-scroll')) {
-	const scroll = document.createElement('div');
-	scroll.className = 'chkdd-scroll';
-	const actions = [...menu.querySelectorAll(':scope > .chkdd-actions, :scope > div:last-child')];
-	const toWrap = [...menu.childNodes].filter(n => !actions.includes(n));
-	toWrap.forEach(n => scroll.appendChild(n));
-	menu.insertBefore(scroll, menu.firstChild);
-}
-
 function getExcludedBooks() {
 	return boxes.filter(b => b.checked).map(b => b.value);
 }
 
 const PREDICTION_MARKET_BOOKS = ["kal", "poly", "px", "nv"];
+function syncExcludePicker() {
+	if (!menu || !excludeBtn) return;
+	const count = getExcludedBooks().length;
+	excludeBtn.textContent = count ? `Exclude (${count})` : 'Exclude';
+	excludeBtn.classList.toggle('tf-is-active', count > 0);
+	const summary = menu.querySelector('.exclude-summary');
+	if (summary) summary.textContent = `${count} excluded`;
+	const prediction = menu.querySelector('[data-exclude-prediction]');
+	if (prediction) {
+		const inputs = boxes.filter(input => PREDICTION_MARKET_BOOKS.includes(input.value));
+		prediction.setAttribute('aria-pressed', String(inputs.length > 0 && inputs.every(input => input.checked)));
+	}
+}
+
+function initExcludePicker() {
+	if (!menu) return;
+	const save = menu.querySelector('#save-exclude');
+	const saveAll = menu.querySelector('button[onclick*="saveAllExcludeBooks"]');
+	const status = menu.querySelector('#exclude-status');
+	menu.id = 'exclude-options';
+	menu.classList.add('exclude-menu');
+	// This panel has its own handlers; it is not a Prop/Game checkbox menu.
+	menu.dataset.wired = '1';
+	menu.setAttribute('role', 'dialog');
+	excludeBtn?.setAttribute('aria-controls', menu.id);
+	excludeBtn?.setAttribute('aria-haspopup', 'dialog');
+	const header = document.createElement('div');
+	header.className = 'exclude-header';
+	header.innerHTML = `<div class="exclude-heading"><strong>Exclude books</strong><span class="exclude-summary" role="status"></span></div>
+		<p>Checked books are left out of best-price picks.</p>
+		<div class="chkdd-actions"><button type="button" data-act="all">Exclude all</button><button type="button" data-act="none">Clear</button></div>`;
+	const list = document.createElement('div');
+	list.className = 'exclude-list';
+	const names = { fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', espn: 'theScore Bet', hr: 'Hard Rock', hr_az: 'Hard Rock (AZ)', hr_oh: 'Hard Rock (OH)' };
+	for (const prediction of [false, true]) {
+		const inputs = boxes.filter(input => PREDICTION_MARKET_BOOKS.includes(input.value) === prediction);
+		if (!inputs.length) continue;
+		const section = document.createElement('section');
+		const heading = document.createElement('div');
+		heading.className = 'exclude-section-heading';
+		const title = document.createElement('h3');
+		title.textContent = prediction ? 'Prediction markets' : 'Sportsbooks';
+		heading.appendChild(title);
+		if (prediction) {
+			const toggle = document.createElement('button');
+			toggle.type = 'button';
+			toggle.dataset.excludePrediction = '';
+			toggle.textContent = 'Toggle group';
+			toggle.setAttribute('aria-label', 'Exclude all prediction markets');
+			toggle.addEventListener('click', togglePredictionMarkets);
+			heading.appendChild(toggle);
+		}
+		const grid = document.createElement('div');
+		grid.className = 'exclude-book-grid';
+		for (const input of inputs) {
+			const label = document.createElement('label');
+			label.className = 'exclude-book-option';
+			const logo = document.createElement('img');
+			logo.src = `logos/${encodeURIComponent(input.value.replace(/^hr_(az|oh)$/, 'hr'))}.png`;
+			logo.alt = '';
+			logo.width = logo.height = 22;
+			logo.addEventListener('error', () => { logo.hidden = true; }, { once: true });
+			const name = document.createElement('span');
+			name.textContent = names[input.value] || parseBook(input.value);
+			label.append(input, logo, name);
+			grid.appendChild(label);
+		}
+		section.append(heading, grid);
+		list.appendChild(section);
+	}
+	const footer = document.createElement('div');
+	footer.className = 'exclude-footer';
+	const actions = document.createElement('div');
+	actions.className = 'chkdd-actions';
+	for (const button of [save, saveAll].filter(Boolean)) {
+		button.type = 'button';
+		actions.appendChild(button);
+	}
+	footer.appendChild(actions);
+	if (status) {
+		status.setAttribute('role', 'status');
+		footer.appendChild(status);
+	}
+	menu.replaceChildren(header, list, footer);
+	syncExcludePicker();
+}
+
+initExcludePicker();
+
 function togglePredictionMarkets() {
-	const menu = document.getElementById('exclude-dd')?.querySelector('.chkdd-menu') || document.body;
-	const predBoxes = PREDICTION_MARKET_BOOKS.map(v => menu.querySelector(`input[value="${v}"]`)).filter(Boolean);
+	const predBoxes = boxes.filter(input => PREDICTION_MARKET_BOOKS.includes(input.value));
 	const allChecked = predBoxes.every(b => b.checked);
 	predBoxes.forEach(b => { b.checked = !allChecked; });
+	syncExcludePicker();
 	changeFilter();
 }
 if (excludeBtn) {
@@ -329,6 +480,7 @@ if (excludeBtn) {
 		e.stopPropagation();
 		const open = excludeBtn.getAttribute('aria-expanded') === 'true';
 		open ? closeMenu() : openMenu();
+		if (!open && e.detail === 0) boxes[0]?.focus({ preventScroll: true });
 	});
 }
 
@@ -337,15 +489,22 @@ if (menu) {
 		if (menu.style.display === 'block' && !menu.contains(e.target)) closeMenu();
 	});
 	boxes.forEach(b => b.addEventListener('change', () => {
+		syncExcludePicker();
 		changeFilter();
 	}));
 	
 	menu.addEventListener('click', (e) => {
-		const act = e.target?.dataset?.act;
+		const act = e.target.closest('button')?.dataset.act;
 		if (!act) return;
 		const state = act === 'all';
 		boxes.forEach(b => b.checked = state);
+		syncExcludePicker();
 		changeFilter();
+	});
+	document.addEventListener('keydown', event => {
+		if (event.key !== 'Escape' || menu.style.display !== 'block') return;
+		closeMenu();
+		excludeBtn?.focus({ preventScroll: true });
 	});
 }
 
@@ -362,6 +521,7 @@ document.getElementById('overlay')?.addEventListener('change', event => {
 });
 
 function openMenu() {
+	syncExcludePicker();
 	document.body.appendChild(menu);
 	menu.style.display = 'block';
 	positionFilterMenu(excludeBtn, menu);
@@ -1509,6 +1669,7 @@ function changeFilter(render = true) {
 	let book = document.getElementById("book-select").value;
 	const selectedBooks = parseBookFilter(book);
 	syncBookPicker();
+	syncExcludePicker();
 	let ou = document.getElementById("ou-select").value;
 	let minOdds = document.getElementById("min-odds").value;
 	let maxOdds = document.getElementById("max-odds").value;

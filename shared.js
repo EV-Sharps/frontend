@@ -2418,6 +2418,22 @@ function getNhlOpponentHitRateColumnItem() {
 	};
 }
 
+function getNbaHistoryHitRateColumnItems() {
+	return [["career", "Career", "across available career games"], ["bvt", "vs Opp", "against this opponent across available career games"]].map(([key, label, scope]) => ({
+		key: `hitRates_${key}`, label: `${label} Hit Rate`,
+		cols: [{
+			title: `${label}<br>Hit Rate`, field: `hitRates.${key}`, width: 60, responsive: 2,
+			formatter: hitRateFormatter, sorter: hitRateSorter,
+			headerTooltip: `Hit rate ${scope} for the current prop, line and Over/Under side. Pushes are not hits.`,
+			tooltip: (event, cell) => {
+				const rate = cell.getValue();
+				if (cell.getRow().getData().blurred || hitRatePercent(rate) === null || rate.w == null || !(Number(rate.t) > 0)) return "";
+				return `${rate.w}/${rate.t} games hit this line ${scope}`;
+			}
+		}]
+	}));
+}
+
 const hedgeFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	return `$${data.hedge}`;
@@ -3675,7 +3691,9 @@ const DEFAULT_FIELDS = {
 	nhl: [...DEFAULT_SHARED, "hitRates_bvt", "handicap", "oppRank", "dvpRank", "goalie", "ppLine"],
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", ...getPropHitRateColumnItems().map(item => item.key)],
-	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank"]
+	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank", ...getNbaHistoryHitRateColumnItems().map(item => item.key)],
+	pts: [...DEFAULT_SHARED, ...getNbaHistoryHitRateColumnItems().map(item => item.key)],
+	threes: [...DEFAULT_SHARED, ...getNbaHistoryHitRateColumnItems().map(item => item.key)]
 };
 
 function getNestedFields(defs, out = []) {
@@ -3835,6 +3853,9 @@ function showHideUserTable(loaded) {
 		}
 		if (["nhl", "atgs", "atgs2", "fgs"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-bvt-hit-rate-version`]) {
 			allowed.add("hitRates_bvt");
+		}
+		if (["nba", "pts", "threes"].includes(PAGE) && !CURR_USER.metadata[`${PAGE}-nba-history-hit-rates-version`]) {
+			getNbaHistoryHitRateColumnItems().forEach(item => allowed.add(item.key));
 		}
 		if (recordColumnVisible()) allowed.add('roiRecord');
 		if (openingColumnVisible()) allowed.add('openingPrice');

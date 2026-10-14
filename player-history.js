@@ -1,5 +1,5 @@
-function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.handicap }) {
-	const logFields = { logs: 'logs', bvt: 'bvtLogs', away: 'awayLogs', home: 'homeLogs' };
+function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.handicap, roundPercent = Math.round }) {
+	const logFields = { logs: 'logs', career: 'careerLogs', bvt: 'bvtLogs', away: 'awayLogs', home: 'homeLogs' };
 	const colors = { hit: '#36d399', miss: '#c57580', push: '#94a3b8', gap: '#659be8', current: '#c388ff', average: '#f2bd60', median: '#5dd8cf' };
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
@@ -199,14 +199,14 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		const note = dialog.querySelector('.nhl-history-note');
 		const opponent = String(selected.opp || '').toUpperCase();
 		const venue = view === 'away' || view === 'home' ? view : '';
-		const games = view === 'bvt' ? `meetings vs ${opponent || 'this opponent'}` : venue ? `${venue} games` : 'games';
+		const games = view === 'bvt' ? `meetings vs ${opponent || 'this opponent'}` : venue ? `${venue} games` : view === 'career' ? 'career games' : 'games';
 		const rawLine = lineOf(selected);
 		const line = rawLine === null || rawLine === undefined || rawLine === '' ? NaN : Number(rawLine);
 		const hasLine = Number.isFinite(line);
 		if (!values.length) {
 			summary([]);
 			note.textContent = '';
-			empty.textContent = view === 'bvt' ? `No ${props[selected.prop] || selected.prop} history available against ${opponent || 'this opponent'}.` : `No ${venue ? `${venue} ` : ''}game logs available for this prop.`;
+			empty.textContent = view === 'bvt' ? `No ${props[selected.prop] || selected.prop} history available against ${opponent || 'this opponent'}.` : `No ${venue ? `${venue} ` : view === 'career' ? 'career ' : ''}game logs available for this prop.`;
 			empty.hidden = false;
 			return;
 		}
@@ -214,7 +214,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		const hits = values.filter(value => result(value) === 'hit').length;
 		const pushes = hasLine ? values.filter(value => value === line).length : 0;
 		const average = values.reduce((a, b) => a + b, 0) / values.length;
-		summary([...(hasLine ? [['Hit rate', `${Math.round(hits * 100 / values.length)}% (${hits}/${values.length})`]] : []), ['Average', display(average)], ['Games', String(values.length)]]);
+		summary([...(hasLine ? [['Hit rate', `${roundPercent(hits * 100 / values.length)}% (${hits}/${values.length})`]] : []), ['Average', display(average)], ['Games', String(values.length)]]);
 		note.textContent = `${values.length === all.length ? `All ${all.length} available` : `Last ${values.length} of ${all.length}`} ${games} · Oldest to latest${pushes ? ` · ${pushes} push${pushes === 1 ? '' : 'es'}` : ''}`;
 		if (hasLine) dialog.querySelector('.nhl-history-legend').innerHTML = '<span class="history-hit">Hit</span><span class="history-miss">Miss</span><span class="history-push">Push</span><span>Dashed: selected line</span>';
 		const x = values.map((_, index) => index + 1);
@@ -229,7 +229,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 			customdata: values.map((value, index) => [labels[index], hasLine ? result(value).toUpperCase() : '']),
 			hovertemplate: '%{customdata[0]}<br>%{y} · %{customdata[1]}<extra></extra>'
 		}], {
-			xaxis: { title: { text: view === 'bvt' ? `Games vs ${opponent || 'opponent'}` : venue ? `${views[view]} games` : 'Recent games' }, tickvals, ticktext: tickvals.map(value => labels[value - 1]), showgrid: false, fixedrange: true },
+			xaxis: { title: { text: view === 'bvt' ? `Games vs ${opponent || 'opponent'}` : venue || view === 'career' ? `${views[view]} games` : 'Recent games' }, tickvals, ticktext: tickvals.map(value => labels[value - 1]), showgrid: false, fixedrange: true },
 			yaxis: { title: { text: props[selected.prop] || convertProp(selected.prop) }, range: [min < 0 ? min - (max - min) * 0.12 - 0.5 : 0, max * 1.2 + 0.5], dtick: max < 10 ? 1 : undefined, gridcolor: '#263445', zeroline: false, fixedrange: true },
 			shapes: hasLine ? [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: line, y1: line, line: { color: '#dbe7f3', dash: 'dash', width: 1.5 } }] : []
 		}, values.length);
@@ -278,6 +278,18 @@ window.NhlHistory = createPlayerHistory(window, {
 	prefix: 'nhl-history',
 	views: { due: 'Due', logs: 'Logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
 	props: { atgs: 'Goals', fgs: 'First goal', lgs: 'Last goal', sog: 'Shots on goal', ast: 'Assists', pts: 'Points', sv: 'Saves', bs: 'Blocked shots', pp_pts: 'Power play points' }
+});
+window.NbaHistory = createPlayerHistory(window, {
+	prefix: 'nba-history',
+	views: { logs: 'Game logs', career: 'Career', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
+	// Match whole percentages from the NBA feed, including half-to-even ties.
+	roundPercent: value => value % 1 === 0.5 ? Math.round(value / 2) * 2 : Math.round(value),
+	props: {
+		pts: 'Points', reb: 'Rebounds', ast: 'Assists', '3ptm': 'Made threes', stl: 'Steals', blk: 'Blocks',
+		'pts+reb': 'Points + rebounds', 'pts+ast': 'Points + assists', 'reb+ast': 'Rebounds + assists',
+		'pts+reb+ast': 'Points + rebounds + assists', 'blk+stl': 'Blocks + steals',
+		dd: 'Double-doubles', td: 'Triple-doubles', '1st pts': 'First basket'
+	}
 });
 window.NflHistory = createPlayerHistory(window, {
 	prefix: 'nfl-history',

@@ -1279,6 +1279,7 @@ html.odds-app #app > main { min-height: 0; }
 }
 
 .data-card .trend-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.data-card .trend-row-history { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); }
 .data-card .trend-pill { width: auto; min-width: 0; }
 .data-card .trend-box { padding: 6px 2px; }
 
@@ -2814,6 +2815,7 @@ nav {
 	.nhl-history-toolbar { padding: 12px; gap: 8px; }
 	.nhl-history-tabs { flex: 1 1 100%; min-width: 0; }
 	.nhl-history-tabs button { flex: 1; padding: 8px 5px; }
+	#nba-history-dialog .nhl-history-tabs button { min-width: 0; white-space: normal; }
 	.player-history-panel { padding: 0 12px; }
 	.nhl-history-stats { gap: 5px; }
 	.nhl-history-stats > div { padding: 9px 7px; }

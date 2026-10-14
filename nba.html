@@ -531,6 +531,14 @@
 									<label for="custom_hitRateLYR">Hit Rate LYR</label>
 								</div>
 								<div>
+									<input id="custom_hitRates_career" type="checkbox">
+									<label for="custom_hitRates_career">Career Hit Rate</label>
+								</div>
+								<div>
+									<input id="custom_hitRates_bvt" type="checkbox">
+									<label for="custom_hitRates_bvt">vs Opp Hit Rate</label>
+								</div>
+								<div>
 									<input id="custom_logs" type="checkbox">
 									<label for="custom_logs">Logs</label>
 								</div>
@@ -568,6 +576,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="player-lines.js"></script>
+	<script src="player-history.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "nba";
@@ -647,7 +657,7 @@
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_hr_az', 'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi',
 			'bookOdds_bol', 'bookOdds_kal', 'bookOdds_nv', 'bookOdds_px', 'bookOdds_poly',
-			'bookOdds_pn', 'logs', 'hitRate', 'hitRateLYR'
+			'bookOdds_pn', 'logs', 'hitRate', 'hitRateLYR', 'hitRates_career', 'hitRates_bvt'
 		];
 
 		function getNbaColumnItems() {
@@ -770,7 +780,8 @@
 				]},
 				{ key: 'hitRateLYR', label: 'Hit Rate LYR', cols: [
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2}
-				]}
+				]},
+				...getNbaHistoryHitRateColumnItems()
 			];
 		}
 
@@ -827,11 +838,12 @@ let loaded = false;
 			TABLE.on('tableBuilt', resolveTableReady);
 
 			TABLE.on("rowClick", function(e, row) {
+				if (e.target.closest('a, button, input, select, .watchlist-star') || row.getData().blurred) return;
 				if (e.shiftKey || e.ctrlKey) {
 					showCardModal(row.getData());
 					return;
 				}
-				rowClick(row);
+				NbaHistory.open(row.getData());
 			});
 
 			TABLE.on("dataLoaded", function(data) {

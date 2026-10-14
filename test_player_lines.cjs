@@ -105,8 +105,12 @@ test('missing or invalid liquidity remains unknown', () => {
 	assert.deepEqual(result.lines[0].liquidity.get('kal'), [null, null]);
 });
 
-test('only the three requested pages expose playable player names', () => {
-	for (const page of ['mlb', 'nfl', 'nhl']) assert.equal(canOpen(page, selected), true);
+test('supported prop pages expose player price comparisons while locked rows remain unavailable', () => {
+	for (const page of ['mlb', 'nfl', 'nhl', 'ncaaf', 'nba', 'pts', 'threes']) {
+		assert.equal(canOpen(page, selected), true);
+		assert.equal(canOpen(page, { ...selected, blurred: true }), false);
+		assert.equal(canOpen(page, { ...selected, prop: 'separator' }), false);
+	}
 	for (const page of ['dingers', 'tds', 'atgs', 'main']) assert.equal(canOpen(page, selected), false);
 	assert.equal(canOpen('nfl', { ...selected, blurred: true }), false);
 	assert.equal(canOpen('nfl', { ...selected, player: '' }), false);

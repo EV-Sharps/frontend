@@ -241,6 +241,7 @@ async function saveTableSettings() {
 	if (PAGE === "ncaaf") fields['ncaaf-carries-version'] = 1;
 	if (["mlb", "nfl"].includes(PAGE)) fields[`${PAGE}-hit-rates-version`] = 1;
 	if (document.getElementById('custom_hitRates_bvt')) fields[`${PAGE}-bvt-hit-rate-version`] = 1;
+	if (["nba", "pts", "threes"].includes(PAGE)) fields[`${PAGE}-nba-history-hit-rates-version`] = 1;
 	if (document.querySelector("#sort-select")) {
 		fields[`${PAGE}-sort`] = document.querySelector("#sort-select").value;
 	}

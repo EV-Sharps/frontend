@@ -322,16 +322,19 @@ function cardHitRates(rowData) {
 	return rates;
 }
 
-function renderTrends(trends, prop, { handicap, under = false } = {}) {
+function renderTrends(trends, prop, { handicap, under = false, history = false, blurred = false } = {}) {
 	const LABELS = {
 		lyr: "Last Yr",
-		szn: "Year"
+		szn: "Year",
+		career: "Career",
+		bvt: "vs Opp"
 	};
-	const ORDER = ["lyr", "szn", "L5", "L10", "L20"];
+	const ORDER = ["lyr", "szn", "L5", "L10", "L20", ...(history ? ["career", "bvt"] : [])];
 	const isAnytimeGoal = prop === 'atgs' && Number(handicap) === 0.5 && !under;
 	const useScoringScale = prop === 'hr' || isAnytimeGoal;
 	const pills = ORDER
-		.filter(k => trends?.[k]?.p != null && trends[k].p !== "" && Number.isFinite(Number(trends[k].p)))
+		.filter(k => trends?.[k]?.p != null && trends[k].p !== "" && Number.isFinite(Number(trends[k].p))
+			&& (trends[k].t == null || Number(trends[k].t) > 0))
 		.map(k => {
 			const { w, t } = trends[k];
 			const p = Number(trends[k].p);
@@ -346,7 +349,7 @@ function renderTrends(trends, prop, { handicap, under = false } = {}) {
 			return `
 				<div class="trend-pill">
 				  <div class="trend-label">${label}</div>
-				  <div class="trend-box ${tone}">
+				  <div class="trend-box ${tone}${blurred ? ' blurred' : ''}">
 					${counts}
 					<div class="trend-pct">${p}%</div>
 				  </div>
@@ -355,7 +358,7 @@ function renderTrends(trends, prop, { handicap, under = false } = {}) {
 		})
 		.join("");
 
-	return `<div class="trend-row">${pills}</div>`;
+	return `<div class="trend-row${history ? ' trend-row-history' : ''}">${pills}</div>`;
 }
 
 function renderDue(pa) {
@@ -858,7 +861,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u' })}
+					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u', history: ["nba", "pts", "threes"].includes(PAGE), blurred: rowData.blurred })}
 				</div>
 				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}

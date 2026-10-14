@@ -3,16 +3,21 @@
   'use strict';
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const metrics = ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit_units', 'ev_sum'];
+  const kellyMetrics = ['kelly_stake_units', 'kelly_profit_units'];
   const compactDimensions = ['date', 'book', 'prop', 'reference', 'method', 'odds_band', 'share_odds_bucket'];
   const compactHits = ['best_hit', 'highest_odds_hit', 'lowest_odds_hit'];
   const compactFields = [...compactDimensions, ...metrics, ...compactHits];
+  const kellyCompactFields = [...compactDimensions, ...metrics, ...kellyMetrics, ...compactHits];
   const normalizedReports = new WeakMap();
   function normalizeReport(data) {
     if (data?.version !== 2) return data;
     if (normalizedReports.has(data)) return normalizedReports.get(data);
     const invalid = () => { throw new Error('The published report contains invalid result rows. Please refresh after it is rebuilt.'); };
+    const fields = data.kelly_version === 1 ? kellyCompactFields : compactFields;
+    const numericFields = data.kelly_version === 1 ? [...metrics, ...kellyMetrics] : metrics;
+    const hitStart = compactDimensions.length + numericFields.length;
     if (data.cell_encoding !== 'indexed-v1' || !Array.isArray(data.cell_fields)
-      || data.cell_fields.length !== compactFields.length || data.cell_fields.some((field, index) => field !== compactFields[index])
+      || data.cell_fields.length !== fields.length || data.cell_fields.some((field, index) => field !== fields[index])
       || !data.cell_dictionaries || typeof data.cell_dictionaries !== 'object' || Array.isArray(data.cell_dictionaries)
       || !Array.isArray(data.hit_table) || !Array.isArray(data.cells)
       || (data.best_cells !== undefined && !Array.isArray(data.best_cells))) invalid();
@@ -30,19 +35,19 @@
       return values[index];
     };
     const decode = rows => rows.map(row => {
-      if (!Array.isArray(row) || row.length < 15 || row.length > compactFields.length) invalid();
+      if (!Array.isArray(row) || row.length < hitStart || row.length > fields.length) invalid();
       const cell = {};
       for (let i = 0; i < compactDimensions.length; i++) {
         if (i === 6 && row[i] === null) continue;
         cell[compactDimensions[i]] = indexed(dictionaries[i], row[i]);
       }
-      for (let i = 0; i < metrics.length; i++) {
+      for (let i = 0; i < numericFields.length; i++) {
         const value = row[compactDimensions.length + i];
         if (typeof value !== 'number' || !Number.isFinite(value)) invalid();
-        cell[metrics[i]] = value;
+        cell[numericFields[i]] = value;
       }
-      for (let i = 15; i < row.length; i++) {
-        if (row[i] !== null) cell[compactFields[i]] = indexed(hits, row[i]);
+      for (let i = hitStart; i < row.length; i++) {
+        if (row[i] !== null) cell[fields[i]] = indexed(hits, row[i]);
       }
       return cell;
     });
@@ -56,56 +61,73 @@
     report = normalizeReport(report);
     return [...report.cells, ...(report.best_cells || [])];
   };
-  const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
+  const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
+  const goalTier = prop => prop === 'atgs' ? 1 : /^[1-9]\d*\+goals$/.test(prop) ? Number.parseInt(prop, 10) : null;
+  const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS — ${goalTier(prop)}+ goals`;
   const supportedSports = ['nhl', 'nfl'];
   const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
   const compareProps = (a, b) => {
-    const index = prop => propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
-    return index(a) - index(b) || a.localeCompare(b);
+    const index = prop => goalTier(prop) !== null ? propOrder.indexOf('atgs') : propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
+    return index(a) - index(b) || (goalTier(a) || 0) - (goalTier(b) || 0) || a.localeCompare(b);
   };
-  function aggregate(cells) {
+  const hasKellyMetrics = cell => kellyMetrics.every(key => typeof cell[key] === 'number' && Number.isFinite(cell[key]))
+    && cell.kelly_stake_units >= 0;
+  function supportsKelly(report) {
+    report = normalizeReport(report);
+    return report?.kelly_version === 1 && reportCells(report).every(hasKellyMetrics);
+  }
+  const stakingLabel = mode => mode === 'quarter-kelly' ? '¼ Kelly' : 'Flat 1u';
+  function aggregate(cells, staking = 'flat') {
     const total = Object.fromEntries(metrics.map(key => [key, 0]));
     for (const cell of cells) for (const key of metrics) total[key] += number(cell[key]);
     total.settled = total.wins + total.losses + total.pushes;
-    total.roi = total.settled ? 100 * total.profit_units / total.settled : null;
+    total.stake_units = total.settled;
+    if (staking === 'quarter-kelly') {
+      if (!cells.every(hasKellyMetrics)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
+      total.stake_units = cells.reduce((sum, cell) => sum + cell.kelly_stake_units, 0);
+      total.profit_units = cells.reduce((sum, cell) => sum + cell.kelly_profit_units, 0);
+    }
+    total.roi = total.stake_units ? 100 * total.profit_units / total.stake_units : null;
     return total;
   }
   function matches(cell, filters) {
     return (!filters.start || cell.date >= filters.start) && (!filters.end || cell.date <= filters.end)
       && (filters.book ? cell.book === filters.book : cell.book !== 'best') && (!filters.prop || cell.prop === filters.prop);
   }
-  function group(cells, keys) {
+  function group(cells, keys, staking) {
     const groups = new Map();
     for (const cell of cells) {
       const key = JSON.stringify(keys.map(field => cell[field]));
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(cell);
     }
-    return [...groups.values()].map(rows => ({ ...Object.fromEntries(keys.map(key => [key, rows[0][key]])), ...aggregate(rows) }));
+    return [...groups.values()].map(rows => ({ ...Object.fromEntries(keys.map(key => [key, rows[0][key]])), ...aggregate(rows, staking) }));
   }
   function ranked(rows, minimum, profitableOnly) {
-    return rows.filter(row => row.settled >= Math.max(1, number(minimum)) && (!profitableOnly || row.profit_units > 0))
+    return rows.filter(row => row.roi !== null && row.settled >= Math.max(1, number(minimum)) && (!profitableOnly || row.profit_units > 0))
       .sort((a, b) => b.roi - a.roi || b.settled - a.settled || b.profit_units - a.profit_units
         || JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
   function buildView(report, filters) {
     report = normalizeReport(report);
+    const staking = filters.staking || 'flat';
+    if (staking === 'quarter-kelly' && !supportsKelly(report)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
     const scope = reportCells(report).filter(cell => matches(cell, filters));
     const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
     const byProp = [...new Set(scope.map(cell => cell.prop))].sort(compareProps).map(prop => {
       const rows = chosen.filter(cell => cell.prop === prop);
-      const bookSamples = group(rows, ['book']), bandSamples = group(rows, ['odds_band']);
-      return { prop, total: aggregate(rows), books: rank(bookSamples), bands: rank(bandSamples), bookSamples, bandSamples };
+      const bookSamples = group(rows, ['book'], staking), bandSamples = group(rows, ['odds_band'], staking);
+      return { prop, total: aggregate(rows, staking), books: rank(bookSamples), bands: rank(bandSamples), bookSamples, bandSamples };
     });
     return {
       byProp,
-      total: aggregate(chosen),
-      strategies: rank(group(scope, ['reference', 'method'])),
-      books: rank(group(chosen, ['book'])),
-      bands: rank(group(chosen, ['odds_band'])),
-      markets: rank(group(chosen, ['prop'])),
-      days: group(chosen, ['date']).sort((a, b) => a.date.localeCompare(b.date)),
+      total: aggregate(chosen, staking),
+      strategies: rank(group(scope, ['reference', 'method'], staking)),
+      books: rank(group(chosen, ['book'], staking)),
+      bands: rank(group(chosen, ['odds_band'], staking)),
+      markets: rank(group(chosen, ['prop'], staking)),
+      days: group(chosen, ['date'], staking).sort((a, b) => a.date.localeCompare(b.date)),
     };
   }
   const shareBookOrder = ['fd', 'dk', 'b365', 'mgm', 'cz', 'hr', 'fn', 'br', 'espn'];
@@ -167,6 +189,7 @@
   }
   function buildPerformers(report, filters = {}) {
     report = normalizeReport(report);
+    if (filters.staking === 'quarter-kelly' && !supportsKelly(report)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
     const method = filters.method || 'probit', bucket = filters.bucket || 'all';
     const columns = [...report.references].sort((a, b) => shareReferencePriority(a) - shareReferencePriority(b) || a.id.localeCompare(b.id));
     const cells = reportCells(report);
@@ -189,7 +212,7 @@
     return { method, bucket, columns, rows: books.map(book => ({ book, cells: columns.map(({ id: reference }) => {
       const key = JSON.stringify([book, reference]);
       if (ambiguous.has(key)) return { reference, row: null, reason: 'rebuild' };
-      const rows = combinations.get(key) || [], total = aggregate(rows);
+      const rows = combinations.get(key) || [], total = aggregate(rows, filters.staking);
       if (!total.settled) return { reference, row: null, reason: 'empty' };
       if (filters.profitableOnly && total.profit_units <= 0) return { reference, row: null, reason: 'unprofitable' };
       return { reference, reason: null, row: { book, reference, method, bucket, ...total, ...bestHit(rows, report, bucket) } };
@@ -261,6 +284,7 @@
       if (!validDate(cell.date) || cell.date < data.window.start || cell.date > data.window.end
         || ['book', 'prop', 'reference', 'method', 'odds_band'].some(key => typeof cell[key] !== 'string')
         || metrics.some(key => typeof cell[key] !== 'number' || !Number.isFinite(cell[key]))
+        || (data.kelly_version === 1 && !hasKellyMetrics(cell))
         || ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded'].some(key => cell[key] < 0)) throw new Error('The published report contains invalid result rows. Please refresh after it is rebuilt.');
     }
     return data;
@@ -272,10 +296,10 @@
     return '"' + text.replaceAll('"', '""') + '"';
   }
   function exportCSV(view, filters) {
-    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop'];
+    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop', 'staking', 'settled_stake_units'];
     const line = (section, segment, row) => [section, segment, row.reference ?? filters.reference, row.method ?? filters.method,
       filters.start, filters.end, filters.book || 'all', filters.prop || 'all', row.selected, row.settled, row.wins, row.losses,
-      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || ''];
+      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || '', filters.staking || 'flat', row.stake_units];
     const rows = [headings, line('summary', 'selected strategy', view.total)];
     for (const [section, key, data] of [['strategies', 'reference', view.strategies],
       ['markets', 'prop', view.markets], ['days', 'date', view.days]]) {
@@ -287,7 +311,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, normalizeReport, validateReport, exportCSV };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -319,14 +343,16 @@
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
   const propName = prop => {
     if (prop === 'spread' && sport === 'nfl') return 'Point spread';
-    if (/^\d+\+goals$/.test(prop)) return prop.replace('+goals', '+ goals');
+    if (goalMarketLabel(prop)) return goalMarketLabel(prop);
     if (prop.startsWith('goals_under_')) return `Under ${prop.slice('goals_under_'.length)} goals`;
     const period = /^([123])p_(.+)$/.exec(prop);
-    return period ? `P${period[1]} · ${propNames[period[2]] || period[2].replaceAll('_', ' ')}` : propNames[prop] || String(prop).replaceAll('_', ' ');
+    return period ? `P${period[1]} · ${propName(period[2])}` : propNames[prop] || String(prop).replaceAll('_', ' ');
   };
   const dayLabel = day => new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   const timestamp = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET' : 'Time unavailable';
   let report = null, view = null, authVersion = 0, controller = null, pending = null;
+  let staking = 'flat', stakingPreference = 'flat';
+  try { if (localStorage.getItem('devig_results_staking') === 'quarter-kelly') stakingPreference = 'quarter-kelly'; } catch (_) {}
   const referenceName = id => { const reference = report?.references.find(item => item.id === id); return reference?.books?.length === 1 ? bookName(reference.books[0]) : reference?.name || id; };
   const methodName = id => report?.methods.find(item => item.id === id)?.name || id;
   let performersModel = null, performersRevision = 0, performersPage = 0, performersDevigPage = 0, performersFilterKey = '';
@@ -355,7 +381,7 @@
     if (!report || filterError(filters())) { closePerformers(); return; }
     performersRevision++;
     const f = { ...filters(), method: $('performers-method').value || 'probit', bucket: $('performers-range').value || 'all' };
-    const filterKey = JSON.stringify([f.start, f.end, f.book, f.prop, f.profitableOnly, f.method, f.bucket]);
+    const filterKey = JSON.stringify([f.start, f.end, f.book, f.prop, f.profitableOnly, f.method, f.bucket, f.staking]);
     if (filterKey !== performersFilterKey) { performersPage = 0; performersDevigPage = 0; }
     performersFilterKey = filterKey;
     const matrix = buildPerformers(report, f), groups = matrix.rows, requested = $('performers-limit').value;
@@ -383,19 +409,21 @@
       return { hitLabel: `${hit.player ? sharePlayerName(hit.player) : hit.game} ${odds}`, hitDetail: `${propName(hit.prop).replace(/ \(.*\)$/, '')}${lineLabel} · ${dayLabel(hit.date)}${row.book === 'best' ? ` · ${shareBookName(hit.book)}` : ''}` };
     };
     performersModel = {
-      sport, method: f.method, bucket: f.bucket, title: 'Devig performance', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
+      sport, method: f.method, bucket: f.bucket, staking: f.staking, title: 'Devig performance', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
       period: (f.start === f.end ? prettyDate(f.start) : `${prettyDate(f.start)} – ${prettyDate(f.end)}`) + ' · ET',
       scope: `${f.book ? bookName(f.book) : 'All betting books'} · ${devigPageLabel}`,
-      description: `${methodName(f.method)} · ${rangeLabel}`,
+      description: `${methodName(f.method)} · ${rangeLabel} · ${stakingLabel(f.staking)}`,
       criteria: `${groups.length ? `Books ${performersPage * pageSize + 1}–${Math.min((performersPage + 1) * pageSize, groups.length)} of ${groups.length}` : 'No books in this market'}${f.profitableOnly ? ' · Profitable only' : ''}`,
       generated: `Updated ${timestamp(report.generated_at)}`,
       pageNumber: performersPage + 1, pageCount, devigPageNumber: performersDevigPage + 1,
       pageLabel: `Book page ${performersPage + 1} of ${pageCount} · Devig page ${performersDevigPage + 1} of ${devigPageCount}`,
       columns: columns.map(column => ({ id: column.id, label: performerReferenceName(column) })),
       footnotes: [
-        'Historical replay · 1u risk per settled offer · Modeled fees included.',
+        f.staking === 'quarter-kelly' ? 'Historical replay · ¼ Kelly · Fixed 100u bankroll; 1u = 1%; no compounding. Modeled fees included.'
+          : 'Historical replay · Flat 1u · 1u risk per settled offer · Modeled fees included.',
         'Each cell uses the selected method and odds range for that betting book and devig.',
         'Pending / ungraded offers are excluded from ROI. W–L–P includes pushes.',
+        ...(f.staking === 'quarter-kelly' ? ['ROI = net profit / settled stake. Stakes rounded to 0.01u per offer. Best hit ranks the return on 1u.'] : []),
         'Strategies can overlap and are not a combined betting record. Past results do not establish a future edge.',
       ],
       rows: pageGroups.map(group => ({ book: group.book, bookLabel: shareBookName(group.book), bookName: bookName(group.book),
@@ -446,7 +474,7 @@
       const canvas = root.DevigResultsShare.drawCard(model);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image unavailable')), 'image/png'));
       if (!current()) return;
-      const filename = `${model.sport}-devigs-${model.method}-${model.bucket}-${f.start}-${f.end}-books-${model.pageNumber}-devigs-${model.devigPageNumber}.png`;
+      const filename = `${model.sport}-devigs-${model.method}-${model.bucket}-${f.start}-${f.end}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}-books-${model.pageNumber}-devigs-${model.devigPageNumber}.png`;
       if (copy) {
         try {
           if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Clipboard unavailable');
@@ -470,7 +498,24 @@
   function notice(id, text) { $(id).textContent = text; $(id).hidden = !text; }
   function filters() {
     return { start: $('date-start').value, end: $('date-end').value, book: $('book-filter').value, prop: $('market-filter').value,
-      reference: $('reference-filter').value, method: $('method-filter').value, minimum: Math.max(1, Math.floor(number($('min-settled').value))), profitableOnly: $('profitable-only').checked };
+      reference: $('reference-filter').value, method: $('method-filter').value, staking,
+      minimum: Math.max(1, Math.floor(number($('min-settled').value))), profitableOnly: $('profitable-only').checked };
+  }
+  function renderStaking() {
+    const available = report && supportsKelly(report), kelly = staking === 'quarter-kelly';
+    $('staking-flat').setAttribute('aria-pressed', String(!kelly));
+    $('staking-kelly').setAttribute('aria-pressed', String(kelly));
+    $('staking-kelly').disabled = !available;
+    $('staking-note').textContent = !report ? '' : !available
+      ? 'Flat 1u · ¼ Kelly will be available when this report is updated with staking data.'
+      : kelly ? '¼ Kelly · Fixed 100u bankroll; 1u = 1%. Stakes rounded to 0.01u per offer; no compounding.'
+        : 'Flat 1u · 1 unit risked per offer.';
+    $('staking-mode-label').textContent = stakingLabel(staking);
+    $('summary-profit-note').textContent = kelly ? '¼ Kelly · fixed 100u bankroll' : '1 unit risked per offer';
+    $('staking-methodology').textContent = (kelly
+      ? '¼ Kelly sizes each archived offer using its devig probability and payout after modeled fees, against a fixed 100u bankroll (1u = 1%). Stakes are rounded to 0.01u per offer, with no compounding. Zero-sized offers remain in the record but add no stake or profit. '
+      : 'Flat 1u risks one unit on each qualifying offer. ')
+      + 'ROI is net profit divided by total stake on settled offers, including pushes. Pending and ungraded offers contribute neither stake nor profit. The summary and breakdowns use exactly one reference and method.';
   }
   function options(id, entries, placeholder, preferred) {
     const select = $(id), previous = preferred ?? select.value;
@@ -560,6 +605,7 @@
   }
   function render() {
     if (!report) return;
+    renderStaking();
     const f = filters(), error = filterError(f);
     notice('filter-status', error);
     $('export').disabled = Boolean(error);
@@ -578,6 +624,7 @@
     $('summary-roi').className = tone(total.roi);
     $('summary-profit').textContent = signed(total.profit_units, 'u');
     $('summary-profit').className = tone(total.profit_units);
+    $('summary-roi-note').textContent = `Net profit / ${total.stake_units.toFixed(2)}u risked`;
     $('summary-settled').textContent = count(total.settled);
     $('summary-record').textContent = `${count(total.wins)} W · ${count(total.losses)} L · ${count(total.pushes)} P`;
     $('summary-unresolved').textContent = `${count(total.pending)} / ${count(total.ungraded)}`;
@@ -618,6 +665,7 @@
   function acceptReport(data) {
     const previous = report ? filters() : null;
     report = validateReport(data, sport);
+    staking = supportsKelly(report) ? stakingPreference : 'flat';
     $('report-content').hidden = false;
     $('report-content').setAttribute('aria-busy', 'false');
     $('access-panel').hidden = true;
@@ -656,10 +704,13 @@
     for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record']) $(id).textContent = '';
     $('daily-caption').textContent = '';
     $('daily-caption').hidden = true;
+    $('summary-roi-note').textContent = 'Net profit / settled stake';
     $('export').disabled = true;
   }
   function clearReport() {
     report = null;
+    staking = 'flat';
+    renderStaking();
     clearResults();
     $('report-content').hidden = true;
     $('report-content').setAttribute('aria-busy', 'false');
@@ -729,6 +780,8 @@
     SPORT = sport;
     $('sport-filter').value = sport;
     $('sport-label').textContent = sport.toUpperCase();
+    const goalLinesNote = $('goal-lines-note');
+    if (goalLinesNote) goalLinesNote.hidden = sport !== 'nhl';
     $('page-title').textContent = `${sport.toUpperCase()} devig results`;
     document.title = `${sport.toUpperCase()} devig results | +EV Sharps`;
     $('report-window').textContent = sport === 'nfl' ? 'Current season · ET' : 'Last 7 complete days · ET';
@@ -782,6 +835,12 @@
   $('performers-download').addEventListener('click', () => exportPerformers(false));
   $('refresh').addEventListener('click', refresh);
   $('reset-filters').addEventListener('click', resetFilters);
+  for (const [id, mode] of [['staking-flat', 'flat'], ['staking-kelly', 'quarter-kelly']]) $(id).addEventListener('click', () => {
+    if (!report || (mode === 'quarter-kelly' && !supportsKelly(report))) return;
+    staking = stakingPreference = mode;
+    try { localStorage.setItem('devig_results_staking', mode); } catch (_) {}
+    render();
+  });
   $('date-preset').addEventListener('change', applyDatePreset);
   for (const id of ['date-start', 'date-end']) $(id).addEventListener('change', () => { $('date-preset').value = 'custom'; render(); });
   for (const id of ['book-filter', 'market-filter', 'reference-filter', 'method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
@@ -801,7 +860,7 @@
   $('export').addEventListener('click', () => {
     if (!view || !report) return;
     const f = filters(), url = URL.createObjectURL(new Blob([exportCSV(view, f)], { type: 'text/csv;charset=utf-8;' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}.csv`; anchor.click();
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}.csv`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   for (const id of ['account-link', 'access-login']) $(id).href = `profile${HTML}`;

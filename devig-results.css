@@ -2,6 +2,13 @@ html:has(body.devig-page) { height: auto; min-height: 100%; overflow: auto; }
 body.devig-page { display: block; height: auto; min-height: 100vh; overflow: visible; margin: 0; background: #111416; color: #e8edf0; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; line-height: 1.55; color-scheme: dark; }
 body.devig-page::before { display: none; }
 .dv-scope-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.dv-staking { display: flex; align-items: center; gap: 8px; color: #aebec9; font-size: 11px; }
+.dv-staking-options { display: inline-flex; border: 1px solid #465c6b; border-radius: 6px; overflow: hidden; }
+.devig-page .dv-staking-options button { margin: 0; border: 0; border-radius: 0; padding: 8px 11px; background: #18232c; color: #aebec9; white-space: nowrap; }
+.devig-page .dv-staking-options button + button { border-left: 1px solid #465c6b; }
+.devig-page .dv-staking-options button[aria-pressed="true"] { background: #32546c; color: #fff; box-shadow: inset 0 -2px #97d2ff; }
+.devig-page .dv-staking-options button:focus-visible { outline: 2px solid #b7e2ff; outline-offset: -3px; }
+@media (max-width: 760px) { .dv-staking { flex-wrap: wrap; } .devig-page .dv-staking-options button { min-height: 42px; } }
 .devig-page #best-performers { background: #244052; border-color: #507c98; }
 .dv-share-dialog { width: min(1800px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); margin: auto; padding: 0; color: #e8edf0; background: #171e25; border: 1px solid #476073; border-radius: 10px; box-shadow: 0 24px 100px #0009; font-size: 12px; }
 .dv-share-dialog[open] { display: flex; flex-direction: column; }

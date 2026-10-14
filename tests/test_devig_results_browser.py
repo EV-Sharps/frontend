@@ -130,11 +130,11 @@ try:
         page.locator('#reset-filters').click()
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
         expect(page.locator('#book-ranking-title')).to_have_text('Best betting books by prop')
-        expect(page.locator('#market-filter option[value="atgs"]')).to_have_text(re.compile(r'ATGS.*Anytime goalscorer'))
+        expect(page.locator('#market-filter option[value="atgs"]')).to_have_text(re.compile(r'ATGS.*1\+ goals'))
         for table in ('#odds-rows', '#book-rows'):
             assert page.locator(f'{table} tr.dv-prop-group').count() == 2
             expect(page.locator(f'{table} tr.dv-prop-group').first).to_have_attribute('data-prop', 'atgs')
-            expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*Anytime goalscorer'))
+            expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*1\+ goals'))
             expect(page.locator(f'{table} tr[data-prop="atgs"][data-segment]')).to_contain_text('+7.00u')
         expect(page.locator('#book-rows tr[data-prop="sog"][data-segment="dk"]')).to_contain_text('+5.00u')
         expect(page.locator('#odds-rows tr[data-prop="sog"][data-segment]')).to_contain_text('+2.00u')
@@ -404,7 +404,7 @@ try:
             expect(page.locator('#summary-roi')).not_to_have_text('-')
             for table in ('#odds-rows', '#book-rows'):
                 expect(page.locator(f'{table} tr.dv-prop-group').first).to_have_attribute('data-prop', 'atgs')
-                expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*Anytime goalscorer'))
+                expect(page.locator(f'{table} tr.dv-prop-group[data-prop="atgs"]')).to_contain_text(re.compile(r'ATGS.*1\+ goals'))
             assert page.locator('#odds-rows tr[data-prop="atgs"][data-segment]').count() > 0
             page.locator('#strategy-rows .dv-strategy-button').first.scroll_into_view_if_needed()
             assert page.locator('#strategy-rows .dv-strategy-button').first.evaluate('''el => {

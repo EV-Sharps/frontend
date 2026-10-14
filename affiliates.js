@@ -56,14 +56,16 @@
     const body = $('aff-admin-partners'); body.replaceChildren();
     for (const partner of partners) {
       const summary = partner.summary || partner;
-      const row = document.createElement('tr'); cell(row, partner.code); cell(row, partner.active ? 'Active' : 'Disabled');
+      const row = document.createElement('tr'); cell(row, partner.code);
+      cell(row, partner.email || '—'); cell(row, partner.user_id || '—');
+      cell(row, partner.active ? 'Active' : 'Disabled');
       cell(row, summary.signups || 0); cell(row, summary.conversions || 0); cell(row, money(summary.available_cents));
       const actions = cell(row, '');
       button(actions, partner.active ? 'Disable code' : 'Enable code', async () => { await api(`/admin/partners/${encodeURIComponent(partner.id)}`, 'PATCH', { active: !partner.active }); await load(session); });
       button(actions, 'Reserve payout', async () => { await api('/admin/payouts', 'POST', { partner_id: partner.id }); await load(session); status('Batch reserved. Send payment outside the site, then record its reference.'); }, Number(summary.available_cents || 0) < 2500);
       body.appendChild(row);
     }
-    if (!body.children.length) empty(body, 6, 'No partners yet. Create your first invitation above.');
+    if (!body.children.length) empty(body, 8, 'No partners yet. Create your first invitation above.');
     const payouts = $('aff-admin-payouts'); payouts.replaceChildren();
     for (const payout of data.payouts || []) {
       const row = document.createElement('tr');

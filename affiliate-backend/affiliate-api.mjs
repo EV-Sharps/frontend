@@ -150,6 +150,19 @@ export function createAffiliateProgram({ supabase, stripe, enabled = false, coup
     return checked(supabase.rpc('affiliate_set_referral', { p_user_id: userId, p_affiliate_id: partner.id, p_visit_id: visitId, p_source: source }));
   }
   const publicPartner = partner => ({ id: partner.id, code: partner.code, active: partner.status === 'active', referral_url: `${baseUrl}/pricing${localSite ? '.html' : ''}?ref=${encodeURIComponent(partner.code)}` });
+  async function partnerEmail(userId) {
+    let data, error;
+    try {
+      ({ data, error } = await supabase.auth.admin.getUserById(userId));
+    } catch (lookupError) {
+      error = lookupError;
+    }
+    if (error) {
+      if (error.status === 404 || error.code === 'user_not_found') return null;
+      fail(503, 'identity_unavailable', 'Partner emails could not be loaded. Please try again.');
+    }
+    return typeof data?.user?.email === 'string' ? data.user.email.trim() || null : null;
+  }
   const publicPayout = payout => ({ id: payout.id, partner_id: payout.affiliate_id, amount_cents: Number(payout.total_cents), currency: payout.currency, status: payout.status, created_at: payout.created_at, paid_at: payout.paid_at, external_reference: payout.external_reference });
   async function report(partner) {
     const [referrals, commissions, payouts] = await Promise.all([
@@ -364,8 +377,11 @@ export function createAffiliateProgram({ supabase, stripe, enabled = false, coup
     });
     route('get', '/admin', async () => {
       const partners = await all('affiliates');
-      const reports = await Promise.all(partners.map(report));
-      return { partners: reports.map((entry, index) => ({ ...entry.partner, user_id: partners[index].owner_user_id, summary: entry.summary })), payouts: reports.flatMap(entry => entry.payouts).sort((a, b) => b.created_at.localeCompare(a.created_at)), terms: TERMS };
+      const [reports, emails] = await Promise.all([
+        Promise.all(partners.map(report)),
+        Promise.all(partners.map(partner => partnerEmail(partner.owner_user_id))),
+      ]);
+      return { partners: reports.map((entry, index) => ({ ...entry.partner, user_id: partners[index].owner_user_id, email: emails[index], summary: entry.summary })), payouts: reports.flatMap(entry => entry.payouts).sort((a, b) => b.created_at.localeCompare(a.created_at)), terms: TERMS };
     }, 'admin');
     route('post', '/admin/partners', async req => {
       const body = bodyOf(req);

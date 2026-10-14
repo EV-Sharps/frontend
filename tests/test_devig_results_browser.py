@@ -281,7 +281,7 @@ try:
         assert state['requests'][-1] == dict(url='https://packaged-api.test/api/devig-results?sport=nhl', auth='Bearer fixture-token')
         packaged.close()
 
-        # A season report defaults to ATTD, while all-market and book views remain available.
+        # NFL defaults to all markets; ATTD remains available as an explicit filter.
         nfl = fixture()
         nfl.update(sport='nfl', window=dict(start='2026-07-01', end='2026-10-11', season_start='2026-07-01'),
                    cells=[cell(date='2026-10-11', prop='attd', profit_units=8),
@@ -291,9 +291,9 @@ try:
         nfl['coverage'].update(event_dates=['2026-10-04', '2026-10-09', '2026-10-11'], missing_dates=[])
         state.update(signed_in=True, payload=nfl)
         page.goto(url + '?sport=nfl')
-        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        expect(page.locator('#summary-profit')).to_have_text('+106.00u')
         expect(page.locator('#sport-filter')).to_have_value('nfl')
-        expect(page.locator('#market-filter')).to_have_value('attd')
+        expect(page.locator('#market-filter')).to_have_value('')
         expect(page.locator('#page-title')).to_have_text('NFL devig results')
         expect(page.locator('#date-preset')).to_have_value('season')
         expect(page.locator('#date-start')).to_have_value('2026-07-01')
@@ -303,6 +303,9 @@ try:
         assert 'sport=nfl' in state['requests'][-1]['url']
         assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
         assert 'Archived NFL offers' in page.locator('#config-note').text_content()
+        assert page.locator('#book-rows [data-prop="rush_yds"]').count() > 0
+        page.select_option('#market-filter', 'attd')
+        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
         assert page.locator('#book-rows [data-prop="rush_yds"]').count() == 0
         page.select_option('#date-preset', 'yesterday')
         expect(page.locator('#daily-chart .dv-day')).to_have_count(1)
@@ -378,11 +381,11 @@ try:
         page.wait_for_function('typeof window.releaseNhl === "function"')
         state['payload'] = nfl
         page.select_option('#sport-filter', 'nfl')
-        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        expect(page.locator('#summary-profit')).to_have_text('+106.00u')
         page.evaluate('window.releaseNhl(); window.delayNhl = false;')
         expect(page.locator('#page-title')).to_have_text('NFL devig results')
-        expect(page.locator('#market-filter')).to_have_value('attd')
-        expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+        expect(page.locator('#market-filter')).to_have_value('')
+        expect(page.locator('#summary-profit')).to_have_text('+106.00u')
         for status in (401, 403):
             state['status'] = status
             page.locator('#refresh').click()
@@ -391,7 +394,7 @@ try:
             assert page.locator('#book-rows tr').count() == 0
             state['status'] = 200
             page.locator('#refresh').click()
-            expect(page.locator('#summary-profit')).to_have_text('+6.00u')
+            expect(page.locator('#summary-profit')).to_have_text('+106.00u')
         state.update(payload=fixture(), signed_in=False)
         page.goto(local_url + '?preview=1')
         expect(page.locator('#summary-profit')).to_have_text('+9.00u')
@@ -449,7 +452,7 @@ try:
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: NHL regressions; NFL ATTD defaults, all-market/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
+        print('PASS: NHL regressions; NFL all-market defaults, explicit ATTD/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
 finally:
     server.shutdown()
     ARTIFACTS.cleanup()

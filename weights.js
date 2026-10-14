@@ -1,5 +1,224 @@
 
 let DEV_WINDOW = "All";
+let DEV_PRICE_SOURCE = 'closing';
+let DEV_STAKING = 'flat';
+const OPENING_PRESET_CACHE = new Map();
+
+function presetFeed(page = PAGE, sport = SPORT) {
+	const name = String(sport || '').toLowerCase();
+	if (!/^(mlb|nhl|nfl|nba|wnba|ncaaf|ncaab|soccer|ufc)(?:_main)?$/.test(name)) return null;
+	return /^(main|main_recap|preseason)$/.test(page) && !name.endsWith('_main') ? `${name}_main` : name;
+}
+
+// Opening presets are data only: loading them must never replace the live RECORD global.
+function decodePresetRecords(packed) {
+	const bad = () => { throw new Error('Invalid opening preset records'); };
+	const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+	if (!object(packed) || packed.v !== 1 || !Array.isArray(packed.fields) || !Array.isArray(packed.windows) || !Array.isArray(packed.rows)) return bad();
+	const metrics = new Set(['wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit', 'kelly', 'kelly_stake_units', 'roi', 'kelly_roi']);
+	const periods = new Set(['All', 'SZN', 'L3', 'L7', 'L14', 'L30', 'L60']);
+	for (const [schemas, allowed] of [[packed.fields, metrics], [packed.windows, periods]]) {
+		if (!schemas.every(names => Array.isArray(names) && names.length && new Set(names).size === names.length && names.every(name => allowed.has(name)))) return bad();
+	}
+	const index = (value, list) => Number.isInteger(value) && value >= 0 && value < list.length;
+	const row = id => {
+		if (!index(id, packed.rows)) return bad();
+		const values = packed.rows[id];
+		if (!Array.isArray(values) || !index(values[0], packed.fields)) return bad();
+		const names = packed.fields[values[0]];
+		if (names.length !== values.length - 1 || values.slice(1).some(value => value !== null && !['number', 'string', 'boolean'].includes(typeof value) || typeof value === 'number' && !Number.isFinite(value))) return bad();
+		return Object.fromEntries(names.map((name, i) => [name, values[i + 1]]));
+	};
+	// Check unused vectors too, so malformed data is never silently accepted.
+	packed.rows.forEach((_, i) => row(i));
+	const expand = (value, depth = 0) => {
+		if (depth > 12) return bad();
+		if (Array.isArray(value)) {
+			if (!value.length) return bad();
+			if (value[0] === null) return value.slice(1).map(item => expand(item, depth + 1));
+			if (value.length === 1) return row(value[0]);
+			const id = -1 - value[0];
+			if (!Number.isInteger(value[0]) || !index(id, packed.windows) || packed.windows[id].length !== value.length - 1) return bad();
+			return Object.fromEntries(packed.windows[id].map((name, i) => [name, row(value[i + 1])]));
+		}
+		if (object(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => {
+			if (['__proto__', 'constructor', 'prototype'].includes(key)) return bad();
+			return [key, expand(item, depth + 1)];
+		}));
+		if (value !== null && !['number', 'string', 'boolean'].includes(typeof value)) return bad();
+		return value;
+	};
+	const records = expand(packed.data);
+	if (!object(records)) return bad();
+	return records;
+}
+
+function validateOpeningPreset(payload, feed) {
+	if (!payload || payload.schema_version !== 1 || payload.feed !== feed || payload.price_source !== 'opening'
+		|| typeof payload.available !== 'boolean' || payload.kelly_metric !== 'units_per_100_settled'
+		|| typeof payload.kelly_available !== 'boolean' || typeof payload.updated !== 'string' || !Number.isFinite(Date.parse(payload.updated))) {
+		throw new Error('Invalid opening preset report');
+	}
+	if (payload.window !== null && (!payload.window || !/^\d{4}-\d{2}-\d{2}$/.test(payload.window.start)
+		|| !/^\d{4}-\d{2}-\d{2}$/.test(payload.window.end) || payload.window.start > payload.window.end)) throw new Error('Invalid opening preset window');
+	return { ...payload, records: decodePresetRecords(payload.records) };
+}
+
+function getPresetRecordSource() {
+	if (DEV_PRICE_SOURCE === 'closing') return {
+		status: 'ready', records: typeof RECORD === 'undefined' ? null : RECORD,
+		updated: typeof RECORD_UPD === 'undefined' ? null : RECORD_UPD,
+	};
+	const feed = presetFeed();
+	if (!feed) return { status: 'unavailable', records: null };
+	const entry = OPENING_PRESET_CACHE.get(feed);
+	if (!entry) return { status: 'idle', records: null };
+	if (entry.status !== 'ready') return { status: entry.status, records: null };
+	return { ...entry.report, updated: entry.report.source_updated || entry.report.updated,
+		status: entry.report.available ? 'ready' : 'unavailable', records: entry.report.available ? entry.report.records : null };
+}
+
+function presetRecordStats(stats, staking = 'flat') {
+	const number = value => value == null || typeof value === 'boolean' || String(value).trim() === '' ? null : Number(value);
+	const kelly = number(stats?.kelly), kellyStakeUnits = number(stats?.kelly_stake_units);
+	const isKelly = staking === 'quarter-kelly';
+	// Legacy kelly_roi is profit per 100 bets. Only actual settled stakes can yield ROI.
+	const roi = isKelly
+		? Number.isFinite(kelly) && Number.isFinite(kellyStakeUnits) && kellyStakeUnits > 0 ? kelly / kellyStakeUnits * 100 : null
+		: number(stats?.roi);
+	const wins = number(stats?.wins ?? stats?.w), losses = number(stats?.losses ?? stats?.l);
+	const pushes = number(stats?.pushes ?? 0);
+	const hasRecord = Number.isFinite(roi) && Number.isFinite(wins) && Number.isFinite(losses) && wins >= 0 && losses >= 0
+		&& (isKelly ? Number.isFinite(pushes) && pushes >= 0 && wins + losses + pushes > 0 : wins + losses > 0);
+	return { hasRecord, roi: hasRecord ? roi : null, wins: hasRecord ? wins : null, losses: hasRecord ? losses : null,
+		profit: hasRecord ? stats.profit : null, kelly: hasRecord ? kelly : null,
+		kellyStakeUnits: hasRecord && Number.isFinite(kellyStakeUnits) ? kellyStakeUnits : null };
+}
+
+function presetMetricLabel(row) {
+	if (!row.hasRecord) return row.staking === 'quarter-kelly'
+		? `No ${row.recordWindow === 'All' ? '' : `${row.recordWindow} `}¼ Kelly data`
+		: row.recordWindow === 'All' ? 'No record data' : `No ${row.recordWindow} data`;
+	return `${row.roi > 0 ? '+' : ''}${row.roi.toLocaleString('en-US', { maximumFractionDigits: 2 })}% ROI`;
+}
+
+function presetProfitLabel(row) {
+	if (!row.hasRecord || row.staking !== 'quarter-kelly' || !Number.isFinite(row.kelly)) return '';
+	return `${row.kelly > 0 ? '+' : ''}${row.kelly.toLocaleString('en-US', { maximumFractionDigits: 2 })}u`;
+}
+
+function presetKellyTitle(row) {
+	if (row.staking !== 'quarter-kelly') return '';
+	if (!row.hasRecord) return 'Kelly ROI is unavailable without a positive total of settled stakes.';
+	return `¼ Kelly: ${presetProfitLabel(row)} net profit on ${row.kellyStakeUnits.toLocaleString('en-US', { maximumFractionDigits: 2 })}u settled stake. Fixed 100u bankroll; no compounding.`;
+}
+
+function presetModeDescription() {
+	const source = getPresetRecordSource();
+	let description = '';
+	if (DEV_PRICE_SOURCE === 'opening') {
+		if (['idle', 'loading'].includes(source.status)) description = 'Loading opening presets…';
+		else if (source.status === 'error') description = 'Opening presets could not load. Retry or select Closing.';
+		else if (source.status === 'unavailable') description = 'No captured opening presets are available for this sport yet.';
+		else if (source.window) description = `Opening history: ${source.window.start}–${source.window.end}. All-time covers this captured history only.`;
+		else description = 'Opening presets use captured opening history only.';
+		if (source.status === 'ready' && source.source_updated && Number.isFinite(Date.parse(source.source_updated))) description += ` Records updated ${source.source_updated.slice(0, 10)}.`;
+		if (source.status === 'ready' && DEV_STAKING === 'quarter-kelly' && !source.kelly_available) description += ' ¼ Kelly results are unavailable for this opening history.';
+	}
+	if (DEV_STAKING === 'quarter-kelly') description += `${description ? ' ' : ''}¼ Kelly: ROI = net profit / settled stake; total profit shown in units. Fixed 100u bankroll (1u = 1%), no compounding. Live sizing is unchanged.`;
+	return description;
+}
+
+function syncPresetModeControls() {
+	document.querySelectorAll('[data-preset-mode]').forEach(select => {
+		select.value = select.dataset.presetMode === 'prices' ? DEV_PRICE_SOURCE : DEV_STAKING;
+	});
+	const note = presetModeDescription();
+	document.querySelectorAll('#dev-picker-row [data-preset-mode]').forEach(select => {
+		select.title = [select.dataset.presetMode === 'prices' ? 'Preset prices' : 'Preset staking', note].filter(Boolean).join(' · ');
+	});
+	document.querySelectorAll('[data-preset-mode-note]').forEach(element => {
+		element.textContent = note; element.hidden = !note;
+	});
+	document.querySelectorAll('[data-preset-retry]').forEach(button => {
+		button.hidden = DEV_PRICE_SOURCE !== 'opening' || getPresetRecordSource().status !== 'error';
+	});
+}
+
+function refreshPresetViews() {
+	if (typeof initDevPicker === 'function') initDevPicker(getTopDevigs(BOOK || 'best'));
+	const modal = document.getElementById('preloads-modal');
+	const container = document.getElementById('preloads-list-container');
+	if (modal?.style.display === 'flex' && container) renderPreloadsList(container, getTopDevigs(), ({ tds: 'attd', ftd: 'ftd', fgs: 'fgs' })[PAGE] || 'atgs');
+	syncPresetModeControls();
+}
+
+function ensureOpeningPresets({ retry = false } = {}) {
+	const feed = presetFeed();
+	if (!feed) return Promise.resolve();
+	const prior = OPENING_PRESET_CACHE.get(feed);
+	if (prior && (prior.status !== 'error' || !retry)) return prior.promise || Promise.resolve(prior.report);
+	const entry = { status: 'loading' };
+	OPENING_PRESET_CACHE.set(feed, entry);
+	entry.promise = (async () => {
+		try {
+			const response = await fetch(`presets/${feed}_opening.json`, { cache: 'no-cache' });
+			if (!response.ok) throw new Error('Opening preset request failed');
+			entry.report = validateOpeningPreset(await response.json(), feed);
+			entry.status = 'ready';
+		} catch (_) { entry.status = 'error'; }
+		if (DEV_PRICE_SOURCE === 'opening' && presetFeed() === feed) refreshPresetViews();
+	})();
+	return entry.promise;
+}
+
+function setPresetMode(kind, value) {
+	if (kind === 'prices' && ['closing', 'opening'].includes(value)) DEV_PRICE_SOURCE = value;
+	else if (kind === 'staking' && ['flat', 'quarter-kelly'].includes(value)) DEV_STAKING = value;
+	else return;
+	if (DEV_PRICE_SOURCE === 'opening') ensureOpeningPresets();
+	refreshPresetViews();
+}
+
+function appendPresetModeControls(container, prefix) {
+	const controls = document.createElement('div');
+	controls.className = 'dev-preset-modes';
+	for (const [kind, label, choices] of [['prices', 'Prices', [['closing', 'Closing'], ['opening', 'Opening']]],
+		['staking', 'Staking', [['flat', 'Flat 1u'], ['quarter-kelly', '¼ Kelly']]]]) {
+		const wrapper = document.createElement('label');
+		wrapper.htmlFor = `${prefix}-${kind}`;
+		wrapper.className = 'dev-preset-control';
+		const name = document.createElement('span'); name.textContent = label;
+		const select = document.createElement('select');
+		select.id = wrapper.htmlFor; select.dataset.presetMode = kind;
+		select.className = 'dev-window-select';
+		select.setAttribute('aria-describedby', `${prefix}-note`);
+		for (const [value, text] of choices) {
+			const option = document.createElement('option'); option.value = value; option.textContent = text; select.appendChild(option);
+		}
+		select.addEventListener('change', () => setPresetMode(kind, select.value));
+		wrapper.append(name, select); controls.appendChild(wrapper);
+	}
+	container.appendChild(controls);
+	return controls;
+}
+
+function appendPresetModeNote(container, prefix) {
+	const note = document.createElement('p');
+	note.id = `${prefix}-note`; note.className = 'dev-preset-note'; note.dataset.presetModeNote = '';
+	note.setAttribute('role', 'status'); note.hidden = true;
+	const retry = document.createElement('button');
+	retry.type = 'button'; retry.className = 'dev-preset-retry'; retry.dataset.presetRetry = ''; retry.textContent = 'Retry opening presets'; retry.hidden = true;
+	retry.addEventListener('click', () => { ensureOpeningPresets({ retry: true }); refreshPresetViews(); });
+	container.append(note, retry);
+}
+
+function presetProps(prop) {
+	const available = [...document.querySelectorAll('#prop-options input[type="checkbox"]')].map(input => input.value);
+	const match = /^(.*)team_total$/.exec(prop);
+	const desired = match && !available.includes(prop) ? [`${match[1]}away_total`, `${match[1]}home_total`] : [prop];
+	return available.length ? desired.filter(value => available.includes(value)) : desired;
+}
 const SESSION_WEIGHTS = {
 	"tds-pn+circa": {
 		pn: 0.4,
@@ -312,13 +531,11 @@ function closeWeights() {
 
 // Start preload logic
 function getTopDevigs(bookArg = null) {
-	if (typeof RECORD === "undefined" || !RECORD) {
-		return { error: "RECORD not available" };
-	}
 	const list = [];
-	const recordNumber = value => value == null || String(value).trim() === "" ? null : Number(value);
+	const source = getPresetRecordSource();
+	if (!source.records) return list;
 	const selectedBooks = bookArg ? String(bookArg).split(",") : [];
-	const books = RECORD[METHOD || "worst"];
+	const books = source.records[METHOD || "worst"];
 	if (!books) return list;
 	for (const book in books) {
 		if (selectedBooks.length && !selectedBooks.includes(book)) continue;
@@ -326,12 +543,13 @@ function getTopDevigs(bookArg = null) {
 		if (!devigs) continue;
 		for (const devigKey in devigs) {
 			const stats = devigs[devigKey]?.[DEV_WINDOW];
-			const roi = recordNumber(stats?.roi);
-			const wins = recordNumber(stats?.wins ?? stats?.w);
-			const losses = recordNumber(stats?.losses ?? stats?.l);
-			const hasRecord = Number.isFinite(roi) && Number.isFinite(wins) && Number.isFinite(losses) && wins >= 0 && losses >= 0 && wins + losses > 0;
+			const resolved = presetRecordStats(DEV_PRICE_SOURCE === 'opening' && DEV_STAKING === 'quarter-kelly' && !source.kelly_available ? null : stats, DEV_STAKING);
 			const parts = devigKey.split("-vs-");
 			const prop = parts[0] || devigKey;
+			const [reference, embeddedWeights] = (parts[1] || devigKey).split(';');
+			const weights = embeddedWeights?.split('+').map(Number);
+			// Presets apply equal weights. Do not mislabel an unequal historical blend.
+			if (weights && (weights.length !== reference.split('+').length || weights.some(weight => !Number.isFinite(weight) || weight <= 0 || weight !== weights[0]))) continue;
 			
 			if (PAGE == "atgs" && prop !== "atgs") continue;
 			if (PAGE == "nhl" && ["2+goals", "3+goals", "no_goal"].includes(prop)) continue;
@@ -342,15 +560,12 @@ function getTopDevigs(bookArg = null) {
 			list.push({
 				method: METHOD || "",
 				book,
-				devig: devigKey,
+				devig: parts.length > 1 ? `${prop}-vs-${reference}` : reference,
 				prop,
 				recordWindow: DEV_WINDOW,
-				hasRecord,
-				roi: hasRecord ? roi : null,
-				wins: hasRecord ? wins : null,
-				losses: hasRecord ? losses : null,
-				profit: hasRecord ? stats.profit : null,
-				kelly: hasRecord ? stats.kelly : null,
+				priceSource: DEV_PRICE_SOURCE,
+				staking: DEV_STAKING,
+				...resolved,
 			});
 		}
 	}
@@ -397,15 +612,29 @@ function filterDevPickerByProps(selectedProps) {
 
 	picker.querySelectorAll('.dev-chip-wrap').forEach(wrap => {
 		const prop = wrap.dataset.prop;
-		const matches = selectedProps?.includes(prop) || (prop === 'team_total' && selectedProps?.some(value => ['away_total', 'home_total'].includes(value)));
+		const matches = presetProps(prop).some(value => selectedProps?.includes(value));
 		wrap.style.display = (showAll || matches) ? '' : 'none';
 	});
 }
 
+let preloadSelection = null;
 function renderPreloadsList(container, items, prop = "atgs") {
+	if (container.querySelector('#min-bets')) preloadSelection = {
+		minimum: container.querySelector('#min-bets').value,
+		book: container.querySelector('#preload-book-select').value,
+		prop: container.querySelector('#preload-prop-select').value,
+	};
 	container.innerHTML = "";
+	appendPresetModeControls(container, 'preload-preset');
+	appendPresetModeNote(container, 'preload-preset');
+	syncPresetModeControls();
 	if (!items || items.length === 0) {
-		container.innerHTML = `<div style="padding:1rem">No ${prop.toUpperCase()} devigs found in RECORD.</div>`;
+		const empty = document.createElement('p');
+		empty.className = 'dev-picker-empty';
+		empty.textContent = DEV_PRICE_SOURCE === 'opening' && getPresetRecordSource().status !== 'ready'
+			? ['idle', 'loading'].includes(getPresetRecordSource().status) ? 'Loading opening presets…' : 'Opening presets unavailable.'
+			: `No ${prop.toUpperCase()} presets match this source.`;
+		container.appendChild(empty);
 		return;
 	}
 
@@ -413,6 +642,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	header.style.display = "flex";
 	header.style.alignItems = "center";
 	header.style.gap = "1rem";
+	header.style.flexWrap = 'wrap';
 
 	// build unique prop and book lists from items
 	const uniqueProps = [...new Set(items.map(it => it.prop || "").filter(Boolean))].sort();
@@ -432,6 +662,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	header.appendChild(bookWrapper);
 
 	bookSelect.value = uniqueBooks.includes(BOOK) ? BOOK : "all";
+	if (preloadSelection && ['all', ...uniqueBooks].includes(preloadSelection.book)) bookSelect.value = preloadSelection.book;
 
 	// prop select
 	const propWrapper = document.createElement("div");
@@ -445,6 +676,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	});
 	propWrapper.appendChild(propSelect);
 	header.appendChild(propWrapper);
+	if (preloadSelection && ['all', ...uniqueProps].includes(preloadSelection.prop)) propSelect.value = preloadSelection.prop;
 
 	// min-bets select
 	const minWrapper = document.createElement("div");
@@ -461,6 +693,7 @@ function renderPreloadsList(container, items, prop = "atgs") {
 	});
 	minWrapper.appendChild(minSelect);
 	header.appendChild(minWrapper);
+	if (preloadSelection) minSelect.value = preloadSelection.minimum;
 
 	container.appendChild(header);
 
@@ -497,10 +730,10 @@ function renderPreloadsList(container, items, prop = "atgs") {
 
 			let [p,d] = (it.devig || "").split("-vs-");
 			const bookLabel = it.book ? it.book.toUpperCase() : "";
-			const recordWindow = it.recordWindow || DEV_WINDOW;
+			const profitLabel = presetProfitLabel(it);
 			const recordMarkup = it.hasRecord
-				? `<div style="font-weight:600">${it.roi >= 0 ? '+' : ''}${it.roi}%</div><div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>`
-				: `<div style="font-size:.85rem;color:#666">${recordWindow === "All" ? "No record data" : `No ${recordWindow} data`}</div>`;
+				? `<div style="font-weight:600">${escapeHtml(presetMetricLabel(it))}${profitLabel ? ` <span class="dev-profit" title="${escapeHtml(presetKellyTitle(it))}">${escapeHtml(profitLabel)}</span>` : ''}</div><div style="font-size:.8rem;color:#666">${it.wins}W - ${it.losses}L</div>`
+				: `<div style="font-size:.85rem;color:#666">${escapeHtml(presetMetricLabel(it))}</div>`;
 
 			row.innerHTML = `
 				<div style="min-width:260px">
@@ -536,8 +769,8 @@ function renderPreloadsList(container, items, prop = "atgs") {
 				WEIGHT = repeatOnes(devig).slice(1);
 				REQUIRED = devig.replace("only+", "").split("+");
 				setBookSelection(book === "best" ? "" : book);
-				setOptions("prop-options", [prop]);
-				updatePropLabel([prop]);
+				const props = presetProps(prop);
+				if (props.length) { setOptions('prop-options', props); updatePropLabel(props); }
 				if (typeof updateRequiredDropdown === 'function') updateRequiredDropdown();
 
 				const preloadsModal = document.getElementById("preloads-modal");

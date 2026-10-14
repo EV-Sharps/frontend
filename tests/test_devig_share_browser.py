@@ -230,7 +230,8 @@ try:
         url = 'https://public-preview.test/devig-results.html?sport=nfl'
         page.goto(url)
         expect(page.locator('#best-performers')).to_be_enabled()
-        expect(page.locator('#market-filter')).to_have_value('attd')
+        expect(page.locator('#market-filter')).to_have_value('')
+        page.select_option('#market-filter', 'attd')
         initial_strategy = (page.locator('#reference-filter').input_value(), page.locator('#method-filter').input_value())
         dialog = page.locator('#performers-dialog')
 

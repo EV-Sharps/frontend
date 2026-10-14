@@ -345,7 +345,7 @@ function addRecordSummaryButtons(yesterdayRecord, seasonFn, { showSportToggle = 
 			renderRecordSummary(yesterdayRecord);
 			document.getElementById('record-summary-modal').classList.add('open');
 		};
-		col.insertBefore(btn, col.querySelector('.dev-manage-btn'));
+		col.appendChild(btn);
 	}
 
 	if (seasonFn) {
@@ -361,6 +361,6 @@ function addRecordSummaryButtons(yesterdayRecord, seasonFn, { showSportToggle = 
 			renderRecordSummary(rec);
 			document.getElementById('record-summary-modal').classList.add('open');
 		};
-		col.insertBefore(btnSeason, col.querySelector('.dev-manage-btn'));
+		col.appendChild(btnSeason);
 	}
 }

@@ -37,7 +37,8 @@ def session(role):
 
 def main():
     state = dict(role=None, requests=[], referral={}, payouts=[], reserve_error=False,
-                 paid_error=False, hold_me=False, held_routes=[])
+                 paid_error=False, hold_me=False, held_routes=[],
+                 partner_email='partner@example.test', no_partners=False)
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(ROOT)))
     Thread(target=server.serve_forever, daemon=True).start()
     origin = f'http://127.0.0.1:{server.server_port}'
@@ -119,7 +120,9 @@ def main():
             elif path.startswith('/admin') and role != 'admin':
                 route.fulfill(status=403, json={'error': 'Administrator access is required.'})
             elif path == '/admin':
-                route.fulfill(json=dict(partners=[dict(**partner, summary=summary)], payouts=state['payouts']))
+                partners = [] if state['no_partners'] else [dict(**partner, summary=summary,
+                    user_id=USERS['partner'], email=state['partner_email'])]
+                route.fulfill(json=dict(partners=partners, payouts=state['payouts']))
             elif path == '/admin/payouts' and request.method == 'POST':
                 if state['reserve_error']:
                     route.fulfill(status=409, json={'error': 'At least $25 in available earnings is required.'})
@@ -233,6 +236,7 @@ def main():
                 expect(page.locator('#aff-code')).to_have_text('HOCKEYGUY')
                 expect(page.locator('#aff-admin')).to_be_hidden()
                 assert not any('/admin' in request['path'] for request in state['requests'][before:])
+                expect(page.locator('#aff-admin-partners')).to_be_empty()
                 assert '$125.00' in page.locator('#aff-metrics').inner_text()
                 page.evaluate('window.__setSession(null)')
                 expect(page.locator('#aff-guest')).to_be_visible()
@@ -245,6 +249,24 @@ def main():
                 go('affiliates.html', 'admin')
                 expect(page.locator('#aff-admin')).to_be_visible()
                 expect(page.locator('#aff-partner')).to_be_hidden()
+                partner_cells = page.locator('#aff-admin-partners tr').first.locator('td')
+                expect(partner_cells).to_have_count(8)
+                expect(partner_cells.nth(1)).to_have_text('partner@example.test')
+                expect(partner_cells.nth(2)).to_have_text(USERS['partner'])
+                for email in (None, '<img src=x onerror=alert(1)>@example.test'):
+                    state['partner_email'] = email
+                    page.locator('#aff-refresh').click()
+                    expect(partner_cells.nth(1)).to_have_text(email or '—')
+                    expect(partner_cells.nth(2)).to_have_text(USERS['partner'])
+                    expect(page.locator('#aff-admin-partners img')).to_have_count(0)
+                state['no_partners'] = True
+                page.locator('#aff-refresh').click()
+                expect(page.locator('#aff-admin-partners td')).to_have_attribute('colspan', '8')
+                state['no_partners'] = False
+                state['partner_email'] = 'partner@example.test'
+                page.locator('#aff-refresh').click()
+                expect(partner_cells.nth(1)).to_have_text('partner@example.test')
+                print('PASS admin partner table shows email and account UID, handles missing email, and renders identity as text')
                 state['reserve_error'] = True
                 page.get_by_role('button', name='Reserve payout', exact=True).click()
                 expect(page.locator('#aff-status')).to_contain_text('At least $25')
@@ -268,6 +290,7 @@ def main():
 
                 page.evaluate('window.__setSession(null)')
                 expect(page.locator('#aff-guest')).to_be_visible()
+                expect(page.locator('#aff-admin-partners')).to_be_empty()
                 assert page.locator('#aff-admin-payouts').inner_text() == ''
                 assert page.locator('#aff-pay-description').text_content() == '', 'Logout must clear hidden payout details'
                 assert page.locator('#aff-pay-reference').input_value() == '', 'Logout must clear bank references'
@@ -286,6 +309,10 @@ def main():
                     go('pricing.html', 'regular')
                     no_overflow()
                     go('affiliates.html', 'admin')
+                    no_overflow()
+                    expect(partner_cells.nth(1)).to_have_text('partner@example.test')
+                    expect(partner_cells.nth(2)).to_have_text(USERS['partner'])
+                    page.get_by_role('button', name='Reserve payout', exact=True).scroll_into_view_if_needed()
                     no_overflow()
                     go('affiliates.html', 'partner')
                     no_overflow()

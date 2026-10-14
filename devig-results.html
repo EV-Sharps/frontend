@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Devig results | +EV Sharps</title>
-  <meta name="description" content="Explore NFL ATTD and NHL archived devig results by date, odds, method, reference and betting book.">
+  <meta name="description" content="Explore NFL and NHL devig results by market, date, odds, method, reference and betting book.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="devig-results.css?v=20261014-kelly">
   <link rel="icon" href="logos/icon2.png">
@@ -33,6 +33,7 @@
           <button id="reset-filters" type="button">Reset</button>
         </div>
         <p id="goal-lines-note" class="dv-caption" hidden>1+ goals = over 0.5; 2+ goals = over 1.5. Choose a market to compare each line separately.</p>
+        <p id="nfl-markets-note" class="dv-caption" hidden>Choose a market to compare touchdowns, player props and game lines separately. Available markets depend on the published report.</p>
         <div class="dv-filter-row dv-strategy-row">
           <span class="dv-filter-title">Analyze one strategy</span>
           <label>Devig reference <select id="reference-filter"></select></label><label>Method <select id="method-filter"></select></label>
@@ -85,6 +86,6 @@
   <script src="shared.js?v=20261012-devig-nfl"></script>
   <script src="auth.js"></script>
   <script src="devig-results-share.js?v=20261012-dense-matrix"></script>
-  <script src="devig-results.js?v=20261014-opening"></script>
+  <script src="devig-results.js?v=20261014-nfl-markets"></script>
 </body>
 </html>

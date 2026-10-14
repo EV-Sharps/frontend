@@ -67,7 +67,8 @@ def assert_bounds(page, width):
         ['true', 'false'].includes(button.getAttribute('aria-pressed')) &&
         button.contains(button.querySelector('.dev-subinfo')))
     """)
-    for selector in ["#dev-window-select", ".dev-manage-btn", ".dev-picker-actions"]:
+    assert row.locator(".dev-manage-btn").count() == 0
+    for selector in ["#dev-window-select", ".dev-picker-actions"]:
         bounds = row.locator(selector).bounding_box()
         assert bounds and bounds["x"] >= -1 and bounds["x"] + bounds["width"] <= width + 1, (selector, bounds)
 
@@ -183,10 +184,10 @@ def check_atgs(browser, origin, width):
     actions.locator(".record-summary-btn").first.click()
     assert page.locator("#record-summary-modal").is_visible()
     page.evaluate("document.getElementById('record-summary-modal').classList.remove('open')")
-    actions.locator(".dev-manage-btn").click()
+    page.locator("#devig-button").click()
     assert page.locator("#devig-modal").is_visible()
     page.locator("#close-devig-modal").click()
-    assert actions.locator(".dev-manage-btn").evaluate("button => button === document.activeElement")
+    assert page.locator("#devig-button").evaluate("button => button === document.activeElement")
 
     # Custom unequal weights must not claim to be the equal-weight preset.
     page.evaluate("WEIGHT = '3+1'; changeFilter();")
@@ -210,7 +211,7 @@ def check_atgs(browser, origin, width):
     page.screenshot(path=str(Path(tempfile.gettempdir()) / f"dev-picker-atgs-{width}.png"))
     assert not errors, errors
     page.close()
-    print(f"PASS: ATGS {width}px cards, exact periods, selection, keyboard, summary actions and Manage", flush=True)
+    print(f"PASS: ATGS {width}px cards, exact periods, selection, keyboard, summary actions and Devig access", flush=True)
 
 
 def check_context(browser, origin):
@@ -292,20 +293,21 @@ def check_recap_toolbar(browser, origin, name):
     toolbar = page.locator("#dev-picker-row .dev-picker-col")
     assert not toolbar.locator(".dev-window-control").is_visible()
     assert not toolbar.locator("#dev-record-upd").is_visible()
-    assert toolbar.locator(".dev-picker-actions button").all_text_contents() == ["Yest", "Season", "Manage"]
+    assert toolbar.locator(".dev-picker-actions button").all_text_contents() == ["Yest", "Season"]
+    assert toolbar.locator(".dev-manage-btn").count() == 0
     assert card(page, "pn", "hr").is_visible()
     assert page.evaluate("RES.data.length") == 1
     toolbar.get_by_role("button", name="Yesterday", exact=True).click()
     assert page.locator("#record-summary-modal").is_visible()
     page.evaluate("document.getElementById('record-summary-modal').classList.remove('open')")
-    toolbar.locator(".dev-manage-btn").click()
+    page.locator("#devig-button").click()
     assert page.locator("#devig-modal").is_visible()
     page.locator("#close-devig-modal").click()
-    assert toolbar.locator(".dev-manage-btn").evaluate("button => button === document.activeElement")
+    assert page.locator("#devig-button").evaluate("button => button === document.activeElement")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     assert not errors, errors
     page.close()
-    print(f"PASS: {name} compact toolbar, summary actions and Manage", flush=True)
+    print(f"PASS: {name} compact toolbar, summary actions and Devig access", flush=True)
 
 
 def check_cheat_season(browser, origin):

@@ -57,11 +57,12 @@ test('outlier comparisons constrain betting candidates while preserving all refe
 
 test('devig suggestions use each selected book record, keeping their identities', () => {
     const context = vm.createContext({
-        METHOD: 'mult', DEV_WINDOW: 'All', PAGE: 'atgs',
+        METHOD: 'mult', DEV_WINDOW: 'All', DEV_PRICE_SOURCE: 'closing', DEV_STAKING: 'flat', PAGE: 'atgs',
         RECORD: { mult: Object.fromEntries(['fd', 'dk', 'b365'].map((book, i) => [book, {
             'atgs-vs-pn': { All: { roi: 10 + i, wins: 2, losses: 1 } },
         }])) },
     });
+    vm.runInContext(weights.slice(weights.indexOf('function getPresetRecordSource('), weights.indexOf('function presetMetricLabel(')), context);
     vm.runInContext(weights.slice(weights.indexOf('function getTopDevigs('), weights.indexOf('// wire up the Preloads')), context);
     assert.equal(context.getTopDevigs('fd,dk').map(row => row.book).join(','), 'dk,fd');
     assert.equal(context.getTopDevigs('fd')[0].book, 'fd');

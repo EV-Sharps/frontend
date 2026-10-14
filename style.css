@@ -889,6 +889,7 @@ html.odds-app #app > main { min-height: 0; }
 /* Compact devig strip: controls beside the presets keep the table close. */
 #dev-picker-row {
 	flex-direction: row;
+	flex-wrap: wrap;
 	align-items: center;
 	flex: 0 0 auto;
 	width: 100%;
@@ -897,10 +898,11 @@ html.odds-app #app > main { min-height: 0; }
 	padding: 4px 6px 2px;
 }
 #dev-picker-row .dev-picker-col {
-	flex-direction: column;
-	flex-wrap: nowrap;
-	align-items: flex-start;
-	gap: 2px;
+	display: grid;
+	grid-template-areas: "window modes" "actions modes";
+	grid-template-columns: max-content max-content;
+	align-items: center;
+	gap: 2px 4px;
 	min-width: 0;
 	padding: 0;
 }
@@ -908,6 +910,7 @@ html.odds-app #app > main { min-height: 0; }
 	display: none;
 }
 #dev-picker-row .dev-window-control {
+	grid-area: window;
 	display: inline-flex;
 	align-items: center;
 	gap: 0;
@@ -940,13 +943,13 @@ html.odds-app #app > main { min-height: 0; }
 }
 #dev-picker-row .dev-record-upd:empty { display: none; }
 #dev-picker-row .dev-picker-actions {
+	grid-area: actions;
 	display: flex;
 	align-items: center;
 	gap: 3px;
 	margin: 0;
 }
-#dev-picker-row .record-summary-btn,
-#dev-picker-row .dev-manage-btn {
+#dev-picker-row .record-summary-btn {
 	min-height: 24px;
 	margin: 0;
 	padding: 2px 5px;
@@ -961,9 +964,7 @@ html.odds-app #app > main { min-height: 0; }
 	white-space: nowrap;
 	cursor: pointer;
 }
-#dev-picker-row .dev-manage-btn { color: #a8d1ff; }
 #dev-picker-row .record-summary-btn:hover,
-#dev-picker-row .dev-manage-btn:hover,
 #dev-picker-row .dev-window-select:hover { border-color: #6488ad; }
 #dev-picker-row #dev-picker {
 	flex: 1 1 0;
@@ -1027,8 +1028,7 @@ html.odds-app #app > main { min-height: 0; }
 }
 #dev-picker-row .dev-chip:focus-visible,
 #dev-picker-row .dev-window-select:focus-visible,
-#dev-picker-row .record-summary-btn:focus-visible,
-#dev-picker-row .dev-manage-btn:focus-visible {
+#dev-picker-row .record-summary-btn:focus-visible {
 	outline: 2px solid #a6d4ff;
 	outline-offset: 2px;
 }
@@ -1073,6 +1073,8 @@ html.odds-app #app > main { min-height: 0; }
 	font-variant-numeric: tabular-nums;
 }
 #dev-picker-row .dev-roi { font-size: 11px; font-weight: 650; white-space: nowrap; }
+#dev-picker-row .dev-subinfo-kelly { flex-wrap: wrap; row-gap: 0; }
+#dev-picker-row .dev-profit { white-space: nowrap; }
 #dev-picker-row .dev-roi.positive { color: #79d6ac; }
 #dev-picker-row .dev-roi.negative { color: #f19d9d; }
 #dev-picker-row .dev-roi.neutral { color: #ced9e5; }
@@ -1084,6 +1086,81 @@ html.odds-app #app > main { min-height: 0; }
 	font-size: 12px;
 	white-space: normal;
 }
+.dev-preset-modes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin: 2px 0;
+}
+.dev-preset-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+}
+.dev-preset-control select {
+	min-height: 26px;
+	margin: 0;
+	padding: 2px 5px;
+	border: 1px solid #364555;
+	border-radius: 5px;
+	background: #15212c;
+	color: #dbe4ee;
+	font-size: 11px;
+}
+#dev-picker-row .dev-preset-modes { grid-area: modes; flex-direction: column; gap: 2px; margin: 0; }
+#dev-picker-row .dev-preset-control > span {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+#dev-picker-row .dev-preset-control select { width: 100%; min-width: 76px; }
+.dev-preset-note {
+	flex: 0 0 100%;
+	box-sizing: border-box;
+	max-width: 100%;
+	margin: 2px 0;
+	color: #a9bbcc;
+	font-size: 10px;
+	line-height: 1.35;
+	white-space: normal;
+}
+.dev-preset-retry {
+	margin: 1px 0;
+	padding: 3px 6px;
+	border: 1px solid #587592;
+	border-radius: 5px;
+	background: #15212c;
+	color: #dbe4ee;
+	font-size: 11px;
+	cursor: pointer;
+}
+.dev-preset-note[hidden], .dev-preset-retry[hidden] { display: none; }
+#dev-picker-row .dev-preset-note {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+@media (max-width: 480px) {
+	#dev-picker-row .dev-picker-col { column-gap: 3px; }
+	#dev-picker-row .dev-picker-actions { gap: 2px; }
+	#dev-picker-row .record-summary-btn { padding-inline: 2px; font-size: 9px; }
+	#dev-picker-row .dev-preset-control select { width: 64px; min-width: 64px; padding-inline: 3px; font-size: 9px; }
+	#dev-picker-row .dev-chip-wrap { min-width: 124px; max-width: 124px; }
+	#dev-picker-row .dev-chip { padding: 3px 5px; gap: 0; }
+	#dev-picker-row .dev-subinfo { flex-wrap: wrap; gap: 0 4px; }
+	#dev-picker-row .dev-roi { font-size: 10px; }
+}
+.dev-preset-control select:focus-visible, .dev-preset-retry:focus-visible { outline: 2px solid #a6d4ff; outline-offset: 2px; }
+#preloads-list-container .preload-row { flex-wrap: wrap; gap: 5px; }
+#preloads-list-container .preload-row > div:first-child { min-width: 0 !important; overflow-wrap: anywhere; }
+#preloads-list-container .preload-right { flex-wrap: wrap; }
 .remove-weight {
 	padding: 2px 6px;
 	background-color: #E83333;

@@ -68,14 +68,56 @@
     return normalizeReport(data.opening_report);
   }
   const priceSourceLabel = source => source === 'opening' ? 'Opening odds' : 'Archived odds';
-  const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
+  const nflAliases = { pass_yds: 'pass_yd', rush_yds: 'rush_yd', rec_yds: 'rec_yd',
+    pass_comp: 'pass_cmp', pass_completions: 'pass_cmp', receptions: 'rec' };
+  const canonicalNflProp = prop => String(prop).split('+').map(part => nflAliases[part] || part).join('+');
+  const nflPropNames = {
+    attd: 'ATTD (Anytime touchdown)', no_td: 'No touchdown (under 0.5)',
+    pass_yd: 'Passing yards', pass_td: 'Passing touchdowns', pass_cmp: 'Pass completions',
+    pass_att: 'Pass attempts', pass_int: 'Interceptions thrown', longest_pass: 'Longest completion',
+    rush_yd: 'Rushing yards', rush_att: 'Rush attempts', rush_td: 'Rushing touchdowns', longest_rush: 'Longest rush',
+    rec_yd: 'Receiving yards', rec: 'Receptions', targets: 'Receiving targets', rec_td: 'Receiving touchdowns', longest_rec: 'Longest reception',
+    'pass_yd+rush_yd': 'Passing + rushing yards', 'rush_yd+rec_yd': 'Rushing + receiving yards',
+    'pass_yd+rush_yd+rec_yd': 'Passing + rushing + receiving yards',
+    'tackles+ast': 'Tackles + assists',
+    ml: 'Moneyline', spread: 'Point spread', total: 'Game total', tt: 'Team total', team_total: 'Team total',
+    home_total: 'Home team total', away_total: 'Away team total',
+  };
+  function nflMarketLabel(prop) {
+    prop = canonicalNflProp(prop);
+    const touchdowns = /^([1-9]\d*)\+td$/.exec(prop);
+    if (touchdowns) return `${touchdowns[1]}+ touchdowns`;
+    const tdLine = /^tds_(under|over)_(.+)$/.exec(prop);
+    if (tdLine) return `${tdLine[1] === 'under' ? 'Under' : 'Over'} ${tdLine[2]} touchdowns`;
+    const period = /^([12])h_(.+)$/.exec(prop) || /^([1-4])q_(.+)$/.exec(prop);
+    if (period) {
+      const label = nflMarketLabel(period[2]);
+      return label ? `${['1st', '2nd', '3rd', '4th'][Number(period[1]) - 1]} ${prop[1] === 'h' ? 'half' : 'quarter'} · ${label}` : null;
+    }
+    return nflPropNames[prop] || null;
+  }
+  const nflMainProps = ['ml', 'spread', 'total', 'tt', 'team_total', 'away_total', 'home_total'];
+  const propOrder = ['attd', 'no_td', 'pass_yd', 'pass_td', 'pass_cmp', 'pass_att', 'pass_int', 'longest_pass',
+    'rush_yd', 'rush_att', 'rush_td', 'longest_rush', 'rec_yd', 'rec', 'targets', 'rec_td', 'longest_rec',
+    'pass_yd+rush_yd', 'rush_yd+rec_yd', 'pass_yd+rush_yd+rec_yd', 'tackles+ast', ...nflMainProps,
+    ...['1h', '2h', '1q', '2q', '3q', '4q'].flatMap(period => nflMainProps.map(prop => `${period}_${prop}`)),
+    'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
+  const nhlPropOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
   const goalTier = prop => prop === 'atgs' ? 1 : /^[1-9]\d*\+goals$/.test(prop) ? Number.parseInt(prop, 10) : null;
   const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS — ${goalTier(prop)}+ goals`;
   const supportedSports = ['nhl', 'nfl'];
   const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
-  const compareProps = (a, b) => {
-    const index = prop => goalTier(prop) !== null ? propOrder.indexOf('atgs') : propOrder.includes(prop) ? propOrder.indexOf(prop) : propOrder.length;
-    return index(a) - index(b) || (goalTier(a) || 0) - (goalTier(b) || 0) || a.localeCompare(b);
+  const compareProps = (a, b, league = 'nhl') => {
+    const order = league === 'nfl' ? propOrder : nhlPropOrder;
+    const tdTier = prop => prop === 'attd' ? 1 : /^[1-9]\d*\+td$/.test(prop) ? Number.parseInt(prop, 10) : null;
+    const index = prop => {
+      if (league === 'nfl') prop = canonicalNflProp(prop);
+      if (goalTier(prop) !== null) return order.indexOf('atgs');
+      if (league === 'nfl' && (tdTier(prop) !== null || prop.startsWith('tds_over_'))) return order.indexOf('attd');
+      if (league === 'nfl' && prop.startsWith('tds_under_')) return order.indexOf('no_td');
+      return order.includes(prop) ? order.indexOf(prop) : order.length;
+    };
+    return index(a) - index(b) || (goalTier(a) || tdTier(a) || 0) - (goalTier(b) || tdTier(b) || 0) || a.localeCompare(b);
   };
   const hasKellyMetrics = cell => kellyMetrics.every(key => typeof cell[key] === 'number' && Number.isFinite(cell[key]))
     && cell.kelly_stake_units >= 0;
@@ -122,7 +164,7 @@
     const scope = reportCells(report).filter(cell => matches(cell, filters));
     const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
-    const byProp = [...new Set(scope.map(cell => cell.prop))].sort(compareProps).map(prop => {
+    const byProp = [...new Set(scope.map(cell => cell.prop))].sort((a, b) => compareProps(a, b, report.sport)).map(prop => {
       const rows = chosen.filter(cell => cell.prop === prop);
       const bookSamples = group(rows, ['book'], staking), bandSamples = group(rows, ['odds_band'], staking);
       return { prop, total: aggregate(rows, staking), books: rank(bookSamples), bands: rank(bandSamples), bookSamples, bandSamples };
@@ -325,7 +367,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, nflMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -356,7 +398,7 @@
     ast: 'Assists', goals: 'Goals', assists: 'Assists', points: 'Points', ml: 'Moneyline', spread: 'Puck line', total: 'Game total', tt: 'Team total',
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
   const propName = prop => {
-    if (prop === 'spread' && sport === 'nfl') return 'Point spread';
+    if (sport === 'nfl' && nflMarketLabel(prop)) return nflMarketLabel(prop);
     if (goalMarketLabel(prop)) return goalMarketLabel(prop);
     if (prop.startsWith('goals_under_')) return `Under ${prop.slice('goals_under_'.length)} goals`;
     const period = /^([123])p_(.+)$/.exec(prop);
@@ -556,7 +598,7 @@
       $('date-end').value = initialRange.end;
     }
     $('book-filter').value = '';
-    $('market-filter').value = sport === 'nfl' ? 'attd' : '';
+    $('market-filter').value = '';
     $('reference-filter').value = strategy.reference;
     $('method-filter').value = strategy.method;
     $('min-settled').value = '10';
@@ -714,7 +756,7 @@
     const cells = reportCells(report);
     const books = [...new Set(cells.map(cell => cell.book))].sort((a, b) => a === 'best' ? -1 : b === 'best' ? 1 : a.localeCompare(b));
     options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers', previous?.book, previous?.book ? bookName(previous.book) : null);
-    const props = [...new Set([...(sport === 'nfl' ? ['attd'] : []), ...cells.map(cell => cell.prop)])].sort(compareProps);
+    const props = [...new Set([...(sport === 'nfl' ? ['attd'] : []), ...cells.map(cell => cell.prop)])].sort((a, b) => compareProps(a, b, sport));
     options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets', previous?.prop, previous?.prop ? propName(previous.prop) : null);
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]), null, previous?.reference, previous?.reference ? referenceName(previous.reference) : null);
     options('method-filter', report.methods.map(item => [item.id, item.name]), null, previous?.method, previous?.method ? methodName(previous.method) : null);
@@ -826,6 +868,8 @@
     $('sport-label').textContent = sport.toUpperCase();
     const goalLinesNote = $('goal-lines-note');
     if (goalLinesNote) goalLinesNote.hidden = sport !== 'nhl';
+    const nflMarketsNote = $('nfl-markets-note');
+    if (nflMarketsNote) nflMarketsNote.hidden = sport !== 'nfl';
     $('page-title').textContent = `${sport.toUpperCase()} devig results`;
     document.title = `${sport.toUpperCase()} devig results | +EV Sharps`;
     $('report-window').textContent = sport === 'nfl' ? 'Current season · ET' : 'Last 7 complete days · ET';

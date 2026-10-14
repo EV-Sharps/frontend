@@ -17,7 +17,7 @@ function harness(overrides = {}) {
     affiliate_visits: [], affiliate_referrals: [], affiliate_commissions: [], affiliate_payouts: [], affiliate_payout_items: [],
     profiles: [{ id: USER, stripe_customer_id: 'cus_user' }, { id: OWNER, stripe_customer_id: 'cus_owner' }],
   };
-  const calls = { invoices: [], rpc: [], coupons: [], errors: [] };
+  const calls = { invoices: [], rpc: [], coupons: [], errors: [], authUsers: [] };
   let dbError = null;
   function builder(table) {
     let predicates = [], mode = 'read', value, single = false, start = 0, end = Infinity;
@@ -52,7 +52,10 @@ function harness(overrides = {}) {
     from: builder,
     auth: {
       getUser: async token => ({ data: { user: users.has(token) ? { id: token, user_metadata: { admin: true } } : null } }),
-      admin: { getUserById: async id => ({ data: { user: users.has(id) ? { id } : null } }) },
+      admin: { getUserById: async id => {
+        calls.authUsers.push(id);
+        return { data: { user: users.has(id) ? { id, email: id === OWNER ? 'partner@example.com' : 'account@example.com', user_metadata: { private_note: 'owner metadata' } } : null } };
+      } },
     },
     rpc: async (name, params) => {
       calls.rpc.push({ name, params });
@@ -116,6 +119,75 @@ test('localhost requires authentication and user metadata cannot grant admin', a
   assert.equal(unauthenticated.headers.Vary, 'Authorization');
   assert.equal((await h.invoke('get', '/admin')).statusCode, 403);
   assert.equal((await h.invoke('get', '/admin', { user: ADMIN })).statusCode, 200);
+});
+
+test('admin report includes partner email and account UID without other account or referred-customer data', async () => {
+  const h = harness();
+  h.tables.affiliate_referrals.push({ user_id: USER, email: 'customer@example.com', affiliate_id: PARTNER, first_paid_at: NOW });
+  const response = await h.invoke('get', '/admin', { user: ADMIN });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers['Cache-Control'], 'private, no-store');
+  assert.equal(response.headers.Vary, 'Authorization');
+  assert.equal(response.data.partners[0].email, 'partner@example.com');
+  assert.equal(response.data.partners[0].user_id, OWNER);
+  assert.equal(response.data.partners[0].id, PARTNER);
+  assert.equal(response.data.partners[0].summary.conversions, 1);
+  assert.deepEqual(h.calls.authUsers, [OWNER]);
+  const serialized = JSON.stringify(response.data);
+  assert.equal(serialized.includes('owner metadata'), false);
+  assert.equal(serialized.includes('customer@example.com'), false);
+  assert.equal(serialized.includes(USER), false);
+});
+
+test('non-admin routes never look up or expose partner account identity', async () => {
+  const h = harness();
+  const responses = [
+    await h.invoke('get', '/admin', { user: null }),
+    await h.invoke('get', '/admin', { user: USER }),
+    await h.invoke('get', '/admin', { user: OWNER }),
+    await h.invoke('get', '/me', { user: OWNER }),
+    await h.invoke('post', '/capture', { user: null, body: { code: 'HOCKEY' } }),
+  ];
+  assert.deepEqual(responses.map(response => response.statusCode), [401, 403, 403, 200, 200]);
+  assert.deepEqual(h.calls.authUsers, []);
+  for (const response of responses) {
+    const serialized = JSON.stringify(response.data);
+    assert.equal(serialized.includes('partner@example.com'), false);
+    assert.equal(serialized.includes(OWNER), false);
+  }
+});
+
+test('admin report retains partner UID when the account or email is missing', async () => {
+  const h = harness();
+  for (const lookup of [
+    { data: { user: null } },
+    { data: { user: { id: OWNER } } },
+    { data: { user: { id: OWNER, email: '  ' } } },
+    { data: null, error: { status: 404, message: 'Account deleted' } },
+    { data: null, error: { code: 'user_not_found', message: 'Account deleted' } },
+  ]) {
+    h.supabase.auth.admin.getUserById = async () => lookup;
+    const response = await h.invoke('get', '/admin', { user: ADMIN });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.data.partners[0].email, null);
+    assert.equal(response.data.partners[0].user_id, OWNER);
+  }
+});
+
+test('admin identity lookup errors produce a sanitized retryable response', async () => {
+  const h = harness();
+  for (const lookup of [
+    async () => ({ data: null, error: { status: 500, message: 'private auth details' } }),
+    async () => { throw new Error('private auth details'); },
+  ]) {
+    h.supabase.auth.admin.getUserById = lookup;
+    const response = await h.invoke('get', '/admin', { user: ADMIN });
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.data.code, 'identity_unavailable');
+    assert.equal(JSON.stringify(response.data).includes('private auth details'), false);
+    assert.equal(Object.hasOwn(response.data, 'partners'), false);
+  }
+  assert.deepEqual(h.calls.errors, []);
 });
 
 test('capture normalizes codes, returns an opaque expiring token, and rate limits', async () => {

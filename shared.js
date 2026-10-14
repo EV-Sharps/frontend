@@ -230,7 +230,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏈 College Game Tracker", value: "nfl_tracker?sport=ncaaf", tier: "free" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nfl", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nfl", tier: "sharp" },
-			{ label: "Devig Results", value: "devig-results?sport=nfl", tier: "sharp" },
+			{ label: "Devig Results", value: "devig-results?sport=nfl", tier: "free" },
 			{ label: "🏈 Preseason", value: "preseason", tier: "sharp" },
 			{ label: "🔮 Futures", value: "nfl_futures", tier: "free" },
 			{ label: "🏈 CFB", value: "ncaaf", tier: "sharp" },
@@ -251,7 +251,7 @@ const PAGE_SECTIONS = [
 			{ label: "ATGS Parlays", value: "parlays?market=atgs", tier: "analyst" },
 			{ label: "ATGS Grades", value: "atgs-grades", tier: "analyst" },
 			{ label: "Longshots", value: "longshots", tier: "sharp" },
-			{ label: "Devig Results", value: "devig-results", tier: "sharp" },
+			{ label: "Devig Results", value: "devig-results", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nhl", tier: "sharp" },
 			{ label: "📊 Results", value: "analysis?sport=nhl", tier: "free" },
 		]
@@ -281,7 +281,7 @@ const PAGE_SECTIONS = [
 			{ label: "⭐ Watchlist/Bets", value: "tracker", tier: "sharp" },
 			{ label: "❓ FAQ", value: "faq" },
 			{ label: "👤 Profile", value: "profile" },
-			//{ label: "Affiliates", value: "affiliates" },
+			{ label: "Affiliates", value: "affiliates" },
 			{ label: "💳 Pricing", value: "pricing" },
 		]
 	}
@@ -6165,8 +6165,8 @@ function syncDevPickerSelection({ reveal = false } = {}) {
 	const propInputs = [...document.querySelectorAll('#prop-options input[type="checkbox"]')];
 	const props = propInputs.filter(input => input.checked).map(input => input.value);
 	const candidates = equalWeights && !DEVIG_EXCLUDED.length ? buttons.filter(button => {
-		const propMatch = !propInputs.length || !props.length || (button.dataset.prop === 'team_total'
-			? props.includes('away_total') && props.includes('home_total') : props.includes(button.dataset.prop));
+		const mappedProps = presetProps(button.dataset.prop);
+		const propMatch = !propInputs.length || !props.length || mappedProps.length > 0 && mappedProps.every(prop => props.includes(prop));
 		const bookMatch = books.length ? books.includes(button.dataset.book) : button.dataset.book === 'best';
 		return propMatch && bookMatch && devigSetEquals(button.dataset.value, dev);
 	}) : [];
@@ -6185,7 +6185,6 @@ function syncDevPickerSelection({ reveal = false } = {}) {
 async function initDevPicker(data) {
 	const picker = document.getElementById('dev-picker');
 	const hidden = document.getElementById('devig-select');
-	const recordNumber = value => value == null || String(value).trim() === '' ? null : Number(value);
 	if (!picker) return;
 
 	// Keep the toolbar mounted while the record window rebuilds the cards.
@@ -6200,8 +6199,9 @@ async function initDevPicker(data) {
 			<label class="dev-window-control" for="dev-window-select"><span>Record window</span>
 				<select id="dev-window-select" class="dev-window-select"></select></label>
 			<span id="dev-record-upd" class="dev-record-upd"></span>
-			<div class="dev-picker-actions"><button type="button" class="dev-manage-btn" aria-label="Manage devig presets" aria-haspopup="dialog">Manage</button></div>`;
+			<div class="dev-picker-actions"></div>`;
 		section.appendChild(toolbar);
+		toolbar.insertBefore(appendPresetModeControls(toolbar, 'dev-preset'), toolbar.querySelector('.dev-picker-actions'));
 		const select = toolbar.querySelector('select');
 		select.innerHTML = ['All', 'SZN', 'L3', 'L7', 'L14', 'L30', 'L60'].map(value =>
 			`<option value="${value}"${value === 'SZN' ? ' title="Current season"' : ''}>${value === 'All' ? 'All-time' : value}</option>`).join('');
@@ -6209,7 +6209,6 @@ async function initDevPicker(data) {
 			DEV_WINDOW = select.value;
 			initDevPicker(getTopDevigs(BOOK || 'best'));
 		});
-		toolbar.querySelector('.dev-manage-btn').addEventListener('click', event => openDevig(event.currentTarget));
 		picker.setAttribute('role', 'group');
 		picker.setAttribute('aria-label', 'Select a devig preset');
 		picker.addEventListener('keydown', event => {
@@ -6223,12 +6222,16 @@ async function initDevPicker(data) {
 			revealHorizontalControl(picker, buttons[next]);
 		});
 		section.appendChild(picker);
+		appendPresetModeNote(section, 'dev-preset');
 	}
 	document.getElementById('dev-window-select').value = DEV_WINDOW;
+	syncPresetModeControls();
+	if (DEV_PRICE_SOURCE === 'opening' && getPresetRecordSource().status === 'idle') ensureOpeningPresets();
 	const updated = document.getElementById('dev-record-upd');
 	updated.textContent = '';
-	if (typeof RECORD_UPD !== 'undefined' && RECORD_UPD) {
-		const date = new Date(RECORD_UPD);
+	const recordUpdated = getPresetRecordSource().updated;
+	if (recordUpdated) {
+		const date = new Date(recordUpdated);
 		if (!Number.isNaN(date.getTime())) updated.textContent = `Updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 	}
 	document.getElementById('dev-window-select').title = ['Record window', updated.textContent].filter(Boolean).join(' · ');
@@ -6238,7 +6241,9 @@ async function initDevPicker(data) {
 	if (!Array.isArray(data) || !data.length) {
 		const empty = document.createElement('span');
 		empty.className = 'dev-picker-empty';
-		empty.textContent = 'No presets for these books. Choose a devig in Manage.';
+		empty.textContent = DEV_PRICE_SOURCE === 'opening' && getPresetRecordSource().status !== 'ready'
+			? ['idle', 'loading'].includes(getPresetRecordSource().status) ? 'Loading opening presets…' : 'Opening presets unavailable.'
+			: 'No presets for these books. Use the Devig button to choose a mix.';
 		picker.appendChild(empty);
 		return;
 	}
@@ -6267,6 +6272,7 @@ async function initDevPicker(data) {
 		button.dataset.key = `${prop}|${row.book}|${dev.split('+').sort().join('+')}`;
 		button.setAttribute('aria-pressed', 'false');
 		button.title = `${dev.split('+').map(parseBook).join(' + ')} · Equal weights`;
+		if (row.staking === 'quarter-kelly') button.title += ` · ${presetKellyTitle(row)}`;
 		const heading = document.createElement('span');
 		heading.className = 'dev-chip-heading';
 		const name = document.createElement('span');
@@ -6289,21 +6295,28 @@ async function initDevPicker(data) {
 		}
 		const info = document.createElement('span');
 		info.className = 'dev-subinfo';
-		const record = typeof RECORD !== 'undefined' ? RECORD?.[METHOD || 'worst']?.[row.book]?.[`${prop}-vs-${dev}`]?.[DEV_WINDOW] : null;
-		const wins = recordNumber(record?.wins ?? record?.w);
-		const losses = recordNumber(record?.losses ?? record?.l);
-		const roi = recordNumber(record?.roi);
-		if (Number.isFinite(roi) && Number.isFinite(wins) && Number.isFinite(losses) && wins >= 0 && losses >= 0 && wins + losses > 0) {
+		if (row.staking === 'quarter-kelly') info.classList.add('dev-subinfo-kelly');
+		const { wins, losses, roi } = row;
+		if (row.hasRecord) {
 			const roiLabel = document.createElement('span');
 			roiLabel.className = `dev-roi ${roi > 0 ? 'positive' : roi < 0 ? 'negative' : 'neutral'}`;
-			roiLabel.textContent = `${roi > 0 ? '+' : ''}${roi.toLocaleString('en-US', { maximumFractionDigits: 2 })}% ROI`;
+			roiLabel.textContent = presetMetricLabel(row);
 			const recordLabel = document.createElement('span');
 			recordLabel.className = 'dev-record';
 			recordLabel.textContent = `${wins}W–${losses}L`;
-			info.append(roiLabel, recordLabel);
+			info.appendChild(roiLabel);
+			const profit = presetProfitLabel(row);
+			if (profit) {
+				const profitLabel = document.createElement('span');
+				profitLabel.className = 'dev-profit';
+				profitLabel.textContent = profit;
+				profitLabel.title = presetKellyTitle(row);
+				info.appendChild(profitLabel);
+			}
+			info.appendChild(recordLabel);
 		} else {
 			info.classList.add('dev-no-record');
-			info.textContent = DEV_WINDOW === 'All' ? 'No record data' : `No ${DEV_WINDOW} data`;
+			info.textContent = presetMetricLabel(row);
 		}
 		button.appendChild(info);
 		button.addEventListener('click', () => {
@@ -6316,9 +6329,8 @@ async function initDevPicker(data) {
 			document.getElementById('devig-display-text').innerText = parseWeightKey(`${DEVIG};${WEIGHT}`);
 			// A preset retains a selected betting-book group.
 			if (parseBookFilter(BOOK).length <= 1) setBookSelection(row.book === 'best' ? '' : row.book);
-			const props = prop === 'team_total' ? ['away_total', 'home_total'] : [prop];
-			setOptions('prop-options', props);
-			updatePropLabel(props);
+			const props = presetProps(prop);
+			if (props.length) { setOptions('prop-options', props); updatePropLabel(props); }
 			updateRequiredDropdown();
 			changeFilter();
 			syncDevPickerSelection({ reveal: true });

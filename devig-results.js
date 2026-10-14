@@ -61,6 +61,13 @@
     report = normalizeReport(report);
     return [...report.cells, ...(report.best_cells || [])];
   };
+  function reportForSource(data, priceSource = 'archive') {
+    data = normalizeReport(data);
+    if (priceSource !== 'opening' || data?.price_source === 'opening') return data;
+    if (!data?.opening_report) throw new Error('Opening odds results are unavailable. Refresh after the report is rebuilt with opening snapshots.');
+    return normalizeReport(data.opening_report);
+  }
+  const priceSourceLabel = source => source === 'opening' ? 'Opening odds' : 'Archived odds';
   const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
   const goalTier = prop => prop === 'atgs' ? 1 : /^[1-9]\d*\+goals$/.test(prop) ? Number.parseInt(prop, 10) : null;
   const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS — ${goalTier(prop)}+ goals`;
@@ -109,7 +116,7 @@
         || JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
   function buildView(report, filters) {
-    report = normalizeReport(report);
+    report = reportForSource(report, filters.priceSource);
     const staking = filters.staking || 'flat';
     if (staking === 'quarter-kelly' && !supportsKelly(report)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
     const scope = reportCells(report).filter(cell => matches(cell, filters));
@@ -188,7 +195,7 @@
     return index >= 0 ? index : books.some(book => book === 'circa' || book === 'pn') ? 8 : 9;
   }
   function buildPerformers(report, filters = {}) {
-    report = normalizeReport(report);
+    report = reportForSource(report, filters.priceSource);
     if (filters.staking === 'quarter-kelly' && !supportsKelly(report)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
     const method = filters.method || 'probit', bucket = filters.bucket || 'all';
     const columns = [...report.references].sort((a, b) => shareReferencePriority(a) - shareReferencePriority(b) || a.id.localeCompare(b.id));
@@ -263,18 +270,20 @@
     if (!range) return null;
     return { ...range, available: range.start <= range.end && range.start >= data.window.start && range.end <= data.window.end };
   }
-  function configDescription(c = {}, sport = 'nhl') {
+  function configDescription(c = {}, sport = 'nhl', priceSource = 'archive') {
     const ev = c.max_ev == null ? `EV ≥ ${c.min_ev ?? 0}%; no upper limit`
       : `EV from ${c.min_ev ?? 0}% to ${c.max_ev}%`;
     const oneSided = c.one_sided === 'site' ? 'missing opposite prices use the site’s 7% assumed vig'
       : c.one_sided === 'exclude' ? 'excluded' : 'see report notes';
-    return `Archived ${sport.toUpperCase()} offers with estimated ${ev}. Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. `
+    return `${priceSource === 'opening' ? 'Opening' : 'Archived'} ${sport.toUpperCase()} offers with estimated ${ev}. Recorded exchange liquidity minimum: $${c.min_liquidity ?? 50}. `
       + `One-sided reference prices: ${oneSided}. `
       + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
   }
-  function validateReport(data, expectedSport) {
+  function validateReport(data, expectedSport, nested = false) {
     data = normalizeReport(data);
-    if (data?.version !== 1 || !supportedSports.includes(data.sport) || !validDate(data.window?.start) || !validDate(data.window?.end)
+    if (data?.version !== 1 || !supportedSports.includes(data.sport)
+      || (data.price_source !== undefined && !['archive', 'opening'].includes(data.price_source))
+      || !validDate(data.window?.start) || !validDate(data.window?.end)
       || data.window.start > data.window.end || !Array.isArray(data.cells)
       || (data.best_cells !== undefined && !Array.isArray(data.best_cells))
       || !Array.isArray(data.references) || !Array.isArray(data.methods)) throw new Error('The published report format is not supported. Refresh after the next report is published.');
@@ -287,6 +296,11 @@
         || (data.kelly_version === 1 && !hasKellyMetrics(cell))
         || ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded'].some(key => cell[key] < 0)) throw new Error('The published report contains invalid result rows. Please refresh after it is rebuilt.');
     }
+    if (data.opening_report !== undefined) {
+      if (nested || data.price_source === 'opening' || !data.opening_report || typeof data.opening_report !== 'object') throw new Error('The published opening report is invalid. Please refresh after it is rebuilt.');
+      const opening = validateReport(data.opening_report, data.sport, true);
+      if (opening.price_source !== 'opening' || opening.window.start !== data.window.start || opening.window.end !== data.window.end) throw new Error('The published opening report has a different source or date window. Please refresh after it is rebuilt.');
+    }
     return data;
   }
   function csvField(value) {
@@ -296,10 +310,10 @@
     return '"' + text.replaceAll('"', '""') + '"';
   }
   function exportCSV(view, filters) {
-    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop', 'staking', 'settled_stake_units'];
+    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop', 'staking', 'settled_stake_units', 'price_source'];
     const line = (section, segment, row) => [section, segment, row.reference ?? filters.reference, row.method ?? filters.method,
       filters.start, filters.end, filters.book || 'all', filters.prop || 'all', row.selected, row.settled, row.wins, row.losses,
-      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || '', filters.staking || 'flat', row.stake_units];
+      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || '', filters.staking || 'flat', row.stake_units, filters.priceSource || 'archive'];
     const rows = [headings, line('summary', 'selected strategy', view.total)];
     for (const [section, key, data] of [['strategies', 'reference', view.strategies],
       ['markets', 'prop', view.markets], ['days', 'date', view.days]]) {
@@ -311,7 +325,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -351,6 +365,8 @@
   const dayLabel = day => new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   const timestamp = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET' : 'Time unavailable';
   let report = null, view = null, authVersion = 0, controller = null, pending = null;
+  let publishedReport = null, priceSource = 'archive', priceSourcePreference = 'archive';
+  try { if (localStorage.getItem('devig_results_price_source') === 'opening') priceSourcePreference = 'opening'; } catch (_) {}
   let staking = 'flat', stakingPreference = 'flat';
   try { if (localStorage.getItem('devig_results_staking') === 'quarter-kelly') stakingPreference = 'quarter-kelly'; } catch (_) {}
   const referenceName = id => { const reference = report?.references.find(item => item.id === id); return reference?.books?.length === 1 ? bookName(reference.books[0]) : reference?.name || id; };
@@ -381,7 +397,7 @@
     if (!report || filterError(filters())) { closePerformers(); return; }
     performersRevision++;
     const f = { ...filters(), method: $('performers-method').value || 'probit', bucket: $('performers-range').value || 'all' };
-    const filterKey = JSON.stringify([f.start, f.end, f.book, f.prop, f.profitableOnly, f.method, f.bucket, f.staking]);
+    const filterKey = JSON.stringify([f.start, f.end, f.book, f.prop, f.profitableOnly, f.method, f.bucket, f.staking, f.priceSource]);
     if (filterKey !== performersFilterKey) { performersPage = 0; performersDevigPage = 0; }
     performersFilterKey = filterKey;
     const matrix = buildPerformers(report, f), groups = matrix.rows, requested = $('performers-limit').value;
@@ -409,16 +425,17 @@
       return { hitLabel: `${hit.player ? sharePlayerName(hit.player) : hit.game} ${odds}`, hitDetail: `${propName(hit.prop).replace(/ \(.*\)$/, '')}${lineLabel} · ${dayLabel(hit.date)}${row.book === 'best' ? ` · ${shareBookName(hit.book)}` : ''}` };
     };
     performersModel = {
-      sport, method: f.method, bucket: f.bucket, staking: f.staking, title: 'Devig performance', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
+      sport, method: f.method, bucket: f.bucket, staking: f.staking, priceSource: f.priceSource, title: 'Devig performance', subtitle: `${sport.toUpperCase()} · ${f.prop ? propName(f.prop) : 'All markets'} · ${windowName}`,
       period: (f.start === f.end ? prettyDate(f.start) : `${prettyDate(f.start)} – ${prettyDate(f.end)}`) + ' · ET',
       scope: `${f.book ? bookName(f.book) : 'All betting books'} · ${devigPageLabel}`,
-      description: `${methodName(f.method)} · ${rangeLabel} · ${stakingLabel(f.staking)}`,
+      description: `${methodName(f.method)} · ${rangeLabel} · ${stakingLabel(f.staking)} · ${priceSourceLabel(f.priceSource)}`,
       criteria: `${groups.length ? `Books ${performersPage * pageSize + 1}–${Math.min((performersPage + 1) * pageSize, groups.length)} of ${groups.length}` : 'No books in this market'}${f.profitableOnly ? ' · Profitable only' : ''}`,
       generated: `Updated ${timestamp(report.generated_at)}`,
       pageNumber: performersPage + 1, pageCount, devigPageNumber: performersDevigPage + 1,
       pageLabel: `Book page ${performersPage + 1} of ${pageCount} · Devig page ${performersDevigPage + 1} of ${devigPageCount}`,
       columns: columns.map(column => ({ id: column.id, label: performerReferenceName(column) })),
       footnotes: [
+        ...(f.priceSource === 'opening' ? ['Opening odds: first saved checkpoint after four sportsbooks quote a selection, not necessarily the first line posted. Missing opening prices are excluded.'] : []),
         f.staking === 'quarter-kelly' ? 'Historical replay · ¼ Kelly · Fixed 100u bankroll; 1u = 1%; no compounding. Modeled fees included.'
           : 'Historical replay · Flat 1u · 1u risk per settled offer · Modeled fees included.',
         'Each cell uses the selected method and odds range for that betting book and devig.',
@@ -474,7 +491,7 @@
       const canvas = root.DevigResultsShare.drawCard(model);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image unavailable')), 'image/png'));
       if (!current()) return;
-      const filename = `${model.sport}-devigs-${model.method}-${model.bucket}-${f.start}-${f.end}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}-books-${model.pageNumber}-devigs-${model.devigPageNumber}.png`;
+      const filename = `${model.sport}-devigs-${model.method}-${model.bucket}-${f.start}-${f.end}${f.priceSource === 'opening' ? '-opening' : ''}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}-books-${model.pageNumber}-devigs-${model.devigPageNumber}.png`;
       if (copy) {
         try {
           if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Clipboard unavailable');
@@ -498,7 +515,7 @@
   function notice(id, text) { $(id).textContent = text; $(id).hidden = !text; }
   function filters() {
     return { start: $('date-start').value, end: $('date-end').value, book: $('book-filter').value, prop: $('market-filter').value,
-      reference: $('reference-filter').value, method: $('method-filter').value, staking,
+      reference: $('reference-filter').value, method: $('method-filter').value, staking, priceSource,
       minimum: Math.max(1, Math.floor(number($('min-settled').value))), profitableOnly: $('profitable-only').checked };
   }
   function renderStaking() {
@@ -517,11 +534,12 @@
       : 'Flat 1u risks one unit on each qualifying offer. ')
       + 'ROI is net profit divided by total stake on settled offers, including pushes. Pending and ungraded offers contribute neither stake nor profit. The summary and breakdowns use exactly one reference and method.';
   }
-  function options(id, entries, placeholder, preferred) {
+  function options(id, entries, placeholder, preferred, missingLabel) {
     const select = $(id), previous = preferred ?? select.value;
     select.replaceChildren();
     if (placeholder) select.add(new Option(placeholder, ''));
     for (const [value, label] of entries) select.add(new Option(label, value));
+    if (previous && missingLabel && ![...select.options].some(option => option.value === previous)) select.add(new Option(`${missingLabel} (no offers)`, previous));
     if ([...select.options].some(option => option.value === previous)) select.value = previous;
   }
   function resetFilters() {
@@ -598,10 +616,14 @@
     const days = dateRange(f.start, f.end), available = coverageDates(), missing = days.filter(date => !available.has(date));
     const covered = days.length - missing.length, coverage = report.coverage || {};
     $('coverage-badge').textContent = `${covered} / ${days.length} days`;
-    $('coverage-summary').textContent = covered ? `${covered} of ${days.length} calendar dates have archived event offers.` : 'No archived event offers are available for these calendar dates.';
+    const opening = priceSource === 'opening', offers = opening ? 'saved opening snapshots' : 'archived event offers';
+    $('coverage-summary').textContent = covered ? `${covered} of ${days.length} calendar dates have ${offers}.` : `No ${offers} are available for these calendar dates.`;
     $('coverage-days').innerHTML = days.map(date => `<span class="dv-coverage-day ${available.has(date) ? '' : 'is-missing'}" title="${esc(date)}: ${available.has(date) ? 'Event data available' : 'Event data missing'}"><i aria-hidden="true"></i><span>${esc(dayLabel(date))}</span><span class="sr-only">${available.has(date) ? 'Event data available' : 'Event data missing'}</span></span>`).join('');
-    $('coverage-caution').textContent = missing.length ? `Dates without archived offers (including off days): ${missing.map(dayLabel).join(', ')}. An absence of archived offers is not a zero-profit result.` : 'Event-date coverage does not guarantee every market or book was captured.';
-    $('coverage-latest').textContent = coverage.latest_archive_date ? `Latest archive: ${coverage.latest_archive_date}. Dates use Eastern time.` : 'No latest archive date was reported. Dates use Eastern time.';
+    $('coverage-caution').textContent = missing.length ? `Dates without ${opening ? 'saved opening snapshots' : 'archived offers'} (including off days): ${missing.map(dayLabel).join(', ')}. Missing data is not a zero-profit result.` : 'Event-date coverage does not guarantee every market or book was captured.';
+    if (opening) $('coverage-caution').textContent += ' Results only include captured opening prices; earlier history and missing books are not filled from later odds.';
+    $('coverage-latest').textContent = opening
+      ? (coverage.first_opening_capture ? `Opening captures in this report: ${timestamp(coverage.first_opening_capture)}${coverage.last_opening_capture && coverage.last_opening_capture !== coverage.first_opening_capture ? ` through ${timestamp(coverage.last_opening_capture)}` : ''}.` : 'No opening captures are available in this report.')
+      : (coverage.latest_archive_date ? `Latest archive: ${coverage.latest_archive_date}. Dates use Eastern time.` : 'No latest archive date was reported. Dates use Eastern time.');
   }
   function render() {
     if (!report) return;
@@ -619,7 +641,7 @@
     view = buildView(report, f);
     const total = view.total;
     $('selected-strategy').textContent = `${referenceName(f.reference)} / ${methodName(f.method)}`;
-    $('selection-caption').textContent = `${dayLabel(f.start)}–${dayLabel(f.end)} · ${f.book ? bookName(f.book) : 'All books'} · ${f.prop ? propName(f.prop) : 'All markets'}`;
+    $('selection-caption').textContent = `${dayLabel(f.start)}–${dayLabel(f.end)} · ${f.book ? bookName(f.book) : 'All books'} · ${f.prop ? propName(f.prop) : 'All markets'} · ${priceSourceLabel(f.priceSource)}`;
     $('summary-roi').textContent = percent(total.roi);
     $('summary-roi').className = tone(total.roi);
     $('summary-profit').textContent = signed(total.profit_units, 'u');
@@ -631,11 +653,14 @@
     $('offer-note').textContent = f.book === 'best' ? `${count(total.selected)} qualifying saved lines/sides, each counted once at the best payout after fees. Match reference, method, dates and book when comparing with Analysis.`
       : f.book ? `${count(total.selected)} qualifying offers at ${bookName(f.book)} for this strategy. Match reference, method, dates and book when comparing with Analysis.`
       : `${count(total.selected)} qualifying offers. The same bet at different books is an alternative offer, not a unique-bet portfolio. Books can qualify different selections.`;
+    if (priceSource === 'opening') $('offer-note').textContent = `${count(total.selected)} qualifying opening offers. Both betting and reference prices use saved opening checkpoints. Books can have different selections; opening results are a separate sample from archived-odds results.`;
     $('book-ranking-title').textContent = f.book === 'best' ? 'Best available by prop' : 'Best betting books by prop';
     $('book-ranking-caption').textContent = f.book === 'best' ? 'One highest net payout per saved line/side, after fees.'
       : 'Each prop is ranked separately. Qualifying selections differ by book.';
     $('empty-state').hidden = total.selected > 0;
-    $('empty-message').textContent = 'Try another date, market, betting book or strategy. Check coverage below for missing archives.';
+    $('empty-message').textContent = priceSource === 'opening'
+      ? `No qualifying opening offers for ${referenceName(f.reference)} / ${methodName(f.method)} match these filters. Opening references must be available in the saved checkpoints. Try another reference, method, date or betting book, or switch to Archived odds. Check opening coverage below.`
+      : 'Try another date, market, betting book or strategy. Check coverage below for missing archives.';
     $('export').disabled = false;
     renderDaily(f);
     renderCoverage(f);
@@ -652,7 +677,10 @@
   }
   function renderMethodology() {
     const c = report.config || {}, coverage = report.coverage || {};
-    $('config-note').textContent = configDescription(c, sport);
+    $('config-note').textContent = configDescription(c, sport, priceSource);
+    $('price-source-methodology').textContent = priceSource === 'opening'
+      ? 'Opening results use each selection’s first saved checkpoint after four sportsbooks quoted it, with independently captured sides. Opposite-side opening quotes are used only when captured no later than the selected side; otherwise the one-sided devig policy applies. No later reference quotes, betting prices or liquidity are substituted. These are captured opening prices, not guaranteed sportsbook launch prices. Select Archived odds when comparing this page with Analysis.'
+      : 'To compare counts with Analysis, match reference, method, dates and book. Best available counts each saved line/side once at the highest payout after fees. All books counts offers separately at each book.';
     $('coverage-totals').textContent = `Full published window: ${count(coverage.raw_rows)} raw rows; ${count(coverage.valid_rows)} valid; ${count(coverage.graded_rows)} graded; ${count(coverage.unresolved_rows)} unresolved. Counts describe source rows, not sums across strategies.`;
     $('report-notes').replaceChildren(...(report.notes || []).map(note => { const li = document.createElement('li'); li.textContent = note; return li; }));
     const reasons = [['Archive', coverage.reasons || {}], ['Grading', coverage.grading_reasons || {}]];
@@ -664,8 +692,19 @@
   }
   function acceptReport(data) {
     const previous = report ? filters() : null;
-    report = validateReport(data, sport);
+    const next = validateReport(data, sport);
+    const nextSource = priceSourcePreference === 'opening' && next.opening_report ? 'opening' : 'archive';
+    const active = reportForSource(next, nextSource);
+    publishedReport = next;
+    priceSource = nextSource;
+    report = active;
     staking = supportsKelly(report) ? stakingPreference : 'flat';
+    $('price-source').value = priceSource;
+    $('price-source').querySelector('option[value="opening"]').disabled = !publishedReport.opening_report;
+    $('price-source-note').textContent = priceSource === 'opening'
+      ? 'Opening odds · First saved checkpoint after four sportsbooks quote a selection, not necessarily its first posted line. Only captured opening prices are included.'
+      : !publishedReport.opening_report ? 'Archived odds · Opening results will be available when this report is rebuilt with saved opening snapshots.'
+        : 'Archived odds · Latest saved daily prices for each selection. Select Opening odds to replay the captured opening prices.';
     $('report-content').hidden = false;
     $('report-content').setAttribute('aria-busy', 'false');
     $('access-panel').hidden = true;
@@ -674,11 +713,11 @@
     for (const id of ['date-start', 'date-end']) { $(id).min = report.window.start; $(id).max = report.window.end; }
     const cells = reportCells(report);
     const books = [...new Set(cells.map(cell => cell.book))].sort((a, b) => a === 'best' ? -1 : b === 'best' ? 1 : a.localeCompare(b));
-    options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers');
+    options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers', previous?.book, previous?.book ? bookName(previous.book) : null);
     const props = [...new Set([...(sport === 'nfl' ? ['attd'] : []), ...cells.map(cell => cell.prop)])].sort(compareProps);
-    options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets');
-    options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]));
-    options('method-filter', report.methods.map(item => [item.id, item.name]));
+    options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets', previous?.prop, previous?.prop ? propName(previous.prop) : null);
+    options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]), null, previous?.reference, previous?.reference ? referenceName(previous.reference) : null);
+    options('method-filter', report.methods.map(item => [item.id, item.name]), null, previous?.method, previous?.method ? methodName(previous.method) : null);
     const shareMethod = previous ? $('performers-method').value || 'probit' : 'probit';
     const shareMethods = report.methods.map(item => [item.id, item.name]);
     for (const id of new Set(['probit', shareMethod])) {
@@ -709,6 +748,11 @@
   }
   function clearReport() {
     report = null;
+    publishedReport = null;
+    priceSource = 'archive';
+    $('price-source').value = priceSource;
+    $('price-source').querySelector('option[value="opening"]').disabled = true;
+    $('price-source-note').textContent = '';
     staking = 'flat';
     renderStaking();
     clearResults();
@@ -835,6 +879,14 @@
   $('performers-download').addEventListener('click', () => exportPerformers(false));
   $('refresh').addEventListener('click', refresh);
   $('reset-filters').addEventListener('click', resetFilters);
+  $('price-source').addEventListener('change', () => {
+    if (!publishedReport) return;
+    const next = $('price-source').value;
+    if (!['archive', 'opening'].includes(next) || (next === 'opening' && !publishedReport.opening_report)) return;
+    priceSourcePreference = next;
+    try { localStorage.setItem('devig_results_price_source', next); } catch (_) {}
+    acceptReport(publishedReport);
+  });
   for (const [id, mode] of [['staking-flat', 'flat'], ['staking-kelly', 'quarter-kelly']]) $(id).addEventListener('click', () => {
     if (!report || (mode === 'quarter-kelly' && !supportsKelly(report))) return;
     staking = stakingPreference = mode;
@@ -860,7 +912,7 @@
   $('export').addEventListener('click', () => {
     if (!view || !report) return;
     const f = filters(), url = URL.createObjectURL(new Blob([exportCSV(view, f)], { type: 'text/csv;charset=utf-8;' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}.csv`; anchor.click();
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}${f.priceSource === 'opening' ? '-opening' : ''}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}.csv`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   for (const id of ['account-link', 'access-login']) $(id).href = `profile${HTML}`;

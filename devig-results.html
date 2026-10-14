@@ -28,6 +28,7 @@
           <label>From <input id="date-start" type="date" required></label><label>Through <input id="date-end" type="date" required></label>
           <label>Betting book <select id="book-filter"><option value="">All books · separate offers</option></select></label>
           <label>Market <select id="market-filter"><option value="">All markets</option></select></label>
+          <label>Prices <select id="price-source" aria-describedby="price-source-note"><option value="archive">Archived odds</option><option value="opening" disabled>Opening odds</option></select></label>
           <div class="dv-staking"><span id="staking-label">Staking</span><div class="dv-staking-options" role="group" aria-labelledby="staking-label" aria-describedby="staking-note"><button id="staking-flat" type="button" aria-pressed="true">Flat 1u</button><button id="staking-kelly" type="button" aria-pressed="false" disabled>¼ Kelly</button></div></div>
           <button id="reset-filters" type="button">Reset</button>
         </div>
@@ -39,6 +40,7 @@
         </div>
       </section>
       <p id="filter-status" class="dv-notice" role="status" hidden></p>
+      <p id="price-source-note" class="dv-caption" role="status"></p>
       <p id="staking-note" class="dv-caption" role="status">Flat 1u · 1 unit risked per offer.</p>
       <div class="dv-scope"><p><span class="dv-dot" aria-hidden="true"></span><strong id="selected-strategy"></strong><span id="selection-caption"></span></p><div class="dv-scope-actions"><button id="best-performers" type="button" aria-haspopup="dialog" disabled>Best performers</button><button id="export" type="button">Export CSV <span aria-hidden="true">↓</span></button></div></div>
       <section class="dv-summary" aria-label="Selected strategy results">
@@ -60,7 +62,7 @@
         <section class="dv-panel"><div class="dv-panel-head"><div><h2 id="book-ranking-title">Best betting books by prop</h2><p id="book-ranking-caption" class="dv-caption">Each prop is ranked separately. Qualifying selections differ by book.</p></div></div><div class="dv-table-wrap" role="region" aria-label="Betting book rankings by prop" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Book</th><th scope="col">Settled</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="book-rows"></tbody></table></div></section>
         <section class="dv-panel"><div class="dv-panel-head"><div><h2>Markets</h2><p class="dv-caption">Results for the selected strategy</p></div></div><div class="dv-table-wrap" role="region" aria-label="Market rankings" tabindex="0"><table class="dv-table"><thead><tr><th scope="col">Market</th><th scope="col">Settled</th><th scope="col">Net units</th><th scope="col">ROI</th><th scope="col">Pending / ungraded</th></tr></thead><tbody id="market-rows"></tbody></table></div></section>
       </div>
-      <details class="dv-details"><summary>Methodology &amp; archive coverage</summary><div class="dv-method-body"><section><h3>How to read these results</h3><p id="config-note"></p><p>To compare counts with Analysis, match reference, method, dates and book. Best available counts each saved line/side once at the highest payout after fees. All books counts offers separately at each book.</p><p id="staking-methodology">ROI is net profit divided by total stake on settled offers, including pushes. Flat 1u risks one unit per offer. Pending and ungraded offers contribute neither stake nor profit. The summary and breakdowns use exactly one reference and method.</p><p>Different strategies can qualify overlapping offers. Comparing them does not create independent samples. Odds, book and market rankings are descriptive results from this window; small samples and selecting past winners can overstate a repeatable edge.</p><ul id="report-notes"></ul></section><section><h3>Source coverage</h3><p id="coverage-totals"></p><ul id="coverage-reasons"></ul><div class="dv-table-wrap"><table class="dv-table"><caption class="sr-only">Archived files used by the report</caption><thead><tr><th scope="col">Date</th><th scope="col">Feed</th><th scope="col">Rows</th></tr></thead><tbody id="coverage-files"></tbody></table></div></section></div></details>
+      <details class="dv-details"><summary>Methodology &amp; archive coverage</summary><div class="dv-method-body"><section><h3>How to read these results</h3><p id="config-note"></p><p id="price-source-methodology">To compare counts with Analysis, match reference, method, dates and book. Best available counts each saved line/side once at the highest payout after fees. All books counts offers separately at each book.</p><p id="staking-methodology">ROI is net profit divided by total stake on settled offers, including pushes. Flat 1u risks one unit per offer. Pending and ungraded offers contribute neither stake nor profit. The summary and breakdowns use exactly one reference and method.</p><p>Different strategies can qualify overlapping offers. Comparing them does not create independent samples. Odds, book and market rankings are descriptive results from this window; small samples and selecting past winners can overstate a repeatable edge.</p><ul id="report-notes"></ul></section><section><h3>Source coverage</h3><p id="coverage-totals"></p><ul id="coverage-reasons"></ul><div class="dv-table-wrap"><table class="dv-table"><caption class="sr-only">Archived files used by the report</caption><thead><tr><th scope="col">Date</th><th scope="col">Feed</th><th scope="col">Rows</th></tr></thead><tbody id="coverage-files"></tbody></table></div></section></div></details>
     </div>
   </main>
   <dialog id="performers-dialog" class="dv-share-dialog" aria-labelledby="performers-dialog-title">
@@ -83,6 +85,6 @@
   <script src="shared.js?v=20261012-devig-nfl"></script>
   <script src="auth.js"></script>
   <script src="devig-results-share.js?v=20261012-dense-matrix"></script>
-  <script src="devig-results.js?v=20261014-kelly"></script>
+  <script src="devig-results.js?v=20261014-opening"></script>
 </body>
 </html>

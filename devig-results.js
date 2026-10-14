@@ -3,7 +3,59 @@
   'use strict';
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const metrics = ['selected', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'profit_units', 'ev_sum'];
-  const reportCells = report => [...report.cells, ...(report.best_cells || [])];
+  const compactDimensions = ['date', 'book', 'prop', 'reference', 'method', 'odds_band', 'share_odds_bucket'];
+  const compactHits = ['best_hit', 'highest_odds_hit', 'lowest_odds_hit'];
+  const compactFields = [...compactDimensions, ...metrics, ...compactHits];
+  const normalizedReports = new WeakMap();
+  function normalizeReport(data) {
+    if (data?.version !== 2) return data;
+    if (normalizedReports.has(data)) return normalizedReports.get(data);
+    const invalid = () => { throw new Error('The published report contains invalid result rows. Please refresh after it is rebuilt.'); };
+    if (data.cell_encoding !== 'indexed-v1' || !Array.isArray(data.cell_fields)
+      || data.cell_fields.length !== compactFields.length || data.cell_fields.some((field, index) => field !== compactFields[index])
+      || !data.cell_dictionaries || typeof data.cell_dictionaries !== 'object' || Array.isArray(data.cell_dictionaries)
+      || !Array.isArray(data.hit_table) || !Array.isArray(data.cells)
+      || (data.best_cells !== undefined && !Array.isArray(data.best_cells))) invalid();
+    const dictionaries = compactDimensions.map(field => {
+      const dictionary = data.cell_dictionaries[field];
+      if (!Array.isArray(dictionary) || dictionary.some(value => typeof value !== 'string')) invalid();
+      return dictionary;
+    });
+    const hits = data.hit_table.map(hit => {
+      if (!hit || typeof hit !== 'object' || Array.isArray(hit)) invalid();
+      return { ...hit };
+    });
+    const indexed = (values, index) => {
+      if (!Number.isInteger(index) || index < 0 || index >= values.length) invalid();
+      return values[index];
+    };
+    const decode = rows => rows.map(row => {
+      if (!Array.isArray(row) || row.length < 15 || row.length > compactFields.length) invalid();
+      const cell = {};
+      for (let i = 0; i < compactDimensions.length; i++) {
+        if (i === 6 && row[i] === null) continue;
+        cell[compactDimensions[i]] = indexed(dictionaries[i], row[i]);
+      }
+      for (let i = 0; i < metrics.length; i++) {
+        const value = row[compactDimensions.length + i];
+        if (typeof value !== 'number' || !Number.isFinite(value)) invalid();
+        cell[metrics[i]] = value;
+      }
+      for (let i = 15; i < row.length; i++) {
+        if (row[i] !== null) cell[compactFields[i]] = indexed(hits, row[i]);
+      }
+      return cell;
+    });
+    const { cell_encoding, cell_fields, cell_dictionaries, hit_table, ...metadata } = data;
+    const result = { ...metadata, version: 1, cells: decode(data.cells) };
+    if (data.best_cells !== undefined) result.best_cells = decode(data.best_cells);
+    normalizedReports.set(data, result);
+    return result;
+  }
+  const reportCells = report => {
+    report = normalizeReport(report);
+    return [...report.cells, ...(report.best_cells || [])];
+  };
   const propOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', '2+goals', '3+goals', 'fgs', 'no_goal'];
   const supportedSports = ['nhl', 'nfl'];
   const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
@@ -37,6 +89,7 @@
         || JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
   function buildView(report, filters) {
+    report = normalizeReport(report);
     const scope = reportCells(report).filter(cell => matches(cell, filters));
     const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
@@ -113,6 +166,7 @@
     return index >= 0 ? index : books.some(book => book === 'circa' || book === 'pn') ? 8 : 9;
   }
   function buildPerformers(report, filters = {}) {
+    report = normalizeReport(report);
     const method = filters.method || 'probit', bucket = filters.bucket || 'all';
     const columns = [...report.references].sort((a, b) => shareReferencePriority(a) - shareReferencePriority(b) || a.id.localeCompare(b.id));
     const cells = reportCells(report);
@@ -142,6 +196,7 @@
     }) })) };
   }
   function defaultStrategy(report) {
+    report = normalizeReport(report);
     const pairs = new Set(reportCells(report).map(cell => JSON.stringify([cell.reference, cell.method])));
     if (pairs.has(JSON.stringify(['pn;1', 'worst']))) return { reference: 'pn;1', method: 'worst', fallback: false };
     for (const reference of report.references) for (const method of report.methods) {
@@ -195,6 +250,7 @@
       + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
   }
   function validateReport(data, expectedSport) {
+    data = normalizeReport(data);
     if (data?.version !== 1 || !supportedSports.includes(data.sport) || !validDate(data.window?.start) || !validDate(data.window?.end)
       || data.window.start > data.window.end || !Array.isArray(data.cells)
       || (data.best_cells !== undefined && !Array.isArray(data.best_cells))
@@ -231,7 +287,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, validateReport, exportCSV };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, normalizeReport, validateReport, exportCSV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;

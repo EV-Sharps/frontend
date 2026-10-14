@@ -4,15 +4,36 @@ let ENABLE_AUTH = true;
 let SAVE_DISCORD;
 let SB;
 
+function getSupabaseClientConfig() {
+	const config = {
+		url: 'https://nkdhryqpiulrepmphwmt.supabase.co',
+		publishableKey: 'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt'
+	};
+	if (window.EV_APP_CONFIG?.packaged === true || !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) return config;
+	let saved;
+	try { saved = localStorage.getItem('ev_dev_supabase'); } catch (_) { return config; }
+	if (!saved) return config;
+	const override = JSON.parse(saved);
+	const url = new URL(override.url);
+	const key = String(override.publishableKey || '').trim();
+	let publicKey = key.startsWith('sb_publishable_');
+	try { publicKey ||= JSON.parse(atob(key.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).role === 'anon'; } catch (_) {}
+	if (!publicKey || (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) {
+		throw new Error('Local Supabase configuration needs a test project URL and its publishable/anon key.');
+	}
+	return { url: url.href.replace(/\/$/, ''), publishableKey: key };
+}
+
 try {
+	const config = getSupabaseClientConfig();
 	SB = supabase.createClient(
-		'https://nkdhryqpiulrepmphwmt.supabase.co',
-		'sb_publishable_mMniM5v3auOHfF72hlVL_w_LUNlh3yt',
+		config.url,
+		config.publishableKey,
 		window.EV_APP_CONFIG?.packaged === true ? { auth: { flowType: "pkce", detectSessionInUrl: false } } : undefined
 	);
 	if (window.EV_APP_CONFIG?.packaged === true) window.EVNative?.setAuthClient(SB);
 } catch (e) {
-
+	console.error('Sign-in initialization failed:', e.message);
 }
 
 // Seed CURR_USER synchronously from the last successful profile fetch so page-init
@@ -123,6 +144,12 @@ async function upsertProfile(session) {
 	} else if (window.location.pathname.includes("/pricing")) {
 		fillPricing(tier);
 	}
+	if (typeof loadReferralClient === 'function') {
+		loadReferralClient().then(async client => {
+			await client?.claimPending(session);
+			if (CURR_SESSION?.user?.id === session.user.id) document.dispatchEvent(new Event('affiliate-session-ready'));
+		}).catch(() => {});
+	}
 }
 
 const tierOrder = {
@@ -133,6 +160,8 @@ const tierOrder = {
 
 function fillPricing(tier) {
 	const currentLevel = tierOrder[tier];
+	const referralForm = document.getElementById('affiliate-code-form');
+	if (referralForm) referralForm.hidden = currentLevel > 0;
 
 	document.querySelectorAll('.pricing-card').forEach(card => {
 		const btn = card.querySelector('.select-btn');
@@ -375,7 +404,13 @@ function fillProfile(data, discordUsername, tier, session) {
 	}
 }
 
+async function preserveReferralBeforeSignIn() {
+	if (!new URLSearchParams(location.search).has('ref') && !document.getElementById('affiliate-code')?.value.trim()) return;
+	try { await (await loadReferralClient())?.beforeSignIn(); } catch (_) {}
+}
+
 async function loginWithGoogle() {
+	await preserveReferralBeforeSignIn();
 	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.signIn('google');
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'google',
@@ -391,6 +426,7 @@ async function loginWithGoogle() {
 }
 
 async function loginWithDiscord() {
+	await preserveReferralBeforeSignIn();
 	if (IS_PACKAGED_APP && window.EVNative) return window.EVNative.signIn('discord');
 	const { data, error } = await SB.auth.signInWithOAuth({
 		provider: 'discord',
@@ -433,19 +469,35 @@ async function saveDiscordToProfile() {
 }
 
 async function upgrade(tier) {
+	let referral = {};
+	if (!['analyst', 'sharp'].includes(CURR_USER?.tier)) {
+		let referrals;
+		try { referrals = await loadReferralClient(); }
+		catch (error) {
+			let saved = false;
+			try { saved = !!localStorage.getItem('ev_affiliate_referral_v1'); } catch (_) {}
+			if (saved || document.getElementById('affiliate-code')?.value.trim() || new URLSearchParams(location.search).has('ref')) {
+				throw new Error('Your partner code could not be checked. Refresh and try again before checking out.');
+			}
+		}
+		if (referrals) referral = await referrals.prepareCheckout(ACCESS_TOKEN);
+	}
 	const response = await fetch(`${API_BASE}/api/stripe-portal`, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${ACCESS_TOKEN}`,
-			Tier: tier
-		}
+			Tier: tier,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(referral)
 	});
-	const data = await response.json();
+	const data = await response.json().catch(() => ({}));
+	if (!response.ok) throw new Error(data.error || 'Checkout could not be opened. Please try again.');
 	if (data.url) {
 		if (IS_PACKAGED_APP && window.EVNative) await window.EVNative.openExternal(data.url);
 		else window.location.href = data.url;
 	} else {
-		alert('Error starting checkout. Contact plusevsharps@gmail.com');
+		throw new Error('Checkout could not be opened. Please try again.');
 	}
 }
 

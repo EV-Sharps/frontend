@@ -1,4 +1,12 @@
 html.pricing-root { height: auto; min-height: 100%; overflow: auto; scroll-behavior: smooth; scroll-padding-top: 24px; }
+.pricing-referral { margin: 0 0 20px; padding: 14px 16px; border: 1px solid #30465c; border-radius: 8px; background: #121e2c; }
+.pricing-referral label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 600; }
+.pricing-referral > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.pricing-referral input { min-width: 0; width: 180px; padding: 9px; border: 1px solid #4b637b; border-radius: 5px; background: #0b1520; color: #eff6ff; text-transform: uppercase; font: 16px system-ui; caret-color: auto; }
+.pricing-referral button { border: 1px solid #4b637b; padding: 8px 12px; border-radius: 5px; background: #233950; color: #eff6ff; cursor: pointer; }
+.pricing-referral p { margin: 8px 0 0; color: #a8b8ca; font-size: 12px; }
+.pricing-referral-price { color: #a9eccf; font-size: 13px; margin: -12px 0 16px; }
+.pricing-referral[hidden], .pricing-referral [hidden], .pricing-referral-price[hidden] { display: none; }
 body.pricing-page {
 	--pricing-bg: #0b121c;
 	--pricing-panel: #121e2c;

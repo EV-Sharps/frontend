@@ -1,0 +1,47 @@
+html.affiliates-root { height: auto; min-height: 100%; overflow: auto; color-scheme: dark; }
+body.affiliates-page { height: auto; min-height: 100vh; margin: 0; overflow: auto; background: #0c1520; color: #e6edf6; font: 14px/1.5 system-ui, sans-serif; }
+.affiliates-page * { box-sizing: border-box; }
+.affiliates-page [hidden] { display: none !important; }
+.affiliates-page button { cursor: pointer; padding: 8px 12px; border: 1px solid #456079; border-radius: 6px; background: #243b51; color: #e8f3ff; font: inherit; font-size: 12px; }
+.affiliates-page button:hover { background: #314e6b; }
+.affiliates-page button:disabled { opacity: .5; cursor: default; }
+.affiliates-page :focus-visible { outline: 2px solid #93cbff; outline-offset: 3px; }
+.affiliates-page input { width: 100%; min-width: 0; padding: 9px 10px; background: #0c1724; color: #ecf4fd; border: 1px solid #456079; border-radius: 5px; font: 16px system-ui; caret-color: auto; }
+.affiliates-page h1, .affiliates-page h2, .affiliates-page h3, .affiliates-page p { margin: 0 0 10px; }
+.affiliates-page h1 { font-size: 28px; }
+.affiliates-page h2 { font-size: 17px; }
+.affiliates-page h3 { font-size: 15px; }
+.aff-header { display: flex; align-items: center; gap: 12px; padding: 16px 28px; border-bottom: 1px solid #2e4054; }
+.aff-brand { color: #eff5fc; font-size: 21px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.aff-brand span { color: #8dc9ff; }
+.aff-header nav { display: flex; align-items: center; gap: 12px; }
+.aff-header #account-link { font-size: 12px; white-space: nowrap; }
+main.aff-main { display: block; width: 100%; max-width: 1140px; height: auto; overflow: visible; padding: 28px; margin: auto; }
+.aff-intro, .aff-section-heading { display: flex; gap: 15px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.aff-intro p, .aff-muted { color: #a9bbcf; font-size: 12px; }
+#aff-status { min-height: 21px; font-size: 13px; color: #9cd4ff; overflow-wrap: anywhere; }
+#aff-status[data-error="true"] { color: #ffc7a1; }
+.aff-panel { border: 1px solid #304459; border-radius: 8px; background: #121f2e; padding: 18px; margin-bottom: 16px; }
+.aff-panel p:last-child { margin-bottom: 0; }
+.aff-copy, .aff-actions, .aff-code { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aff-copy input { flex: 1; min-width: 180px; font-size: 13px; }
+.aff-code { margin: 12px 0; font-size: 12px; }
+.aff-code strong { letter-spacing: .04em; color: #acdfb7; }
+.aff-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.aff-metric { padding: 14px; border: 1px solid #304459; border-radius: 7px; background: #142233; }
+.aff-metric span { display: block; color: #a9bbcf; font-size: 12px; }
+.aff-metric strong { display: block; font-size: 22px; margin-top: 4px; }
+.aff-table-scroll { width: 100%; overflow-x: auto; }
+.affiliates-page table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.affiliates-page th, .affiliates-page td { padding: 10px 8px; border-bottom: 1px solid #2b3d50; white-space: nowrap; }
+.affiliates-page th { color: #a8bdd3; font-weight: 500; }
+.affiliates-page td button { margin-right: 5px; padding: 5px 8px; }
+.aff-form-row { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.aff-form-row label { flex: 1; min-width: 200px; font-size: 12px; }
+.aff-form-row input { display: block; margin-top: 5px; }
+.affiliates-page details summary { cursor: pointer; font-weight: 600; }
+.affiliates-page details[open] summary { margin-bottom: 12px; }
+.affiliates-page dialog { width: min(440px, calc(100vw - 24px)); padding: 22px; color: #e6edf6; background: #142233; border: 1px solid #587592; border-radius: 8px; }
+.affiliates-page dialog::backdrop { background: #0009; }
+.affiliates-page dialog input { margin: 6px 0 18px; }
+@media (max-width: 600px) { .aff-header { padding: 12px; } .aff-brand { font-size: 17px; } .aff-header #page-picker-btn { padding: 6px; gap: 4px; font-size: 11px; } .aff-header #page-picker-btn > svg:first-child { display: none; } main.aff-main { padding: 20px 12px; } .aff-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .aff-panel { padding: 13px; } .affiliates-page h1 { font-size: 24px; } }

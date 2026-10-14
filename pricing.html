@@ -91,6 +91,11 @@
 					<div><p class="pricing-eyebrow">Your next step</p><h2 id="plans-heading">A plan for your process.</h2></div>
 					<p>Monthly memberships.<br>Change or cancel from your profile.</p>
 				</div>
+				<form id="affiliate-code-form" class="pricing-referral">
+					<label for="affiliate-code">Partner code</label>
+					<div><input id="affiliate-code" name="partner-code" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter a code"><button type="submit">Apply</button><button id="affiliate-code-remove" type="button" hidden>Remove</button></div>
+					<p id="affiliate-code-status" role="status">Optional. Partner codes are for your first paid membership.</p>
+				</form>
 				<div class="pricing-grid">
 					<article class="pricing-card" data-tier="free" aria-labelledby="free-heading">
 						<div class="pricing-plan-heading"><h3 id="free-heading">Free</h3></div>
@@ -109,6 +114,7 @@
 						<div class="pricing-plan-heading"><h3 id="analyst-heading">Analyst</h3></div>
 						<p class="pricing-plan-description">Go deeper on core props with tools you can make your own.</p>
 						<p class="price">$10 <span>/ month</span></p>
+						<p id="affiliate-price-analyst" class="pricing-referral-price" hidden></p>
 						<button type="button" class="select-btn" onclick="handlePlanClick(this, 'analyst')"><span class="btn-text">Choose Analyst</span><span class="spinner" style="display:none;" aria-hidden="true"></span></button>
 						<p class="pricing-list-intro">Your core prop toolkit</p>
 						<ul>
@@ -124,6 +130,7 @@
 						<div class="pricing-plan-heading"><h3 id="sharp-heading">Sharp</h3><span class="pricing-plan-badge">Full access</span></div>
 						<p class="pricing-plan-description">The wider slate, from pregame research to live markets.</p>
 						<p class="price">$25 <span>/ month</span></p>
+						<p id="affiliate-price-sharp" class="pricing-referral-price" hidden></p>
 						<button type="button" class="select-btn" onclick="handlePlanClick(this, 'sharp')"><span class="btn-text">Choose Sharp</span><span class="spinner" style="display:none;" aria-hidden="true"></span></button>
 						<p class="pricing-list-intro">Everything in Analyst, plus</p>
 						<ul>
@@ -248,7 +255,7 @@
 			try {
 				await upgrade(plan);
 			} catch (error) {
-				status.textContent = 'Checkout could not be opened. Please try again.';
+				status.textContent = error.message || 'Checkout could not be opened. Please try again.';
 				status.scrollIntoView({ block: 'center' });
 			} finally {
 				btnText.textContent = originalText;

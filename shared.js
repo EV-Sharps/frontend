@@ -140,6 +140,26 @@ if (!IS_LOCALHOST) {
 	API_BASE = IS_PACKAGED_APP && window.EV_APP_CONFIG.apiBase || "https://api-production-3a3b.up.railway.app";
 }
 
+// Load referral capture on landing pages and reuse it through sign-in/checkout.
+const referralScriptUrl = new URL('referrals.js?v=20261013', document.currentScript?.src || location.href).href;
+let referralClientPromise;
+function loadReferralClient() {
+	if (window.EVAffiliateReferrals) return Promise.resolve(window.EVAffiliateReferrals);
+	if (!referralClientPromise) referralClientPromise = new Promise((resolve, reject) => {
+		const script = document.createElement('script');
+		script.src = referralScriptUrl;
+		script.onload = () => resolve(window.EVAffiliateReferrals);
+		script.onerror = () => { referralClientPromise = null; reject(new Error('Partner codes could not load. Refresh and try again.')); };
+		document.head.appendChild(script);
+	});
+	return referralClientPromise;
+}
+try {
+	if (new URLSearchParams(location.search).has('ref') || localStorage.getItem('ev_affiliate_referral_v1') || /\/(pricing|profile|affiliates)(\.html)?$/.test(location.pathname)) {
+		loadReferralClient().catch(() => {});
+	}
+} catch (_) { if (new URLSearchParams(location.search).has('ref')) loadReferralClient().catch(() => {}); }
+
 function getToday() {
 	let today = new Date();
 	today = today.toLocaleDateString("en-US", {day: "2-digit", month: "2-digit", year: "numeric"});
@@ -261,6 +281,7 @@ const PAGE_SECTIONS = [
 			{ label: "⭐ Watchlist/Bets", value: "tracker", tier: "sharp" },
 			{ label: "❓ FAQ", value: "faq" },
 			{ label: "👤 Profile", value: "profile" },
+			//{ label: "Affiliates", value: "affiliates" },
 			{ label: "💳 Pricing", value: "pricing" },
 		]
 	}

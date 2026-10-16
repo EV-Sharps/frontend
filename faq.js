@@ -24,6 +24,17 @@ const FAQ = [
 		answer: `<p>Coverage includes sportsbooks such as FanDuel, DraftKings, bet365, BetMGM, Circa, and Pinnacle, alongside Kalshi, Novig, ProphetX, and Polymarket.</p><p>See the <a href="pricing.html#book-coverage">full book list</a>. Availability varies by sport, market, and region; every source is not available on every page.</p>`
 	},
 	{
+		id: 'q-refresh-intervals', topic: 'odds-ev', q: 'How often do odds refresh?',
+		answer: `<p>These are the configured intervals for checking the main odds feed. They do not guarantee that every sportsbook or market updates that often.</p>
+		<div class="faq-refresh-panel">
+			<table id="faq-refresh-table" class="faq-refresh-table" hidden><caption>Configured refresh intervals</caption><thead><tr><th scope="col">Sport</th><th scope="col">Interval</th></tr></thead><tbody id="faq-refresh-rows"></tbody></table>
+			<p id="faq-refresh-status" class="faq-refresh-status" role="status" aria-live="polite">Loading configured intervals…</p>
+			<p id="faq-refresh-updated" class="faq-refresh-updated" hidden>Configuration last changed: <time id="faq-refresh-config-time"></time>.</p>
+			<button id="faq-refresh-retry" class="faq-refresh-retry" type="button" hidden>Try again</button>
+		</div>
+		<p>Odds-provider delays, processing, and page updates can add time before a change appears on the site.</p>`
+	},
+	{
 		id: 'q-devig-basics', topic: 'odds-ev', q: 'What does devig mean?',
 		answer: `<p>The <strong>vig</strong> is the margin built into a sportsbook's odds. <strong>Devigging</strong> removes an estimate of that margin to produce a fair probability for each outcome.</p><p>The <strong>Devig</strong> control lets you choose the reference books and weights used in the comparison. Changing those inputs or the devig method can change the fair value and EV shown.</p>`
 	},
@@ -212,3 +223,102 @@ faqCollapse.addEventListener('click', () => { for (const row of faqRows.values()
 window.addEventListener('hashchange', openFaqLink);
 filterFaq();
 openFaqLink();
+
+// This public help page does not load the authenticated odds-page scripts.
+// Match their API routing without starting a session or odds subscriptions.
+function faqRefreshApiBase() {
+	if (typeof API_BASE !== 'undefined' && typeof API_BASE === 'string') return API_BASE.replace(/\/$/, '');
+	if (window.EV_APP_CONFIG?.packaged === true) return String(window.EV_APP_CONFIG.apiBase || 'https://api-production-3a3b.up.railway.app').replace(/\/$/, '');
+	return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
+		? 'http://localhost:5001' : 'https://api-production-3a3b.up.railway.app';
+}
+
+function formatRefreshInterval(seconds) {
+	const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 3 });
+	const minutes = Math.floor(seconds / 60);
+	const remainder = Number((seconds % 60).toFixed(3));
+	if (!minutes) return `${number(seconds)} sec`;
+	return `${number(minutes)} min${remainder ? ` ${number(remainder)} sec` : ''}`;
+}
+
+function validateRefreshIntervals(value) {
+	if (!value || value.version !== 1 || typeof value.configured_at !== 'string'
+		|| !Number.isFinite(Date.parse(value.configured_at)) || !Array.isArray(value.sports)) throw new Error('Invalid refresh intervals');
+	const seen = new Set();
+	for (const row of value.sports) {
+		if (!row || typeof row.sport !== 'string' || !/^[a-z][a-z0-9_]*$/.test(row.sport)
+			|| seen.has(row.sport) || typeof row.label !== 'string' || !row.label.trim()
+			|| typeof row.interval_seconds !== 'number' || !Number.isFinite(row.interval_seconds) || row.interval_seconds <= 0) throw new Error('Invalid refresh interval row');
+		seen.add(row.sport);
+	}
+	return value;
+}
+
+const refreshIntervalTable = document.getElementById('faq-refresh-table');
+const refreshIntervalRows = document.getElementById('faq-refresh-rows');
+const refreshIntervalStatus = document.getElementById('faq-refresh-status');
+const refreshIntervalUpdated = document.getElementById('faq-refresh-updated');
+const refreshIntervalRetry = document.getElementById('faq-refresh-retry');
+let refreshIntervalsInFlight = false;
+let refreshIntervalsLastChecked = null;
+
+function refreshIntervalTimestamp(value) {
+	return new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+}
+
+function updateRefreshSearchText() {
+	const row = faqRows.get('q-refresh-intervals');
+	if (!row) return;
+	row.text = normalizeFaqText(`${row.element.querySelector('summary').textContent} ${row.element.querySelector('.faq-answer').textContent}`);
+	filterFaq();
+}
+
+async function loadRefreshIntervals() {
+	if (refreshIntervalsInFlight || document.visibilityState === 'hidden') return;
+	refreshIntervalsInFlight = true;
+	refreshIntervalRetry.disabled = true;
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 15000);
+	try {
+		const response = await fetch(`${faqRefreshApiBase()}/api/refresh-intervals`, { cache: 'no-store', credentials: 'omit', signal: controller.signal });
+		if (!response.ok) throw new Error('Refresh intervals unavailable');
+		const report = validateRefreshIntervals(await response.json());
+		const fragment = document.createDocumentFragment();
+		for (const sport of report.sports) {
+			const row = document.createElement('tr');
+			const name = document.createElement('th');
+			name.scope = 'row'; name.textContent = sport.label;
+			const interval = document.createElement('td'); interval.textContent = formatRefreshInterval(sport.interval_seconds);
+			row.append(name, interval); fragment.appendChild(row);
+		}
+		refreshIntervalRows.replaceChildren(fragment);
+		refreshIntervalTable.hidden = !report.sports.length;
+		refreshIntervalsLastChecked = new Date().toISOString();
+		refreshIntervalStatus.textContent = report.sports.length
+			? `Last checked ${refreshIntervalTimestamp(refreshIntervalsLastChecked)}.`
+			: 'No configured refresh intervals are currently available.';
+		refreshIntervalStatus.classList.remove('is-unavailable');
+		const configTime = document.getElementById('faq-refresh-config-time');
+		configTime.dateTime = report.configured_at;
+		configTime.textContent = refreshIntervalTimestamp(report.configured_at);
+		refreshIntervalUpdated.hidden = false;
+		refreshIntervalRetry.hidden = true;
+	} catch (_) {
+		refreshIntervalStatus.textContent = refreshIntervalsLastChecked && !refreshIntervalTable.hidden
+			? `Current settings could not be confirmed. Showing intervals last checked ${refreshIntervalTimestamp(refreshIntervalsLastChecked)}.`
+			: 'Configured refresh intervals are unavailable right now. Please try again.';
+		refreshIntervalStatus.classList.add('is-unavailable');
+		refreshIntervalRetry.hidden = false;
+	} finally {
+		clearTimeout(timeout);
+		refreshIntervalsInFlight = false;
+		refreshIntervalRetry.disabled = false;
+		updateRefreshSearchText();
+	}
+}
+
+refreshIntervalRetry.addEventListener('click', loadRefreshIntervals);
+window.addEventListener('focus', loadRefreshIntervals);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'hidden') loadRefreshIntervals(); });
+setInterval(() => { if (document.visibilityState !== 'hidden') loadRefreshIntervals(); }, 60000);
+loadRefreshIntervals();

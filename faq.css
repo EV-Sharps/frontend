@@ -78,6 +78,20 @@ body.faq-page {
 .faq-methods dt { color: #dceaf7; font-weight: 600; font-size: 12px; }
 .faq-methods dd { margin: 0; font-size: 12px; }
 .faq-methods .faq-method-tip { margin-top: 7px; }
+.faq-refresh-panel { margin: 15px 0; padding: 14px 16px; border: 1px solid #354b62; border-radius: 7px; background: #0d1a29; }
+.faq-refresh-table { width: 100%; border-collapse: collapse; color: #c6d8e9; font-family: inherit; font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.faq-refresh-table caption { padding: 0 0 12px; text-align: left; color: #e1ecf7; font-size: 12px; font-weight: 650; }
+.faq-refresh-table th, .faq-refresh-table td { padding: 8px 0; border-bottom: 1px solid #253a50; text-align: left; }
+.faq-refresh-table thead th { padding-top: 0; color: #8fa9c3; font-size: 10px; font-weight: 500; }
+.faq-refresh-table tbody th { font-weight: 600; }
+.faq-refresh-table th:last-child, .faq-refresh-table td:last-child { text-align: right; padding-left: 12px; }
+.faq-refresh-table tbody tr:last-child > * { border-bottom: 0; }
+.faq-page .faq-refresh-status, .faq-page .faq-refresh-updated { margin: 9px 0 0; color: #8fa9c3; font-size: 10px; line-height: 1.65; }
+.faq-page .faq-refresh-status.is-unavailable { color: #ecc797; }
+.faq-refresh-status:first-child { margin-top: 0; }
+.faq-page .faq-refresh-retry { margin: 10px 0 0; min-height: 32px; padding: 5px 10px; border: 1px solid #3b536d; border-radius: 5px; background: transparent; color: #b9dcfa; font: inherit; font-size: 11px; cursor: pointer; }
+.faq-page .faq-refresh-retry:hover { background: #1b334e; color: #fff; }
+.faq-page .faq-refresh-retry:disabled { opacity: .6; cursor: wait; }
 .faq-share { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .faq-page .faq-copy-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 9px; border: 1px solid #3b536d; border-radius: 5px; background: transparent; color: #aecde9; font: inherit; font-size: 10px; cursor: pointer; }
 .faq-copy-link svg { width: 13px; height: 13px; }

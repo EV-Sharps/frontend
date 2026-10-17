@@ -21,8 +21,13 @@ def quote(over, under=-700, status='available'):
 
 
 def leg(index, player, game, price):
+    probability = {1: .25, 2: .1, 3: .25, 4: .2, 5: .08, 6: .12, 7: .3}.get(index, .35)
+    fair = {book: {method: p * factor for method, factor in
+                  {'power': 1, 'mult': .8, 'probit': 1.05, 'conservative': .8}.items()}
+            for book, p in (('circa', probability + .01), ('pn', probability))}
     return {'id': f'{index:024x}', 'player': player, 'game': game, 'team': game.split(' @ ')[0],
             'start': (NOW + timedelta(hours=3)).isoformat(), 'market': 'Over 0.5 home runs',
+            'fair_probabilities': fair,
             'quotes': {'circa': quote(price - 30), 'pn': quote(price - 20),
                        'fd': quote(price), 'dk': quote(price + 50), 'br': quote(None, None, 'Missing over price')}}
 
@@ -40,6 +45,7 @@ CATALOG = {'date': NOW.date().isoformat(), 'generated_at': NOW.isoformat(), 'boo
 CATALOG['legs'][3]['quotes']['dk'] = quote(600, None, 'Missing under price')
 CATALOG['legs'][4]['quotes']['dk'] = quote(900, -1200, 'Stale prices')
 CATALOG['legs'][4]['quotes']['dk']['updated_at'] = (NOW - timedelta(minutes=20)).isoformat()
+CATALOG['legs'][5]['fair_probabilities'] = {}  # An older/missing reference estimate stays unknown.
 
 ATTD_CATALOG = {'market': 'attd', 'sport': 'nfl', 'date': NOW.date().isoformat(),
                 'generated_at': NOW.isoformat(), 'books': BOOKS, 'max_age_minutes': 10,
@@ -82,7 +88,7 @@ try:
         errors, posts, gets = [], [], []
         state = {'catalog': deepcopy(CATALOG), 'denied': False, 'hold_next': False, 'held': None, 'fail_next': False, 'legacy': False}
         state.update(attd_catalog=deepcopy(ATTD_CATALOG), atgs_catalog=deepcopy(ATGS_CATALOG), hold_catalog=None, held_catalog=None,
-                     wrong_catalog=False, wrong_quote=False, price_overrides=None)
+                     wrong_catalog=False, wrong_quote=False, price_overrides=None, incomplete_references=set())
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.route('https://**/*', lambda route: route.fulfill(
@@ -120,9 +126,10 @@ try:
                           for book, name in BOOKS.items() if book in ('circa', 'pn')]
             for ref in references:
                 probability = state['probabilities'][ref['book']]
-                if probability is not None and payload['method'] == 'mult':
-                    probability *= 0.5
-                ref.update(probability=probability, complete=probability is not None,
+                if probability is not None:
+                    probability *= {'power': 1, 'mult': .5, 'probit': 1.5, 'conservative': .25}[payload['method']]
+                ref.update(probability=probability,
+                           complete=probability is not None and ref['book'] not in state['incomplete_references'],
                            fair_odds=(1 / probability - 1) * 100 if probability else None)
             prices = []
             for book, name in BOOKS.items():
@@ -143,7 +150,7 @@ try:
             # The API may return books in arbitrary order. The page owns its ranking.
             response = {'legs': selected, 'references': references, 'prices': list(reversed(prices)),
                         'best_price': prices[0] if prices else None,
-                        'offered_odds': payload['offered_odds'], 'max_age_minutes': 10}
+                        'offered_odds': payload['offered_odds'], 'max_age_minutes': 10, 'method': payload['method']}
             if payload['market'] != 'hr':
                 response.update(market=payload['market'], sport=catalog['sport'])
             if state['wrong_quote']:
@@ -190,15 +197,27 @@ try:
             ids = page.locator('#catalog-rows tr[data-leg-row]').evaluate_all("rows => rows.map(row => row.dataset.legRow)")
             assert ids == [f'{index:024x}' for index in expected], ids
 
-        def book_cards(expected, best):
+        def book_cards(expected, best, known_ev=True):
             cards = page.locator('#parlay-book-prices [data-price-tile]')
             assert cards.evaluate_all("cards => cards.map(card => card.dataset.priceTile)") == expected
             assert page.locator('#parlay-book-prices .is-best').evaluate_all(
                 "cards => cards.map(card => card.dataset.priceTile)") == best
             assert page.locator('#parlay-book-prices .book-price-best').count() == len(best)
+            assert page.locator('#parlay-book-prices .book-price-best').all_text_contents() == [
+                'Best EV' if known_ev else 'Best price'] * len(best)
+            assert page.locator('#parlay-book-prices .parlay-book-ev').count() == len(expected)
             assert page.locator('#parlay-book-prices .parlay-book-logo').count() == len(expected)
             assert page.locator('#book-prices-empty').is_hidden() == bool(expected)
             assert not set(expected) & {'circa', 'pn'}
+
+        def card_ev(book, text, tone=None):
+            cell = page.locator(f'[data-price-tile="{book}"] .parlay-book-ev')
+            expect(cell).to_have_text(text)
+            classes = (cell.get_attribute('class') or '').split()
+            if tone:
+                assert tone in classes, classes
+            else:
+                assert 'positive' not in classes and 'negative' not in classes, classes
 
         def grid_fits():
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
@@ -218,8 +237,12 @@ try:
         count(0)
         expect(page.locator('#parlay-market')).to_have_value('hr')
         assert page.locator('#catalog-rows tr').count() == 7
-        order([6, 7, 3, 1, 2, 4, 5])
-        assert page.locator('[data-key="average"]').get_attribute('aria-sort') == 'ascending'
+        order([4, 1, 7, 3, 5, 2, 6])
+        assert page.locator('[data-key="ev"]').get_attribute('aria-sort') == 'descending'
+        expect(page.locator('#picker-book')).to_be_visible()
+        expect(row(1).locator('.catalog-ev strong')).to_have_text('+37.5%')
+        expect(row(2).locator('.catalog-ev strong')).to_have_text('-43.0%')
+        expect(row(6).locator('.catalog-ev strong')).to_have_text('—')
         assert row(4).locator('.catalog-average').inner_text() == '+550'  # Includes a fresh over with no under.
         assert row(5).locator('.catalog-average').inner_text() == '+683'  # Excludes the stale +900 price.
         assert page.locator('#leg-inputs input, #leg-inputs select').count() == 0
@@ -244,6 +267,8 @@ try:
         count(2)
         calculated([1, 3])
         book_cards(['dk', 'fd'], ['dk'])
+        card_ev('dk', '-87.6% EV', 'negative')
+        card_ev('fd', '-90.0% EV', 'negative')
         expect(page.locator('[data-price-tile="dk"] .parlay-book-odds')).to_have_text('+2,375')
         expect(page.locator('[data-price-tile="fd"] .parlay-book-odds')).to_have_text('+1,900')
         assert page.locator('#parlay-breakdown').get_attribute('open') is None
@@ -270,6 +295,7 @@ try:
         calculated([1, 3])
         book_cards(['fd', 'dk'], ['fd'])
         assert page.locator('#parlay-book-prices .parlay-book-odds').all_text_contents() == ['+2,375', '+2,375']
+        assert page.locator('#parlay-book-prices .parlay-book-ev').all_text_contents() == ['-87.6% EV', '-87.6% EV']
         assert 'FanDuel' in page.locator('#best-parlay-price').inner_text()
         assert page.locator('#price-rows tr').first.get_attribute('data-price-book') == 'fd'
 
@@ -301,11 +327,14 @@ try:
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+12,900'
         assert 'DraftKings' in page.locator('#best-parlay-price').inner_text()
         book_cards(['dk', 'fd'], ['dk'])  # Fresh over-only DK quotes remain usable.
+        card_ev('dk', '-13.4% EV', 'negative')
+        card_ev('fd', '-35.0% EV', 'negative')
 
         # Compare each book's full-precision estimated product with each distinct reference probability.
         assert page.locator('[data-ev-reference="circa"] small').inner_text() == 'Fair +4,900'
         assert page.locator('[data-ev-reference="pn"] small').inner_text() == 'Fair +19,900'
         assert page.locator('[data-price-book="dk"] [data-ev-book="circa"]').inner_text() == '+246.5%'
+        card_ev('dk', '-13.4% EV', 'negative')  # Custom betslip odds never replace a book's estimated payout.
         assert page.locator('[data-price-book="dk"] [data-ev-book="pn"]').inner_text() == '-13.4%'
         assert page.locator('[data-price-book="fd"] [data-ev-book="circa"]').inner_text() == '+160.0%'
         assert 'positive' in page.locator('[data-price-book="dk"] [data-ev-book="circa"]').get_attribute('class')
@@ -319,6 +348,15 @@ try:
         calculated([1, 3, 4])
         assert page.locator('[data-price-book="dk"] [data-ev-book="circa"]').inner_text() == '+73.3%'
         assert page.locator('[data-ev-reference="circa"] small').inner_text() == 'Fair +9,900'
+        card_ev('dk', '-56.7% EV', 'negative')
+        expect(page.locator('#book-price-sort')).to_contain_text('Multiplicative')
+        page.locator('#method').select_option('probit')
+        calculated([1, 3, 4])
+        card_ev('dk', '+29.9% EV', 'positive')
+        card_ev('fd', '-2.5% EV', 'negative')
+        page.locator('#method').select_option('conservative')
+        calculated([1, 3, 4])
+        card_ev('dk', '-78.3% EV', 'negative')
         page.locator('#method').select_option('power')
         calculated([1, 3, 4])
         state['probabilities'] = {'circa': 1 / 130, 'pn': None}
@@ -328,6 +366,20 @@ try:
         assert page.locator('[data-price-book="dk"] [data-ev-book="pn"]').inner_text() == '-'
         assert page.locator('[data-ev-reference="pn"] small').inner_text() == 'Fair -'
         assert page.locator('#price-rows tr').count() == 2
+        card_ev('fd', '0.0% EV')
+        card_ev('dk', '+33.3% EV', 'positive')
+        state['probabilities']['pn'] = .00001
+        state['incomplete_references'] = {'pn'}
+        page.evaluate('window.refreshParlays()')
+        calculated([1, 3, 4])
+        card_ev('fd', '0.0% EV')  # An incomplete reference cannot lower the estimate.
+        state['incomplete_references'] = set()
+        state['probabilities'] = {'circa': None, 'pn': None}
+        page.evaluate('window.refreshParlays()')
+        calculated([1, 3, 4])
+        book_cards(['dk', 'fd'], ['dk'], known_ev=False)
+        card_ev('dk', 'EV —')
+        card_ev('fd', 'EV —')
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
 
         # A missing totals field is not missing coverage, including books without complete unders.
@@ -437,7 +489,7 @@ try:
         assert page.locator('#empty-slate').is_visible()
         assert page.locator('#calculate').is_disabled()
 
-        # Average decimal prices across mixed American odds; absent current prices always sort last.
+        # Average decimal prices across mixed American odds; rows without a current betting offer are omitted.
         state['catalog'] = deepcopy(CATALOG)
         state['catalog']['legs'] = state['catalog']['legs'][:3]
         state['catalog']['legs'][0]['quotes'] = {'circa': quote(-200), 'fd': quote(200)}
@@ -446,15 +498,15 @@ try:
         page.evaluate('window.refreshParlays()')
         page.locator('[data-sort="book:fd"]').click()
         page.locator('[data-sort="average"]').click()
-        order([2, 1, 3])
+        order([2, 1])
         assert row(1).locator('.catalog-average').inner_text() == '+125'
-        assert row(3).locator('.catalog-average').inner_text() == '-'
+        assert row(3).count() == 0
         page.locator('[data-sort="average"]').click()
-        order([1, 2, 3])
+        order([1, 2])
         page.locator('[data-sort="average"]').click()
         state['catalog']['legs'][1]['quotes']['fd'] = quote(300)
         page.evaluate('window.refreshParlays()')
-        order([1, 2, 3])
+        order([1, 2])
 
         state['catalog'] = deepcopy(CATALOG)
         page.evaluate('window.refreshParlays()')

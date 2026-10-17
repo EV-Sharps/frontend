@@ -1,4 +1,4 @@
-"""Offline browser regression coverage for the ATGS book and EV player picker."""
+"""Offline browser regression coverage for Homer, ATTD and ATGS EV pickers."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -86,7 +86,9 @@ class AtgsPickerTests(unittest.TestCase):
         cls.server_thread = Thread(target=cls.server.serve_forever, daemon=True)
         cls.server_thread.start()
         cls.playwright = sync_playwright().start()
-        cls.browser = cls.playwright.chromium.launch(headless=True)
+        cls.browser = cls.playwright.chromium.launch(headless=True, args=[
+            '--disable-logging', f'--log-file={Path(tempfile.gettempdir()) / "parlays-picker.log"}',
+        ])
 
     @classmethod
     def tearDownClass(cls):
@@ -118,7 +120,7 @@ class AtgsPickerTests(unittest.TestCase):
             payload = deepcopy(self.catalog)
             if market != 'atgs':
                 payload.update(market=market, sport={'hr': 'mlb', 'attd': 'nfl'}[market])
-                payload['legs'] = payload['legs'][:3]
+                payload['legs'] = payload['legs'][:7]
             route.fulfill(json=payload)
             return
         payload = route.request.post_data_json
@@ -314,22 +316,53 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertTrue(self.order())
         expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
 
-    def test_other_markets_keep_average_sort_and_have_no_picker_or_ev_column(self):
+    def test_other_markets_default_to_ev_and_use_selected_method_and_book(self):
         self.open()
         self.page.locator('#picker-book').select_option('dk')
         for market in ('hr', 'attd'):
-            self.page.locator('#parlay-market').select_option(market)
-            expect(self.page.locator('#calculator')).to_be_visible()
-            expect(self.page.locator('#picker-book')).to_be_hidden()
-            self.assertEqual(self.page.locator('#catalog-head [data-key="ev"], .catalog-ev').count(), 0)
-            expect(self.page.locator('#catalog-head [data-key="average"]')).to_have_attribute('aria-sort', 'ascending')
-            before = self.book_columns()
-            self.page.locator('#betting-book').select_option('fd')
-            self.assertEqual(self.book_columns(), before)
-            self.assertEqual(len(self.order()), 3)
+            with self.subTest(market=market):
+                self.page.locator('#parlay-market').select_option(market)
+                expect(self.page.locator('#calculator')).to_be_visible()
+                expect(self.page.locator('#picker-book')).to_be_visible()
+                expect(self.page.locator('#picker-book')).to_have_value('')
+                self.page.locator('#method').select_option('power')
+                expect(self.page.locator('#catalog-head [data-key="ev"]')).to_have_attribute('aria-sort', 'descending')
+                self.assertEqual(self.order(), [5, 2, 1, 4, 3, 7, 6])
+                self.assertEqual(self.ev(1), 25.0)
+                for index in (6, 7):
+                    self.assertIsNone(self.ev(index))
+                self.page.locator('#betting-book').select_option('fd')
+                expect(self.page.locator('#picker-book')).to_have_value('fd')
+                self.assertEqual(set(self.book_columns()), {'circa', 'pn', 'fd'})
+                self.assertEqual(self.order(), [5, 1, 3, 4, 2, 7, 6])
+                self.pick(1)
+                self.page.locator('#method').select_option('mult')
+                self.assertEqual(self.order(), [5, 2, 3, 4, 1, 7, 6])
+                self.assertEqual(self.ev(1), -50.0)
+                self.assertEqual(self.ev(2), 40.0)
+                self.page.locator('#method').select_option('probit')
+                self.assertEqual(self.order()[:2], [1, 5])
+                self.assertEqual(self.ev(1), 50.0)
+                self.page.locator('#method').select_option('conservative')
+                self.assertEqual(self.order(), [5, 3, 4, 2, 1, 7, 6])
+                expect(self.row(1).locator('button')).to_have_attribute('aria-pressed', 'true')
+                expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+                self.assertEqual(self.posts, [])
         self.page.locator('#parlay-market').select_option('atgs')
         expect(self.page.locator('#picker-book')).to_be_visible()
         expect(self.page.locator('#catalog-head [data-key="ev"]')).to_have_attribute('aria-sort', 'descending')
+        expect(self.page.locator('#selection-count')).to_have_text('0 / 4 selected')
+
+    def test_missing_method_probabilities_stay_unknown_in_all_markets(self):
+        self.catalog['legs'][0].pop('fair_probabilities')
+        for market in ('hr', 'attd', 'atgs'):
+            with self.subTest(market=market):
+                self.open(market)
+                self.assertIsNone(self.ev(1))
+                self.assertNotEqual(self.order()[0], 1)
+                self.page.locator('#method').select_option('mult')
+                self.assertIsNone(self.ev(1))
+                self.assertEqual(self.posts, [])
 
     def test_picker_toolbar_fits_mobile_without_document_overflow(self):
         self.open()

@@ -19,7 +19,7 @@
   const gameTime = v => market !== 'hr' && v ? new Date(v).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ' / ' + time(v) : time(v);
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
   const selections = ['', '', '', ''];
-  const sort = { key: market === 'atgs' ? 'ev' : 'average', direction: market === 'atgs' ? 'desc' : 'asc' };
+  const sort = { key: 'ev', direction: 'desc' };
   let catalog = null, result = null, refreshWork = null, refreshController = null, quoteController = null, calculateTimer = null;
   let authVersion = 0, inputVersion = 0, marketVersion = 0, quoteBusy = false, sessionReady = false;
   const notice = (id, text) => { $(id).textContent = text; $(id).hidden = !text; };
@@ -32,8 +32,7 @@
     $('parlay-market').value = market;
     $('market-title').textContent = `Build your ${config.name} parlay`;
     $('market-eyebrow').textContent = `${config.sport.toUpperCase()} / FAIR ODDS`;
-    $('picker-book-label').hidden = market !== 'atgs';
-    $('catalog-help').textContent = `Choose two to four players. Most likely first, by lowest average ${config.name} odds. Prices for ${config.label} are on top, ${config.under} below. Green marks the best current ${config.name} price outside Circa and Pinnacle. Click Avg or a book to sort.`;
+    renderPickerHelp();
     $('empty-slate').textContent = `No upcoming ${config.name} markets are available${market === 'hr' ? ' for today' : ''}. Refresh when the next slate is posted.`;
     $('catalog-wrap').setAttribute('aria-label', `Choose ${config.name} parlay players and compare prices`);
     $('catalog-caption').textContent = `${config.name} players and sportsbook over/under prices`;
@@ -175,7 +174,7 @@
   function renderPickerBooks() {
     const selected = $('picker-book').value;
     $('picker-book').replaceChildren(new Option('All books — best available price', ''));
-    if (market !== 'atgs' || !catalog) return;
+    if (!catalog) return;
     for (const [book, name] of Object.entries(catalog.books)) {
       if (referenceBooks.has(book)) continue;
       const count = catalog.legs.filter(leg => Date.parse(leg.start) > Date.now() && currentOver(leg.quotes?.[book]) !== null).length;
@@ -184,9 +183,8 @@
     $('picker-book').value = Object.hasOwn(catalog.books, selected) && !referenceBooks.has(selected) ? selected : '';
   }
   function renderPickerHelp() {
-    if (market !== 'atgs') return;
     const book = $('picker-book').value, name = book ? catalog?.books[book] || book : 'the best available book';
-    $('catalog-help').textContent = `Choose two to four players for 1+ Goal. EV uses the ${$('method').selectedOptions[0].textContent} method at ${name}. When Circa and Pinnacle both have fresh over/under prices, the lower fair probability is used; otherwise the available reference is used. No paired reference means no EV estimate. Filter changes keep your selected legs. Click EV or a book to sort.`;
+    $('catalog-help').textContent = `Choose two to four players for ${currentMarket().label}. Highest EV first, using ${$('method').selectedOptions[0].textContent} at ${name}. When Circa and Pinnacle both have fresh over/under prices, the lower fair probability is used; otherwise the available reference is used. No paired reference means no EV estimate. Click EV, Avg or a book to sort.`;
   }
   function disabledReason(leg) {
     if (selections.includes(leg.id)) return '';
@@ -211,23 +209,22 @@
   }
   function renderCatalogHead(books) {
     const heading = (key, label, name) => `<th scope="col" data-key="${esc(key)}" aria-sort="${sort.key === key ? sort.direction === 'asc' ? 'ascending' : 'descending' : 'none'}"><button type="button" data-sort="${esc(key)}" title="Sort by ${esc(name)}">${label}<span class="sort-arrow" aria-hidden="true">${sort.key === key ? sort.direction === 'asc' ? '&#9650;' : '&#9660;' : '&#8597;'}</span></button></th>`;
-    $('catalog-head').innerHTML = `<tr><th scope="col" class="catalog-pick">Pick</th>${heading('player', 'Player / Game', 'player')}${market === 'atgs' ? heading('ev', 'EV / Price', 'estimated EV at the selected book') : ''}${heading('average', 'Avg', `average current ${currentMarket().name} odds (lowest = most likely)`)}${books.map(book => heading(`book:${book}`, `${bookLogo(book)}${esc(bookLabel(book))}`, `${catalog.books[book]} ${currentMarket().name} price`)).join('')}</tr>`;
+    $('catalog-head').innerHTML = `<tr><th scope="col" class="catalog-pick">Pick</th>${heading('player', 'Player / Game', 'player')}${heading('ev', 'EV / Price', 'estimated EV at the selected book')}${heading('average', 'Avg', `average current ${currentMarket().name} odds (lowest = most likely)`)}${books.map(book => heading(`book:${book}`, `${bookLogo(book)}${esc(bookLabel(book))}`, `${catalog.books[book]} ${currentMarket().name} price`)).join('')}</tr>`;
   }
   function renderCatalog() {
     const restoreScroll = rememberScroll();
     const focused = document.activeElement;
     const focusKey = $('catalog-wrap').contains(focused) ? ['sort', 'leg'].find(key => focused.dataset[key]) : null;
     const focusValue = focusKey ? focused.dataset[focusKey] : null;
-    document.querySelector('.catalog-table').classList.toggle('ev-picker', market === 'atgs');
-    const allBooks = catalogBooks(), book = market === 'atgs' ? $('picker-book').value : '';
+    const allBooks = catalogBooks(), book = $('picker-book').value;
     const books = book ? allBooks.filter(key => referenceBooks.has(key) || key === book) : allBooks;
-    if (sort.key.startsWith('book:') && !books.includes(sort.key.slice(5))) { sort.key = market === 'atgs' ? 'ev' : 'average'; sort.direction = market === 'atgs' ? 'desc' : 'asc'; }
+    if (sort.key.startsWith('book:') && !books.includes(sort.key.slice(5))) { sort.key = 'ev'; sort.direction = 'desc'; }
     renderCatalogHead(books);
     renderPickerHelp();
     const search = $('player-search').value.trim().toLowerCase(), game = $('game-filter').value;
-    const estimates = new Map(market === 'atgs' ? (catalog?.legs || []).map(leg => [leg.id, pickerEstimate(leg)]) : []);
+    const estimates = new Map((catalog?.legs || []).map(leg => [leg.id, pickerEstimate(leg)]));
     const legs = (catalog?.legs || []).filter(leg => (!game || leg.game === game) && `${leg.player} ${leg.game} ${leg.team || ''}`.toLowerCase().includes(search)
-      && (market !== 'atgs' || estimates.get(leg.id)?.offer));
+      && estimates.get(leg.id)?.offer);
     const averages = new Map(legs.map(leg => [leg.id, averageOver(leg, allBooks)]));
     legs.sort((a, b) => {
       let order;
@@ -253,10 +250,10 @@
       const estimate = estimates.get(leg.id), ev = estimate?.ev;
       const displayEV = Number.isFinite(ev) ? Number(ev.toFixed(1)) : null;
       const refLabel = estimate?.references.map(ref => bookLabel(ref.book)).join(' + ');
-      const evCell = market === 'atgs' ? `<td class="catalog-ev${displayEV > 0 ? ' positive' : displayEV < 0 ? ' negative' : ''}" title="${esc(refLabel ? `Reference: ${refLabel}${estimate.references.length > 1 ? ' (lower fair probability)' : ''}` : 'Needs a fresh paired Circa or Pinnacle quote')}">
+      const evCell = `<td class="catalog-ev${displayEV > 0 ? ' positive' : displayEV < 0 ? ' negative' : ''}" title="${esc(refLabel ? `Reference: ${refLabel}${estimate.references.length > 1 ? ' (lower fair probability)' : ''}` : 'Needs a fresh paired Circa or Pinnacle quote')}">
         <strong>${displayEV === null ? '—' : `${displayEV > 0 ? '+' : ''}${displayEV.toFixed(1)}%`}</strong>
         <small class="ev-offer">${bookLogo(estimate.offer.book)} ${esc(bookLabel(estimate.offer.book))} ${esc(odds(estimate.offer.price))}</small>
-        <small class="ev-reference">${refLabel ? `vs ${esc(refLabel)}` : 'No fair estimate'}</small></td>` : '';
+        <small class="ev-reference">${refLabel ? `vs ${esc(refLabel)}` : 'No fair estimate'}</small></td>`;
       const action = selected >= 0 ? 'Remove' : 'Add';
       const prices = books.map(book => {
         const quote = leg.quotes?.[book], status = priceStatus(quote), over = currentOver(quote);
@@ -309,7 +306,6 @@
   $('player-search').addEventListener('input', renderCatalog);
   $('game-filter').addEventListener('change', renderCatalog);
   $('picker-book').addEventListener('change', () => {
-    if (market !== 'atgs') return;
     $('betting-book').value = $('picker-book').value;
     sort.key = 'ev'; sort.direction = 'desc';
     renderSelections();
@@ -319,30 +315,47 @@
   function renderResult(data) {
     const restoreScroll = rememberScroll();
     const showUnavailable = $('show-unavailable').getAttribute('aria-expanded') === 'true';
-    const prices = parlayPrices(data);
-    result = { ...data, prices };
     const count = data.legs.length;
-    const best = prices[0];
     const benchmarks = ['circa', 'pn'].map(book => {
       const ref = data.references.find(ref => ref.book === book);
       const probability = ref?.complete && Number.isFinite(ref.probability) && ref.probability > 0 && ref.probability < 1 ? ref.probability : null;
       return { book, name: book === 'pn' ? 'Pinnacle' : 'Circa', probability,
         fairOdds: probability === null ? null : ref.fair_odds };
     });
-    $('best-parlay-price').innerHTML = best ? `${esc(odds(best.odds))} <span>${prices.filter(price => price.decimal === best.decimal).map(price => `${bookLogo(price.book)} ${esc(price.name)}`).join(' / ')}</span>` : 'No complete book prices';
+    const availableReferences = benchmarks.filter(ref => ref.probability !== null);
+    const probability = availableReferences.length ? Math.min(...availableReferences.map(ref => ref.probability)) : null;
+    const prices = parlayPrices(data).map(price => ({ ...price,
+      ev: probability !== null && Number.isFinite(price.decimal) && price.decimal > 1 ? 100 * (probability * price.decimal - 1) : null,
+    })).sort((a, b) => {
+      if (a.ev === null || b.ev === null) {
+        if (a.ev !== b.ev) return a.ev === null ? 1 : -1;
+      } else if (a.ev !== b.ev) return b.ev - a.ev;
+      return b.decimal - a.decimal || a.name.localeCompare(b.name);
+    });
+    result = { ...data, prices };
+    const best = prices[0], hasEV = best?.ev !== null && Number.isFinite(best?.ev);
+    const isBestPrice = price => hasEV ? price.ev === best.ev : price.decimal === best.decimal;
+    const method = $('method').selectedOptions[0].textContent;
+    $('best-price-label').textContent = hasEV ? 'HIGHEST ESTIMATED EV' : 'BEST ESTIMATED PRICE';
+    $('book-price-sort').textContent = hasEV ? `Highest EV first / ${method}` : 'EV unavailable / Highest odds first';
+    $('parlay-book-prices').setAttribute('aria-label', hasEV ? 'Estimated parlay odds and EV by book, highest EV first' : 'Estimated parlay odds by book, highest odds first; EV unavailable');
+    $('book-prices-help').textContent = `Estimated from each book's prices for all selected legs. ${probability === null ? 'EV needs fresh over/under prices for every leg at Circa or Pinnacle.' : `EV uses ${method} and ${availableReferences.length > 1 ? 'the lower complete parlay probability from Circa or Pinnacle' : `${availableReferences[0].name}'s complete parlay probability`}.`} Final betslip odds may differ.`;
+    $('best-parlay-price').innerHTML = best ? `${esc(odds(best.odds))} <span>${prices.filter(isBestPrice).map(price => `${bookLogo(price.book)} ${esc(price.name)}`).join(' / ')}</span>` : 'No complete book prices';
     $('price-count').textContent = `${count} legs / ${prices.length} book${prices.length === 1 ? '' : 's'}`;
     $('parlay-book-prices').innerHTML = prices.map(price => {
-      const isBest = price.decimal === best.decimal;
+      const isBest = isBestPrice(price);
+      const ev = price.ev === null ? null : Number(price.ev.toFixed(1));
       return `<li class="parlay-book-card${isBest ? ' is-best' : ''}" data-price-tile="${esc(price.book)}">
         <span class="parlay-book-name">${bookLogo(price.book)}<span>${esc(price.name)}</span></span>
         <strong class="parlay-book-odds">${esc(odds(price.odds))}</strong>
-        ${isBest ? '<span class="book-price-best">Best price</span>' : '<span class="book-price-note">Est. parlay</span>'}
+        <span class="parlay-book-ev${ev > 0 ? ' positive' : ev < 0 ? ' negative' : ''}">${ev === null ? 'EV —' : `${ev > 0 ? '+' : ''}${ev.toFixed(1)}% EV`}</span>
+        ${isBest ? `<span class="book-price-best">${hasEV ? 'Best EV' : 'Best price'}</span>` : '<span class="book-price-note">Est. parlay</span>'}
       </li>`;
     }).join('');
     notice('book-prices-empty', prices.length ? '' : `No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.`);
     $('price-head').innerHTML = `<tr><th scope="col">Book</th><th scope="col">Est. parlay odds</th>${benchmarks.map(ref => `<th scope="col" data-ev-reference="${ref.book}"><span class="book-name">${bookLogo(ref.book)}${ref.name} EV</span><small>Fair ${ref.probability === null ? '-' : esc(odds(ref.fairOdds))}</small></th>`).join('')}${data.legs.map(leg => `<th scope="col">${esc(title(leg.player))}</th>`).join('')}</tr>`;
-    $('price-rows').innerHTML = prices.map(price => `<tr data-price-book="${esc(price.book)}" class="${price.decimal === best.decimal ? 'best-parlay' : ''}">
-      <th scope="row"><span class="book-name">${bookLogo(price.book)}${esc(price.name)}</span>${price.decimal === best.decimal ? '<small class="best-label">Best price</small>' : ''}</th>
+    $('price-rows').innerHTML = prices.map(price => `<tr data-price-book="${esc(price.book)}" class="${isBestPrice(price) ? 'best-parlay' : ''}">
+      <th scope="row"><span class="book-name">${bookLogo(price.book)}${esc(price.name)}</span>${isBestPrice(price) ? `<small class="best-label">${hasEV ? 'Best EV' : 'Best price'}</small>` : ''}</th>
       <td class="parlay-total"><strong>${esc(odds(price.odds))}</strong></td>
       ${benchmarks.map(ref => {
         const ev = ref.probability !== null && Number.isFinite(price.decimal) && price.decimal > 1 ? 100 * (ref.probability * price.decimal - 1) : null;
@@ -506,7 +519,7 @@
     $('calculator').hidden = true;
     $('access-panel').hidden = true;
     $('updated').textContent = 'Loading prices...';
-    sort.key = market === 'atgs' ? 'ev' : 'average'; sort.direction = market === 'atgs' ? 'desc' : 'asc';
+    sort.key = 'ev'; sort.direction = 'desc';
     renderMarket();
     renderSelections();
     notice('request-status', '');
@@ -531,7 +544,7 @@
     renderSelections();
   });
   ['method', 'betting-book', 'offered-odds'].forEach(id => $(id).addEventListener(id === 'offered-odds' ? 'input' : 'change', () => {
-    if (market === 'atgs' && id !== 'offered-odds') {
+    if (id !== 'offered-odds') {
       if (id === 'betting-book') {
         const book = $('betting-book').value;
         if (book && ![...$('picker-book').options].some(option => option.value === book)) $('picker-book').add(new Option(`${catalog.books[book]} (no current prices)`, book));

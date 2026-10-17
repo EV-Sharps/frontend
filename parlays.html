@@ -33,13 +33,13 @@
         <div class="catalog-toolbar">
           <label for="player-search">Find a player or team<input id="player-search" type="search" placeholder="All players" autocomplete="off"></label>
           <label for="game-filter">Game<select id="game-filter"><option value="">All games</option></select></label>
-          <label id="picker-book-label" for="picker-book" hidden>EV at book<select id="picker-book"><option value="">All books — best available price</option></select></label>
+          <label id="picker-book-label" for="picker-book">EV at book<select id="picker-book"><option value="">All books — best available price</option></select></label>
           <span id="catalog-count" role="status"></span>
         </div>
-        <p id="catalog-help" class="muted">Choose two to four players. Most likely first, by lowest average homer odds. Prices for 1+ HR are on top, no HR below. Green marks the best current homer price outside Circa and Pinnacle. Click Avg or a book to sort.</p>
+        <p id="catalog-help" class="muted">Choose two to four players, ranked by highest EV using your selected devig method. Click EV, Avg or a book to sort.</p>
         <p id="empty-slate" class="notice" hidden>No upcoming homer markets are available for today. Refresh when the next slate is posted.</p>
         <div id="catalog-wrap" class="catalog-wrap" role="region" aria-label="Choose homer parlay players and compare prices" aria-describedby="catalog-help" tabindex="0">
-          <table class="catalog-table"><caption id="catalog-caption" class="sr-only">Homer players and sportsbook over/under prices</caption><thead id="catalog-head"></thead><tbody id="catalog-rows"></tbody></table>
+          <table class="catalog-table ev-picker"><caption id="catalog-caption" class="sr-only">Homer players and sportsbook over/under prices</caption><thead id="catalog-head"></thead><tbody id="catalog-rows"></tbody></table>
         </div>
         <div class="settings">
           <label>Devig method<select id="method"><option value="power">Power</option><option value="mult">Multiplicative</option><option value="probit">Probit</option><option value="conservative">Lowest probability of all three</option></select></label>
@@ -51,15 +51,15 @@
         <div class="form-actions"><button type="submit" class="primary" id="calculate" disabled>Recalculate</button><button type="button" id="clear">Clear legs</button><span id="calculation-status" class="muted" role="status">Choose two players to calculate automatically.</span></div>
       </form>
       <section id="results" class="panel" aria-live="polite" hidden>
-        <div class="section-heading"><div><p class="eyebrow">BEST ESTIMATED PRICE</p><h2 id="best-parlay-price"></h2></div><span id="price-count"></span></div>
+        <div class="section-heading"><div><p id="best-price-label" class="eyebrow">HIGHEST ESTIMATED EV</p><h2 id="best-parlay-price"></h2></div><span id="price-count"></span></div>
         <p id="result-selections"></p>
-        <div class="book-prices-heading"><h3>Parlay odds by book</h3><span>Highest odds first</span></div>
-        <ol id="parlay-book-prices" class="parlay-book-grid" aria-label="Estimated parlay odds by book, highest first"></ol>
+        <div class="book-prices-heading"><h3>Parlay odds &amp; EV by book</h3><span id="book-price-sort">Highest EV first</span></div>
+        <ol id="parlay-book-prices" class="parlay-book-grid" aria-label="Estimated parlay odds and EV by book, highest EV first"></ol>
         <p id="book-prices-empty" class="muted" hidden></p>
-        <p class="muted book-prices-help">Estimated from each book's prices for all selected legs. Final betslip odds may differ.</p>
+        <p id="book-prices-help" class="muted book-prices-help">Estimated from each book's prices for all selected legs. EV uses your selected devig method. Final betslip odds may differ.</p>
         <details id="parlay-breakdown" class="parlay-breakdown">
           <summary>Leg prices &amp; fair odds</summary>
-          <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, best first" tabindex="0">
+          <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, highest EV first when available" tabindex="0">
             <table><caption id="price-caption" class="sr-only">Estimated parlay prices from each book's current homer odds</caption><thead id="price-head"></thead><tbody id="price-rows"></tbody></table>
           </div>
           <p class="muted">Totals multiply each book's current prices for every selected leg. EV compares each total with Circa and Pinnacle fair odds using your selected devig method.</p>
@@ -75,7 +75,7 @@
         </details>
       </section>
       <details class="panel methodology"><summary>How the fair price is calculated</summary>
-        <p>Estimated book prices multiply the decimal odds for all two to four legs at that book, then convert the total to American odds. The highest total appears first. A book needs a current over price for every leg; prices from different books are never mixed into one parlay.</p>
+        <p>Estimated book prices multiply the decimal odds for all two to four legs at that book, then convert the total to American odds. Books are ranked by EV using your selected devig method and the lower complete parlay probability from Circa or Pinnacle. If only one reference can price every leg, that reference is used. Without either reference, EV is unavailable and books are ordered by odds. A book needs a current over price for every leg; prices from different books are never mixed into one parlay.</p>
         <p id="fair-methodology">For fair odds, we remove the margin from each player's over/under 0.5 home run market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.</p>
         <p>Power, multiplicative and probit remove the margin differently. The lowest-probability option takes the smallest of those estimates for each leg; it is a sensitivity check, not a confidence bound.</p>
         <p>Every leg must have both prices at the same reference book to calculate fair odds. Missing unders are never inferred. Quotes older than 10 minutes are excluded; timestamps describe the book's feed update, not a guaranteed update of every selection.</p>

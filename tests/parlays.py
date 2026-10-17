@@ -88,7 +88,8 @@ try:
         errors, posts, gets = [], [], []
         state = {'catalog': deepcopy(CATALOG), 'denied': False, 'hold_next': False, 'held': None, 'fail_next': False, 'legacy': False}
         state.update(attd_catalog=deepcopy(ATTD_CATALOG), atgs_catalog=deepcopy(ATGS_CATALOG), hold_catalog=None, held_catalog=None,
-                     wrong_catalog=False, wrong_quote=False, price_overrides=None, incomplete_references=set())
+                     wrong_catalog=False, wrong_quote=False, price_overrides=None, incomplete_references=set(),
+                     custom_references=False)
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.route('https://**/*', lambda route: route.fulfill(
@@ -123,9 +124,9 @@ try:
             references = [{'book': book, 'name': name, 'complete': True, 'same_as_betting_book': book == payload['betting_book'],
                            'probability': 0.02, 'fair_odds': 4900, 'raw_product_odds': 4800, 'ev': 2,
                            'legs': [dict(leg['quotes'][book], probability=0.2, fair_odds=400) for leg in selected]}
-                          for book, name in BOOKS.items() if book in ('circa', 'pn')]
+                          for book, name in BOOKS.items() if book in ('circa', 'pn') or state['custom_references']]
             for ref in references:
-                probability = state['probabilities'][ref['book']]
+                probability = state['probabilities'].get(ref['book'])
                 if probability is not None:
                     probability *= {'power': 1, 'mult': .5, 'probit': 1.5, 'conservative': .25}[payload['method']]
                 ref.update(probability=probability,
@@ -191,7 +192,8 @@ try:
             expect(page.locator('#calculation-status')).to_have_text(f'{len(ids)}-leg parlay updated automatically.')
             assert posts[-1]['legs'] == [f'{index:024x}' for index in ids]
             assert page.locator('#reference-head th').count() == len(ids) + 4
-            assert page.locator('#price-head th').count() == len(ids) + 4
+            reference_count = page.locator('#fair-books-options input[data-reference-book]:checked').count()
+            assert page.locator('#price-head th').count() == len(ids) + 2 + reference_count
 
         def order(expected):
             ids = page.locator('#catalog-rows tr[data-leg-row]').evaluate_all("rows => rows.map(row => row.dataset.legRow)")
@@ -218,6 +220,15 @@ try:
                 assert tone in classes, classes
             else:
                 assert 'positive' not in classes and 'negative' not in classes, classes
+
+        def select_references(*books):
+            if page.locator('#fair-books-picker').get_attribute('open') is None:
+                page.locator('#fair-books-summary').click()
+            for book in BOOKS:
+                page.locator(f'#fair-books-options input[data-reference-book="{book}"]').set_checked(book in books)
+            page.locator('#fair-books-summary').click()
+            assert set(page.locator('#fair-books-options input[data-reference-book]:checked').evaluate_all(
+                'inputs => inputs.map(input => input.dataset.referenceBook)')) == set(books)
 
         def grid_fits():
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
@@ -250,10 +261,10 @@ try:
         assert 'Leg 3 (optional)' in page.locator('#leg-inputs').inner_text()
         assert 'Leg 4 (optional)' in page.locator('#leg-inputs').inner_text()
         assert page.locator('#calculate').is_disabled()
-        assert page.locator('#catalog-head img').count() == 4
-        assert page.locator('[data-sort="book:br"]').count() == 0
-        assert row(4).locator('.catalog-price').last.inner_text() == '+600\n-'
-        assert row(5).locator('.catalog-price').last.inner_text() == 'Stale'
+        assert page.locator('#catalog-head img').count() == len(BOOKS)
+        assert page.locator('[data-sort="book:br"]').count() == 1
+        assert row(4).locator('.catalog-price').nth(3).inner_text() == '+600\n-'
+        assert row(5).locator('.catalog-price').nth(3).inner_text() == 'Stale'
         assert row(5).locator('.best-price').inner_text() == '+700\n-700'
         page.locator('[data-sort="book:fd"]').click()
         assert page.locator('#catalog-rows tr').first.get_attribute('data-leg-row') == f'{5:024x}'
@@ -279,6 +290,46 @@ try:
         assert page.locator('[data-price-book="fd"] .parlay-total').inner_text() == '+1,900'
         assert page.locator('[data-price-book="dk"] [data-ev-book="circa"]').inner_text() == '-50.5%'
         assert page.locator('[data-price-book="dk"] [data-ev-book="pn"]').inner_text() == '-87.6%'
+
+        # Chosen references alone drive book EV, including ordinary betting books.
+        state['custom_references'] = True
+        state['probabilities'].update(fd=.04, dk=.08)
+        select_references('fd')
+        calculated([1, 3])
+        card_ev('dk', '-1.0% EV', 'negative')
+        card_ev('fd', '-20.0% EV', 'negative')
+        book_cards(['dk', 'fd'], ['dk'])
+        expect(page.locator('#price-head [data-ev-reference="fd"]')).to_have_count(1)
+        expect(page.locator('#price-head [data-ev-reference="pn"]')).to_have_count(0)
+        expect(page.locator('#betting-book option[value="fd"]')).to_have_count(1)
+        count(2)
+        select_references('dk')
+        calculated([1, 3])
+        card_ev('dk', '+98.0% EV', 'positive')
+        card_ev('fd', '+60.0% EV', 'positive')
+        page.locator('#method').select_option('mult')
+        calculated([1, 3])
+        card_ev('dk', '-1.0% EV', 'negative')
+        page.locator('#method').select_option('power')
+        calculated([1, 3])
+        select_references('fd', 'dk')
+        calculated([1, 3])
+        card_ev('dk', '-1.0% EV', 'negative')
+        select_references('br')
+        calculated([1, 3])
+        card_ev('dk', 'EV —')  # Available but unselected Circa/PN/FD/DK cannot substitute.
+        book_cards(['dk', 'fd'], ['dk'], known_ev=False)
+        select_references()
+        calculated([1, 3])
+        card_ev('fd', 'EV —')
+        expect(page.locator('#price-head [data-ev-reference]')).to_have_count(0)
+        count(2)
+        state['custom_references'] = False
+        state['probabilities'] = {'circa': .02, 'pn': .005}
+        select_references('circa', 'pn')
+        calculated([1, 3])
+        card_ev('dk', '-87.6% EV', 'negative')
+
         post_count = len(posts)
         pick(3).click()
         count(1)

@@ -8,7 +8,7 @@ body.parlays-page::before { display: none; }
 .parlay-header .brand { font-size: 22px; font-weight: 750; color: #f0f4f5; text-decoration: none; }
 .brand span { color: #76dcac; }
 .parlay-header nav { display: flex; align-items: center; gap: 20px; }
-main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; height: auto; overflow: visible; padding: 30px; margin: auto; }
+main.parlay-main { display: block; flex: none; width: 100%; max-width: none; height: auto; overflow: visible; padding: 24px 18px; margin: auto; }
 .parlays-page h1 { font-size: clamp(25px, 3vw, 34px); margin: 7px 0 12px; text-align: left; letter-spacing: -.6px; }
 .parlays-page h2 { font-size: 18px; margin: 0; text-align: left; }
 .parlays-page p { line-height: 1.65; }
@@ -41,17 +41,32 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
 .parlays-page button:hover:not(:disabled) { background: #34434e; border-color: #85a2b8; }
 .parlays-page button:disabled { cursor: default; opacity: .5; }
 .parlays-page :focus-visible { outline: 2px solid #a9e1ff; outline-offset: 3px; }
-.catalog-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 22px; }
-.catalog-toolbar label:first-child { flex: 1; max-width: 300px; }
-.catalog-toolbar label { min-width: 160px; }
+.catalog-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-top: 22px; }
+.catalog-toolbar > label:first-child { flex: 1; max-width: 240px; }
+.catalog-toolbar > label { min-width: 130px; max-width: 220px; }
 .catalog-toolbar input, .catalog-toolbar select { font-size: 12px; padding: 8px 10px; }
+.reference-control { display: grid; gap: 7px; min-width: 180px; max-width: 240px; font-size: 12px; color: #bdc9d0; }
+#fair-books-picker { position: relative; }
+#fair-books-summary { cursor: pointer; color: #edf3f6; background: #202b32; border: 1px solid #4a5b67; border-radius: 4px; padding: 8px 10px; white-space: nowrap; }
+#fair-books-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; width: 390px; max-width: calc(100vw - 64px); max-height: min(420px, 65vh); overflow: auto; padding: 10px; border: 1px solid #56748a; border-radius: 6px; background: #1b2832; box-shadow: 0 8px 24px #0008; }
+.fair-books-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.parlays-page .fair-books-actions button { padding: 5px 10px; font-size: 11px; }
+#fair-books-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.parlays-page .fair-book-option { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 7px 5px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.fair-book-option:hover { background: #2a3e4e; }
+.fair-book-option:has(input:checked) { background: #254355; }
+.catalog-toolbar .fair-book-option input { width: 14px; height: 14px; padding: 0; margin: 0; flex-shrink: 0; accent-color: #8ac9f0; }
+.fair-book-option > span { min-width: 0; overflow-wrap: anywhere; }
+.fair-book-option small { display: block; margin-top: 2px; color: #9fb2c0; font-size: 9px; }
+#fair-books-menu p { margin: 9px 3px 0; font-size: 10px; color: #a9bcc9; }
 #catalog-count { margin-left: auto; padding-bottom: 9px; color: #a0b1bc; font-size: 11px; }
 #catalog-help { margin: 10px 0; font-size: 11px; }
 .catalog-wrap { max-height: 420px; overflow: auto; border: 1px solid #3c4950; border-radius: 5px; scrollbar-color: #52616b #181a1b; }
-.catalog-table { --player-width: 185px; border-spacing: 0; width: max-content; min-width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
-.catalog-table th, .catalog-table td { min-width: 72px; border-right: 1px solid #343b40; border-bottom: 1px solid #343b40; padding: 6px; vertical-align: middle; text-align: center; }
+.catalog-table { --player-width: 160px; border-spacing: 0; width: max-content; min-width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.catalog-table th, .catalog-table td { min-width: 58px; border-right: 1px solid #343b40; border-bottom: 1px solid #343b40; padding: 5px; vertical-align: middle; text-align: center; }
 .catalog-table th:last-child, .catalog-table td:last-child { border-right: 0; }
 .catalog-table thead th { position: sticky; top: 0; z-index: 4; height: 40px; background: #262e33; font-weight: 600; color: #c3cdd4; }
+.catalog-table thead th.fair-reference { background: #254355; box-shadow: inset 0 -2px #8ac9f0; }
 .parlays-page .catalog-table thead button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 0; padding: 3px 0; background: transparent; font-size: 10px; white-space: nowrap; }
 .catalog-table .sort-arrow { color: #93a6b5; font-size: 8px; }
 .catalog-table th[aria-sort="ascending"] .sort-arrow, .catalog-table th[aria-sort="descending"] .sort-arrow { color: #93dfb5; }
@@ -73,14 +88,14 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
 .catalog-table .catalog-ev { min-width: 118px; }
 .catalog-ev strong, .catalog-ev small { display: block; line-height: 1.6; }
 .catalog-ev .ev-offer { color: #c9d6dd; white-space: nowrap; font-size: 10px; }
-.catalog-ev .ev-reference { color: #9eacb6; font-size: 9px; }
+.catalog-ev .ev-reference { max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #9eacb6; font-size: 9px; }
 .catalog-ev .parlay-book-logo { width: 13px; height: 13px; }
 .catalog-ev.positive strong { color: #98e8b7; }
 .catalog-ev.negative strong { color: #f2a3a3; }
 .catalog-price.best-price strong { color: #6ee6a0; font-weight: 700; }
 .price-unavailable { color: #82929f; font-size: 10px; }
 .catalog-table .catalog-empty { padding: 24px; text-align: left; color: #aab8c2; }
-.settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+.settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; max-width: 760px; }
 .optional { display: inline; font-size: 10px; color: #90a1ad; }
 .muted { color: #a0b1bc; font-size: 12px; }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
@@ -162,7 +177,9 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
   .leg-card { padding: 9px 10px; }
   .catalog-table { --player-width: 145px; }
   .catalog-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .catalog-toolbar label, .catalog-toolbar label:first-child { min-width: 0; max-width: none; }
+  .catalog-toolbar > label, .catalog-toolbar > label:first-child { min-width: 0; max-width: none; }
+  .reference-control { grid-column: 1 / -1; grid-row: 3; min-width: 0; max-width: none; }
+  #fair-books-menu { width: 390px; max-width: 100%; }
   #catalog-count { grid-column: 1 / -1; margin: 0; padding: 0; }
   .catalog-wrap { max-height: 360px; }
   .results .table-wrap { overflow: visible; border: 0; }
@@ -195,4 +212,5 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
   .ev-picker .catalog-ev { min-width: 100px; }
   .ev-picker .catalog-player small span { display: block; margin-left: 0; white-space: normal; }
   .ev-picker .ev-offer { white-space: normal; }
+  .ev-picker .ev-reference { max-width: 84px; }
 }

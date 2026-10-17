@@ -60,6 +60,11 @@ def catalog_fixture():
                                      'pn': probabilities(.25, .12, .3, .12)}
     legs[1]['fair_probabilities'] = {'circa': probabilities(.2, .35, .18, .18),
                                      'pn': probabilities(.22, .4, .2, .2)}
+    legs[0]['fair_probabilities'].update(fd=probabilities(.4, .15, .45, .12),
+                                       dk=probabilities(.15, .3, .18, .15))
+    legs[1]['fair_probabilities'].update(fd=probabilities(.15, .4, .16, .15),
+                                       dk=probabilities(.3, .2, .35, .2))
+    legs[2]['fair_probabilities']['fd'] = probabilities(.25, .15, .3, .15)
     legs[3]['quotes']['dk'] = quote(300, None, 'Missing under price')
     legs[4]['quotes']['circa'] = quote(300, age=20)  # Ignore stale .05; current PN gives .30.
     legs[4]['fair_probabilities']['circa'] = probabilities(.05)
@@ -151,6 +156,19 @@ class AtgsPickerTests(unittest.TestCase):
         return self.page.locator('#catalog-head [data-key^="book:"]').evaluate_all(
             'columns => columns.map(column => column.dataset.key.slice(5))')
 
+    def references(self):
+        return set(self.page.locator('#fair-books-options input[data-reference-book]:checked').evaluate_all(
+            'inputs => inputs.map(input => input.dataset.referenceBook)'))
+
+    def select_references(self, *books):
+        picker = self.page.locator('#fair-books-picker')
+        if picker.get_attribute('open') is None:
+            self.page.locator('#fair-books-summary').click()
+        for book in BOOKS:
+            self.page.locator(f'#fair-books-options input[data-reference-book="{book}"]').set_checked(book in books)
+        self.page.locator('#fair-books-summary').click()
+        self.assertEqual(self.references(), set(books))
+
     def pick(self, index):
         self.row(index).locator('button[data-leg]').click()
 
@@ -172,18 +190,18 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertEqual(self.row(12).count(), 0)
         self.assertEqual(self.posts, [])
 
-    def test_specific_book_filters_current_overs_including_over_only_and_keeps_references(self):
+    def test_specific_book_filters_current_overs_without_hiding_book_columns(self):
         self.open()
         self.page.locator('#picker-book').select_option('dk')
         expect(self.page.locator('#betting-book')).to_have_value('dk')
         self.assertEqual(self.order(), [2, 4, 8, 1, 6])
-        self.assertEqual(set(self.book_columns()), {'circa', 'pn', 'dk'})
+        self.assertEqual(set(self.book_columns()), set(BOOKS))
         self.assertEqual(self.ev(1), -25.0)
         self.assertEqual(self.ev(4), 20.0)  # Betting unders are optional; reference unders are required.
         self.page.locator('#betting-book').select_option('fd')
         expect(self.page.locator('#picker-book')).to_have_value('fd')
         self.assertEqual(self.order(), [5, 1, 3, 10, 4, 2, 7, 11, 6])
-        self.assertEqual(set(self.book_columns()), {'circa', 'pn', 'fd'})
+        self.assertEqual(set(self.book_columns()), set(BOOKS))
         self.assertEqual(self.row(8).count(), 0)
         self.assertEqual(self.gets, ['atgs'])
         self.assertEqual(self.posts, [])
@@ -333,7 +351,7 @@ class AtgsPickerTests(unittest.TestCase):
                     self.assertIsNone(self.ev(index))
                 self.page.locator('#betting-book').select_option('fd')
                 expect(self.page.locator('#picker-book')).to_have_value('fd')
-                self.assertEqual(set(self.book_columns()), {'circa', 'pn', 'fd'})
+                self.assertEqual(set(self.book_columns()), set(BOOKS))
                 self.assertEqual(self.order(), [5, 1, 3, 4, 2, 7, 6])
                 self.pick(1)
                 self.page.locator('#method').select_option('mult')
@@ -364,6 +382,97 @@ class AtgsPickerTests(unittest.TestCase):
                 self.assertIsNone(self.ev(1))
                 self.assertEqual(self.posts, [])
 
+    def test_custom_fair_books_rerank_with_method_and_keep_betting_choices_and_selection(self):
+        self.catalog['legs'] = self.catalog['legs'][:3]
+        self.open()
+        self.assertEqual(self.references(), {'circa', 'pn'})
+        self.pick(1)
+        self.select_references('fd')
+        self.assertEqual(self.order(), [1, 3, 2])
+        self.assertEqual(self.ev(1), 100.0)
+        self.assertEqual(self.ev(2), 5.0)
+        self.assertEqual(self.ev(3), 25.0)
+        expect(self.page.locator('#picker-book option[value="fd"]')).to_have_count(1)
+        expect(self.page.locator('#betting-book option[value="fd"]')).to_have_count(1)
+        self.page.locator('#picker-book').select_option('fd')
+        self.assertEqual(self.ev(2), -40.0)
+        self.assertEqual(set(self.book_columns()), set(BOOKS))
+        self.page.locator('#method').select_option('mult')
+        self.assertEqual(self.order(), [2, 1, 3])
+        self.assertEqual(self.ev(1), -25.0)
+        self.assertEqual(self.ev(2), 60.0)
+        expect(self.row(1).locator('button')).to_have_attribute('aria-pressed', 'true')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        self.assertEqual(self.posts, [])
+        self.assertEqual(self.gets, ['atgs'])
+
+    def test_selected_reference_missing_or_stale_never_falls_back_to_unselected_books(self):
+        self.catalog['legs'] = self.catalog['legs'][:3]
+        self.catalog['legs'][0]['quotes']['fd']['updated_at'] = (
+            datetime.now(timezone.utc) - timedelta(minutes=20)).isoformat()
+        self.open()
+        self.select_references('fd')
+        self.assertIsNone(self.ev(1))  # Current Circa/PN/DK must not replace the chosen stale FD pair.
+        self.assertEqual(self.order(), [3, 2, 1])
+        self.select_references('dk')
+        self.assertEqual(self.ev(1), -55.0)
+        self.assertEqual(self.ev(2), 110.0)
+        self.assertIsNone(self.ev(3))
+        self.select_references('b365')
+        self.assertTrue(all(self.ev(index) is None for index in (1, 2, 3)))
+        self.select_references('fd', 'dk')
+        self.assertEqual(self.ev(1), -55.0)
+        self.assertEqual(self.ev(2), 5.0)
+        self.assertEqual(self.ev(3), 25.0)
+
+    def test_reference_choices_and_explicit_empty_selection_survive_reload_and_market_changes(self):
+        self.catalog['legs'] = self.catalog['legs'][:3]
+        self.open()
+        self.select_references('fd')
+        self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('ev_parlay_reference_books_v1'))"), ['fd'])
+        self.open('hr')
+        self.assertEqual(self.references(), {'fd'})
+        self.assertEqual(self.ev(1), 100.0)
+        self.page.locator('#parlay-market').select_option('attd')
+        expect(self.page.locator('#calculator')).to_be_visible()
+        self.assertEqual(self.references(), {'fd'})
+        self.assertEqual(self.ev(1), 100.0)
+        self.page.locator('#fair-books-summary').click()
+        self.page.locator('#fair-books-clear').click()
+        self.page.locator('#fair-books-summary').click()
+        self.assertEqual(self.references(), set())
+        self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('ev_parlay_reference_books_v1'))"), [])
+        self.assertTrue(all(self.ev(index) is None for index in (1, 2, 3)))
+        self.open('atgs')
+        self.assertEqual(self.references(), set())
+        self.assertTrue(all(self.ev(index) is None for index in (1, 2, 3)))
+        self.page.locator('#fair-books-summary').click()
+        self.page.locator('#fair-books-all').click()
+        self.assertEqual(self.references(), set(BOOKS))
+        self.page.locator('#fair-books-reset').click()
+        self.assertEqual(self.references(), {'circa', 'pn'})
+        self.page.locator('#fair-books-summary').click()
+        self.assertEqual(self.ev(1), 25.0)
+
+    def test_desktop_book_columns_are_compact_and_use_available_width(self):
+        self.catalog['books'].update(mgm='BetMGM', cz='Caesars', espn='ESPN BET',
+                                     hr='Hard Rock', px='ProphetX', nv='Novig')
+        self.open()
+        self.page.locator('#picker-book').select_option('fd')
+        geometry = self.page.locator('#catalog-wrap').evaluate('''container => {
+            const viewport = container.getBoundingClientRect();
+            return {width: viewport.width, screen: innerWidth,
+                books: [...container.querySelectorAll('th[data-key^="book:"]')].map(cell => {
+                    const rect = cell.getBoundingClientRect();
+                    return {width: rect.width, left: rect.left, right: rect.right};
+                }), left: viewport.left, right: viewport.right};
+        }''')
+        self.assertGreater(geometry['width'], geometry['screen'] * .85)
+        self.assertEqual(len(geometry['books']), len(self.catalog['books']))
+        self.assertTrue(all(book['width'] <= 110 for book in geometry['books']), geometry)
+        self.assertTrue(all(geometry['left'] <= book['left'] < book['right'] <= geometry['right'] + 1
+                            for book in geometry['books']), geometry)
+
     def test_picker_toolbar_fits_mobile_without_document_overflow(self):
         self.open()
         self.page.screenshot(path=str(Path(tempfile.gettempdir()) / 'parlays-picker-desktop.png'), full_page=True)
@@ -371,13 +480,20 @@ class AtgsPickerTests(unittest.TestCase):
             with self.subTest(width=width):
                 self.page.set_viewport_size({'width': width, 'height': 844})
                 self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
-                boxes = self.page.locator('.catalog-toolbar input, .catalog-toolbar select').evaluate_all(
+                boxes = self.page.locator('.catalog-toolbar input:not([type="checkbox"]), .catalog-toolbar select').evaluate_all(
                     'inputs => inputs.map(input => { const r = input.getBoundingClientRect(); '
                     'return {left: r.left, right: r.right, width: r.width}; })')
                 for box in boxes:
                     self.assertGreater(box['width'], 0)
                     self.assertGreaterEqual(box['left'], 0)
                     self.assertLessEqual(box['right'], width)
+                expect(self.page.locator('.catalog-toolbar #method')).to_have_count(1)
+                self.page.locator('#fair-books-summary').click()
+                menu = self.page.locator('#fair-books-menu').bounding_box()
+                self.assertIsNotNone(menu)
+                self.assertGreaterEqual(menu['x'], 0)
+                self.assertLessEqual(menu['x'] + menu['width'], width + 1)
+                self.page.locator('#fair-books-summary').click()
                 self.page.locator('#picker-book').select_option('dk')
                 expect(self.page.locator('#betting-book')).to_have_value('dk')
                 self.assertEqual(self.order(), [2, 4, 8, 1, 6])

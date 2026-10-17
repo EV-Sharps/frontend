@@ -256,7 +256,7 @@ def main():
                 for email in (None, '<img src=x onerror=alert(1)>@example.test'):
                     state['partner_email'] = email
                     page.locator('#aff-refresh').click()
-                    expect(partner_cells.nth(1)).to_have_text(email or '—')
+                    expect(partner_cells.nth(1)).to_have_text(email or '-')
                     expect(partner_cells.nth(2)).to_have_text(USERS['partner'])
                     expect(page.locator('#aff-admin-partners img')).to_have_count(0)
                 state['no_partners'] = True

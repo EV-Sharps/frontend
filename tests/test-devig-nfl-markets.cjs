@@ -66,7 +66,7 @@ test('NFL markets group naturally while NHL goal tiers retain their previous ord
   const nhl = { ...sourceReport('archive'), sport: 'nhl',
     cells: ['total', '4+goals', 'sog', 'atgs', '2+goals', 'ml'].map(prop => ({ ...sourceReport('archive').cells[0], prop })) };
   assert.deepEqual(buildView(nhl, filters).byProp.map(row => row.prop), ['atgs', '2+goals', '4+goals', 'sog', 'ml', 'total']);
-  assert.equal(goalMarketLabel('2+goals'), 'ATGS — 2+ goals');
+  assert.equal(goalMarketLabel('2+goals'), 'ATGS - 2+ goals');
 });
 for (const format of ['legacy', 'compact']) for (const priceSource of ['archive', 'opening']) for (const staking of ['flat', 'quarter-kelly']) {
   test(`${format}/${priceSource}/${staking}: non-ATTD market filters retain exact source and staking metrics`, () => {

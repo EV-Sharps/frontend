@@ -30,11 +30,11 @@ const filters = { start: '2026-10-13', end: '2026-10-13', book: '', prop: '', re
   method: 'probit', minimum: 1, profitableOnly: false };
 
 test('goal-tier labels explicitly distinguish one, two and higher goal totals', () => {
-  assert.equal(goalMarketLabel('atgs'), 'ATGS — 1+ goals');
-  assert.equal(goalMarketLabel('2+goals'), 'ATGS — 2+ goals');
-  assert.equal(goalMarketLabel('3+goals'), 'ATGS — 3+ goals');
-  assert.equal(goalMarketLabel('4+goals'), 'ATGS — 4+ goals');
-  assert.equal(goalMarketLabel('10+goals'), 'ATGS — 10+ goals');
+  assert.equal(goalMarketLabel('atgs'), 'ATGS - 1+ goals');
+  assert.equal(goalMarketLabel('2+goals'), 'ATGS - 2+ goals');
+  assert.equal(goalMarketLabel('3+goals'), 'ATGS - 3+ goals');
+  assert.equal(goalMarketLabel('4+goals'), 'ATGS - 4+ goals');
+  assert.equal(goalMarketLabel('10+goals'), 'ATGS - 10+ goals');
   for (const prop of ['no_goal', 'goals_under_1.5', 'sog', 'attd']) assert.equal(goalMarketLabel(prop), null);
 });
 for (const format of ['legacy', 'compact']) {

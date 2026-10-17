@@ -206,7 +206,7 @@
   }
   function renderPickerBooks() {
     const selected = $('picker-book').value;
-    $('picker-book').replaceChildren(new Option('All books — best available price', ''));
+    $('picker-book').replaceChildren(new Option('All books - best available price', ''));
     if (!catalog) return;
     for (const [book, name] of Object.entries(catalog.books)) {
       if (nonBettingBooks.has(book)) continue;
@@ -285,7 +285,7 @@
       const displayEV = Number.isFinite(ev) ? Number(ev.toFixed(1)) : null;
       const refLabel = estimate?.references.map(ref => bookLabel(ref.book)).join(' + ');
       const evCell = `<td class="catalog-ev${displayEV > 0 ? ' positive' : displayEV < 0 ? ' negative' : ''}" title="${esc(refLabel ? `Reference: ${refLabel}${estimate.references.length > 1 ? ' (lower fair probability)' : ''}${estimate.references.some(ref => ref.book === estimate.offer.book) ? ' / Includes the betting book' : ''}` : 'Needs a fresh over/under pair at a selected fair value book')}">
-        <strong>${displayEV === null ? '—' : `${displayEV > 0 ? '+' : ''}${displayEV.toFixed(1)}%`}</strong>
+        <strong>${displayEV === null ? '-' : `${displayEV > 0 ? '+' : ''}${displayEV.toFixed(1)}%`}</strong>
         <small class="ev-offer">${bookLogo(estimate.offer.book)} ${esc(bookLabel(estimate.offer.book))} ${esc(odds(estimate.offer.price))}</small>
         <small class="ev-reference">${refLabel ? `vs ${esc(refLabel)}` : 'No fair estimate'}</small></td>`;
       const action = selected >= 0 ? 'Remove' : 'Add';
@@ -406,7 +406,7 @@
       return `<li class="parlay-book-card${isBest ? ' is-best' : ''}" data-price-tile="${esc(price.book)}">
         <span class="parlay-book-name">${bookLogo(price.book)}<span>${esc(price.name)}</span></span>
         <strong class="parlay-book-odds">${esc(odds(price.odds))}</strong>
-        <span class="parlay-book-ev${ev > 0 ? ' positive' : ev < 0 ? ' negative' : ''}">${ev === null ? 'EV —' : `${ev > 0 ? '+' : ''}${ev.toFixed(1)}% EV`}</span>
+        <span class="parlay-book-ev${ev > 0 ? ' positive' : ev < 0 ? ' negative' : ''}">${ev === null ? 'EV -' : `${ev > 0 ? '+' : ''}${ev.toFixed(1)}% EV`}</span>
         ${isBest ? `<span class="book-price-best">${hasEV ? 'Best EV' : 'Best price'}</span>` : '<span class="book-price-note">Est. parlay</span>'}
       </li>`;
     }).join('');
@@ -573,7 +573,7 @@
     $('player-search').value = '';
     $('game-filter').replaceChildren(new Option('All games', ''));
     $('betting-book').replaceChildren(new Option('No book selected', ''));
-    $('picker-book').replaceChildren(new Option('All books — best available price', ''));
+    $('picker-book').replaceChildren(new Option('All books - best available price', ''));
     $('offered-odds').value = '';
     $('calculator').hidden = true;
     $('access-panel').hidden = true;

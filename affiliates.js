@@ -3,7 +3,7 @@
   PAGE = 'affiliates';
   const $ = id => document.getElementById(id);
   const money = cents => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(cents || 0) / 100);
-  const date = value => value ? new Date(value).toLocaleDateString('en-US') : '—';
+  const date = value => value ? new Date(value).toLocaleDateString('en-US') : '-';
   let session = null, generation = 0, paying = null;
   $('account-link').href = `profile${HTML}`;
   function status(message, error = false) { $('aff-status').textContent = message; $('aff-status').dataset.error = String(error); }
@@ -17,7 +17,7 @@
     if (!response.ok) throw new Error(result.error || 'Could not load the affiliate program. Please try again.');
     return result;
   }
-  function cell(row, value) { const td = document.createElement('td'); td.textContent = String(value ?? '—'); row.appendChild(td); return td; }
+  function cell(row, value) { const td = document.createElement('td'); td.textContent = String(value ?? '-'); row.appendChild(td); return td; }
   function button(parent, text, action, disabled = false) {
     const node = document.createElement('button'); node.type = 'button'; node.textContent = text; node.disabled = disabled;
     node.addEventListener('click', () => run(node, action)); parent.appendChild(node); return node;
@@ -46,7 +46,7 @@
     }));
     const body = $('aff-payout-history'); body.replaceChildren();
     for (const payout of data.payouts || []) {
-      const row = document.createElement('tr'); [date(payout.created_at), money(payout.amount_cents), payout.status, date(payout.paid_at), payout.external_reference || '—'].forEach(value => cell(row, value)); body.appendChild(row);
+      const row = document.createElement('tr'); [date(payout.created_at), money(payout.amount_cents), payout.status, date(payout.paid_at), payout.external_reference || '-'].forEach(value => cell(row, value)); body.appendChild(row);
     }
     if (!body.children.length) empty(body, 5, 'No payouts yet.');
     $('aff-partner').hidden = false;
@@ -57,7 +57,7 @@
     for (const partner of partners) {
       const summary = partner.summary || partner;
       const row = document.createElement('tr'); cell(row, partner.code);
-      cell(row, partner.email || '—'); cell(row, partner.user_id || '—');
+      cell(row, partner.email || '-'); cell(row, partner.user_id || '-');
       cell(row, partner.active ? 'Active' : 'Disabled');
       cell(row, summary.signups || 0); cell(row, summary.conversions || 0); cell(row, money(summary.available_cents));
       const actions = cell(row, '');
@@ -69,7 +69,7 @@
     const payouts = $('aff-admin-payouts'); payouts.replaceChildren();
     for (const payout of data.payouts || []) {
       const row = document.createElement('tr');
-      [payout.code || names.get(payout.partner_id || payout.affiliate_id) || 'Partner', date(payout.created_at), money(payout.amount_cents), payout.status, payout.external_reference || '—'].forEach(value => cell(row, value));
+      [payout.code || names.get(payout.partner_id || payout.affiliate_id) || 'Partner', date(payout.created_at), money(payout.amount_cents), payout.status, payout.external_reference || '-'].forEach(value => cell(row, value));
       const actions = cell(row, '');
       if (['reserved', 'pending'].includes(payout.status)) {
         button(actions, 'Record payment', () => {

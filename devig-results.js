@@ -104,7 +104,7 @@
     'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
   const nhlPropOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
   const goalTier = prop => prop === 'atgs' ? 1 : /^[1-9]\d*\+goals$/.test(prop) ? Number.parseInt(prop, 10) : null;
-  const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS — ${goalTier(prop)}+ goals`;
+  const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS - ${goalTier(prop)}+ goals`;
   const supportedSports = ['nhl', 'nfl'];
   const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
   const compareProps = (a, b, league = 'nhl') => {

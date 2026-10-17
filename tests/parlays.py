@@ -253,7 +253,7 @@ try:
         expect(page.locator('#picker-book')).to_be_visible()
         expect(row(1).locator('.catalog-ev strong')).to_have_text('+37.5%')
         expect(row(2).locator('.catalog-ev strong')).to_have_text('-43.0%')
-        expect(row(6).locator('.catalog-ev strong')).to_have_text('—')
+        expect(row(6).locator('.catalog-ev strong')).to_have_text('-')
         assert row(4).locator('.catalog-average').inner_text() == '+550'  # Includes a fresh over with no under.
         assert row(5).locator('.catalog-average').inner_text() == '+683'  # Excludes the stale +900 price.
         assert page.locator('#leg-inputs input, #leg-inputs select').count() == 0
@@ -317,11 +317,11 @@ try:
         card_ev('dk', '-1.0% EV', 'negative')
         select_references('br')
         calculated([1, 3])
-        card_ev('dk', 'EV —')  # Available but unselected Circa/PN/FD/DK cannot substitute.
+        card_ev('dk', 'EV -')  # Available but unselected Circa/PN/FD/DK cannot substitute.
         book_cards(['dk', 'fd'], ['dk'], known_ev=False)
         select_references()
         calculated([1, 3])
-        card_ev('fd', 'EV —')
+        card_ev('fd', 'EV -')
         expect(page.locator('#price-head [data-ev-reference]')).to_have_count(0)
         count(2)
         state['custom_references'] = False
@@ -429,8 +429,8 @@ try:
         page.evaluate('window.refreshParlays()')
         calculated([1, 3, 4])
         book_cards(['dk', 'fd'], ['dk'], known_ev=False)
-        card_ev('dk', 'EV —')
-        card_ev('fd', 'EV —')
+        card_ev('dk', 'EV -')
+        card_ev('fd', 'EV -')
         state['probabilities'] = {'circa': 0.02, 'pn': 0.005}
 
         # A missing totals field is not missing coverage, including books without complete unders.

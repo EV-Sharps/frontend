@@ -54,17 +54,17 @@ const receptions = {
 };
 
 test('Swift receptions use the full NFL fee rather than the homer discount', () => {
-	assert.equal(load('main').addKalshiFee('+456'), '440', 'The former half-rate calculation explains the reported +440');
+	assert.equal(load('main').addKalshiFee('+456'), '425', 'The full fee is the default without row context');
 	assert.equal(load('nfl').addKalshiFee('+456', receptions), '425');
 	assert.equal(load('main').addKalshiFee('+456', { prop: 'rec', sport: 'nfl' }), '425');
 	assert.equal(load('main', 'nfl').addKalshiFee('+456', { prop: 'rec' }), '425');
 	assert.equal(load('main').addKalshiFee('+456', { prop: 'rec' }, 'nfl'), '425');
 	assert.equal(load('nfl').addKalshiFee('+456', { prop: 'rec' }), '425', 'NFL rows without sport or links use their page context');
-	assert.equal(load('main', 'nfl').addKalshiFee('+456', { prop: 'hr', sport: 'mlb' }), '440',
-		'Explicit row sport takes precedence over a mixed page sport');
+	assert.equal(load('main', 'nfl').addKalshiFee('+456', { prop: 'hr', sport: 'mlb' }), '425',
+		'A homer row does not change the default fee outside the two homer pages');
 	assert.equal(load('nfl', 'nfl').addKalshiFee('+456', {
 		links: { kal: 'https://kalshi.com/markets/kxmlbhr/mlb-home-runs/kxmlbhr-26sep28' },
-	}), '440', 'A verified homer market retains its reduced fee across pages');
+	}), '425', 'A homer market link does not select a reduced fee on other pages');
 });
 
 test('Every NFL prop series in the current feed carries its fee onto mixed pages', () => {
@@ -115,14 +115,15 @@ test('Touchdown fees follow the market on other pages and page fallback on TDs',
 	}
 });
 
-test('MLB home runs retain their reduced fee and legacy markets remain unchanged', () => {
-	for (const page of ['dingers', 'dingers2', 'mlb']) {
+test('Only Dingers and Dingers 2 retain the reduced homer fee', () => {
+	for (const page of ['dingers', 'dingers2']) {
 		const context = load(page);
 		assert.equal(context.addKalshiFee('+567', { prop: 'hr', sport: 'mlb' }), '547',
 			'The 15-cent Tatis home-run quote stays approximately +547 after fees');
 		assert.equal(context.addKalshiFee('+104/-108', { prop: 'hr', sport: 'mlb' }), '100/-112');
 	}
-	assert.equal(load('main').addKalshiFee('+104/-108'), '100/-112');
+	assert.equal(load('mlb').addKalshiFee('+104/-108', { prop: 'hr', sport: 'mlb' }), '-104/-116');
+	assert.equal(load('main').addKalshiFee('+104/-108'), '-104/-116');
 });
 
 test('NHL scorer and prop pages use the full fee on both sides, including missing row context', () => {
@@ -135,11 +136,11 @@ test('NHL scorer and prop pages use the full fee on both sides, including missin
 	for (const prop of ['atgs', 'fgs', 'lgs']) {
 		assert.equal(load('main').addKalshiFee('+456', { prop }), '425', prop);
 	}
-	assert.equal(load('main', 'nhl').addKalshiFee('+456', { sport: 'mlb', prop: 'hr' }), '440',
-		'Explicit MLB row context still retains its existing fee on a mixed page');
+	assert.equal(load('main', 'nhl').addKalshiFee('+456', { sport: 'mlb', prop: 'hr' }), '425',
+		'Explicit MLB row context retains the default fee on a mixed page');
 });
 
-test('NHL market links carry the full fee onto mixed pages while homer links keep their discount', () => {
+test('NHL and homer market links both retain the default full fee on mixed pages', () => {
 	for (const kal of [
 		'https://kalshi.com/markets/kxnhlanygoal/nhl-goals/kxnhlanygoal-26oct01',
 		'https://kalshi.com/markets/KXNHLGOAL-26OCT01',
@@ -148,7 +149,7 @@ test('NHL market links carry the full fee onto mixed pages while homer links kee
 	}
 	assert.equal(load('nhl', 'nhl').addKalshiFee('+456', {
 		links: { kal: 'https://kalshi.com/markets/kxmlbhr/mlb-home-runs/kxmlbhr-26sep30' },
-	}), '440');
+	}), '425');
 });
 
 test('Hockey best-book and saved quotes use full fees without altering raw prices or charging twice', () => {
@@ -169,6 +170,57 @@ test('Hockey best-book and saved quotes use full fees without altering raw price
 		assert.equal(context.displayedBestBookQuote({ ...row, line: 425, outlierLine: 425 }).line, 425, page);
 		assert.equal(context.watchlistQuote({ ...row, line: 425, outlierLine: 425 }, page, false).odds, 425, page);
 		assert.equal(JSON.stringify(row), original, page);
+	}
+});
+
+test('The full fee defaults across sports and shared pages without market metadata', () => {
+	for (const page of ['nba', 'pts', 'threes', 'main', 'live', 'tracker', 'outliers', 'mlb',
+		'strikeouts', 'nfl', 'nhl', 'wnba', 'ncaab', 'soccer', 'ufc', 'unknown', '']) {
+		const context = load(page);
+		assert.equal(context.kalshiFeeRate(), 0.07, page);
+		assert.equal(context.addKalshiFee('+104/-108'), '-104/-116', page);
+		assert.equal(context.addKalshiFee('+456'), '425', page);
+	}
+});
+
+test('Page context alone controls the homer discount, regardless of row sport or links', () => {
+	const rows = [
+		{}, { prop: 'hr', sport: 'mlb' }, { prop: 'pts', sport: 'nba' },
+		{ prop: 'atgs', sport: 'nhl' }, { prop: 'attd', sport: 'nfl' },
+		{ links: { kal: 'https://kalshi.com/markets/kxmlbhr/mlb-home-runs/kxmlbhr-26oct17' } },
+		{ links: { kal: 'https://kalshi.com/markets/KXNBAPTS/KXNBAPTS-26OCT17' } },
+		{ links: { kal: 'https://kalshi.com/markets/kxnfltd/nfl-touchdowns/kxnfltd-26oct17' } },
+	];
+	for (const page of ['dingers', 'dingers2', 'main', 'nba', 'tracker', 'mlb']) {
+		const discounted = ['dingers', 'dingers2'].includes(page);
+		const context = load(page, 'nfl');
+		const mixed = load('tracker', 'mlb');
+		for (const row of rows) {
+			assert.equal(context.addKalshiFee('+104/-108', row), discounted ? '100/-112' : '-104/-116', `${page}: ${JSON.stringify(row)}`);
+			assert.equal(mixed.addKalshiFee('+456', row, page), discounted ? '440' : '425', `Explicit quote page ${page}`);
+		}
+	}
+});
+
+test('NBA best-book and saved quotes use full fees on both sides without mutation or double charging', () => {
+	for (const page of ['nba', 'pts', 'threes']) {
+		const context = load(page);
+		const prices = Object.freeze({ kal: '+104/-108', fd: '+100/-110' });
+		for (const under of [false, true]) {
+			const effective = under ? -116 : -104;
+			const row = Object.freeze({ player: 'nba example', prop: page === 'threes' ? '3ptm' : 'pts',
+				handicap: 2.5, under, game: 'bos @ ny', book: 'kal', line: under ? -108 : 104, bookOdds: prices });
+			const before = JSON.stringify(row);
+			assert.deepEqual(plain(context.highestOver(prices, [], 0, '', under, row)),
+				{ book: 'fd', value: under ? -110 : 100, raw: under ? '-110' : '+100' }, page);
+			assert.deepEqual(plain(context.highestOver(prices, [], 0, 'kal', under, row)),
+				{ book: 'kal', value: effective, raw: String(effective) }, page);
+			assert.equal(context.displayedBestBookQuote(row).line, effective);
+			assert.equal(context.watchlistQuote(row).odds, effective);
+			assert.equal(context.displayedBestBookQuote({ ...row, line: effective }).line, effective);
+			assert.equal(context.watchlistQuote({ ...row, line: effective }, page, false).odds, effective);
+			assert.equal(JSON.stringify(row), before);
+		}
 	}
 });
 
@@ -230,6 +282,33 @@ test('Explicit quote page and outlier book selection preserve their fee context'
 	assert.deepEqual(plain(context.displayedBestBookQuote(outlier, 'tds2')), { book: 'kal', line: -104 });
 	assert.equal(context.watchlistQuote(outlier, 'tds2').odds, -104);
 	assert.equal(context.displayedBestBookQuote({ book: 'kal', line: 567, prop: 'hr', bookOdds: { kal: '+567' } }, 'dingers').line, 547);
+	const homer = { book: 'kal', line: 567, prop: 'hr', sport: 'mlb', bookOdds: { kal: '+567' },
+		links: { kal: 'https://kalshi.com/markets/kxmlbhr/kxmlbhr-26oct17' } };
+	const tracker = load('tracker');
+	for (const page of ['dingers', 'dingers2']) {
+		assert.equal(tracker.displayedBestBookQuote(homer, page).line, 547);
+		assert.equal(tracker.watchlistQuote(homer, page).odds, 547);
+	}
+	assert.equal(tracker.displayedBestBookQuote(homer).line, Number(tracker.addKalshiFee('+567')));
+	assert.notEqual(tracker.watchlistQuote(homer).odds, 547, 'Tracker defaults to the full fee without an explicit homer quote page');
+});
+
+test('NBA compact and stacked highlights use full fees while displaying raw market prices', () => {
+	for (const page of ['nba', 'pts', 'threes']) {
+		const context = loadOddsFormatter('american', page);
+		for (const stackedOdds of [false, true]) {
+			for (const under of [false, true]) {
+				const options = { prop: page === 'threes' ? '3ptm' : 'pts', sport: undefined,
+					odds: under ? '-567/+456' : '+456/-567', under, stackedOdds };
+				assert.equal(greenPrices(formatOdds(context, { ...options, fairVal: 440 })), 0,
+					`${page}: raw +456 becomes +425, below fair +440`);
+				const winning = formatOdds(context, { ...options, fairVal: 400 });
+				assert.equal(greenPrices(winning), 1, `${page}: only the selected side is highlighted`);
+				assert.match(winning, /\+456/);
+				assert.doesNotMatch(winning, /425/);
+			}
+		}
+	}
 });
 
 test('Compact and stacked EV highlights compare each selected Kalshi side after fees', () => {

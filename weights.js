@@ -118,7 +118,7 @@ function presetModeDescription() {
 	let description = '';
 	if (DEV_PRICE_SOURCE === 'opening') {
 		if (['idle', 'loading'].includes(source.status)) description = 'Loading opening presets…';
-		else if (source.status === 'error') description = 'Opening presets could not load. Retry or select Closing.';
+		else if (source.status === 'error') description = 'Opening presets could not load. Retry or select Close.';
 		else if (source.status === 'unavailable') description = 'No captured opening presets are available for this sport yet.';
 		else if (source.window) description = `Opening history: ${source.window.start}–${source.window.end}. All-time covers this captured history only.`;
 		else description = 'Opening presets use captured opening history only.';
@@ -183,7 +183,7 @@ function setPresetMode(kind, value) {
 function appendPresetModeControls(container, prefix) {
 	const controls = document.createElement('div');
 	controls.className = 'dev-preset-modes';
-	for (const [kind, label, choices] of [['prices', 'Prices', [['closing', 'Closing'], ['opening', 'Opening']]],
+	for (const [kind, label, choices] of [['prices', 'Prices', [['closing', 'Close'], ['opening', 'Open']]],
 		['staking', 'Staking', [['flat', 'Flat 1u'], ['quarter-kelly', '¼ Kelly']]]]) {
 		const wrapper = document.createElement('label');
 		wrapper.htmlFor = `${prefix}-${kind}`;

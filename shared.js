@@ -4903,24 +4903,13 @@ function round1(n) { return Math.round(n * 10) / 10; }
 // pre-computed "kal_fee" field stored anywhere, so nothing needs to guard against it showing
 // up as a phantom 20th book in a generic bookOdds iteration).
 //
-// Kalshi's series API (verified 2026-09-28) gives NFL props (KXNFLTD, KXNFLREC,
-// passing/rushing/receiving yards, attempts, etc.) a fee_multiplier of 1, while
-// KXMLBHR uses 0.5. The taker formula is multiplier * 0.07 * C * P * (1-P):
+// The taker formula is multiplier * 0.07 * C * P * (1-P):
 // https://kalshi.com/docs/kalshi-fee-schedule.pdf
-// NFL and NHL markets use the full rate. Keep the existing reduced rate elsewhere;
-// row context also identifies football and hockey props outside their dedicated pages.
-const KALSHI_FEE_RATE = 0.035;
+// Use the full rate by default, with the reduced homer rate only on Dingers pages.
+const KALSHI_FEE_RATE = 0.07;
 
 function kalshiFeeRate(data = {}, page = PAGE) {
-	const link = String(data.links?.kal || "").toLowerCase();
-	if (/\/kx(?:nfl|nhl)[a-z0-9]*(?:[/-]|$)/.test(link)) return 0.07;
-	if (/\/kxmlbhr(?:[/-]|$)/.test(link)) return KALSHI_FEE_RATE;
-	const sport = String(data.sport || (typeof SPORT !== "undefined" ? SPORT : "") || "").toLowerCase();
-	const prop = String(data.prop || "").toLowerCase();
-	return ["nfl", "nhl"].includes(sport)
-		|| ["nfl", "tds", "tds2", "ftd", "nhl", "atgs", "atgs2", "fgs"].includes(page)
-		|| ["attd", "ftd", "atgs", "fgs", "lgs"].includes(prop)
-		? 0.07 : KALSHI_FEE_RATE;
+	return ["dingers", "dingers2"].includes(page) ? 0.035 : KALSHI_FEE_RATE;
 }
 
 function kalshiCentsFromFeeFreeAmerican(odds) {

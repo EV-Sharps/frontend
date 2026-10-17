@@ -1116,7 +1116,7 @@ html.odds-app #app > main { min-height: 0; }
 	overflow: hidden;
 	clip-path: inset(50%);
 }
-#dev-picker-row .dev-preset-control select { width: 100%; min-width: 76px; }
+#dev-picker-row .dev-preset-control select { width: 100%; min-width: 64px; }
 .dev-preset-note {
 	flex: 0 0 100%;
 	box-sizing: border-box;
@@ -1151,7 +1151,7 @@ html.odds-app #app > main { min-height: 0; }
 	#dev-picker-row .dev-picker-col { column-gap: 3px; }
 	#dev-picker-row .dev-picker-actions { gap: 2px; }
 	#dev-picker-row .record-summary-btn { padding-inline: 2px; font-size: 9px; }
-	#dev-picker-row .dev-preset-control select { width: 64px; min-width: 64px; padding-inline: 3px; font-size: 9px; }
+	#dev-picker-row .dev-preset-control select { width: 56px; min-width: 56px; padding-inline: 3px; font-size: 9px; }
 	#dev-picker-row .dev-chip-wrap { min-width: 124px; max-width: 124px; }
 	#dev-picker-row .dev-chip { padding: 3px 5px; gap: 0; }
 	#dev-picker-row .dev-subinfo { flex-wrap: wrap; gap: 0 4px; }

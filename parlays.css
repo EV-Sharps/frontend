@@ -70,6 +70,13 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
 .parlays-page .catalog-pick button[aria-pressed="true"] { background: #385b46; border-color: #7bcc9e; color: #c1f2d2; }
 .catalog-price strong, .catalog-price small { display: block; line-height: 1.55; font-weight: 500; }
 .catalog-price small { color: #9eacb6; font-size: 10px; }
+.catalog-table .catalog-ev { min-width: 118px; }
+.catalog-ev strong, .catalog-ev small { display: block; line-height: 1.6; }
+.catalog-ev .ev-offer { color: #c9d6dd; white-space: nowrap; font-size: 10px; }
+.catalog-ev .ev-reference { color: #9eacb6; font-size: 9px; }
+.catalog-ev .parlay-book-logo { width: 13px; height: 13px; }
+.catalog-ev.positive strong { color: #98e8b7; }
+.catalog-ev.negative strong { color: #f2a3a3; }
 .catalog-price.best-price strong { color: #6ee6a0; font-weight: 700; }
 .price-unavailable { color: #82929f; font-size: 10px; }
 .catalog-table .catalog-empty { padding: 24px; text-align: left; color: #aab8c2; }
@@ -179,4 +186,10 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: 1380px; h
   .parlay-book-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .parlay-book-card { padding: 12px 10px; }
   .parlay-book-odds { font-size: 20px; }
+}
+@media (max-width: 360px) {
+  .catalog-table.ev-picker { --player-width: 96px; }
+  .ev-picker .catalog-ev { min-width: 100px; }
+  .ev-picker .catalog-player small span { display: block; margin-left: 0; white-space: normal; }
+  .ev-picker .ev-offer { white-space: normal; }
 }

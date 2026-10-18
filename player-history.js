@@ -4,7 +4,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
 	const display = value => Number.isInteger(value) ? String(value) : Number(value.toFixed(1)).toString();
-	let dialog, selected, view, range = '20', opener;
+	let dialog, selected, view, range = '20', opener, priceHistory;
 
 	function dueOf(row) {
 		// Goal-gap history describes any goal, not a 2+ or first-goal result.
@@ -20,7 +20,15 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		chart?.remove(); // Disconnect pending lazy renders before changing the view/player.
 	}
 
+	function destroyPriceHistory() {
+		priceHistory?.destroy();
+		priceHistory = null;
+		dialog?.querySelector('.player-history-price-host')?.replaceChildren();
+	}
+
 	function close() {
+		purgeChart();
+		destroyPriceHistory();
 		if (dialog?.open) dialog.close();
 	}
 
@@ -38,6 +46,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 			<div class="nhl-history-toolbar">
 				<div class="nhl-history-tabs" role="tablist" aria-label="Player history">
 					${Object.entries(views).map(([key, label]) => `<button type="button" id="${prefix}-tab-${key}" role="tab" aria-controls="${prefix}-panel" data-history-view="${key}">${label}</button>`).join('')}
+					<button type="button" id="${prefix}-tab-pricehistory" role="tab" aria-controls="${prefix}-panel" data-history-view="pricehistory" hidden>Price history</button>
 				</div>
 				<div class="nhl-history-ranges" role="group" aria-label="Games shown">
 					<button type="button" data-history-range="10">L10</button>
@@ -46,11 +55,14 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 				</div>
 			</div>
 			<section id="${prefix}-panel" class="player-history-panel" role="tabpanel" tabindex="0">
-				<div class="nhl-history-stats"></div>
-				<p class="nhl-history-note"></p>
-				<div class="nhl-history-plot-scroll"></div>
-				<p class="nhl-history-empty" hidden></p>
-				<div class="nhl-history-legend"></div>
+				<div class="player-history-game-content">
+					<div class="nhl-history-stats"></div>
+					<p class="nhl-history-note"></p>
+					<div class="nhl-history-plot-scroll"></div>
+					<p class="nhl-history-empty" hidden></p>
+					<div class="nhl-history-legend"></div>
+				</div>
+				<div id="${prefix}-price-history" class="player-history-price-host" hidden></div>
 			</section>
 			<footer class="nhl-history-footer">
 				<button type="button" data-history-action="prices">Compare prices</button>
@@ -66,14 +78,23 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		dialog.addEventListener('close', () => {
 			if (dialog.open) return;
 			purgeChart();
+			destroyPriceHistory();
 			if (opener?.isConnected) opener.focus({ preventScroll: true });
 		});
+		dialog.addEventListener('cancel', () => {
+			purgeChart();
+			destroyPriceHistory();
+		});
 		dialog.querySelectorAll('[data-history-view]').forEach(button => {
-			button.onclick = () => { view = button.dataset.historyView; render(); };
+			button.onclick = () => {
+				if (button.hidden || button.disabled) return;
+				view = button.dataset.historyView;
+				render();
+			};
 			button.onkeydown = event => {
 				if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
 				event.preventDefault();
-				const tabs = [...dialog.querySelectorAll('[data-history-view]')].filter(tab => !tab.disabled);
+				const tabs = [...dialog.querySelectorAll('[data-history-view]')].filter(tab => !tab.disabled && !tab.hidden);
 				let index = tabs.indexOf(button);
 				index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
 				tabs[index].focus();
@@ -237,6 +258,14 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 
 	function render() {
 		purgeChart();
+		destroyPriceHistory();
+		const hasPriceHistory = !!root.PriceHistory?.hasData(selected);
+		dialog.querySelector('[data-history-view="pricehistory"]').hidden = !hasPriceHistory;
+		if (view === 'pricehistory' && !hasPriceHistory) view = dueOf(selected) ? 'due' : 'logs';
+		const showPrices = view === 'pricehistory';
+		dialog.querySelector('.player-history-game-content').hidden = showPrices;
+		const priceHost = dialog.querySelector('.player-history-price-host');
+		priceHost.hidden = !showPrices;
 		dialog.querySelector('.nhl-history-empty').hidden = true;
 		dialog.querySelector('.nhl-history-legend').replaceChildren();
 		dialog.querySelectorAll('[data-history-view]').forEach(button => {
@@ -244,9 +273,10 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 			button.tabIndex = button.dataset.historyView === view ? 0 : -1;
 		});
 		dialog.querySelector(`#${prefix}-panel`).setAttribute('aria-labelledby', `${prefix}-tab-${view}`);
-		dialog.querySelector('.nhl-history-ranges').hidden = view === 'due';
+		dialog.querySelector('.nhl-history-ranges').hidden = view === 'due' || showPrices;
 		dialog.querySelectorAll('[data-history-range]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.historyRange === range)));
-		if (view === 'due') renderDue(dueOf(selected));
+		if (showPrices) priceHistory = root.PriceHistory.mount(priceHost, selected);
+		else if (view === 'due') renderDue(dueOf(selected));
 		else renderLogs();
 	}
 

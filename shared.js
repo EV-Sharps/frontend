@@ -1439,7 +1439,8 @@ const evOddsFormatter = function(cell, params = {}) {
 			const color = !raw || raw === '-' ? ' stacked-odds-missing' : highlighted && idx === side ? ' odds-positive' : '';
 			const amount = inlineLiquidity && raw ? numFrom(liq?.[side]) : null;
 			const liquidity = amount === null ? '' : ` <span class="stacked-odds-liquidity">($${amount.toLocaleString('en-US')})</span>`;
-			return `<span class="stacked-odds-line${color}" title="${side ? 'Under' : 'Over'}" aria-label="${side ? 'Under' : 'Over'} ${value}">${value}${liquidity}</span>`;
+			const sideLabel = liveNflMainMarket(data)?.sideMarket ? (side ? 'Home' : 'Away') : (side ? 'Under' : 'Over');
+			return `<span class="stacked-odds-line${color}" title="${sideLabel}" aria-label="${sideLabel} ${value}">${value}${liquidity}</span>`;
 		};
 		res = `<span class="stacked-odds-stack">${price(oRaw, 0)}${price(uRaw, 1)}</span>`;
 		if (blurOdds) return `<div class="blurred">${res}</div>`;
@@ -2565,6 +2566,33 @@ function convertProp(prop) {
 	return prop.toUpperCase();
 }
 
+// Live NFL pairs keep the away spread as the canonical handicap for both rows.
+function liveNflMainMarket(data) {
+	const sport = data.sport || (typeof SPORT === 'undefined' ? '' : SPORT);
+	if (typeof PAGE === 'undefined' || PAGE !== 'live' || sport !== 'nfl'
+		|| String(data.player || '').trim()
+		|| !['ml', 'spread', 'total', 'away_total', 'home_total'].includes(data.prop)) return null;
+	const game = String(data.game || data.gameId || '');
+	const [away, home] = game.split(' @ ');
+	const sideMarket = data.prop === 'ml' || data.prop === 'spread';
+	const team = sideMarket ? (data.under ? home : away)
+		: data.prop === 'away_total' ? away : data.prop === 'home_total' ? home : '';
+	let line = `${data.under ? 'u' : 'o'}${data.handicap}`;
+	if (data.prop === 'ml') line = 'ML';
+	if (data.prop === 'spread') {
+		const number = Number(data.handicap) * (data.under ? -1 : 1);
+		line = Number.isFinite(number) ? (number > 0 ? `+${number}` : String(number)) : '';
+	}
+	return { player: String(team || game).toUpperCase(), team: team || '', line, sideMarket };
+}
+
+function liveNflMainIdentity(data) {
+	if (!liveNflMainMarket(data)) return '';
+	return 'live-nfl-' + encodeURIComponent(JSON.stringify([
+		data.game || '', data.gameId || '', data.prop, String(data.handicap ?? ''), !!data.under
+	]));
+}
+
 const propFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	if (data.prop == "separator") return "";
@@ -2855,6 +2883,9 @@ const basePlayerFormatter = function(cell, params, rendered) {
 	} else if (["movement"].includes(PAGE)) {
 		isPlayerProp = false;
 	}
+
+	const liveMain = liveNflMainMarket(data);
+	if (liveMain) player = liveMain.player;
 
 	let prop = "";
 	if (!["feed", "dingers", "dingers2", "tds2", "recap", "strikeouts", "backfields", "tracker", "top_pitches"].includes(PAGE) && !params.noProp) {

@@ -1,0 +1,50 @@
+.price-history {
+	box-sizing: border-box; width: 100%; min-width: 0; padding: 14px;
+	border: 1px solid #30465c; border-radius: 10px; background: linear-gradient(150deg, #162536, #101c29 75%);
+	color: #e6eff8; text-align: left; font-family: Inter, system-ui, sans-serif;
+}
+.price-history *, .price-history *::before, .price-history *::after { box-sizing: border-box; }
+.price-history [hidden], .player-history-price-host[hidden], .player-history-game-content[hidden], .nhl-history-tabs button[hidden] { display: none !important; }
+.price-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.price-history-heading h3 { margin: 0 0 5px; font-size: 15px; font-weight: 650; line-height: 1.3; color: #edf5ff; }
+.price-history-context { margin: 0; color: #9fb5ca; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.price-history button { font: inherit; cursor: pointer; }
+.price-history button:focus-visible, .price-history input:focus-visible, .price-history-books:focus-visible { outline: 2px solid #83beff; outline-offset: 2px; }
+.price-history-scales { display: flex; flex-shrink: 0; gap: 2px; padding: 3px; border: 1px solid #304359; border-radius: 6px; background: #0b1521; }
+.price-history-scales button { padding: 5px 8px; border: 0; border-radius: 4px; color: #9fb5ca; background: transparent; font-size: 11px; white-space: nowrap; }
+.price-history-scales button[aria-pressed="true"] { color: #eaf4ff; background: #284361; }
+.price-history-books { display: flex; gap: 6px; width: 100%; padding: 2px 2px 9px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: #38546d transparent; overscroll-behavior-x: contain; }
+.price-history-books button { display: grid; grid-template-columns: 18px auto; grid-template-rows: auto auto; align-items: center; gap: 3px 7px; flex: 0 0 auto; min-width: 100px; padding: 7px 10px; border: 1px solid #2d4054; border-bottom: 2px solid var(--price-book-color); border-radius: 6px; color: #acc0d3; background: #142231; font-size: 10px; text-align: left; }
+.price-history-books button:hover { background: #21354a; }
+.price-history-books button[aria-pressed="true"] { border-color: var(--price-book-color); color: #eaf4ff; background: #243d55; }
+.price-history-books img { object-fit: contain; grid-row: 1 / 3; }
+.price-history-books strong { grid-column: 2; font-size: 13px; font-variant-numeric: tabular-nums; }
+.price-history-focus-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 3px 0 10px; }
+.price-history-focus { margin: 0; color: #c3d3e3; font-size: 11px; line-height: 1.5; }
+.price-history-focus::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--price-book-color); }
+.price-history-compare { display: flex; align-items: center; gap: 5px; color: #a9bfd4; font-size: 11px; white-space: nowrap; cursor: pointer; }
+.price-history-compare input { margin: 0; accent-color: #80baff; width: 14px; height: 14px; }
+.price-history-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.price-history-metrics > div { min-width: 0; padding: 10px; border: 1px solid #2c4055; border-radius: 6px; background: #0e1a27a6; }
+.price-history-metrics span { display: block; margin-bottom: 5px; font-size: 10px; color: #91abc4; }
+.price-history-metrics strong { display: block; color: #edf5ff; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.price-history-metrics [data-price-move] { color: #a6c8ff; }
+.price-history-metrics small { display: block; margin-top: 5px; font-size: 10px; line-height: 1.4; color: #93acc3; }
+.price-history-plot { min-width: 0; width: 100%; margin-top: 6px; }
+.price-history-chart { width: 100%; min-height: 245px; }
+.price-history-note, .price-history-footnote { margin: 5px 0 0; font-size: 10px; line-height: 1.5; color: #91a7bd; }
+.price-history-note { color: #c3d2e0; }
+.price-history-empty { padding: 32px 12px; font-size: 13px; text-align: center; color: #afc1d2; }
+.player-history-price-host { min-width: 0; margin-bottom: 14px; }
+.nhl-history-tabs { flex-wrap: wrap; }
+@media (max-width: 600px) {
+	.price-history { padding: 10px; border-radius: 7px; }
+	.price-history-heading { gap: 8px; }
+	.price-history-scales button { padding: 5px 6px; font-size: 10px; }
+	.price-history-metrics > div { padding: 9px 7px; }
+	.price-history-metrics strong { font-size: 16px; }
+	.price-history-metrics span { font-size: 9px; }
+	.price-history-metrics small { font-size: 9px; }
+	.price-history-focus-row { flex-wrap: wrap; }
+	.nhl-history-tabs button { min-width: 0; white-space: normal; }
+}

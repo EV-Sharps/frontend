@@ -874,10 +874,10 @@
 				<div id="right-body" class="body">
 					<div style="display:flex;align-items:center;gap:6px;">
 						<div class="select-wrapper">
-						<select id="btwn-select">
+						<select id="btwn-select" aria-label="Player details view">
 							<option value="pa">PA Btwn</option>
 							<option value="bbe">BBE Btwn</option>
-							<option value="odds">Odds</option>
+							<option value="odds" hidden disabled>Price history</option>
 							<option value="feed">Feed</option>
 							<option value="mix">Mix</option>
 						</select>
@@ -906,6 +906,7 @@
 					<div id="feed-arsenal-content"></div>
 					</div>
 					<div id="chart"></div>
+					<div id="price-history-panel" hidden style="width:100%;min-width:0;"></div>
 					<div id="mix-panel" style="display:none;"></div>
 				</div>
 			</div>
@@ -925,6 +926,8 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
+	<link href="price-history.css" rel="stylesheet">
+	<script src="price-history.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
@@ -943,6 +946,8 @@
 
 		document.querySelector("#btwn-select").value = "pa";
 		document.querySelector("#btwn-select").addEventListener("change", function(event) {
+			resetSidebarView();
+			updatePriceHistoryOption(TABLE.getSelectedData()[0]);
 			document.getElementById("feed-toggle").style.display = event.target.value == "feed" ? "flex" : "none";
 			document.getElementById("feed-arsenal").style.display = event.target.value == "feed" ? "" : "none";
 			document.getElementById("chart").classList.toggle("feed-height", event.target.value == "feed");
@@ -990,69 +995,39 @@
 			if (chip) { feedToggleArsenalPitch(chip.dataset.pitch); return; }
 		});
 
+		let priceHistoryView = null;
+
+		function resetSidebarView() {
+			priceHistoryView?.destroy();
+			priceHistoryView = null;
+			const host = document.getElementById('price-history-panel');
+			host.replaceChildren();
+			host.hidden = true;
+			const chart = document.getElementById('chart');
+			if (window.Plotly && chart._fullLayout) Plotly.purge(chart);
+			// A fresh node cancels any Plotly load still targeting the previous view.
+			const fresh = document.createElement('div');
+			fresh.id = 'chart';
+			chart.replaceWith(fresh);
+		}
+
+		function updatePriceHistoryOption(data) {
+			const select = document.getElementById('btwn-select');
+			const option = select.querySelector('[value="odds"]');
+			const available = !!window.PriceHistory?.hasData(data);
+			option.hidden = option.disabled = !available;
+			if (!available && select.value === 'odds') select.value = 'pa';
+			return available;
+		}
+
 		function plotOddsChart() {
+			resetSidebarView();
 			const data = TABLE.getSelectedData()[0];
-			if (!data) return;
-			const chart = data.oddsChart;
-			const el = document.getElementById('chart');
-
-			if (!chart || chart.length === 0) {
-				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
-				return;
-			}
-
-			// Collect all books (exclude ts and *_under keys)
-			const bookSet = new Set();
-			chart.forEach(entry => {
-				Object.keys(entry).forEach(k => {
-					if (k !== 'ts' && !k.endsWith('_under')) bookSet.add(k);
-				});
-			});
-
-			const now = new Date();
-			const BOOK_COLORS = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
-			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
-			const books = [...bookSet];
-			const tooMany = books.length > BOOK_COLORS.length;
-
-			const traces = books.map((book, i) => {
-				// gather points where this book has data
-				const pts = chart
-					.filter(e => e[book] != null)
-					.map(e => ({ x: new Date(e.ts), y: e[book] }));
-				if (pts.length === 0) return null;
-				// extend to now with last known value
-				const xs = [...pts.map(p => p.x), now];
-				const ys = [...pts.map(p => p.y), pts.at(-1).y];
-				const color = BOOK_COLORS[i % BOOK_COLORS.length];
-				const dash = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
-				const labels = new Array(xs.length).fill('');
-				//labels[pts.length - 1] = book.toUpperCase();
-				return {
-					x: xs, y: ys,
-					name: book.toUpperCase(),
-					mode: 'lines+markers+text',
-					text: labels,
-					textposition: 'top center',
-					textfont: { size: 10, color },
-					line: { color, width: 2, dash },
-					marker: { size: 5, color },
-					hovertemplate: `%{x|%I:%M %p}<br>${book.toUpperCase()}: %{y}<extra></extra>`
-				};
-			}).filter(Boolean);
-
-			const layout = {
-				title: { text: `${title(data.player)}: HR Over Odds`, font: { size: 13 } },
-				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
-				font: { color: '#e8e6e3' },
-				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
-				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
-				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
-				margin: { l: 45, r: 10, t: 50, b: 40 },
-				hovermode: 'x unified'
-			};
-
-			return renderLazyChart('chart', traces, layout, { displayModeBar: false, responsive: true });
+			if (!updatePriceHistoryOption(data)) return;
+			const host = document.getElementById('price-history-panel');
+			document.getElementById('chart').style.display = 'none';
+			host.hidden = false;
+			priceHistoryView = PriceHistory.mount(host, data);
 		}
 
 		document.querySelector("#sort-select").addEventListener("change", function(event) {
@@ -1518,6 +1493,9 @@
 		}
 
 		function showMixPanel(rowData) {
+			if (document.getElementById("btwn-select").value !== "mix" ||
+				TABLE.getSelectedData()[0] !== rowData ||
+				document.getElementById("right-body").style.display === "none") return;
 			const teamData = PITCHER_MIX_CACHE?.[rowData.team];
 			const batter = teamData?.battersByName?.[rowData.player];
 			const pitcher = teamData?.pitcher;
@@ -1607,6 +1585,7 @@
 		// ── End Pitcher Mix ──────────────────────────────────────────────────
 
 		function closeRightBody() {
+			resetSidebarView();
 			const right = document.querySelector("#right-body");
 			const left = document.querySelector("#table-container");
 			const table = document.querySelector("#table");
@@ -1626,6 +1605,9 @@
 
 		function rowClick(row) {
 			const data = row.getData();
+			if (data.blurred) return;
+			resetSidebarView();
+			updatePriceHistoryOption(data);
 			const right = document.querySelector("#right-body");
 			const left = document.querySelector("#table-container");
 			const table = document.querySelector("#table");
@@ -1656,7 +1638,9 @@
 					document.getElementById("feed-arsenal").style.display = "none";
 					document.getElementById("chart").classList.remove("feed-height");
 					requestAnimationFrame(() => {
-						if (TABLE.getSelectedRows()[0] === row) plotHRGap();
+						if (TABLE.getSelectedRows()[0] === row &&
+							document.getElementById("btwn-select").value === "pa" &&
+							right.style.display !== "none") plotHRGap();
 					});
 				}
 			}
@@ -1685,10 +1669,13 @@
 			}
 			match.select();
 			SELECTED_ROW_KEY = rowKeyFor(match.getData());
+			resetSidebarView();
+			updatePriceHistoryOption(match.getData());
 			const curSel = document.querySelector("#btwn-select").value;
 			if (curSel === "mix") {
 				fetchAndShowMix(match.getData());
 			} else if (curSel === "feed") {
+				document.getElementById("chart").classList.add("feed-height");
 				renderFeed(false);
 			} else if (curSel === "odds") {
 				plotOddsChart();

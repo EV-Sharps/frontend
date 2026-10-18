@@ -9,7 +9,6 @@
 	<script type="text/javascript" src="peity-vanilla.min.js"></script>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
-	<script src="plotly-3.0.0.min.js" charset="utf-8"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
@@ -396,8 +395,8 @@
 				<div id="right-body" class="body">
 					<div style="display:flex;align-items:center;gap:6px;">
 						<div class="select-wrapper">
-							<select id="btwn-select">
-								<option value="odds">Odds</option>
+							<select id="btwn-select" aria-label="Player details view">
+								<option value="odds" hidden disabled>Price history</option>
 							</select>
 							<svg class="select-arrow" viewBox="0 0 20 20">
 								<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -406,6 +405,7 @@
 						<button onclick="TABLE.deselectRow(); closeRightBody();" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;cursor:pointer;font-size:1rem;line-height:1;padding:4px 8px;" title="Close">&times;</button>
 					</div>
 					<div id="chart"></div>
+					<div id="price-history-panel" hidden style="width:100%;min-width:0;"></div>
 				</div>
 			</div>
 			</div><!-- /bets-section -->
@@ -463,6 +463,9 @@
 		</div>
 	</div>
 
+	<script src="page-performance.js"></script>
+	<link href="price-history.css" rel="stylesheet">
+	<script src="price-history.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script type="text/javascript" src="auth.js"></script>
 	<script type="text/javascript">
@@ -1053,7 +1056,7 @@
 			});
 
 			TABLE.on("rowClick", function(e, row) {
-				if (e.target.closest('.wl-star')) return;
+				if (e.target.closest('a, button, input, select, .wl-star')) return;
 				rowClick(row);
 			});
 
@@ -1626,6 +1629,7 @@
 
 		// ── Right panel (odds chart) ──────────────────────────────────────
 		function closeRightBody() {
+			resetSidebarView();
 			const right = document.querySelector("#right-body");
 			const left  = document.querySelector("#table-container");
 			const table = document.querySelector("#table");
@@ -1637,59 +1641,60 @@
 		}
 
 		function rowClick(row) {
-			
+			const data = row.getData();
+			if (!updatePriceHistoryOption(data)) {
+				TABLE.deselectRow();
+				closeRightBody();
+				return;
+			}
+			const selected = TABLE.getSelectedRows()[0];
+			TABLE.deselectRow();
+			if (selected === row) {
+				closeRightBody();
+				return;
+			}
+			row.select();
+			const right = document.getElementById('right-body');
+			right.style.display = 'flex';
+			right.classList.toggle('mobile-open', MOBILE);
+			document.getElementById('table').style.display = MOBILE ? 'none' : '';
+			document.getElementById('btwn-select').value = 'odds';
+			plotOddsChart();
+		}
+
+		let priceHistoryView = null;
+
+		function resetSidebarView() {
+			priceHistoryView?.destroy();
+			priceHistoryView = null;
+			const host = document.getElementById('price-history-panel');
+			host.replaceChildren();
+			host.hidden = true;
+			const chart = document.getElementById('chart');
+			if (window.Plotly && chart._fullLayout) Plotly.purge(chart);
+			// A fresh node cancels any Plotly load still targeting the previous view.
+			const fresh = document.createElement('div');
+			fresh.id = 'chart';
+			chart.replaceWith(fresh);
+		}
+
+		function updatePriceHistoryOption(data) {
+			const select = document.getElementById('btwn-select');
+			const option = select.querySelector('[value="odds"]');
+			const available = !!window.PriceHistory?.hasData(data);
+			option.hidden = option.disabled = !available;
+			if (!available && select.value === 'odds') select.value = 'pa';
+			return available;
 		}
 
 		function plotOddsChart() {
+			resetSidebarView();
 			const data = TABLE.getSelectedData()[0];
-			if (!data) return;
-			const chart = data.oddsChart;
-			const el = document.getElementById('chart');
-
-			if (!chart || chart.length === 0) {
-				el.innerHTML = '<div style="color:#888;padding:1rem;">No odds data available.</div>';
-				return;
-			}
-
-			const bookSet = new Set();
-			chart.forEach(entry => {
-				Object.keys(entry).forEach(k => { if (k !== 'ts' && !k.endsWith('_under')) bookSet.add(k); });
-			});
-
-			const now = new Date();
-			const BOOK_COLORS  = ['#3b82f6','#1db954','#f97316','#f43f5e','#a78bfa','#ffcc00','#34caff','#ff9500','#5eff72','#c388ff'];
-			const DASH_PATTERNS = ['solid','dash','dot','dashdot'];
-			const books   = [...bookSet];
-			const tooMany = books.length > BOOK_COLORS.length;
-
-			const traces = books.map((book, i) => {
-				const pts = chart.filter(e => e[book] != null).map(e => ({ x: new Date(e.ts), y: e[book] }));
-				if (!pts.length) return null;
-				const xs    = [...pts.map(p => p.x), now];
-				const ys    = [...pts.map(p => p.y), pts.at(-1).y];
-				const color = BOOK_COLORS[i % BOOK_COLORS.length];
-				const dash  = tooMany ? DASH_PATTERNS[Math.floor(i / BOOK_COLORS.length) % DASH_PATTERNS.length] : 'solid';
-				return {
-					x: xs, y: ys, name: book.toUpperCase(), mode: 'lines+markers',
-					line: { color, width: 2, dash }, marker: { size: 5, color },
-					hovertemplate: `%{x|%I:%M %p}<br>${book.toUpperCase()}: %{y}<extra></extra>`
-				};
-			}).filter(Boolean);
-
-			const playerName = data.player ? data.player.split(' ').map(w => w[0].toUpperCase()+w.slice(1)).join(' ') : '';
-			const layout = {
-				title: { text: `${playerName}: HR Over Odds`, font: { size: 13 } },
-				plot_bgcolor: '#181a1b', paper_bgcolor: '#181a1b',
-				font: { color: '#e8e6e3' },
-				legend: { orientation: 'h', y: 1.08, bgcolor: 'rgba(0,0,0,0)' },
-				xaxis: { type: 'date', tickformat: '%I:%M %p', showgrid: false },
-				yaxis: { showgrid: true, gridcolor: 'rgba(255,255,255,0.06)' },
-				margin: { l: 45, r: 10, t: 50, b: 40 },
-				hovermode: 'x unified'
-			};
-
-			Plotly.newPlot('chart', traces, layout, { displayModeBar: false, responsive: true });
-			if (MOBILE) requestAnimationFrame(() => Plotly.Plots.resize(document.getElementById('chart')));
+			if (!updatePriceHistoryOption(data)) return;
+			const host = document.getElementById('price-history-panel');
+			document.getElementById('chart').style.display = 'none';
+			host.hidden = false;
+			priceHistoryView = PriceHistory.mount(host, data);
 		}
 	</script>
 	<script>handleSession();</script>

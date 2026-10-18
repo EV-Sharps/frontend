@@ -38,6 +38,8 @@ const CARDS_PER_LOAD = 20;
 let IS_LOADING_CARDS = false;
 
 function cardStateKey(rowData) {
+  const liveMainId = liveNflMainIdentity(rowData);
+  if (liveMainId) return `cardOpen:${liveMainId}`;
   const player = (rowData.player || "").trim();
   const prop   = (rowData.prop || "").trim();
   const line   = String(rowData.handicap ?? "");
@@ -75,7 +77,9 @@ function applyFilters() {
 	const handicap = handicapSel ? handicapSel.value : "";
 
 	const filtered = MASTER_DATA.filter(row => {
-		if (row.player && !row.player.includes(searchTerm)) return false;
+		const liveMain = liveNflMainMarket(row);
+		const searchName = liveMain ? `${liveMain.player} ${row.game || ''}`.toLowerCase() : row.player;
+		if (searchName && !searchName.includes(searchTerm)) return false;
 		if (handicap !== "" && String(row.handicap) !== String(handicap)) return false;
 		return true;
 	});
@@ -119,7 +123,7 @@ function loadMoreCards() {
 	
 	for (let i = CURRENT_CARD_INDEX; i < endIndex; i++) {
 		const rowData = data[i];
-		const uniqueId = `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`;
+		const uniqueId = liveNflMainIdentity(rowData) || `${rowData.player}-${rowData.prop}-${rowData.line}-${rowData.ouIdx}`;
 		
 		// Use the existing function to create the card
 		const newCard = createNewCard(rowData, uniqueId);
@@ -480,7 +484,7 @@ function showCardModal(rowData) {
 	// Remove previous card if any
 	inner.querySelectorAll('.data-card').forEach(el => el.remove());
 
-	const uniqueId = `modal-${rowData.player}-${rowData.prop}-${rowData.handicap}-${rowData.under ? 1 : 0}`;
+	const uniqueId = `modal-${liveNflMainIdentity(rowData) || `${rowData.player}-${rowData.prop}-${rowData.handicap}-${rowData.under ? 1 : 0}`}`;
 	const card = createNewCard(rowData, uniqueId);
 	// Auto-expand the collapsed body so trends/ranks show immediately
 	const body = card.querySelector('.card-body-collapsed');
@@ -728,7 +732,16 @@ function updateExistingCard(card, rowData) {
 		player = PlayerLines.mainMarketLabel(rowData.prop, rowData);
 		if (/(?:^|_)(?:ml|spread)$/.test(rowData.prop)) player = `${String(team || '').toUpperCase()} ${player}`;
 	}
-	const lineDisplay = PAGE === 'main' && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
+	const liveMain = liveNflMainMarket(rowData);
+	if (liveMain) {
+		player = liveMain.player;
+		if (liveMain.team) {
+			team = liveMain.team;
+			teamImg = getTeamImg(sport, team);
+		}
+	}
+	const lineDisplay = liveMain ? liveMain.line
+		: PAGE === 'main' && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
 		: PAGE === 'main' && /(?:^|_)spread$/.test(rowData.prop) ? addPlus(rowData.handicap)
 		: `${pre}${rowData.handicap}`;
 	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
@@ -836,7 +849,12 @@ function updateExistingCard(card, rowData) {
 			: `<div class="metric-pill" style="font-weight:600; font-size:0.85rem;"><img class="wind" src="logos/${_w.windLogo}" style="height:14px;vertical-align:middle;"> ${_w.wind} mph ${_w.temp}</div>`
 	) : "";
 	const oppRankValue = resolveOppRankValue(rowData);
-	collapsedBody.innerHTML = `
+	collapsedBody.innerHTML = liveMain ? `
+		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
+			<div style="font-weight:700;display:flex;justify-content:center;">${gameImg}</div>
+			<div style="text-align:center;">${String(rowData.game || rowData.gameId || '').toUpperCase()}</div>
+		</div>
+	` : `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
 
 			<!-- Matchup ranks -->
@@ -879,7 +897,10 @@ function updateExistingCard(card, rowData) {
 		//renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap);
 	}
 
-	const previousRow = PREVIOUS_DATA.find(d => `${d.player}-${d.prop}-${d.line}` === card.dataset.uniqueId);
+	const liveMainId = liveNflMainIdentity(rowData);
+	const previousRow = PREVIOUS_DATA.find(d => liveMainId
+		? liveNflMainIdentity(d) === liveMainId
+		: `${d.player}-${d.prop}-${d.line}` === card.dataset.uniqueId);
 	if (previousRow && previousRow.ev !== rowData.ev) {
 		card.style.transition = 'none';
 		card.style.backgroundColor = 'rgba(100, 181, 246, 0.3)';

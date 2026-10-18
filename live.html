@@ -532,6 +532,11 @@
 		PAGE = "live";
 		
 		parseURLParams();
+		if (SPORT === 'nfl') {
+			document.querySelector('label[for="ou-select"]').textContent = 'Side';
+			document.querySelector('#ou-select option[value="o"]').textContent = 'Over / Away';
+			document.querySelector('#ou-select option[value="u"]').textContent = 'Under / Home';
+		}
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -616,6 +621,7 @@
 						title: "Player",
 						field: "player",
 						headerFilter: "input",
+						headerFilterFunc: (query, value, row) => String(liveNflMainMarket(row)?.player ?? value ?? '').toLowerCase().includes(String(query).toLowerCase()),
 						formatter: playerFormatter,
 						width: MOBILE ? 100 : 140,
 						formatterParams:{ sport: SPORT, noProp: true, fullName: true },
@@ -629,6 +635,8 @@
 						formatter: function(cell) {
 							const data = cell.getRow().getData();
 							const prop = data.prop;
+							const liveMain = liveNflMainMarket(data);
+							if (liveMain) return liveMain.line;
 							if (["attd", "2+td", "3+td", "ftd", "ltd", "atgs", "fgs", "lgs"].includes(prop)) {
 								return "";
 							}

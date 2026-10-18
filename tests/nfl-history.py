@@ -141,7 +141,7 @@ try:
             page.wait_for_function("document.getElementById('nfl-history-dialog')?.open")
             popup = page.locator("#nfl-history-dialog")
             assert popup.locator('[data-history-view="due"]').count() == 0
-            assert popup.locator('[data-history-view]').all_text_contents() == ["Game logs", "Logs vs Opp", "Away", "Home"]
+            assert popup.locator('[data-history-view]:visible').all_text_contents() == ["Game logs", "Logs vs Opp", "Away", "Home"]
             assert popup.locator('[data-history-view="logs"]').get_attribute("aria-selected") == "true"
 
             if name == "nfl" and width == 1440:

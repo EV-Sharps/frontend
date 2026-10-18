@@ -270,7 +270,7 @@ try:
                 tabs = page.locator('.nhl-history-tabs').evaluate("""element => {
                     const box = element.getBoundingClientRect();
                     return {left:box.left, right:box.right, width:element.clientWidth, scroll:element.scrollWidth,
-                        buttons:[...element.querySelectorAll('button')].map(button => {
+                        buttons:[...element.querySelectorAll('button:not([hidden])')].map(button => {
                             const rect = button.getBoundingClientRect();
                             return {left:rect.left, right:rect.right, top:rect.top, bottom:rect.bottom};
                         })};

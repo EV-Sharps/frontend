@@ -480,7 +480,7 @@ class AtgsPickerTests(unittest.TestCase):
             with self.subTest(width=width):
                 self.page.set_viewport_size({'width': width, 'height': 844})
                 self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
-                boxes = self.page.locator('.catalog-toolbar input:not([type="checkbox"]), .catalog-toolbar select').evaluate_all(
+                boxes = self.page.locator('.catalog-toolbar input:not([type="checkbox"]):visible, .catalog-toolbar select:visible').evaluate_all(
                     'inputs => inputs.map(input => { const r = input.getBoundingClientRect(); '
                     'return {left: r.left, right: r.right, width: r.width}; })')
                 for box in boxes:

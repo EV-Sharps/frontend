@@ -5,6 +5,7 @@
     hr: { sport: 'mlb', name: 'homer', label: '1+ HR', under: 'no HR', unit: 'home run' },
     attd: { sport: 'nfl', name: 'ATTD', label: 'ATTD', under: 'no touchdown', unit: 'touchdown' },
     atgs: { sport: 'nhl', name: 'ATGS', label: '1+ Goal', under: 'no goal', unit: 'goal' },
+    nba: { sport: 'nba', name: 'NBA props', label: 'NBA props' },
   };
   const requestedMarket = new URLSearchParams(window.location.search).get('market');
   let market = Object.hasOwn(markets, requestedMarket) ? requestedMarket : 'hr';
@@ -13,6 +14,11 @@
   const $ = id => document.getElementById(id);
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const title = v => String(v).replace(/\b\w/g, c => c.toUpperCase());
+  const propNames = { pts: 'Points', reb: 'Rebounds', ast: 'Assists', '3ptm': 'Threes', '3pt': 'Threes',
+    'pts+reb+ast': 'Points + rebounds + assists', 'pts+reb': 'Points + rebounds', 'pts+ast': 'Points + assists',
+    'reb+ast': 'Rebounds + assists', stl: 'Steals', blk: 'Blocks', 'stl+blk': 'Steals + blocks', 'blk+stl': 'Blocks + steals', to: 'Turnovers' };
+  const legLabel = leg => market === 'nba' ? leg.market : currentMarket().label;
+  const legSide = leg => leg?.side === 'under' ? 'under' : 'over';
   const odds = v => v === null || !Number.isFinite(Number(v)) ? '\u2014' : `${v >= 0 ? '+' : '-'}${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
   const pct = v => `${(v * 100).toFixed(3)}%`;
   const time = v => v ? new Date(v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET' : 'Unknown';
@@ -20,6 +26,8 @@
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
   const selections = ['', '', '', ''];
   const sort = { key: 'ev', direction: 'desc' };
+  const pageSize = 100;
+  let catalogPage = 0;
   let catalog = null, result = null, refreshWork = null, refreshController = null, quoteController = null, calculateTimer = null;
   let authVersion = 0, inputVersion = 0, marketVersion = 0, quoteBusy = false, sessionReady = false;
   const notice = (id, text) => { $(id).textContent = text; $(id).hidden = !text; };
@@ -32,13 +40,18 @@
     $('parlay-market').value = market;
     $('market-title').textContent = `Build your ${config.name} parlay`;
     $('market-eyebrow').textContent = `${config.sport.toUpperCase()} / FAIR ODDS`;
+    $('prop-filter-label').hidden = market !== 'nba';
+    $('side-filter-label').hidden = market !== 'nba';
+    $('access-membership').textContent = market === 'nba' ? 'NBA props parlays are included with Sharp.' : 'Included with Analyst and Sharp.';
     renderPickerHelp();
     $('empty-slate').textContent = `No upcoming ${config.name} markets are available${market === 'hr' ? ' for today' : ''}. Refresh when the next slate is posted.`;
     $('catalog-wrap').setAttribute('aria-label', `Choose ${config.name} parlay players and compare prices`);
     $('catalog-caption').textContent = `${config.name} players and sportsbook over/under prices`;
     $('price-caption').textContent = `Estimated parlay prices from each book's current ${config.name} odds`;
     $('reference-caption').textContent = `Devigged ${config.name} parlay prices`;
-    $('fair-methodology').textContent = `For fair odds, we remove the margin from each player's over/under 0.5 ${config.unit} market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.`;
+    $('fair-methodology').textContent = market === 'nba'
+      ? "For fair odds, we remove the margin from each player's over/under pair at the exact selected line and use the probability of your chosen side. We multiply those probabilities, then convert the result to American odds. NBA props use half-point lines so there is no push outcome. The calculations use full precision before rounding the display."
+      : `For fair odds, we remove the margin from each player's over/under 0.5 ${config.unit} market, multiply the fair probabilities, then convert the result to American odds. The calculations use full precision before rounding the display.`;
     $('independence-methodology').textContent = `These estimates assume independent outcomes across different matchups. ${market === 'hr' ? 'Same-game and doubleheader combinations' : 'Same-game combinations'} are excluded. Fair odds are not offered parlay prices. Actual eligibility, starting-player requirements and void rules depend on the sportsbook.`;
     $('slate-date').textContent = market !== 'hr' ? `Upcoming ${config.sport.toUpperCase()} games` : "Today's slate";
   }
@@ -128,8 +141,9 @@
     if (age < -1) return 'Update time is in the future';
     return quote.status || 'No price';
   }
-  function currentOver(quote, maxAge) {
-    return validPrice(quote?.over) && ['available', 'Missing under price'].includes(priceStatus(quote, maxAge)) ? Number(quote.over) : null;
+  function currentPrice(quote, side = 'over', maxAge) {
+    const missingOther = side === 'under' ? 'Missing over price' : 'Missing under price';
+    return validPrice(quote?.[side]) && ['available', missingOther].includes(priceStatus(quote, maxAge)) ? Number(quote[side]) : null;
   }
   function parlayPrices(data) {
     const highestFirst = (a, b) => b.decimal - a.decimal || a.name.localeCompare(b.name);
@@ -138,21 +152,21 @@
     return (data.references || []).flatMap(ref => {
       if (nonBettingBooks.has(ref.book) || ref.legs?.length !== data.legs.length) return [];
       const legs = data.legs.map(leg => ref.legs.find(quote => quote.id === leg.id));
-      const overs = legs.map(leg => currentOver(leg, data.max_age_minutes));
-      if (overs.some(over => over === null)) return [];
-      const combined = overs.reduce((product, over) => product * decimal(over), 1);
+      const offers = legs.map((leg, index) => currentPrice(leg, legSide(data.legs[index]), data.max_age_minutes));
+      if (offers.some(price => price === null)) return [];
+      const combined = offers.reduce((product, price) => product * decimal(price), 1);
       return [{ book: ref.book, name: ref.name, decimal: combined,
         odds: combined >= 2 ? (combined - 1) * 100 : -100 / (combined - 1),
-        legs: legs.map((leg, index) => ({ id: leg.id, player: leg.player, over: overs[index], updated_at: leg.updated_at })) }];
+        legs: legs.map((leg, index) => ({ id: leg.id, player: leg.player, price: offers[index], updated_at: leg.updated_at })) }];
     }).sort(highestFirst);
   }
-  function averageOver(leg, books) {
-    const prices = books.map(book => currentOver(leg.quotes?.[book])).filter(price => price !== null);
+  function averagePrice(leg, books) {
+    const prices = books.map(book => currentPrice(leg.quotes?.[book], legSide(leg))).filter(price => price !== null);
     return prices.length ? prices.reduce((sum, price) => sum + decimal(price), 0) / prices.length : null;
   }
   function bestOffer(leg) {
     return Object.entries(leg.quotes || {}).reduce((best, [book, quote]) => {
-      const price = currentOver(quote);
+      const price = currentPrice(quote, legSide(leg));
       return !nonBettingBooks.has(book) && price !== null && (!best || decimal(price) > decimal(best.price)) ? { book, price } : best;
     }, null);
   }
@@ -188,6 +202,7 @@
     try { localStorage.setItem(referenceStorageKey, JSON.stringify([...fairValueBooks])); } catch (_) { /* The selection still works for this visit. */ }
     renderReferenceSummary();
     sort.key = 'ev'; sort.direction = 'desc';
+    catalogPage = 0;
     renderCatalog();
     scheduleCalculation();
   }
@@ -195,7 +210,7 @@
     if (!Number.isFinite(Date.parse(leg.start)) || Date.parse(leg.start) <= Date.now()) return null;
     const book = $('picker-book').value;
     if (!book) return bestOffer(leg);
-    const price = currentOver(leg.quotes?.[book]);
+    const price = currentPrice(leg.quotes?.[book], legSide(leg));
     return nonBettingBooks.has(book) || price === null ? null : { book, price };
   }
   function pickerEstimate(leg) {
@@ -210,7 +225,7 @@
     if (!catalog) return;
     for (const [book, name] of Object.entries(catalog.books)) {
       if (nonBettingBooks.has(book)) continue;
-      const count = catalog.legs.filter(leg => Date.parse(leg.start) > Date.now() && currentOver(leg.quotes?.[book]) !== null).length;
+      const count = catalog.legs.filter(leg => Date.parse(leg.start) > Date.now() && currentPrice(leg.quotes?.[book], legSide(leg)) !== null).length;
       if (count || selected === book) $('picker-book').add(new Option(`${name} (${count ? count : 'no current prices'})`, book));
     }
     $('picker-book').value = Object.hasOwn(catalog.books, selected) && !nonBettingBooks.has(selected) ? selected : '';
@@ -219,7 +234,17 @@
     const book = $('picker-book').value, name = book ? catalog?.books[book] || book : 'the best available book';
     const refs = selectedReferences();
     const names = refs.length > 3 ? `${refs.length} selected books` : refs.map(referenceName).join(' + ');
-    $('catalog-help').textContent = `Choose two to four players for ${currentMarket().label}. EV uses ${$('method').selectedOptions[0].textContent} at ${name}. ${refs.length ? `Fair value uses the lowest available probability from ${names}. Only fresh over/under pairs count.` : 'Choose fair value books to calculate EV.'} All book columns stay visible. Click EV, Avg or a book to sort.`;
+    $('catalog-help').textContent = `${market === 'nba' ? 'Choose two to four props from different games. Each row shows its exact line and side; the bold book price is for that selection.' : `Choose two to four players for ${currentMarket().label}.`} EV uses ${$('method').selectedOptions[0].textContent} at ${name}. ${refs.length ? `Fair value uses the lowest available probability from ${names}. Only fresh over/under pairs count.` : 'Choose fair value books to calculate EV.'} All book columns stay visible. Click EV, Avg or a book to sort.`;
+  }
+  function renderPropFilter() {
+    const selected = $('prop-filter').value;
+    $('prop-filter').replaceChildren(new Option('All props', ''));
+    if (market !== 'nba') return;
+    const props = [...new Set((catalog?.legs || []).map(leg => leg.prop).filter(Boolean))];
+    const order = Object.keys(propNames);
+    props.sort((a, b) => (order.includes(a) ? order.indexOf(a) : order.length) - (order.includes(b) ? order.indexOf(b) : order.length) || a.localeCompare(b));
+    props.forEach(prop => $('prop-filter').add(new Option(propNames[prop] || title(prop), prop)));
+    if (props.includes(selected)) $('prop-filter').value = selected;
   }
   function disabledReason(leg) {
     if (selections.includes(leg.id)) return '';
@@ -233,12 +258,13 @@
     $('selection-count').textContent = `${selections.filter(Boolean).length} / 4 selected`;
     $('leg-inputs').innerHTML = legSlots().map((leg, index) => {
       const book = $('betting-book').value;
-      const price = leg && book ? currentOver(leg.quotes?.[book]) : null;
+      const price = leg && book ? currentPrice(leg.quotes?.[book], legSide(leg)) : null;
       const offer = leg ? (book ? (price === null ? null : { book, price }) : bestOffer(leg)) : null;
       return `<div class="leg-card${leg ? ' is-filled' : ''}"><span class="leg-number" aria-hidden="true">${index + 1}</span>
         <div class="leg-copy"><strong>${leg ? esc(title(leg.player)) : `Leg ${index + 1}${index >= 2 ? ' (optional)' : ''}`}</strong>
+        ${leg && market === 'nba' ? `<span class="leg-market">${esc(legLabel(leg))}</span>` : ''}
         <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(gameTime(leg.start))}` : index >= 2 ? `Add a ${index === 2 ? 'third' : 'fourth'} player anytime` : 'Add a player from the table'}</small>
-        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>${currentMarket().label}${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
+        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>${market === 'nba' ? esc(bookLabel(offer.book)) : currentMarket().label}${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
         ${leg ? `<button type="button" class="remove-leg" data-remove="${index}" aria-label="Remove ${esc(title(leg.player))}">&times;</button>` : ''}</div>`;
     }).join('');
   }
@@ -256,10 +282,12 @@
     renderCatalogHead(books);
     renderPickerHelp();
     const search = $('player-search').value.trim().toLowerCase(), game = $('game-filter').value;
+    const prop = market === 'nba' ? $('prop-filter').value : '', side = market === 'nba' ? $('side-filter').value : '';
     const estimates = new Map((catalog?.legs || []).map(leg => [leg.id, pickerEstimate(leg)]));
-    const legs = (catalog?.legs || []).filter(leg => (!game || leg.game === game) && `${leg.player} ${leg.game} ${leg.team || ''}`.toLowerCase().includes(search)
+    const legs = (catalog?.legs || []).filter(leg => (!game || leg.game === game) && (!prop || leg.prop === prop) && (!side || legSide(leg) === side)
+      && `${leg.player} ${leg.game} ${leg.team || ''} ${market === 'nba' ? leg.market : ''}`.toLowerCase().includes(search)
       && estimates.get(leg.id)?.offer);
-    const averages = new Map(legs.map(leg => [leg.id, averageOver(leg, allBooks)]));
+    const averages = new Map(legs.map(leg => [leg.id, averagePrice(leg, allBooks)]));
     legs.sort((a, b) => {
       let order;
       if (sort.key === 'player') order = a.player.localeCompare(b.player);
@@ -267,7 +295,7 @@
         const value = leg => {
           if (sort.key === 'ev') return estimates.get(leg.id)?.ev ?? null;
           if (sort.key === 'average') return averages.get(leg.id);
-          const price = currentOver(leg.quotes?.[sort.key.slice(5)]);
+          const price = currentPrice(leg.quotes?.[sort.key.slice(5)], legSide(leg));
           return price === null ? null : decimal(price);
         };
         const first = value(a), second = value(b);
@@ -276,8 +304,15 @@
       }
       return (sort.direction === 'asc' ? order : -order) || a.player.localeCompare(b.player);
     });
-    $('catalog-count').textContent = `${legs.length} of ${catalog?.legs.length || 0} players`;
-    $('catalog-rows').innerHTML = legs.map(leg => {
+    $('catalog-count').textContent = `${legs.length} of ${catalog?.legs.length || 0} ${market === 'nba' ? 'selections' : 'players'}`;
+    const paginated = market === 'nba' && legs.length > pageSize;
+    catalogPage = paginated ? Math.min(catalogPage, Math.ceil(legs.length / pageSize) - 1) : 0;
+    const first = catalogPage * pageSize;
+    $('catalog-pagination').hidden = !paginated;
+    $('catalog-prev').disabled = catalogPage === 0;
+    $('catalog-next').disabled = first + pageSize >= legs.length;
+    $('catalog-range').textContent = `${first + 1}\u2013${Math.min(first + pageSize, legs.length)} of ${legs.length}`;
+    $('catalog-rows').innerHTML = (paginated ? legs.slice(first, first + pageSize) : legs).map(leg => {
       const selected = selections.indexOf(leg.id), reason = disabledReason(leg), best = bestOffer(leg);
       const average = averages.get(leg.id);
       const averagePrice = average === null ? '-' : odds(average >= 2 ? (average - 1) * 100 : -100 / (average - 1));
@@ -290,18 +325,19 @@
         <small class="ev-reference">${refLabel ? `vs ${esc(refLabel)}` : 'No fair estimate'}</small></td>`;
       const action = selected >= 0 ? 'Remove' : 'Add';
       const prices = books.map(book => {
-        const quote = leg.quotes?.[book], status = priceStatus(quote), over = currentOver(quote);
+        const quote = leg.quotes?.[book], status = priceStatus(quote), price = currentPrice(quote, legSide(leg));
         const fresh = ['available', 'Missing under price', 'Missing over price'].includes(status);
-        const highest = over !== null && best && !nonBettingBooks.has(book) && decimal(over) === decimal(best.price);
+        const highest = price !== null && best && !nonBettingBooks.has(book) && decimal(price) === decimal(best.price);
         const label = `${catalog.books[book]}: ${status === 'available' ? `Updated ${time(quote.updated_at)}` : status}`;
+        const primary = legSide(leg), other = primary === 'under' ? 'over' : 'under';
         return `<td class="catalog-price${highest ? ' best-price' : ''}" title="${esc(label)}">${fresh
-          ? `<strong>${validPrice(quote.over) ? esc(odds(quote.over)) : '-'}</strong><small>${validPrice(quote.under) ? esc(odds(quote.under)) : '-'}</small>`
-          : `<span class="price-unavailable">${status === 'Stale prices' ? 'Stale' : validPrice(quote?.over) ? 'Unavailable' : '-'}</span>`}</td>`;
+          ? `<strong>${validPrice(quote[primary]) ? esc(odds(quote[primary])) : '-'}</strong><small>${market === 'nba' ? `${other === 'over' ? 'O' : 'U'} ` : ''}${validPrice(quote[other]) ? esc(odds(quote[other])) : '-'}</small>`
+          : `<span class="price-unavailable">${status === 'Stale prices' ? 'Stale' : validPrice(quote?.[primary]) ? 'Unavailable' : '-'}</span>`}</td>`;
       }).join('');
       return `<tr data-leg-row="${esc(leg.id)}" class="${selected >= 0 ? 'is-selected' : reason ? 'is-blocked' : ''}">
-        <td class="catalog-pick"><button type="button" data-leg="${esc(leg.id)}" aria-label="${action} ${esc(title(leg.player))}${reason ? `: ${esc(reason)}` : ''}" aria-pressed="${selected >= 0}" ${reason ? 'disabled' : ''} title="${esc(reason || `${action} this player`)}">${selected >= 0 ? `&#10003; ${selected + 1}` : reason ? selections.every(Boolean) ? 'Full' : 'N/A' : '+ Add'}</button></td>
-        <th scope="row" class="catalog-player"><strong>${esc(title(leg.player))}</strong><small>${esc(leg.game.toUpperCase())} <span>${esc(gameTime(leg.start))}</span></small></th>${evCell}<td class="catalog-average" title="Average current ${currentMarket().label} price across books">${esc(averagePrice)}</td>${prices}</tr>`;
-    }).join('') || `<tr><td class="catalog-empty" colspan="${books.length + (market === 'atgs' ? 4 : 3)}">${catalog?.legs.length ? `No players match. Try another player, game${market === 'atgs' ? ' or book with current prices' : ''}.` : 'No upcoming players available.'}</td></tr>`;
+        <td class="catalog-pick"><button type="button" data-leg="${esc(leg.id)}" aria-label="${action} ${esc(title(leg.player))}${market === 'nba' ? ` ${esc(legLabel(leg))}` : ''}${reason ? `: ${esc(reason)}` : ''}" aria-pressed="${selected >= 0}" ${reason ? 'disabled' : ''} title="${esc(reason || `${action} this selection`)}">${selected >= 0 ? `&#10003; ${selected + 1}` : reason ? selections.every(Boolean) ? 'Full' : 'N/A' : '+ Add'}</button></td>
+        <th scope="row" class="catalog-player"><strong>${esc(title(leg.player))}</strong>${market === 'nba' ? `<span class="leg-market">${esc(legLabel(leg))}</span>` : ''}<small>${esc(leg.game.toUpperCase())} <span>${esc(gameTime(leg.start))}</span></small></th>${evCell}<td class="catalog-average" title="Average current ${esc(legLabel(leg))} price across books">${esc(averagePrice)}</td>${prices}</tr>`;
+    }).join('') || `<tr><td class="catalog-empty" colspan="${books.length + 4}">${catalog?.legs.length ? `No ${market === 'nba' ? 'selections' : 'players'} match. Try another filter or book with current prices.` : 'No upcoming players available.'}</td></tr>`;
     if (focusKey) $('catalog-wrap').querySelector(`[data-${focusKey}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll: true });
     restoreScroll();
   }
@@ -334,11 +370,19 @@
     const key = button.dataset.sort;
     sort.direction = sort.key === key ? sort.direction === 'asc' ? 'desc' : 'asc' : key.startsWith('book:') || key === 'ev' ? 'desc' : 'asc';
     sort.key = key;
+    catalogPage = 0;
     renderCatalog();
     $('catalog-head').querySelector(`[data-sort="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
   });
-  $('player-search').addEventListener('input', renderCatalog);
-  $('game-filter').addEventListener('change', renderCatalog);
+  const filterCatalog = () => { catalogPage = 0; renderCatalog(); $('catalog-wrap').scrollTop = 0; };
+  $('player-search').addEventListener('input', filterCatalog);
+  ['game-filter', 'prop-filter', 'side-filter'].forEach(id => $(id).addEventListener('change', filterCatalog));
+  for (const [id, step] of [['catalog-prev', -1], ['catalog-next', 1]]) $(id).addEventListener('click', () => {
+    catalogPage += step;
+    renderCatalog();
+    $('catalog-wrap').scrollTop = 0;
+    $('catalog-wrap').focus({ preventScroll: true });
+  });
   $('fair-books-options').addEventListener('change', event => {
     const input = event.target.closest('input[data-reference-book]');
     if (!input) return;
@@ -366,6 +410,7 @@
   $('picker-book').addEventListener('change', () => {
     $('betting-book').value = $('picker-book').value;
     sort.key = 'ev'; sort.direction = 'desc';
+    catalogPage = 0;
     renderSelections();
     scheduleCalculation();
   });
@@ -411,7 +456,7 @@
       </li>`;
     }).join('');
     notice('book-prices-empty', prices.length ? '' : `No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.`);
-    $('price-head').innerHTML = `<tr><th scope="col">Book</th><th scope="col">Est. parlay odds</th>${benchmarks.map(ref => `<th scope="col" data-ev-reference="${esc(ref.book)}"><span class="book-name">${bookLogo(ref.book)}${esc(ref.name)} EV</span><small>Fair ${ref.probability === null ? '-' : esc(odds(ref.fairOdds))}</small></th>`).join('')}${data.legs.map(leg => `<th scope="col">${esc(title(leg.player))}</th>`).join('')}</tr>`;
+    $('price-head').innerHTML = `<tr><th scope="col">Book</th><th scope="col">Est. parlay odds</th>${benchmarks.map(ref => `<th scope="col" data-ev-reference="${esc(ref.book)}"><span class="book-name">${bookLogo(ref.book)}${esc(ref.name)} EV</span><small>Fair ${ref.probability === null ? '-' : esc(odds(ref.fairOdds))}</small></th>`).join('')}${data.legs.map(leg => `<th scope="col">${esc(title(leg.player))}${market === 'nba' ? `<small>${esc(legLabel(leg))}</small>` : ''}</th>`).join('')}</tr>`;
     $('price-rows').innerHTML = prices.map(price => `<tr data-price-book="${esc(price.book)}" class="${isBestPrice(price) ? 'best-parlay' : ''}">
       <th scope="row"><span class="book-name">${bookLogo(price.book)}${esc(price.name)}</span>${isBestPrice(price) ? `<small class="best-label">${hasEV ? 'Best EV' : 'Best price'}</small>` : ''}</th>
       <td class="parlay-total"><strong>${esc(odds(price.odds))}</strong></td>
@@ -420,16 +465,19 @@
         const display = ev === null ? null : Number(ev.toFixed(1));
         return `<td data-ev-book="${ref.book}" class="parlay-ev${display > 0 ? ' positive' : display < 0 ? ' negative' : ''}" title="${esc(ref.probability === null ? `${ref.name} needs current over/under prices for every leg` : `EV at ${odds(price.odds)} against ${ref.name} fair odds of ${odds(ref.fairOdds)}`)}">${display === null ? '-' : `${display > 0 ? '+' : ''}${display.toFixed(1)}%`}</td>`;
       }).join('')}
-      ${price.legs.map(leg => `<td title="Updated ${esc(time(leg.updated_at))}">${esc(odds(leg.over))}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${count + 2 + benchmarks.length}">No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.</td></tr>`;
+      ${data.legs.map((selection, index) => {
+        const quote = price.legs.find(leg => leg.id === selection.id) || price.legs[index];
+        return `<td title="${esc(legLabel(selection))} / Updated ${esc(time(quote?.updated_at))}">${esc(odds(quote?.price ?? quote?.[legSide(selection)] ?? null))}</td>`;
+      }).join('')}</tr>`).join('') || `<tr><td colspan="${count + 2 + benchmarks.length}">No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.</td></tr>`;
     $('result-method').textContent = $('method').selectedOptions[0].textContent;
-    $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} ${currentMarket().label}`).join(' + ');
+    $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} ${legLabel(leg)}`).join(' + ');
     const evLabel = data.offered_odds === null ? 'EV at your price' : `EV at ${odds(data.offered_odds)}`;
-    $('reference-head').innerHTML = `<tr><th scope="col">Reference book</th>${data.legs.map((leg, index) => `<th scope="col" title="${esc(title(leg.player))}">Leg ${index + 1} fair</th>`).join('')}<th scope="col">Fair parlay odds</th><th scope="col">Estimated hit chance</th><th scope="col">${esc(evLabel)}</th></tr>`;
+    $('reference-head').innerHTML = `<tr><th scope="col">Reference book</th>${data.legs.map((leg, index) => `<th scope="col" title="${esc(title(leg.player))} ${esc(legLabel(leg))}">Leg ${index + 1} fair</th>`).join('')}<th scope="col">Fair parlay odds</th><th scope="col">Estimated hit chance</th><th scope="col">${esc(evLabel)}</th></tr>`;
     $('reference-rows').classList.toggle('four-legs', count === 4);
     $('reference-rows').classList.toggle('two-legs', count === 2);
     $('reference-rows').innerHTML = data.references.map(ref => {
       const isAnchor = fairValueBooks.has(ref.book);
-      const legs = ref.legs.map((leg, index) => `<td class="reference-leg" data-label="Leg ${index + 1} fair">${leg.probability === null ? '-' : `<strong>${esc(odds(leg.fair_odds))}</strong>`}<small>O ${esc(odds(leg.over))} / U ${esc(odds(leg.under))}</small><small>${esc(leg.status === 'available' ? `Updated ${time(leg.updated_at)}` : leg.status)}</small></td>`).join('');
+      const legs = ref.legs.map((leg, index) => `<td class="reference-leg" data-label="Leg ${index + 1} fair">${leg.probability === null ? '-' : `<strong>${esc(odds(leg.fair_odds))}</strong>`}${market === 'nba' ? `<small>${esc(legLabel(data.legs[index]))}</small>` : ''}<small>O ${esc(odds(leg.over))} / U ${esc(odds(leg.under))}</small><small>${esc(leg.status === 'available' ? `Updated ${time(leg.updated_at)}` : leg.status)}</small></td>`).join('');
       return `<tr data-book="${esc(ref.book)}" ${!isAnchor && !ref.complete ? `data-unavailable="true"${showUnavailable ? '' : ' hidden'}` : ''} class="${isAnchor ? 'anchor ' : ''}${ref.complete ? '' : 'unavailable'}"><td><span class="book-name">${bookLogo(ref.book)}<strong>${esc(ref.name)}</strong></span>${isAnchor ? '<small>Used for EV</small>' : ''}${ref.same_as_betting_book ? '<small>Your betting book; not an independent comparison</small>' : ''}</td>${legs}<td class="metric-fair" data-label="Fair parlay odds"><strong class="${ref.complete ? 'fair-total' : ''}">${esc(odds(ref.fair_odds))}</strong>${ref.complete ? '' : `<small>Needs all ${count} fresh O/U pairs</small>`}</td><td class="metric-chance" data-label="Hit chance">${ref.complete ? esc(pct(ref.probability)) : '-'}</td><td data-label="${esc(evLabel)}" class="metric-ev ${ref.ev === null ? '' : ref.ev > 0 ? 'positive' : 'negative'}">${ref.ev === null ? '-' : `${ref.ev > 0 ? '+' : ''}${ref.ev.toFixed(1)}%`}</td></tr>`;
     }).join('');
     const unavailable = $('reference-rows').querySelectorAll('[data-unavailable]').length;
@@ -449,7 +497,7 @@
     clearResult();
     $('calculator').hidden = true;
     $('access-panel').hidden = false;
-    $('updated').textContent = 'Analyst or Sharp membership';
+    $('updated').textContent = market === 'nba' ? 'Sharp membership' : 'Analyst or Sharp membership';
     notice('request-status', '');
   }
   async function request(path, options = {}) {
@@ -529,6 +577,7 @@
         $('betting-book').value = book;
         renderPickerBooks();
         renderReferenceBooks();
+        renderPropFilter();
         const game = $('game-filter').value;
         $('game-filter').replaceChildren(new Option('All games', ''));
         [...new Set(data.legs.map(leg => leg.game))].sort().forEach(game => $('game-filter').add(new Option(game.toUpperCase(), game)));
@@ -572,6 +621,9 @@
     clearResult();
     $('player-search').value = '';
     $('game-filter').replaceChildren(new Option('All games', ''));
+    $('prop-filter').replaceChildren(new Option('All props', ''));
+    $('side-filter').value = '';
+    catalogPage = 0;
     $('betting-book').replaceChildren(new Option('No book selected', ''));
     $('picker-book').replaceChildren(new Option('All books - best available price', ''));
     $('offered-odds').value = '';
@@ -611,6 +663,7 @@
         $('picker-book').value = book;
       }
       sort.key = 'ev'; sort.direction = 'desc';
+      catalogPage = 0;
       renderCatalog();
     }
     renderLegs(); scheduleCalculation(id === 'offered-odds' ? 300 : 0);

@@ -28,6 +28,7 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 .leg-card .leg-number { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; background: #294237; color: #9be8be; width: 25px; height: 25px; border-radius: 50%; font-size: 12px; }
 .leg-copy { flex: 1; min-width: 0; }
 .leg-copy > strong { display: block; font-size: 13px; }
+.leg-market { display: block; margin: 4px 0; color: #a7d7f5; font-size: 11px; line-height: 1.4; font-weight: 500; }
 .leg-copy > small { display: block; color: #9fb1bd; font-size: 10px; line-height: 1.6; }
 .leg-price { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 12px; font-variant-numeric: tabular-nums; }
 .leg-price small { color: #9fb1bd; font-size: 10px; }
@@ -95,6 +96,8 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 .catalog-price.best-price strong { color: #6ee6a0; font-weight: 700; }
 .price-unavailable { color: #82929f; font-size: 10px; }
 .catalog-table .catalog-empty { padding: 24px; text-align: left; color: #aab8c2; }
+.catalog-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; font-size: 11px; color: #a0b1bc; }
+.parlays-page .catalog-pagination button { padding: 6px 10px; font-size: 11px; }
 .settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; max-width: 760px; }
 .optional { display: inline; font-size: 10px; color: #90a1ad; }
 .muted { color: #a0b1bc; font-size: 12px; }
@@ -178,9 +181,9 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
   .catalog-table { --player-width: 145px; }
   .catalog-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .catalog-toolbar > label, .catalog-toolbar > label:first-child { min-width: 0; max-width: none; }
-  .reference-control { grid-column: 1 / -1; grid-row: 3; min-width: 0; max-width: none; }
+  .reference-control { grid-column: 1 / -1; order: 1; min-width: 0; max-width: none; }
   #fair-books-menu { width: 390px; max-width: 100%; }
-  #catalog-count { grid-column: 1 / -1; margin: 0; padding: 0; }
+  #catalog-count { grid-column: 1 / -1; order: 2; margin: 0; padding: 0; }
   .catalog-wrap { max-height: 360px; }
   .results .table-wrap { overflow: visible; border: 0; }
   .results table, .results tbody { display: block; min-width: 0; }

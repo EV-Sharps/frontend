@@ -203,6 +203,7 @@ const PAGE_SECTIONS = [
 		key: "nba", label: "🏀 NBA",
 		pages: [
 			{ label: "🏀 All Props", value: "nba", tier: "sharp" },
+			{ label: "NBA Parlays", value: "parlays?market=nba", tier: "sharp" },
 			{ label: "First Basket", value: "fb", tier: "analyst" },
 			{ label: "🏆 Main", value: "main?sport=nba", tier: "sharp" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nba", tier: "free" },
@@ -344,7 +345,7 @@ function pagePickerValue() {
 	}
 	if (page === "nfl_tracker" && ["nhl", "ncaaf"].includes(SPORT)) return `${page}?sport=${SPORT}`;
 	if (page === "devig-results" && (SPORT || new URLSearchParams(window.location.search).get("sport")) === "nfl") return "devig-results?sport=nfl";
-	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : "parlays";
+	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : SPORT === "nba" ? "parlays?market=nba" : "parlays";
 	return page;
 }
 

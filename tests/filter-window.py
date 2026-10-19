@@ -4,6 +4,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 import re
+import sys
 import tempfile
 
 from playwright.sync_api import sync_playwright
@@ -284,11 +285,14 @@ def main():
     Thread(target=server.serve_forever, daemon=True).start()
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
+            browser = playwright.chromium.launch(headless=True, args=[
+                '--disable-logging', f'--log-file={Path(tempfile.gettempdir()) / "evsharps-filter-window.log"}'])
             origin = f"http://localhost:{server.server_port}"
-            for name, width, full in [("atgs", 1280, True), ("atgs", 390, True), ("atgs", 320, False),
-                                      ("dingers", 1280, True), ("dingers", 390, True), ("dingers", 320, False),
-                                      ("main", 320, True), ("top_pitches", 1280, True), ("top_pitches", 390, True)]:
+            basketball = [(name, width, True) for name in ['nba', 'pts', 'threes', 'fb'] for width in [1280, 390]]
+            existing = [("atgs", 1280, True), ("atgs", 390, True), ("atgs", 320, False),
+                        ("dingers", 1280, True), ("dingers", 390, True), ("dingers", 320, False),
+                        ("main", 320, True), ("top_pitches", 1280, True), ("top_pitches", 390, True)]
+            for name, width, full in basketball if '--basketball' in sys.argv else existing + basketball:
                 check_page(browser, origin, name, width, full)
             browser.close()
     finally:

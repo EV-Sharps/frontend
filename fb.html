@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>First Basket | +EV Sharps</title>
+  <script>
+    // Reuse the NBA table while keeping a distinct feed, filters, and saved settings.
+    const target = new URL(location.href);
+    target.pathname = target.pathname.replace(/fb(?:\.html)?$/, "nba.html");
+    target.searchParams.set("market", "fb");
+    target.searchParams.set("prop", "fb");
+    target.searchParams.set("ou", "o");
+    location.replace(target.href);
+  </script>
+</head>
+<body><a href="nba.html?market=fb">Open First Basket</a></body>
+</html>

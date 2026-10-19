@@ -318,7 +318,7 @@ window.NbaHistory = createPlayerHistory(window, {
 		pts: 'Points', reb: 'Rebounds', ast: 'Assists', '3ptm': 'Made threes', stl: 'Steals', blk: 'Blocks',
 		'pts+reb': 'Points + rebounds', 'pts+ast': 'Points + assists', 'reb+ast': 'Rebounds + assists',
 		'pts+reb+ast': 'Points + rebounds + assists', 'blk+stl': 'Blocks + steals',
-		dd: 'Double-doubles', td: 'Triple-doubles', '1st pts': 'First basket'
+		dd: 'Double-doubles', td: 'Triple-doubles', fb: 'First basket', '1st pts': 'First basket'
 	}
 });
 window.NflHistory = createPlayerHistory(window, {

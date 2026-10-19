@@ -710,7 +710,8 @@ function updateExistingCard(card, rowData) {
 	if (gameImg) {
 		gameImg = gameImg.join(" @ ");
 	}
-	let propDisplay = rowData.prop.toUpperCase();
+	const firstBasket = ["fb", "1st pts"].includes(rowData.prop);
+	let propDisplay = firstBasket ? "" : rowData.prop.toUpperCase();
 
 	const isTeamTotal = rowData.prop === "home_total" || rowData.prop === "away_total";
 	if (isTeamTotal) {
@@ -740,7 +741,7 @@ function updateExistingCard(card, rowData) {
 			teamImg = getTeamImg(sport, team);
 		}
 	}
-	const lineDisplay = liveMain ? liveMain.line
+	const lineDisplay = firstBasket ? "First Basket" : liveMain ? liveMain.line
 		: PAGE === 'main' && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
 		: PAGE === 'main' && /(?:^|_)spread$/.test(rowData.prop) ? addPlus(rowData.handicap)
 		: `${pre}${rowData.handicap}`;
@@ -849,7 +850,7 @@ function updateExistingCard(card, rowData) {
 			: `<div class="metric-pill" style="font-weight:600; font-size:0.85rem;"><img class="wind" src="logos/${_w.windLogo}" style="height:14px;vertical-align:middle;"> ${_w.wind} mph ${_w.temp}</div>`
 	) : "";
 	const oppRankValue = resolveOppRankValue(rowData);
-	collapsedBody.innerHTML = liveMain ? `
+	collapsedBody.innerHTML = liveMain || firstBasket ? `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
 			<div style="font-weight:700;display:flex;justify-content:center;">${gameImg}</div>
 			<div style="text-align:center;">${String(rowData.game || rowData.gameId || '').toUpperCase()}</div>

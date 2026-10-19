@@ -226,7 +226,7 @@ const createOption = (val, container) => {
 	}
 	const label = document.createElement('label');
 	label.setAttribute("onclick", "event.stopPropagation()")
-	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val.toUpperCase()}`;
+	label.innerHTML = `<input type="checkbox" value="${val}" checked> ${val === "fb" ? "First Basket" : val.toUpperCase()}`;
 	container.appendChild(label);
 };
 

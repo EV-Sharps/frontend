@@ -582,10 +582,20 @@
 	<script src="player-history.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
-		PAGE = "nba";
+		const FIRST_BASKET_PAGE = new URLSearchParams(window.location.search).get("market") === "fb";
+		PAGE = FIRST_BASKET_PAGE ? "fb" : "nba";
 		
 		parseURLParams();
 		SPORT = "nba";
+		if (FIRST_BASKET_PAGE) {
+			document.title = "First Basket | +EV Sharps";
+			// This market is a yes-only selection; ignore unrelated NBA prop/side links.
+			PROP = "fb";
+			OU = "o";
+			for (const key of ["handicap", "prop", "oppRank", "oppPosRank", "logs", "hitRate", "hitRateLYR"]) {
+				document.getElementById(`custom_${key}`)?.closest("div")?.remove();
+			}
+		}
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -594,10 +604,13 @@
 		let resolveTableReady;
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
 		const fetchProps = createDataRefresh(() => {
-			//fetch(`nba.json`, {
-			return API_BASE+`/api/nba`;
+			return API_BASE + `/api/${PAGE}`;
 		}, async (data) => {
 			RES = data;
+			if (FIRST_BASKET_PAGE) {
+				RES.data = RES.data.filter(row => row.prop === "fb" && !row.under);
+				RES.props = ["fb"];
+			}
 			UPDATED[PAGE] = data["updated"];
 
 			if (TEAMS) {
@@ -784,7 +797,9 @@
 					{title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2}
 				]},
 				...getNbaHistoryHitRateColumnItems()
-			];
+			].filter(item => !FIRST_BASKET_PAGE || ![
+				"handicap", "prop", "oppRank", "oppPosRank", "logs", "hitRate", "hitRateLYR", "hitRates_career", "hitRates_bvt"
+			].includes(item.key));
 		}
 
 		function buildNbaColumns(savedOrder) {
@@ -795,7 +810,7 @@
 		}
 
 		function openColReorder() {
-			const savedOrder = CURR_USER?.metadata?.["nba-order"] || NBA_DEFAULT_COL_ORDER;
+			const savedOrder = CURR_USER?.metadata?.[`${PAGE}-order`] || NBA_DEFAULT_COL_ORDER;
 			const isVisible = (key) => {
 				const items = getNbaColumnItems();
 				const item = items.find(i => i.key === key);
@@ -808,7 +823,7 @@
 		function closeColReorder() { closeColReorderModal(); }
 
 		function saveColReorder() {
-			saveColReorderModal('nba-order', buildNbaColumns, () => showHideUserTable(true));
+			saveColReorderModal(`${PAGE}-order`, buildNbaColumns, () => showHideUserTable(true));
 		}
 
 let loaded = false;
@@ -835,7 +850,7 @@ let loaded = false;
 					return `<span style='color: #c8c3bc'>${value.toUpperCase()}</span>`;
 				},
 				groupToggleElement: "header",
-				columns: buildNbaColumns(CURR_USER?.metadata?.["nba-order"])
+				columns: buildNbaColumns(CURR_USER?.metadata?.[`${PAGE}-order`])
 			});
 			TABLE.on('tableBuilt', resolveTableReady);
 
@@ -845,7 +860,8 @@ let loaded = false;
 					showCardModal(row.getData());
 					return;
 				}
-				NbaHistory.open(row.getData());
+				if (FIRST_BASKET_PAGE) showCardModal(row.getData());
+				else NbaHistory.open(row.getData());
 			});
 
 			TABLE.on("dataLoaded", function(data) {

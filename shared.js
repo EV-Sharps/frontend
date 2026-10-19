@@ -203,6 +203,7 @@ const PAGE_SECTIONS = [
 		key: "nba", label: "🏀 NBA",
 		pages: [
 			{ label: "🏀 All Props", value: "nba", tier: "sharp" },
+			{ label: "First Basket", value: "fb", tier: "analyst" },
 			{ label: "🏆 Main", value: "main?sport=nba", tier: "sharp" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nba", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nba", tier: "sharp" },
@@ -333,6 +334,7 @@ if (document.readyState === "loading") {
 }
 
 function pagePickerValue() {
+	if (PAGE === "fb") return "fb";
 	const filename = window.location.pathname.split("/").pop().replace(/\.html$/, "");
 	const knownFile = PAGE_SECTIONS.some(section => section.pages.some(page => page.value.split("?")[0] === filename));
 	let page = knownFile ? filename : PAGE;
@@ -2560,6 +2562,7 @@ const evBookFormatter = function(cell, params, rendered) {
 }
 
 function convertProp(prop) {
+	if (["fb", "1st pts"].includes(prop)) return "First Basket";
 	prop = prop
 		.replace("single", "1b").replace("double", "2b").replace("triple", "3b")
 		.replace("pts+", "p+").replace("+ast", "+a").replace("+reb", "+r")
@@ -2596,6 +2599,7 @@ function liveNflMainIdentity(data) {
 const propFormatter = function(cell) {
 	const data = cell.getRow().getData();
 	if (data.prop == "separator") return "";
+	if (["fb", "1st pts"].includes(data.prop)) return data.under ? "No First Basket" : "First Basket";
 	const ou = data.under ? "u" : "o";
 	if (["playoffs", "roty", "mvp", "division"].includes(data.prop)) {
 		return data.under ? "No" : "Yes";
@@ -2925,7 +2929,7 @@ const basePlayerFormatter = function(cell, params, rendered) {
 	let bats = data.bats?.replace("B", "S") || "";
 	if (["pitcher_mix", "preview"].includes(PAGE)) {
 		bats = data.pitch_hand;
-	} else if (["pts", "nba", "threes", "kotc"].includes(PAGE)) {
+	} else if (["pts", "nba", "fb", "threes", "kotc"].includes(PAGE)) {
 		bats = data.avgMin;
 	} else if (["atgs", "fgs"].includes(PAGE)) {
 		bats = data.avgTOI;
@@ -2934,7 +2938,7 @@ const basePlayerFormatter = function(cell, params, rendered) {
 	}
 
 	let pos = "";
-	if (["nba", "threes", "atgs", "fgs", "kotc"].includes(PAGE)) {
+	if (["nba", "fb", "threes", "atgs", "fgs", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
 	let lineupCircles = "";
@@ -3723,6 +3727,7 @@ const DEFAULT_FIELDS = {
 	strikeouts: [...DEFAULT_SHARED, "handicap", "oppRank", "hitRates_szn", "hitRates_lyr", "hitRates_L5", "hitRates_L10"],
 	mlb: [...DEFAULT_SHARED.filter(key => !["hitRate", "hitRateLYR"].includes(key)), "handicap", ...getPropHitRateColumnItems().map(item => item.key)],
 	nba: [...DEFAULT_SHARED, "oppRank", "oppPosRank", ...getNbaHistoryHitRateColumnItems().map(item => item.key)],
+	fb: DEFAULT_SHARED.filter(key => !["logs", "hitRate", "hitRateLYR"].includes(key)),
 	pts: [...DEFAULT_SHARED, ...getNbaHistoryHitRateColumnItems().map(item => item.key)],
 	threes: [...DEFAULT_SHARED, ...getNbaHistoryHitRateColumnItems().map(item => item.key)]
 };
@@ -5632,7 +5637,7 @@ function parseURLParams() {
 	document.body?.classList.toggle("stream-mode", STREAM != null);
 
 	function defaultOU() {
-		if (["atgs", "fgs", "tds", "tds2", "ftd", "dingers"].includes(PAGE)) return "o";
+		if (["atgs", "fgs", "tds", "tds2", "ftd", "fb", "dingers"].includes(PAGE)) return "o";
 		return "ou";
 	}
 	OU = URLParams.get("ou") || defaultOU();
@@ -5893,7 +5898,7 @@ function renderBookSelect(availableBooks = null) {
 
 	if (["dingers", "dingers2", "mlb"].includes(PAGE)) {
 		books.push("hr_oh");
-	} else if (["nba", "threes", "pts"].includes(PAGE)) {
+	} else if (["nba", "fb", "threes", "pts"].includes(PAGE)) {
 		books.push("hr_az");
 	} else if (PAGE == "cup") {
 		books = books.concat(["mb", "bw", "bs", "myb"]);
@@ -6271,6 +6276,8 @@ async function initDevPicker(data) {
 	for (const row of data) {
 		const [prop, dev] = row.devig.includes('-vs-') ? row.devig.split('-vs-') : ['hr', row.devig];
 		if (PAGE === 'nhl' && ['atgs', 'fgs', 'lgs'].includes(prop)) continue;
+		if (PAGE === 'fb' && prop !== 'fb') continue;
+		if (PAGE === 'nba' && ['fb', '1st pts'].includes(prop)) continue;
 		if (PAGE === 'threes' && prop !== '3ptm') continue;
 		if (PAGE === 'pts' && !['pts', 'reb', 'ast'].includes(prop)) continue;
 		if (['dingers', 'dingers2', 'recap'].includes(PAGE) && prop !== 'hr') continue;

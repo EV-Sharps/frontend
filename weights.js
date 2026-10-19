@@ -149,7 +149,7 @@ function refreshPresetViews() {
 	if (typeof initDevPicker === 'function') initDevPicker(getTopDevigs(BOOK || 'best'));
 	const modal = document.getElementById('preloads-modal');
 	const container = document.getElementById('preloads-list-container');
-	if (modal?.style.display === 'flex' && container) renderPreloadsList(container, getTopDevigs(), ({ tds: 'attd', ftd: 'ftd', fgs: 'fgs' })[PAGE] || 'atgs');
+	if (modal?.style.display === 'flex' && container) renderPreloadsList(container, getTopDevigs(), ({ tds: 'attd', ftd: 'ftd', fgs: 'fgs', fb: 'fb' })[PAGE] || 'atgs');
 	syncPresetModeControls();
 }
 
@@ -545,7 +545,8 @@ function getTopDevigs(bookArg = null) {
 			const stats = devigs[devigKey]?.[DEV_WINDOW];
 			const resolved = presetRecordStats(DEV_PRICE_SOURCE === 'opening' && DEV_STAKING === 'quarter-kelly' && !source.kelly_available ? null : stats, DEV_STAKING);
 			const parts = devigKey.split("-vs-");
-			const prop = parts[0] || devigKey;
+			const originalProp = parts[0] || devigKey;
+			const prop = SPORT === "nba" && originalProp === "1st pts" ? "fb" : originalProp;
 			const [reference, embeddedWeights] = (parts[1] || devigKey).split(';');
 			const weights = embeddedWeights?.split('+').map(Number);
 			// Presets apply equal weights. Do not mislabel an unequal historical blend.
@@ -555,6 +556,8 @@ function getTopDevigs(bookArg = null) {
 			if (PAGE == "nhl" && ["2+goals", "3+goals", "no_goal"].includes(prop)) continue;
 			if (PAGE == "fgs" && !["fgs", "lgs"].includes(prop)) continue;
 			if (PAGE == "ftd" && !["ftd", "ltd"].includes(prop)) continue;
+			if (PAGE == "fb" && prop !== "fb") continue;
+			if (PAGE == "nba" && prop === "fb") continue;
 			if (PAGE == "tds" && prop !== "attd") continue;
 
 			list.push({
@@ -590,7 +593,7 @@ function openPreloadsWindow(limit = 0) {
 		container.innerHTML = `<div style="padding:1rem;color:#900">${top.error}</div>`;
 		return;
 	}
-	renderPreloadsList(container, top || [], ({ tds: "attd", ftd: "ftd", fgs: "fgs" })[PAGE] || "atgs");
+	renderPreloadsList(container, top || [], ({ tds: "attd", ftd: "ftd", fgs: "fgs", fb: "fb" })[PAGE] || "atgs");
 }
 
 // close preloads and return to devig modal

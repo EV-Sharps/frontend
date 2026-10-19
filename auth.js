@@ -301,7 +301,7 @@ async function saveExcludeHelper(key) {
 	const excluded = getExcludedBooks();
 
 	if (key == "all") {
-		for (k of ["atgs", "atgs2", "fgs", "ftd", "dingers2", "dingers", "live", "main", "mlb", "nba", "wnba", "ncaaf", "ncaafprops", "nhl", "pts", "threes", "outliers", "soccer", "tds"]) {
+		for (k of ["atgs", "atgs2", "fgs", "ftd", "fb", "dingers2", "dingers", "live", "main", "mlb", "nba", "wnba", "ncaaf", "ncaafprops", "nhl", "pts", "threes", "outliers", "soccer", "tds"]) {
 			data[`${k}-exclude`] = excluded;
 		}
 	} else {
@@ -615,7 +615,7 @@ function initPageData() {
 				fetchPlays();
 			}
 		}, 30 * 1000);
-	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "fgs", "ftd", "kotc", "nba", "wnba", "pts", "threes", "analysis", "ncaab", "baseball_ncaa", "tds", "tds2", "live", "nfl", "ncaaf", "ncaafprops", "strikeouts", "futures", "ufc", "wbc", "cup"].includes(PAGE)) {
+	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "fgs", "ftd", "fb", "kotc", "nba", "wnba", "pts", "threes", "analysis", "ncaab", "baseball_ncaa", "tds", "tds2", "live", "nfl", "ncaaf", "ncaafprops", "strikeouts", "futures", "ufc", "wbc", "cup"].includes(PAGE)) {
 		initChkddActions();
 		fetchProps();
 		renderFilters();

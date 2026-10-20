@@ -757,7 +757,7 @@ function updateExistingCard(card, rowData) {
 				<span class="pos">${rowData.pos || ""}</span>
 				<span class="bats">${(PAGE === "dingers") ? rowData.bats : avgMin || ""}</span>
 			</div>
-			<span class="player-name">${playerLinesName(rowData, player)}</span>
+			<span class="player-name">${playerLinesName(rowData, player)}${typeof nbaLineupBadge === "function" ? nbaLineupBadge(rowData, sport) : ""}</span>
 			${_starSpan}
 		</div>
 		<div class="prop-content-stack">

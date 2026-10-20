@@ -71,6 +71,7 @@
 				<label for="game-select" class="select-label">Game</label>
 				<select id="game-select" onchange="applyFilters()">
 					<option value="">All</option>
+					<option value="today">Today</option>
 				</select>
 				<svg class="select-arrow" viewBox="0 0 20 20">
 					<path d="M7 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -606,11 +607,18 @@
 		TABLE.on('rowClick', (e, row) => rowClick(row));
 
 		TABLE.on('tableBuilt', () => {
+			applyFilters();
 			if (!CSV_DOWNLOADED && CSV != undefined) {
 				TABLE.download("csv", `${PAGE}.csv`, { bom: true });
 				CSV_DOWNLOADED = true;
 			}
 		});
+	}
+
+	const gameDateFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+	function gameDay(value) {
+		const date = new Date(value);
+		return value && Number.isFinite(date.getTime()) ? gameDateFormat.format(date) : '';
 	}
 
 	let STARTERS_ONLY = false;
@@ -632,7 +640,10 @@
 		// due to name-format mismatches between the lineup scrape and Savant IDs.
 		const hasBookOdds = Object.keys(r.bookOdds || {}).length > 0;
 		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r)) return false;
-		return (r.n ?? 0) >= minN && (!game || r.game === game) && (!STARTERS_ONLY || hasBookOdds);
+		const matchesGame = !game || (game === 'today'
+			? gameDay(RAW_DATA?.times?.[r.game]) === gameDay(Date.now())
+			: r.game === game);
+		return (r.n ?? 0) >= minN && matchesGame && (!STARTERS_ONLY || hasBookOdds);
 	}
 
 	// applyFilterBuilder() (shared.js) calls changeFilter() if it exists to
@@ -689,6 +700,8 @@
 	// adapted to this page's plain <select> instead of the checkbox menu.
 	function buildGameFilter(rows) {
 		const sel = document.getElementById('game-select');
+		const selectedGame = sel.value;
+		sel.replaceChildren(new Option('All', ''), new Option('Today', 'today'));
 		const times = RAW_DATA?.times || {};
 		const games = [...new Set(rows.map(r => r.game).filter(Boolean))].sort((a, b) => {
 			const ta = new Date(times[a]).getTime();
@@ -714,6 +727,7 @@
 			opt.textContent = display;
 			sel.appendChild(opt);
 		});
+		if ([...sel.options].some(option => option.value === selectedGame)) sel.value = selectedGame;
 	}
 
 	// ── Mode toggles ─────────────────────────────────────────────────────────
@@ -903,9 +917,9 @@
 			_allRows = applyStatMode(_baseRows, STAT_MODE);
 			computeClientPercentiles(_allRows);
 			RES = { arsenal: built.arsenalMap };
+			buildGameFilter(_allRows);
 			renderTable(_allRows);
 			updatePitchLegend(_allRows);
-			buildGameFilter(_allRows);
 			document.getElementById('player-search').addEventListener('input', applyFilters);
 			if (data.updated) {
 				document.getElementById('updated-label').textContent = `Updated ${timeAgo(data.updated, true)}`;

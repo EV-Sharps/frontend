@@ -232,6 +232,50 @@ class OutliersTests(unittest.TestCase):
                 self.page.keyboard.press('Escape')
                 expect(dialog).to_be_hidden()
 
+    def test_today_game_shortcut_uses_eastern_date_and_keeps_empty_selection_empty(self):
+        games = ['tor @ bos', 'nyr @ buf', 'pit @ det', 'dal @ min', 'sea @ vgk']
+        times = dict(zip(games, ['2026-10-19T02:30:00Z', '2026-10-19T23:30:00Z',
+                                 '2026-10-20T03:30:00Z', '2026-10-20T04:30:00Z', 'invalid']))
+        template = self.payloads['nhl']['data'][0]
+        rows = []
+        for index, game in enumerate(games):
+            row = deepcopy(template)
+            row.update(fixture=f'game-{index}', player=f'game player {index}', game=game,
+                       team=game.split(' @ ')[0], opp=game.split(' @ ')[1])
+            rows.append(row)
+        self.payloads['nhl'].update(data=rows, games=games, times=times)
+        # UTC is already October 20, but the game selector uses October 19 in New York.
+        self.page.clock.set_fixed_time(datetime(2026, 10, 20, 2, 30, tzinfo=timezone.utc))
+        self.open('nhl')
+        self.page.locator('#game-dd-button').click()
+
+        def select(action, expected):
+            self.page.locator(f'#game-options [data-act={action}]').click()
+            checked = self.page.locator('#game-options input:checked').evaluate_all(
+                'inputs => inputs.map(input => input.value)')
+            self.assertEqual(set(checked), set(expected))
+            self.page.wait_for_function("count => TABLE.getData('active').length === count", arg=len(expected))
+            self.assertEqual(set(self.page.evaluate("TABLE.getData('active').map(row => row.game)")),
+                             set(expected))
+
+        expect(self.page.locator('#game-options [data-act=today]')).to_have_count(1)
+        select('today', games[1:3])
+        self.payloads['nhl']['data'][0]['bookOdds']['fd'] = '160/-185'
+        self.refresh()
+        expect(self.page.locator('#game-options [data-act=today]')).to_have_count(1)
+        self.assertEqual(set(self.page.locator('#game-options input:checked').evaluate_all(
+            'inputs => inputs.map(input => input.value)')), set(games[1:3]))
+        if not self.page.locator('#game-options').is_visible():
+            self.page.locator('#game-dd-button').click()
+        select('all', games)
+        select('none', [])
+        expect(self.page.locator('#game-dd-button')).to_have_text('No Games')
+        select('today', games[1:3])
+        self.page.clock.set_fixed_time(datetime(2026, 10, 22, 12, tzinfo=timezone.utc))
+        select('today', [])
+        expect(self.page.locator('#game-dd-button')).to_have_text('No Games')
+        select('all', games)
+
     def test_first_payload_timestamp_only_refresh_and_changed_rows_update_headers(self):
         self.open()
         for book, expected in [('fd', '7m'), ('pn', '5m'), ('circa', '3m'), ('re', '9m'), ('kambi', '4m')]:

@@ -23,6 +23,11 @@
   const pct = v => `${(v * 100).toFixed(3)}%`;
   const time = v => v ? new Date(v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET' : 'Unknown';
   const gameTime = v => market !== 'hr' && v ? new Date(v).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ' / ' + time(v) : time(v);
+  const gameDateFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+  const gameDay = value => {
+    const date = new Date(value);
+    return value && Number.isFinite(date.getTime()) ? gameDateFormat.format(date) : '';
+  };
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
   const selections = ['', '', '', ''];
   const sort = { key: 'ev', direction: 'desc' };
@@ -283,8 +288,9 @@
     renderPickerHelp();
     const search = $('player-search').value.trim().toLowerCase(), game = $('game-filter').value;
     const prop = market === 'nba' ? $('prop-filter').value : '', side = market === 'nba' ? $('side-filter').value : '';
+    const today = game === 'today' ? gameDay(Date.now()) : '';
     const estimates = new Map((catalog?.legs || []).map(leg => [leg.id, pickerEstimate(leg)]));
-    const legs = (catalog?.legs || []).filter(leg => (!game || leg.game === game) && (!prop || leg.prop === prop) && (!side || legSide(leg) === side)
+    const legs = (catalog?.legs || []).filter(leg => (!game || (game === 'today' ? gameDay(leg.start) === today : leg.game === game)) && (!prop || leg.prop === prop) && (!side || legSide(leg) === side)
       && `${leg.player} ${leg.game} ${leg.team || ''} ${market === 'nba' ? leg.market : ''}`.toLowerCase().includes(search)
       && estimates.get(leg.id)?.offer);
     const averages = new Map(legs.map(leg => [leg.id, averagePrice(leg, allBooks)]));
@@ -579,7 +585,7 @@
         renderReferenceBooks();
         renderPropFilter();
         const game = $('game-filter').value;
-        $('game-filter').replaceChildren(new Option('All games', ''));
+        $('game-filter').replaceChildren(new Option('All games', ''), new Option('Today', 'today'));
         [...new Set(data.legs.map(leg => leg.game))].sort().forEach(game => $('game-filter').add(new Option(game.toUpperCase(), game)));
         if ([...$('game-filter').options].some(option => option.value === game)) $('game-filter').value = game;
         renderSelections();
@@ -620,7 +626,7 @@
     selections.fill('');
     clearResult();
     $('player-search').value = '';
-    $('game-filter').replaceChildren(new Option('All games', ''));
+    $('game-filter').replaceChildren(new Option('All games', ''), new Option('Today', 'today'));
     $('prop-filter').replaceChildren(new Option('All props', ''));
     $('side-filter').value = '';
     catalogPage = 0;

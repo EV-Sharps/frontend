@@ -77,6 +77,83 @@
 	background: var(--panel);
 	flex-shrink: 0;
 }
+/* Share the existing footer so refresh controls do not take a separate row. */
+footer.has-table-refresh {
+	display: flex;
+	align-items: center;
+	gap: 4px 12px;
+	padding: 3px 8px;
+}
+footer.has-table-refresh > p {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+}
+.table-refresh-controls {
+	align-self: center;
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	box-sizing: border-box;
+	width: max-content;
+	max-width: 100%;
+	min-height: 28px;
+	margin: 0 0 0 auto;
+	padding: 0;
+	color: #d5e3ef;
+	font: 12px/1.2 system-ui, sans-serif;
+}
+.table-refresh-controls[hidden] { display: none; }
+.table-refresh-status {
+	min-width: 78px;
+	color: #a9bfd1;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+.table-refresh-controls .table-refresh-now {
+	min-height: 26px;
+	margin: 0;
+	padding: 4px 8px;
+	border: 1px solid #4a6b87;
+	border-radius: 4px;
+	background: #203a50;
+	color: #d9edff;
+	font: inherit;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.table-refresh-controls .table-refresh-now:hover:not(:disabled) { background: #2b4c67; border-color: #7ca9cc; }
+.table-refresh-controls .table-refresh-now:disabled { opacity: 0.65; cursor: default; }
+.table-refresh-auto {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	min-height: 26px;
+	margin: 0;
+	padding: 0 4px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+.table-refresh-auto input[type="checkbox"] {
+	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	accent-color: #80bffa;
+	cursor: pointer;
+}
+.table-refresh-controls :is(button, input):focus-visible { outline: 2px solid #a0cfff; outline-offset: 2px; }
+@media (max-width: 600px) {
+	footer.has-table-refresh { flex-wrap: wrap; gap: 2px; padding: 3px 6px; }
+	footer.has-table-refresh > p { flex-basis: 100%; line-height: 1.2; }
+	.table-refresh-controls {
+		gap: 6px;
+		font-size: 11px;
+	}
+	.table-refresh-status { min-width: 72px; }
+}
 html, body {
 	margin: 0; padding: 0;
 	height: 100vh; overflow: hidden;

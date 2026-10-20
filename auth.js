@@ -617,39 +617,23 @@ function initPageData() {
 		}, 30 * 1000);
 	} else if (["mlb", "outliers", "nhl", "atgs", "atgs2", "fgs", "ftd", "fb", "kotc", "nba", "wnba", "pts", "threes", "analysis", "ncaab", "baseball_ncaa", "tds", "tds2", "live", "nfl", "ncaaf", "ncaafprops", "strikeouts", "futures", "ufc", "wbc", "cup"].includes(PAGE)) {
 		initChkddActions();
-		fetchProps();
+		if (PAGE === "analysis") fetchProps();
+		else startTableRefresh(fetchProps);
 		renderFilters();
 		initExcluded();
 		renderTable([]);
-		if (PAGE != "analysis") {
-			setInterval(() => {
-				if (document.hasFocus()) {
-					fetchProps();
-				}
-			}, 30 * 1000);
-		}
 	} else if (PAGE == "main" || PAGE == "soccer" || PAGE == "preseason") {
 		initChkddActions();
-		fetchMain();
+		startTableRefresh(fetchMain);
 		renderFilters();
 		initExcluded();
 		renderTable([]);
-		setInterval(() => {
-			if (document.hasFocus()) {
-				fetchMain();
-			}
-		}, 30 * 1000);
 	} else if (["dingers", "dingers2", "charts"].includes(PAGE)) {
 		initChkddActions();
-		fetchDingersData();
+		startTableRefresh(fetchDingersData);
 		//countdown();
 		renderFilters();
 		initExcluded();
 		renderTable([]);
-		setInterval(() => {
-			if (document.hasFocus()) {
-				fetchDingersData();
-			}
-		}, 30 * 1000);
 	}
 }

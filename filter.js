@@ -14,6 +14,17 @@ function restoreChkddState(menu) {
 }
 
 function wireChkddMenu(menu, onChange = onChkddChange) {
+	// Re-add the shortcut when a data refresh rebuilds an already wired menu.
+	if (menu.id === 'game-options' && !menu.querySelector('[data-act="today"]')) {
+		const actions = menu.querySelector('.chkdd-actions');
+		if (actions) {
+			const today = document.createElement('button');
+			today.type = 'button';
+			today.dataset.act = 'today';
+			today.textContent = 'Today';
+			actions.insertBefore(today, actions.querySelector('[data-act="none"]'));
+		}
+	}
 	// prevent duplicate listeners when menu is rebuilt/refreshed
 	if (menu.dataset.wired === "1") return;
 	menu.dataset.wired = "1";
@@ -1676,6 +1687,8 @@ function changeFilter(render = true) {
 	const requiredBooks = getRequiredBooks();
 	let props = getOptions("prop-options");
 	let games = getOptions("game-options");
+	const gameOptions = [...document.querySelectorAll('#game-options input[type="checkbox"]')];
+	const noGamesSelected = gameOptions.length > 0 && !gameOptions.some(option => option.checked);
 	let excluded = [...getExcludedBooks()];
 	if (boost === "custom") {
 		boost = boostCustom.value;
@@ -1857,7 +1870,7 @@ function changeFilter(render = true) {
 		if (minOdds && !(r.line > parseInt(minOdds, 10))) return false;
 		if (maxOdds && !(r.line < parseInt(maxOdds, 10))) return false;
 		if (props.length && !props.includes(r.prop)) return false;
-		if (games.length && !games.includes(r.game)) return false;
+		if (noGamesSelected || (games.length && !games.includes(r.game))) return false;
 		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r)) return false;
 		return true;
 	});

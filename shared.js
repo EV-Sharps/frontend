@@ -2857,6 +2857,17 @@ const ftFormatter = function(cell, params, rendered) {
 	return cell.getValue()+" ft";
 }
 
+function nbaLineupBadge(data, sport) {
+	const rowSport = String(data?.sport || sport || (typeof SPORT !== "undefined" ? SPORT : "")).toLowerCase();
+	if (rowSport !== "nba" || data?.starting !== true) return "";
+	const status = data.lineupStatus;
+	if (status !== "expected" && status !== "confirmed") return "";
+	const confirmed = status === "confirmed";
+	const label = confirmed ? "Confirmed starter" : "Expected starter";
+	const background = confirmed ? "#4ade80" : "transparent";
+	return `<span class="nba-lineup-badge" data-status="${status}" role="img" aria-label="${label}" title="${label}" style="display:inline-block;box-sizing:border-box;width:10px;height:10px;border:2px solid #4ade80;border-radius:50%;background:${background};vertical-align:middle;margin-left:4px;flex-shrink:0;"></span>`;
+}
+
 function playerLinesName(data, label) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return label;
 	return `<button type="button" class="player-lines-trigger" aria-haspopup="dialog" title="Compare all lines and prices">${PlayerLines.escape(label)}</button>`;
@@ -2999,7 +3010,7 @@ const basePlayerFormatter = function(cell, params, rendered) {
 	if (["nba", "fb", "threes", "atgs", "fgs", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
-	let lineupCircles = "";
+	let lineupCircles = typeof nbaLineupBadge === "function" ? nbaLineupBadge(data, sport) : "";
 	const LINEUP_PROPS = ["1st_goal", "atgs", "sot", "shots", "ast", "score_ast", "tackles", "fouls"];
 	if (PAGE == "cup" && LINEUP_PROPS.includes(data.prop) && (data.confirmed != null || data.starting != null)) {
 		const color = data.starting ? "#4ade80" : "#475569";

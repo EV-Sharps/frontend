@@ -880,7 +880,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u', history: ["nba", "pts", "threes"].includes(PAGE), blurred: rowData.blurred })}
+					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u', history: ["nba", "pts", "threes", "outliers"].includes(PAGE), blurred: rowData.blurred })}
 				</div>
 				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}

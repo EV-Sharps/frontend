@@ -532,7 +532,7 @@
 		PAGE = "live";
 		
 		parseURLParams();
-		if (SPORT === 'nfl') {
+		if (['nfl', 'nba'].includes(SPORT)) {
 			document.querySelector('label[for="ou-select"]').textContent = 'Side';
 			document.querySelector('#ou-select option[value="o"]').textContent = 'Over / Away';
 			document.querySelector('#ou-select option[value="u"]').textContent = 'Under / Home';
@@ -581,7 +581,11 @@
 
 			if (data["data"].length == 0) {
 				await TABLE.replaceData([]);
-				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
+				if (SPORT === 'nba') {
+					initializeCards([]);
+					updateHeaders();
+				}
+				TABLE.options.placeholder = SPORT === 'nba' ? "No live markets available." : "No Data. Login or Upgrade to view";
 				TABLE.redraw(true);
 				return;
 			}

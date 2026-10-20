@@ -2626,9 +2626,10 @@ function convertProp(prop) {
 }
 
 // Live NFL pairs keep the away spread as the canonical handicap for both rows.
+// NBA live markets use the same paired format.
 function liveNflMainMarket(data) {
 	const sport = data.sport || (typeof SPORT === 'undefined' ? '' : SPORT);
-	if (typeof PAGE === 'undefined' || PAGE !== 'live' || sport !== 'nfl'
+	if (typeof PAGE === 'undefined' || PAGE !== 'live' || !['nfl', 'nba'].includes(sport)
 		|| String(data.player || '').trim()
 		|| !['ml', 'spread', 'total', 'away_total', 'home_total'].includes(data.prop)) return null;
 	const game = String(data.game || data.gameId || '');
@@ -2647,7 +2648,8 @@ function liveNflMainMarket(data) {
 
 function liveNflMainIdentity(data) {
 	if (!liveNflMainMarket(data)) return '';
-	return 'live-nfl-' + encodeURIComponent(JSON.stringify([
+	const sport = data.sport || SPORT;
+	return `live-${sport}-` + encodeURIComponent(JSON.stringify([
 		data.game || '', data.gameId || '', data.prop, String(data.handicap ?? ''), !!data.under
 	]));
 }

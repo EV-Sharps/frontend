@@ -505,16 +505,32 @@
 								<label for="custom_oppRank">Opp Rank</label>
 							</div>
 							<div>
-								<input id="custom_hitRate" type="checkbox">
-								<label for="custom_hitRate">Hit Rate</label>
+								<input id="custom_hitRates_szn" type="checkbox">
+								<label for="custom_hitRates_szn">Season Hit Rate</label>
 							</div>
 							<div>
-								<input id="custom_hitRateLYR" type="checkbox">
-								<label for="custom_hitRateLYR">Hit Rate LYR</label>
+								<input id="custom_hitRates_L5" type="checkbox">
+								<label for="custom_hitRates_L5">L5 Hit Rate</label>
 							</div>
 							<div>
-								<input id="custom_hitRateCareer" type="checkbox">
-								<label for="custom_hitRateCareer">Hit Rate Career</label>
+								<input id="custom_hitRates_L10" type="checkbox">
+								<label for="custom_hitRates_L10">L10 Hit Rate</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_L20" type="checkbox">
+								<label for="custom_hitRates_L20">L20 Hit Rate</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_lyr" type="checkbox">
+								<label for="custom_hitRates_lyr">Last Year Hit Rate</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_career" type="checkbox">
+								<label for="custom_hitRates_career">Career Hit Rate</label>
+							</div>
+							<div>
+								<input id="custom_hitRates_bvt" type="checkbox">
+								<label for="custom_hitRates_bvt">vs Opp Hit Rate</label>
 							</div>
 							<div>
 								<input id="custom_logs" type="checkbox">
@@ -571,6 +587,17 @@
 			UPDATED[PAGE] = data.updated || {};
 			updateHeaders();
 
+			const gameMenu = document.getElementById("game-options");
+			gameMenu.innerHTML = `
+				<div class="chkdd-actions">
+					<button type="button" data-act="all">All</button>
+					<button type="button" data-act="none">None</button>
+				</div>
+			`;
+			populateGameOptions(data.games || [], data.times, gameMenu);
+			restoreChkddState(gameMenu);
+			updateGameLabel([...gameMenu.querySelectorAll('input:checked')].map(input => input.value));
+
 			const propMenu = document.getElementById("prop-options");
 			propMenu.innerHTML = `
 				<div class="chkdd-actions">
@@ -578,14 +605,13 @@
 					<button type="button" data-act="none">None</button>
 				</div>
 			`;
-			[...data.props].sort().forEach(p => createOption(p, propMenu));
+			[...(data.props || [])].sort().forEach(p => createOption(p, propMenu));
 			restoreChkddState(propMenu);
-			if (PROP) {
-				updatePropLabel(PROP.split(","));
-			}
+			updatePropLabel([...propMenu.querySelectorAll('input:checked')].map(input => input.value));
 
 			if (data["data"].length == 0) {
 				await TABLE.replaceData([]);
+				initializeCards([]);
 				TABLE.options.placeholder = "No Data. Login or Upgrade to view";
 				TABLE.redraw(true);
 				return;
@@ -837,9 +863,10 @@
 					{title: 'FL', field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: 'Kambi', field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false},
 					{title: 'BOL', field: "bookOdds.bol", width: 70, sorter: "number", formatter: evOddsFormatter},
-					{title: "Season</br>Hit Rate", field: "hitRate",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{title: "Last Year</br>Hit Rate", field: "hitRateLYR",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
-					{title: "Career</br>Hit Rate", field: "hitRateCareer",  sorter: "number", formatter: percentFormatterLYR,  width: MOBILE ? 40 : 60, responsive: 2},
+					...[["szn", "Season"], ["L5", "L5"], ["L10", "L10"], ["L20", "L20"], ["lyr", "Last Year"], ["career", "Career"], ["bvt", "vs Opp"]].map(([key, label]) => ({
+						title: `${label}<br>Hit Rate`, field: `hitRates.${key}`, sorter: hitRateSorter,
+						formatter: hitRateFormatter, width: MOBILE ? 40 : 60, responsive: 2
+					})),
 					{
 						title: "Game Logs<br> ➡️ Most Recent",
 						field: "logs",
@@ -867,6 +894,13 @@
 
 			TABLE.on("dataLoaded", function(data) {
 				showHideUserTable(loaded);
+				// Honor saved layouts from before hit rates used nested window fields.
+				const savedColumns = CURR_USER?.metadata?.[PAGE];
+				if (savedColumns && !savedColumns.some(key => key.startsWith("hitRates_"))) {
+					for (const [legacy, window] of [["hitRate", "szn"], ["hitRateLYR", "lyr"], ["hitRateCareer", "career"]]) {
+						if (savedColumns.includes(legacy)) TABLE.showColumn(`hitRates.${window}`);
+					}
+				}
 				if (!loaded) {
 					changeFilter();
 				}
@@ -912,7 +946,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRate", "logs", "hitRateLYR", "hitRateCareer", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			["ev", "fairVal", "implied", "player", "book", "bookOdds.espn", "bookOdds.circa", "bookOdds.pn", "hitRates.szn", "logs", "hitRates.lyr", "hitRates.career", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 			TABLE.setSort([
 				{column: "implied", dir: "desc"}
@@ -950,7 +984,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`ev`, "fairVal", "implied", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.espn", "bookOdds.pn", "hitRate", "hitRateLYR", "hitRateCareer", "logs", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "fairVal", "implied", "player", "book", "opp", "oppRank", "bookOdds.circa", "bookOdds.espn", "bookOdds.pn", "hitRates.szn", "hitRates.lyr", "hitRates.career", "logs", "due.g.streak", "due.g.med", "due.g.z_median"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 
 			TABLE.setSort([
@@ -967,7 +1001,7 @@
 			TABLE.getColumns().map(c => {
 				c.hide()
 			});
-			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRateLYR", "hitRateCareer"].forEach(c => TABLE.showColumn(c));
+			[`ev`, "fairVal", "implied", "kelly", "player", "book", "prop", "bookOdds.circa", "bookOdds.dk", "hitRates.lyr", "hitRates.career"].forEach(c => TABLE.showColumn(c));
 			document.querySelector("#table").style.width = "max-content";
 		}
 	</script>

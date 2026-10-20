@@ -8,7 +8,7 @@
 	const gameTeams = row => String(row?.game || "").split(" @ ").map(team => team.trim().toUpperCase());
 	const mainRow = row => !!row && !row.player && mainMarket(row.prop) && gameTeams(row).length === 2 && gameTeams(row).every(Boolean);
 	const canOpen = (page, row) => !!row && !row.blurred && (page === "main" ? mainRow(row)
-		: ["mlb", "nfl", "nhl", "ncaaf", "nba", "pts", "threes"].includes(page) && !!row.player && !!row.prop && row.prop !== "separator");
+		: ["mlb", "nfl", "nhl", "ncaaf", "nba", "pts", "threes", "outliers"].includes(page) && !!row.player && !!row.prop && row.prop !== "separator");
 	const payout = price => price > 0 ? 1 + price / 100 : 1 + 100 / Math.abs(price);
 	const spreadMarket = prop => /(?:^|_)spread$/.test(prop);
 	const moneylineMarket = prop => /(?:^|_)ml$/.test(prop);

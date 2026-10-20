@@ -106,7 +106,7 @@ test('missing or invalid liquidity remains unknown', () => {
 });
 
 test('supported prop pages expose player price comparisons while locked rows remain unavailable', () => {
-	for (const page of ['mlb', 'nfl', 'nhl', 'ncaaf', 'nba', 'pts', 'threes']) {
+	for (const page of ['mlb', 'nfl', 'nhl', 'ncaaf', 'nba', 'pts', 'threes', 'outliers']) {
 		assert.equal(canOpen(page, selected), true);
 		assert.equal(canOpen(page, { ...selected, blurred: true }), false);
 		assert.equal(canOpen(page, { ...selected, prop: 'separator' }), false);

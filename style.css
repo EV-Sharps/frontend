@@ -32,6 +32,35 @@
 	width: min(360px, calc(100vw - 64px));
 }
 #kelly-settings::backdrop { background: rgba(0, 0, 0, 0.65); }
+.record-column-heading { display: flex; align-items: center; justify-content: center; gap: 3px; }
+.record-column-bins { display: block; font-size: 10px; font-weight: normal; }
+.tabulator .record-info-button {
+	display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px;
+	width: 22px; height: 22px; margin: 0; padding: 0; border: 1px solid #627b90;
+	border-radius: 50%; background: transparent; color: #b8d9f6; font: 600 12px/1 Georgia, serif; cursor: pointer;
+}
+.tabulator .record-info-button:hover { background: #263c50; color: #eef6ff; }
+.tabulator .record-info-button:focus-visible, #record-info button:focus-visible { outline: 2px solid #a0cfff; outline-offset: 2px; }
+#record-info {
+	box-sizing: border-box; width: min(540px, calc(100vw - 24px)); max-width: none;
+	max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); margin: auto; padding: 0;
+	overflow: hidden; border: 1px solid #40576c; border-radius: 10px;
+	background: #111d29; color: #dce7f2; box-shadow: 0 20px 60px #0008; text-align: left;
+	font: 13px/1.6 system-ui, sans-serif; color-scheme: dark;
+}
+#record-info[open] { display: flex; flex-direction: column; }
+#record-info::backdrop { background: #030910b8; }
+#record-info .record-info-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; padding: 14px 16px; border-bottom: 1px solid #304357; }
+#record-info h2 { margin: 0; color: #f0f6fc; font-size: 16px; line-height: 1.4; text-align: left; }
+#record-info .record-info-close { flex: 0 0 32px; width: 32px; height: 32px; margin: 0; padding: 0; border: 1px solid #40576c; border-radius: 5px; background: #1b2b3c; color: #cfdeec; font: 22px/1 system-ui, sans-serif; cursor: pointer; }
+#record-info .record-info-close:hover { background: #2a4057; color: #fff; }
+#record-info .record-info-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 20px 20px; }
+#record-info p { margin: 0 0 12px; }
+#record-info p:last-child { margin-bottom: 0; }
+#record-info h3 { margin: 20px 0 6px; color: #b8d9f6; font-size: 13px; }
+#record-info .record-info-example { display: grid; gap: 5px; padding: 12px 14px; border: 1px solid #365773; border-radius: 6px; background: #192f43; }
+#record-info .record-info-example span { color: #bbcedf; }
+#record-info .record-info-formula { margin: 10px 0; padding: 10px 12px; border-left: 3px solid #83cfad; background: #1a302e; color: #bce8d2; font-variant-numeric: tabular-nums; }
 #kelly-settings form, .profile-kelly-settings { display: grid; gap: 10px; }
 .profile-kelly-settings { margin-top: 16px; max-width: 380px; }
 #kelly-settings h3, #kelly-settings p, .profile-kelly-settings p { margin: 0; }
@@ -1116,7 +1145,9 @@ html.odds-app #app > main { min-height: 0; }
 	overflow: hidden;
 	clip-path: inset(50%);
 }
-#dev-picker-row .dev-preset-control select { width: 100%; min-width: 64px; }
+#dev-picker-row .dev-preset-control select { 
+	width: 100%; min-width: 50px; 
+}
 .dev-preset-note {
 	flex: 0 0 100%;
 	box-sizing: border-box;

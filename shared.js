@@ -205,6 +205,7 @@ const PAGE_SECTIONS = [
 			{ label: "🏀 All Props", value: "nba", tier: "sharp" },
 			{ label: "NBA Parlays", value: "parlays?market=nba", tier: "sharp" },
 			{ label: "First Basket", value: "fb", tier: "analyst" },
+			{ label: "🏀 Outliers", value: "outliers?sport=nba", tier: "sharp" },
 			{ label: "🏆 Main", value: "main?sport=nba", tier: "sharp" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nba", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nba", tier: "sharp" },
@@ -247,6 +248,7 @@ const PAGE_SECTIONS = [
 			{ label: "First Goals", value: "fgs", tier: "analyst" },
 			{ label: "🏒 Props", value: "nhl", tier: "sharp" },
 			{ label: "🏒 Live", value: "live?sport=nhl", tier: "sharp" },
+			{ label: "🏒 Outliers", value: "outliers?sport=nhl", tier: "sharp" },
 			{ label: "🏒 NHL Game Tracker", value: "nfl_tracker?sport=nhl", tier: "free" },
 			{ label: "🏒 Main", value: "main?sport=nhl", tier: "sharp" },
 			{ label: "📝 Main Recap", value: "main_recap?sport=nhl", tier: "free" },
@@ -273,8 +275,6 @@ const PAGE_SECTIONS = [
 			{ label: "🗺️ Heat Map", value: "heatmap", tier: "free" },
 			{ label: "📋 Cheat Sheets", value: "cheat", tier: "free" },
 			{ label: "⚾ Outliers", value: "outliers?sport=mlb", tier: "sharp" },
-			{ label: "🏀 Outliers", value: "outliers?sport=nba", tier: "sharp" },
-			{ label: "🏒 Outliers", value: "outliers?sport=nhl", tier: "sharp" },
 		]
 	},
 	{
@@ -974,9 +974,64 @@ function ensureOpeningColumnControl(table = TABLE) {
 	checkbox.checked = column.isVisible();
 }
 
+function openRecordInfo(event) {
+	event?.stopPropagation();
+	let dialog = document.getElementById('record-info');
+	if (!dialog) {
+		dialog = document.createElement('dialog');
+		dialog.id = 'record-info';
+		dialog.setAttribute('aria-labelledby', 'record-info-title');
+		dialog.innerHTML = `<div class="record-info-header"><h2 id="record-info-title">How Record is calculated</h2>
+			<button type="button" class="record-info-close" aria-label="Close record explanation" autofocus>&times;</button></div>
+			<div class="record-info-body">
+				<p>Record shows how a group of similar historical bets performed, pooling qualifying players and lines.</p>
+				<h3>Which bets are included?</h3>
+				<p>We match the sport, prop, betting book and devig book combination, using the selected devig method. If that betting book has no history, the available best-price history is used. Within each prop, individual players, lines, over/under sides and custom devig weights are not separately matched.</p>
+				<h3>Odds and EV ranges</h3>
+				<p>Bets are grouped into <strong>100-point American odds ranges</strong> and <strong>1-percentage-point EV ranges</strong>. The highest stored odds bucket can also include higher historical prices.</p>
+				<div class="record-info-example"><strong>Example: +550 odds with 8.4% EV</strong><span>Odds: +500 up to, but below, +600<br>EV: 8% up to, but below, 9%</span></div>
+				<h3>Win/loss record and ROI</h3>
+				<p>W&ndash;L counts the wins and losses in that group. Each bet risks <strong>1 unit</strong>; wins use their recorded net payouts, including fees where recorded, and a loss costs 1 unit.</p>
+				<div class="record-info-formula">ROI = net profit &divide; total units staked &times; 100</div>
+				<p>For example, +12 units of profit from 100 bets is +12% ROI.</p>
+				<h3>History and settings</h3>
+				<p>This column uses the published historical sample and flat 1-unit stakes. The preset record window, Close/Open and Kelly controls do not change it.</p>
+				<h3>Why is there a dash?</h3>
+				<p>There is no matching history, the odds or EV are outside the supported range, or devig books are excluded. Coverage is currently +100 to +3000 odds and 0% to 30% EV, where history is available.</p>
+			</div>`;
+		document.body.appendChild(dialog);
+		dialog.querySelector('.record-info-close').addEventListener('click', () => dialog.close());
+		let backdropPress = false;
+		const outside = e => {
+			const rect = dialog.getBoundingClientRect();
+			return e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+		};
+		dialog.addEventListener('pointerdown', e => { backdropPress = e.target === dialog && outside(e); });
+		dialog.addEventListener('click', e => {
+			if (backdropPress && e.target === dialog && outside(e)) dialog.close();
+			backdropPress = false;
+		});
+	}
+	if (!dialog.open) {
+		dialog.showModal();
+		dialog.querySelector('.record-info-body').scrollTop = 0;
+	}
+}
+
+function recordROIHeaderFormatter() {
+	const header = document.createElement('div');
+	header.innerHTML = `<span class="record-column-heading">Record <button type="button" class="record-info-button" aria-label="How Record is calculated" aria-haspopup="dialog" aria-controls="record-info" title="How Record is calculated">i</button></span>
+		<span class="record-column-bins">100-odds bins<br>1% EV bins</span>`;
+	const button = header.querySelector('button');
+	button.addEventListener('click', openRecordInfo);
+	// Opening help must not start a column drag or a header interaction.
+	['pointerdown', 'mousedown', 'touchstart', 'keydown'].forEach(type => button.addEventListener(type, event => event.stopPropagation()));
+	return header;
+}
+
 function recordROIColumn() {
 	return {
-		title: 'Record<br><span style="font-size: 10px; font-weight: normal;">100-odds bins<br>1% EV bins</span>',
+		title: 'Record', titleFormatter: recordROIHeaderFormatter,
 		field: 'roiRecord', width: 80, minWidth: 80, headerSort: false,
 		formatter: recordROIFormatter, visible: recordColumnVisible(),
 		headerTooltip: 'Historical W\u2013L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.'

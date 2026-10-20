@@ -318,15 +318,13 @@ function toggleBookOddsColumns() {
 
 function updateHeaders() {
 	const weights = (typeof devigDisplay !== "undefined") ? getPercentWeights() : {};
-	for (book in UPDATED[PAGE]) {
-		if (!UPDATED[PAGE][book]) {
-			continue;
-		}
-
-		if (!TABLE.getColumn(`bookOdds.${book}`)) {
-			continue;
-		}
-		let html = `${book.toUpperCase()}<img class='book-img' src='logos/${book}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' />`;
+	const updated = UPDATED[PAGE] || {};
+	for (const column of TABLE?.getColumns() || []) {
+		const field = column.getField();
+		if (!field?.startsWith('bookOdds.')) continue;
+		const book = field.slice('bookOdds.'.length);
+		const logo = book.replace(/^hr_(az|oh)$/, 'hr');
+		let html = `${book.toUpperCase()}<img class='book-img' src='logos/${logo}.png' alt='${book}' title='${book}' style='height:12px;width:12px;' />`;
 
 		if (book == "kal") {
 			html += `<a href='https://kalshi.com/r/evdingers' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='position:absolute;bottom:13px;left:0;font-size:10px;color:#9ca3af;text-decoration:none;'>Referral</a>`;
@@ -334,7 +332,8 @@ function updateHeaders() {
 			html += `<a href='https://prophetx.onelink.me/Z8Ks/EV_DINGERS' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='position:absolute;bottom:13px;left:0;font-size:10px;color:#9ca3af;text-decoration:none;'>Referral</a>`;
 		}
 
-		let ta = timeAgo(UPDATED[PAGE][book], short=true);
+		const timestamp = updated[book];
+		let ta = timestamp && Number.isFinite(new Date(timestamp).getTime()) ? timeAgo(timestamp, true) : '';
 		if (ta) {
 			html += `<span class='time-hdrs' style='font-size:0.7rem;'>${ta.replace(" ago", "")}</span>`;
 		}
@@ -343,7 +342,7 @@ function updateHeaders() {
 			html += `⚖️<br>${Math.round(weights[book])}%`;
 		}
 		html += '</span>';
-		let el = TABLE.getColumn(`bookOdds.${book}`).getElement();
+		let el = column.getElement();
 		let title = el.querySelector(".tabulator-col-title");
 		title.style.height = "48px";
 		title.innerHTML = html;

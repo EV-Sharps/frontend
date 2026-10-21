@@ -31,6 +31,8 @@ const context = vm.createContext({ PAGE: 'nba', SPORT: 'nba', PLAYER: '', MOBILE
   cardStateKey: () => 'fixture',
 });
 vm.runInContext(slice(shared, 'function nbaLineupBadge(', 'function playerLinesName('), context);
+vm.runInContext(slice(shared, 'const oppFormatter =', 'const feedPitcherFormatter =')
+  + '\nthis.oppFormatter = oppFormatter;', context);
 vm.runInContext(slice(shared, 'const basePlayerFormatter =', 'function getGoalieColor(')
   + '\nthis.basePlayerFormatter = basePlayerFormatter;', context);
 vm.runInContext(slice(card, 'function updateExistingCard(', 'function renderCards('), context);
@@ -49,7 +51,7 @@ for (const [status, confirmed, label, background] of [
   ['expected', false, 'Expected starter', 'transparent'],
   ['confirmed', true, 'Confirmed starter', '#4ade80'],
 ]) {
-  for (const page of ['nba', 'pts', 'threes', 'fb', 'kotc']) {
+  for (const page of ['nba', 'pts', 'threes', 'fb', 'kotc', 'outliers']) {
     context.PAGE = page;
     const data = row({ lineupStatus: status, confirmed, prop: page === 'fb' ? 'fb' : 'pts' });
     const badge = context.nbaLineupBadge(data);
@@ -57,7 +59,10 @@ for (const [status, confirmed, label, background] of [
     includes(badge, `aria-label="${label}"`);
     includes(badge, `background:${background}`);
     const table = context.basePlayerFormatter(cell(data), { sport: 'nba', noProp: true, fullName: true });
-    includes(table, badge);
+    excludes(table, 'nba-lineup-badge');
+    const opponent = context.oppFormatter({ ...cell(data), getValue: () => data.opp }, { is_pitcher: false });
+    includes(opponent, 'nba-opp-lineup');
+    includes(opponent, badge);
     context.updateExistingCard(fakeCard(), data);
     includes(cardHtml, badge);
   }
@@ -72,6 +77,7 @@ for (const data of [row({ starting: false }), row({ starting: null }), row({ sta
   if (!data.player) continue;
   const table = context.basePlayerFormatter(cell(data), { sport: data.sport, noProp: true, fullName: true });
   excludes(table, 'nba-lineup-badge');
+  excludes(context.oppFormatter({ ...cell(data), getValue: () => data.opp }, { is_pitcher: false }), 'nba-lineup-badge');
   context.updateExistingCard(fakeCard(), data);
   excludes(cardHtml, 'nba-lineup-badge');
 }

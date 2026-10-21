@@ -1138,6 +1138,7 @@ function syncOddsSummaryColumns(table = TABLE) {
 
 function applyOddsTableView(table = TABLE) {
 	if (!supportsOddsViews()) return;
+	syncNbaLineupLegends(table);
 	const tableElement = document.getElementById('table');
 	tableElement?.classList.toggle('stacked-odds', CURRENT_VIEW === 'table');
 	const mobile = CURRENT_VIEW === 'mobile';
@@ -2118,11 +2119,12 @@ const oppFormatter = function(cell, params, rendered) {
 	let sport = data.sport || SPORT;
 	if (params.prop == "k" || params.is_pitcher || sport.includes("ncaa") || sport == "nhl" || sport == "nba" || sport == "wnba") {
 		let t = team?.toUpperCase() || "";
-		return `<div class="opp-cell">
+		const opponent = `<div class="opp-cell">
 			${ah}
 			${getTeamImg(sport, team)}
 			${t}
 		</div>`;
+		return sport === "nba" ? `<div class="nba-opp-lineup">${opponent}${nbaLineupBadge(data, sport)}</div>` : opponent;
 	}
 	let pitcher = "";
 	if (PAGE == "preview") {
@@ -2868,6 +2870,23 @@ function nbaLineupBadge(data, sport) {
 	return `<span class="nba-lineup-badge" data-status="${status}" role="img" aria-label="${label}" title="${label}" style="display:inline-block;box-sizing:border-box;width:10px;height:10px;border:2px solid #4ade80;border-radius:50%;background:${background};vertical-align:middle;margin-left:4px;flex-shrink:0;"></span>`;
 }
 
+function syncNbaLineupLegends(table) {
+	if (SPORT !== 'nba' || !table) return;
+	const opponent = table.getColumns().find(column => column.getField() === 'opp' && column.getDefinition().formatter === oppFormatter);
+	const container = opponent?.getElement().querySelector('.tabulator-col-content');
+	if (!container || container.querySelector('.nba-lineup-legend')) return;
+	const legend = document.createElement('div');
+	legend.className = 'nba-lineup-legend';
+	legend.setAttribute('role', 'group');
+	legend.setAttribute('aria-label', 'Starting lineup indicators');
+	legend.innerHTML = '<span class="nba-lineup-legend-title">Lineups</span>' + ['expected', 'confirmed'].map(status =>
+		`<span class="nba-lineup-legend-item">${nbaLineupBadge({ sport: 'nba', starting: true, lineupStatus: status })}<span>${status === 'expected' ? 'Expected' : 'Confirmed'}</span></span>`
+	).join('');
+	legend.querySelectorAll('.nba-lineup-badge').forEach(badge => badge.setAttribute('aria-hidden', 'true'));
+	legend.addEventListener('click', event => event.stopPropagation());
+	container.append(legend);
+}
+
 function playerLinesName(data, label) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return label;
 	return `<button type="button" class="player-lines-trigger" aria-haspopup="dialog" title="Compare all lines and prices">${PlayerLines.escape(label)}</button>`;
@@ -3010,7 +3029,7 @@ const basePlayerFormatter = function(cell, params, rendered) {
 	if (["nba", "fb", "threes", "atgs", "fgs", "kotc"].includes(PAGE)) {
 		pos = data.pos;
 	}
-	let lineupCircles = typeof nbaLineupBadge === "function" ? nbaLineupBadge(data, sport) : "";
+	let lineupCircles = "";
 	const LINEUP_PROPS = ["1st_goal", "atgs", "sot", "shots", "ast", "score_ast", "tackles", "fouls"];
 	if (PAGE == "cup" && LINEUP_PROPS.includes(data.prop) && (data.confirmed != null || data.starting != null)) {
 		const color = data.starting ? "#4ade80" : "#475569";

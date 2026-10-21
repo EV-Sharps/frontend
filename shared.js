@@ -5103,7 +5103,7 @@ function addPXFee(ou) {
 // charging books here rather than repeating the per-book branch at each call site below.
 const BOOK_FEE_FUNCTIONS = {
 	kal: addKalshiFee,
-	//px: addPXFee,
+	px: addPXFee,
 };
 
 function parseBookFilter(value, preserveBest = typeof PAGE !== "undefined" && PAGE === "heatmap") {

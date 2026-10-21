@@ -570,6 +570,10 @@
 							<div>
 								<h3>Other</h3>
 								<div>
+									<input id="custom_teamTotal" type="checkbox">
+									<label for="custom_teamTotal">Est. Team Pts</label>
+								</div>
+								<div>
 									<input id="custom_oppRank" type="checkbox">
 									<label for="custom_oppRank">Opp Rank</label>
 								</div>
@@ -721,7 +725,7 @@
 		
 		const NBA_DEFAULT_COL_ORDER = [
 			'ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly',
-			'opp', 'oppRank', 'oppPosRank',
+			'opp', 'teamTotal', 'oppRank', 'oppPosRank',
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm',
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_hr_az', 'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi',
@@ -772,6 +776,7 @@
 				{ key: 'opp', label: 'Opp', cols: [
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80}
 				]},
+				{ key: 'teamTotal', label: 'Est. Team Pts', cols: [getNbaTeamTotalColumn()] },
 				{ key: 'oppRank', label: 'Opp Rank', cols: [
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50}
 				]},

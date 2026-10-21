@@ -804,10 +804,14 @@ function updateExistingCard(card, rowData) {
 		</div>` : "";
 	}
 
+	const teamPoints = rowData.teamTotal;
+	const nbaTeamTotal = ["nba", "pts", "threes", "fb"].includes(PAGE)
+		? `<div class="card-row nba-team-total" title="Estimated full-game team points from the game total and spread; median across books.">Est. Team Pts: <strong>${teamPoints == null || teamPoints === "" || !Number.isFinite(Number(teamPoints)) ? "-" : Number(teamPoints).toFixed(2)}</strong></div>` : "";
 	header.innerHTML = `
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
+		${nbaTeamTotal}
 
 		<!-- Top metrics -->
 		<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">

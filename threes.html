@@ -542,6 +542,10 @@
 							<div>
 								<h3>Other</h3>
 								<div>
+									<input id="custom_teamTotal" type="checkbox">
+									<label for="custom_teamTotal">Est. Team Pts</label>
+								</div>
+								<div>
 									<input id="custom_oppRank" type="checkbox">
 									<label for="custom_oppRank">Opp Rank</label>
 								</div>
@@ -796,6 +800,7 @@
 						visible: MOBILE ? false : true
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
+					getNbaTeamTotalColumn(),
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
 					{title: "DvP<br>Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},

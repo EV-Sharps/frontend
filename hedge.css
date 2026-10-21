@@ -79,6 +79,11 @@ main.hedge-main { display: block; flex: none; width: 100%; max-width: 1420px; he
 .hedge-table .conversion strong { color: #9bdfb8; font-size: 23px; }
 .hedge-table a { display: inline-block; margin-top: 7px; font-size: 11px; text-underline-offset: 3px; }
 .side-label { color: #a8bbc6; font-size: 10px; letter-spacing: .4px; margin-right: 4px; }
+.hedge-table .selection-quote { white-space: normal; }
+.selection-quote .side-label { display: block; margin: 0 0 5px; color: #d0e0e8; font-size: 12px; line-height: 1.4; letter-spacing: 0; overflow-wrap: anywhere; }
+.selection-quote > span:last-child { white-space: nowrap; }
+.hedge-table .push-payout, .hedge-table .push-note { color: #f1d5a6; }
+.hedge-table .push-note { max-width: 220px; white-space: normal; }
 .hedge-book { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #c5d4db; }
 .liquidity-badge { display: inline-block; padding: 4px 7px; border: 1px solid #436350; border-radius: 4px; color: #a6dfb9; background: #213a2b; font-size: 10px; white-space: nowrap; }
 .liquidity-badge.unknown { color: #f2d39b; border-color: #7f6944; background: #3a3020; }

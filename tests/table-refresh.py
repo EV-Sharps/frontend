@@ -37,8 +37,10 @@ INIT = r"""(() => {
     const originalFetch = window.fetch.bind(window);
     window.fixtureTransport = {requests: [], mode: 'auto', payload: PAYLOAD};
     window.fetch = (url, options = {}) => {
-        if (new URL(String(url), location.href).pathname !== ENDPOINT) return originalFetch(url, options);
-        const captured = structuredClone(fixtureTransport.payload);
+        const path = new URL(String(url), location.href).pathname;
+        if (!['/api/outliers', '/api/main', '/api/ev'].includes(path)) return originalFetch(url, options);
+        const captured = structuredClone(path === ENDPOINT ? fixtureTransport.payload : {
+            data: [], games: [], props: [], updated: {}, record: {}, times: {}});
         const entry = {url: String(url), aborted: false};
         fixtureTransport.requests.push(entry);
         options.signal?.addEventListener('abort', () => { entry.aborted = true; });
@@ -48,10 +50,7 @@ INIT = r"""(() => {
         if (fixtureTransport.mode === 'hold') return new Promise(resolve => { entry.release = () => resolve(response()); });
         return Promise.resolve(response());
     };
-    if (PAUSED && !sessionStorage.getItem('fixture_pause_seeded')) {
-        localStorage.setItem('ev_table_auto_refresh', 'false');
-        sessionStorage.setItem('fixture_pause_seeded', 'true');
-    }
+    if (LEGACY_PAUSED) localStorage.setItem('ev_table_auto_refresh', 'false');
 })();"""
 
 
@@ -98,7 +97,7 @@ class TableRefreshTests(unittest.TestCase):
             self.context.close()
         self.assertEqual(self.errors, [])
 
-    def open(self, name='outliers', width=1440, *, paused=False, cards=False):
+    def open(self, name='outliers', width=1440, *, paused=False, cards=False, legacy_paused=False):
         if self.context:
             self.context.close()
         self.context = self.browser.new_context(viewport={'width': width, 'height': 900})
@@ -110,7 +109,8 @@ class TableRefreshTests(unittest.TestCase):
             'data': [], 'games': [], 'props': [], 'updated': {}, 'record': {}, 'times': {}}
         endpoint = {'outliers': '/api/outliers', 'main': '/api/main', 'dingers': '/api/ev'}[name]
         self.page.add_init_script(INIT.replace('PAYLOAD', json.dumps(payload))
-                                  .replace('ENDPOINT', json.dumps(endpoint)).replace('PAUSED', json.dumps(paused)))
+                                  .replace('ENDPOINT', json.dumps(endpoint))
+                                  .replace('LEGACY_PAUSED', json.dumps(legacy_paused)))
         self.page.route('https://**/*', lambda route: route.fulfill(body='', content_type='application/javascript'))
         self.page.route('**/auth.js', lambda route: route.fulfill(body=self.auth, content_type='application/javascript'))
         self.page.route(re.compile(r'/record(?:_[a-z]+)*\.js(?:\?.*)?$'), lambda route: route.fulfill(
@@ -123,10 +123,14 @@ class TableRefreshTests(unittest.TestCase):
                        + ('&sport=nhl' if name == 'outliers' else ''))
         expect(self.page.locator('#table-refresh-controls')).to_be_visible()
         expect(self.page.locator('#data-status')).to_be_hidden()
-        expect(self.status).to_have_text('Auto off' if paused else re.compile(r'Next in \d+s'))
+        expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
+        expect(self.auto).to_be_checked()
         current = datetime.fromisoformat(self.page.evaluate('new Date().toISOString()').replace('Z', '+00:00'))
         self.page.clock.pause_at(current + timedelta(milliseconds=20))
-        self.assertEqual(self.requests(), 1, 'The initial load must run exactly once, even when auto is off')
+        self.assertEqual(self.requests(), 1, 'Each page starts enabled and loads exactly once')
+        if paused:
+            self.auto.uncheck()
+            expect(self.status).to_have_text('Auto off')
 
     @property
     def status(self):
@@ -181,7 +185,6 @@ class TableRefreshTests(unittest.TestCase):
         expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
         self.auto.uncheck()
         expect(self.status).to_have_text('Auto off')
-        self.assertEqual(self.page.evaluate("localStorage.getItem('ev_table_auto_refresh')"), 'false')
         self.settle(65000)
         self.assertEqual(self.requests(), 2)
         self.manual()
@@ -194,7 +197,7 @@ class TableRefreshTests(unittest.TestCase):
         self.settle(1500)
         self.assertEqual(self.requests(), 4)
 
-    def test_saved_off_loads_once_and_suppresses_live_and_lifecycle_updates(self):
+    def test_pause_suppresses_live_and_tab_visibility_updates(self):
         self.open(paused=True)
         expect(self.auto).not_to_be_checked()
         self.settle(65000)
@@ -216,15 +219,54 @@ class TableRefreshTests(unittest.TestCase):
                 source.emit('odds-update', {dataset:'fixture-table'});
             }
             fixtureVisibility(false); fixtureVisibility(true);
-            window.dispatchEvent(new Event('pagehide'));
-            window.dispatchEvent(new Event('pageshow'));
         }""")
         self.settle(65000)
-        self.assertEqual(self.requests(), 4, 'Paused tables must ignore SSE and lifecycle catch-up')
-        self.page.clock.resume()  # The replacement Tabulator needs its initial animation frames.
-        self.page.reload()
+        self.assertEqual(self.requests(), 4, 'Paused tables must ignore SSE and tab visibility catch-up')
+        expect(self.auto).not_to_be_checked()
         expect(self.status).to_have_text('Auto off')
-        self.assertEqual(self.requests(), 1, 'Reload keeps auto off but still obtains initial data')
+
+    def test_navigation_back_and_reload_start_enabled_despite_legacy_saved_pause(self):
+        self.open(legacy_paused=True)
+        self.auto.uncheck()
+        expect(self.status).to_have_text('Auto off')
+        self.page.clock.resume()  # A new document needs its initial Tabulator animation frames.
+        self.page.goto(f'http://localhost:{self.server.server_port}/main.html?view=compact&devig=pn')
+        expect(self.auto).to_be_checked()
+        expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
+        self.assertEqual(self.requests(), 1)
+        self.assertIn('/api/main', self.page.evaluate('fixtureTransport.requests[0].url'))
+        self.auto.uncheck()
+        # Filter initialization pushes same-page URL entries; traverse those too.
+        for _ in range(self.page.evaluate('history.length')):
+            self.page.go_back()
+            if '/outliers.html' in self.page.url:
+                break
+            expect(self.auto).not_to_be_checked()
+        self.assertIn('/outliers.html', self.page.url)
+        expect(self.auto).to_be_checked()
+        expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
+        self.assertIn('/api/outliers', self.page.evaluate('fixtureTransport.requests.at(-1).url'))
+        expect(self.page.locator('#table-refresh-controls')).to_have_count(1)
+        self.auto.uncheck()
+        self.page.reload()
+        expect(self.auto).to_be_checked()
+        expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
+        self.assertEqual(self.requests(), 1, 'Reload must start a fresh enabled controller')
+
+    def test_restoring_cached_page_reenables_and_refreshes_once(self):
+        self.open(paused=True)
+        self.page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide', {persisted:true}))")
+        self.settle(65000)
+        self.assertEqual(self.requests(), 1)
+        self.page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
+        self.settle()
+        expect(self.auto).to_be_checked()
+        expect(self.status).to_have_text(re.compile(r'Next in \d+s'))
+        self.assertEqual(self.requests(), 2, 'Restoring a paused document must fetch immediately')
+        self.page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
+        self.settle()
+        self.assertEqual(self.requests(), 2, 'Repeated pageshow must not create another refresh or controller')
+        expect(self.page.locator('#table-refresh-controls')).to_have_count(1)
 
     def test_pause_cancels_queued_live_refresh_behind_pending_request(self):
         self.open()

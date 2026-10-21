@@ -139,24 +139,51 @@ test('initial load, manual refresh, completion-based countdown and failed pollin
   assert.equal(h.maxActive(), 1); controller.dispose();
 });
 
-test('saved Off allows initial/manual loads, blocks every automatic trigger and enables immediately', async () => {
+test('new pages ignore a legacy saved Off and begin polling with live updates enabled', async () => {
   const h = harness({ stored: 'false' }), controller = h.start(); await flush();
+  assert.equal(h.requests.length, 1); assert.equal(h.refresh.autoRefreshEnabled, true);
+  assert.equal(h.document.getElementById('table-refresh-controls').querySelector('input').checked, true);
+  assert.equal(h.document.querySelector('.table-refresh-status').textContent, 'Next in 30s');
+  assert.equal(h.sources.filter(source => !source.closed).length, 1);
+  await h.tick(30000); assert.equal(h.requests.length, 2);
+  controller.dispose();
+});
+
+test('pausing the current page allows manual loads, blocks automatic triggers and enables immediately', async () => {
+  const h = harness(), controller = h.start(); await flush();
+  controller.setEnabled(false);
   assert.equal(h.requests.length, 1); assert.equal(h.refresh.autoRefreshEnabled, false);
   assert.equal(h.document.getElementById('table-refresh-controls').querySelector('input').checked, false);
   assert.equal(h.document.querySelector('.table-refresh-status').textContent, 'Auto off');
-  assert.equal(h.sources.length, 0);
-  await h.tick(90000); h.hide(); h.show(); h.window.emit('pagehide'); h.window.emit('pageshow'); await h.tick(500);
+  assert.ok(h.sources.every(source => source.closed));
+  await h.tick(90000); h.hide(); h.show(); await h.tick(500);
   assert.equal(h.requests.length, 1);
   h.document.querySelector('.table-refresh-now').emit('click'); await flush();
   assert.equal(h.requests.length, 2, 'Refresh button remains usable with Auto off');
   const checkbox = h.document.getElementById('table-refresh-controls').querySelector('input'); checkbox.checked = true; checkbox.emit('change'); await flush();
   assert.equal(h.requests.length, 3, 'Turning Auto on refreshes immediately');
-  assert.equal(h.refresh.autoRefreshEnabled, true); assert.equal(h.storedValues.get('ev_table_auto_refresh'), 'true');
+  assert.equal(h.refresh.autoRefreshEnabled, true);
   assert.equal(h.sources.filter(source => !source.closed).length, 1);
   controller.setEnabled(false); await flush();
-  assert.equal(h.storedValues.get('ev_table_auto_refresh'), 'false');
+  assert.equal(h.storedValues.has('ev_table_auto_refresh'), false, 'Pause must not be saved for other pages');
   assert.ok(h.sources.every(source => source.closed));
   await h.tick(90000); assert.equal(h.requests.length, 3); controller.dispose();
+});
+
+test('back/forward restoration re-enables a paused page and immediately refreshes once', async () => {
+  const h = harness(), controller = h.start({ intervalMs: 2000 }); await flush();
+  controller.setEnabled(false);
+  h.window.emit('pagehide', { persisted: true }); await h.tick(10000);
+  assert.equal(h.requests.length, 1);
+  h.window.emit('pageshow', { persisted: true }); await flush();
+  assert.equal(h.requests.length, 2, 'Returning to the page immediately refreshes');
+  assert.equal(h.refresh.autoRefreshEnabled, true);
+  assert.equal(h.document.getElementById('table-refresh-controls').querySelector('input').checked, true);
+  assert.equal(h.sources.filter(source => !source.closed).length, 1);
+  h.window.emit('pageshow', { persisted: true }); await flush();
+  assert.equal(h.requests.length, 2, 'Repeated pageshow does not duplicate the refresh');
+  await h.tick(2000); assert.equal(h.requests.length, 3, 'Polling resumes');
+  controller.dispose();
 });
 
 test('turning Off cancels queued SSE ready/update work, including invalidation waiting on a request', async () => {

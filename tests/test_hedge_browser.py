@@ -20,7 +20,8 @@ def fixture(query):
     amount = float(query.get('amount', ['100'])[0])
     limit = int(query.get('limit', ['10'])[0])
     market = query.get('market', ['all'])[0]
-    available = ['hr', 'atgs', 'attd'] if market == 'all' else [market]
+    available = ['hr', 'atgs', 'attd', 'nba', 'nba_main', 'fb'] if market == 'all' else (
+        ['nba', 'nba_main', 'fb'] if market == 'nba_all' else [market])
     books = {'dk': 'DraftKings', 'fd': 'FanDuel'}
     hedge_books = {'kal': 'Kalshi', 'nv': 'Novig'}
     chosen_books = query.get('books', [','.join(books)])[0].split(',')
@@ -29,8 +30,9 @@ def fixture(query):
     for book in chosen_books:
         plays = []
         for index in range(min(limit, 2)):
-            play_market = market if market != 'all' else ['hr', 'atgs'][index]
-            plays.append(dict(
+            play_market = ['nba', 'nba_main'][index] if market == 'nba_all' else (
+                market if market != 'all' else ['hr', 'atgs'][index])
+            play = dict(
                 id=f'{book}-{index}', player='aaron judge' if index == 0 else '<script>unsafe</script>',
                 game='nyy @ bos' if play_market == 'hr' else 'nyr @ bos', sport='mlb' if play_market == 'hr' else 'nhl',
                 market=play_market, label='1+ HR' if play_market == 'hr' else 'Anytime goalscorer',
@@ -42,18 +44,39 @@ def fixture(query):
                 max_bonus_amount=200 if verified else None, cash_if_yes=amount * .985,
                 cash_if_no=amount * .983, retained_cash=amount * .983, conversion_pct=98.3,
                 hedge_contracts=600, fee_note='Estimated taker fee included.',
-            ))
+            )
+            if play_market in ('nba', 'nba_main', 'fb'):
+                play.update(sport='nba', game='bos @ det', player='jayson tatum',
+                    bonus_side='Under 25.5 points', hedge_side='Over 25.5 points', label='Player points',
+                    cash_if_bonus_wins=amount * .985, cash_if_hedge_wins=amount * .983,
+                    # New outcome names take precedence over legacy YES/NO fields.
+                    cash_if_yes=1, cash_if_no=2, push_possible=False)
+                if play_market == 'nba_main':
+                    play.update(player='BOS', label='1st half spread',
+                        bonus_side='BOS -1.5', hedge_side='DET +1.5',
+                        hedge_link='https://example.test/main-market?side=other')
+                elif play_market == 'fb':
+                    play.update(label='First basket (including free throws)',
+                                bonus_side='Jayson Tatum first basket', hedge_side='Jayson Tatum not first basket')
+                if index == 1 and market in ('nba', 'nba_main'):
+                    play.update(label='Player rebounds' if market == 'nba' else 'Full game total',
+                        bonus_side='Over 6 rebounds' if market == 'nba' else 'Over 220 points',
+                        hedge_side='Under 6 rebounds' if market == 'nba' else 'Under 220 points',
+                        cash_if_push=0, push_possible=True, retained_cash=0, conversion_pct=0,
+                        push_note='Cash stakes returned; bonus treatment depends on the book.')
+            plays.append(play)
         groups.append(dict(book=book, total=12, plays=plays))
     if state['empty']:
         groups = []
     return dict(generated_at=stamp, max_age_minutes=10,
                 options=dict(amount=amount, limit=limit, market=market, liquidity='verified' if verified else 'any'),
                 books=books, hedge_books=hedge_books,
-                coverage=[dict(market=item, sport={'hr': 'mlb', 'atgs': 'nhl', 'attd': 'nfl'}[item],
+                coverage=[dict(market=item, sport={'hr': 'mlb', 'atgs': 'nhl', 'attd': 'nfl'}.get(item, 'nba'),
                                status='unavailable' if item == 'attd' else 'available', updated_at=stamp, version=1)
                           for item in available],
                 summary=dict(markets=len(available), qualified=24 if groups else 0,
-                             excluded=dict(liquidity=17, cash=3, conversion=0)), groups=groups)
+                             excluded=dict(liquidity=17, cash=3, conversion=0,
+                                           settlement=4 if market in ('nba_all', 'nba', 'nba_main', 'fb') else 0)), groups=groups)
 
 
 with sync_playwright() as p:
@@ -96,6 +119,8 @@ with sync_playwright() as p:
     expect(page.locator('#coverage-status')).to_contain_text('NFL touchdowns')
     assert state['requests'][-1][1] == 'Bearer fixture-token'
     expect(page.locator('.conversion strong').first).to_have_text('98.30%')
+    expect(page.locator('.payouts').first).to_contain_text('Bonus wins: $98.50')
+    expect(page.locator('.payouts').first).to_contain_text('Hedge wins: $98.30')
     expect(page.locator('.cash-cell > strong').first).to_have_text('$501.50')
     expect(page.locator('.cash-cell').first).to_contain_text('600 contracts')
     page.locator('#page-picker-btn').click()
@@ -108,6 +133,48 @@ with sync_playwright() as p:
     assert page.locator('#bonus-picker').evaluate("el => getComputedStyle(el).overflowX") == 'visible'
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     page.screenshot(path=str(OUTPUT / 'hedge-desktop.png'), full_page=True)
+
+    # Restoring any NBA URL must select the same market before the first API call.
+    expect(page.locator('#market-filter option')).to_have_count(8)
+    for nba_market in ('nba_all', 'nba', 'nba_main', 'fb'):
+        page.goto(f'https://hedge-preview.test/hedge.html?market={nba_market}&books=dk&limit=2')
+        expect(page.locator('#hedge-results')).to_be_visible()
+        expect(page.locator('#market-filter')).to_have_value(nba_market)
+        assert state['requests'][-1][0]['market'] == [nba_market]
+        assert f'market={nba_market}' in page.url
+        expect(page.locator('.hedge-group')).to_have_count(1)
+        expect(page.locator('#excluded-note')).to_contain_text('4 incompatible or unknown settlement')
+        expect(page.locator('.payouts').first).to_contain_text('Bonus wins: $98.50')
+        expect(page.locator('.payouts').first).to_contain_text('Hedge wins: $98.30')
+        assert 'If YES' not in page.locator('#book-groups').inner_text()
+        assert 'If NO' not in page.locator('#book-groups').inner_text()
+        if nba_market in ('nba_all', 'nba'):
+            expect(page.locator('.bonus-cell .side-label').first).to_have_text('Under 25.5 points')
+            expect(page.locator('.hedge-cell .side-label').first).to_have_text('Over 25.5 points')
+        if nba_market == 'nba_all':
+            expect(page.locator('#coverage-detail')).to_contain_text('NBA player props')
+            expect(page.locator('#coverage-detail')).to_contain_text('NBA game / period lines')
+            expect(page.locator('#coverage-detail')).to_contain_text('NBA first basket')
+        if nba_market == 'nba_main':
+            expect(page.locator('.market-label').first).to_contain_text('1st half spread')
+            expect(page.locator('.bonus-cell .side-label').first).to_have_text('BOS -1.5')
+            expect(page.locator('.hedge-cell .side-label').first).to_have_text('DET +1.5')
+            expect(page.locator('.hedge-cell a').first).to_have_attribute('href', 'https://example.test/main-market?side=other')
+        if nba_market in ('nba', 'nba_main'):
+            push = page.locator('.hedge-table tbody tr').nth(1)
+            expect(push.locator('.conversion strong')).to_have_text('0.00%')
+            expect(push.locator('.conversion')).to_contain_text('$0.00 worst-case cash retained')
+            expect(push.locator('.push-payout')).to_have_text('Push/tie: $0.00')
+            expect(push.locator('.push-note')).to_contain_text('Cash stakes returned; bonus treatment depends on the book.')
+            expect(page.locator('.hedge-table tbody tr').first.locator('.push-payout')).to_have_count(0)
+        if nba_market == 'fb':
+            expect(page.locator('.bonus-cell .side-label').first).to_have_text('Jayson Tatum first basket')
+            expect(page.locator('.hedge-cell .side-label').first).to_have_text('Jayson Tatum not first basket')
+    page.select_option('#market-filter', 'nba_main')
+    expect(page.locator('.bonus-cell .side-label').first).to_have_text('BOS -1.5')
+    assert state['requests'][-1][0]['market'] == ['nba_main']
+    page.goto('https://hedge-preview.test/hedge.html')
+    expect(page.locator('#summary-amount')).to_have_text('$100.00')
 
     page.locator('#bonus-amount').fill('250')
     expect(page.locator('#hedge-results')).to_be_hidden()
@@ -190,6 +257,14 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUTPUT / 'hedge-mobile.png'), full_page=True)
     page.set_viewport_size(dict(width=360, height=800))
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.select_option('#market-filter', 'nba_main')
+    expect(page.locator('.push-payout').first).to_have_text('Push/tie: $0.00')
+    expect(page.locator('.bonus-cell .side-label').first).to_have_text('BOS -1.5')
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.screenshot(path=str(OUTPUT / 'hedge-nba-mobile.png'), full_page=True)
+    page.select_option('#market-filter', 'fb')
+    expect(page.locator('.bonus-cell .side-label').first).to_have_text('Jayson Tatum first basket')
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     assert not errors, errors
     browser.close()
-print('Hedge browser checks passed: desktop/mobile, filters, auth, errors, races, and safe links.')
+print('Hedge browser checks passed: NBA URL filters, exact sides, push payouts, desktop/mobile, auth, errors, races, and safe links.')

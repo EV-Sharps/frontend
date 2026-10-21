@@ -8,8 +8,8 @@
   const money = value => finite(value) ? Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'Unknown';
   const odds = value => finite(value) ? `${Number(value) > 0 ? '+' : ''}${Number(value).toLocaleString('en-US')}` : '\u2014';
   const title = value => String(value ?? '').replace(/\b\w/g, char => char.toUpperCase());
-  const marketNames = { hr: 'MLB home runs', atgs: 'NHL goalscorers', attd: 'NFL touchdowns' };
-  const marketSides = { hr: ['1+ HR', 'No HR'], atgs: ['1+ goal', 'No goal'], attd: ['1+ TD', 'No TD'] };
+  const marketNames = { all: 'All markets', nba_all: 'NBA all markets', nba: 'NBA player props', nba_main: 'NBA game / period lines', fb: 'NBA first basket', hr: 'MLB home runs', atgs: 'NHL goalscorers', attd: 'NFL touchdowns' };
+  const marketSides = { hr: ['1+ HR', 'No HR'], atgs: ['1+ goal', 'No goal'], attd: ['1+ TD', 'No TD'], fb: ['First basket', 'Not first basket'] };
   let names = {}, hedgeNames = {}, result = null, controller = null, version = 0, timer = null, ready = false;
   const selectedBooks = new Set(), selectedHedgeBooks = new Set();
   const notice = (id, text) => { $(id).textContent = text; $(id).hidden = !text; };
@@ -81,15 +81,20 @@
     $(id).innerHTML = books.map(book => `<label><input type="checkbox" value="${esc(book)}" ${selected.has(book) ? 'checked' : ''}>${esc(bookName(book))}</label>`).join('') || '<p class="muted">No books in the current feed.</p>';
   }
   function renderRow(play, index) {
-    const sides = marketSides[play.market] || ['YES', 'NO'];
+    const legacySides = marketSides[play.market] || ['Bonus side', 'Opposing side'];
+    const bonusSide = play.bonus_side || legacySides[0], hedgeSide = play.hedge_side || legacySides[1];
+    const bonusPayout = play.cash_if_bonus_wins ?? play.cash_if_yes, hedgePayout = play.cash_if_hedge_wins ?? play.cash_if_no;
+    const push = play.push_possible === true;
+    const pushPayout = push ? `<br><span class="push-payout">Push/tie: ${esc(money(play.cash_if_push))}</span>` : '';
+    const pushNote = push && play.push_note ? `<small class="push-note">${esc(play.push_note)}</small>` : '';
     const verified = play.liquidity_status === 'verified';
     const maxBonus = finite(play.max_bonus_amount) ? `<small>Approx. bonus capacity: ${esc(money(play.max_bonus_amount))}</small>` : '';
     const contracts = Number.isInteger(play.hedge_contracts) ? ` \u00b7 ${play.hedge_contracts.toLocaleString('en-US')} contracts` : '';
     return `<tr>
       <td class="hedge-player-cell"><div class="player-heading"><span class="rank">#${index + 1}</span><strong>${esc(title(play.player))}</strong></div><small class="market-label">${esc(play.label || marketNames[play.market] || play.market)} \u00b7 ${esc(String(play.game || '').toUpperCase())}</small><small>${esc(startTime(play.start))}</small></td>
-      <td class="conversion" data-label="Conversion"><strong>${finite(play.conversion_pct) ? Number(play.conversion_pct).toFixed(2) + '%' : '\u2014'}</strong><small>${esc(money(play.retained_cash))} cash retained</small><small class="payouts">If YES: ${esc(money(play.cash_if_yes))}<br>If NO: ${esc(money(play.cash_if_no))}</small></td>
-      <td class="bonus-cell" data-label="Bonus bet"><strong><span class="side-label">YES</span> ${esc(odds(play.bonus_odds))}</strong><small>${esc(money(play.bonus_amount))} bonus \u00b7 ${esc(sides[0])}</small><small>Updated ${esc(time(play.bonus_updated_at))}</small>${marketLink(play.bonus_link, 'Open market')}</td>
-      <td class="hedge-cell" data-label="Cash hedge"><div class="hedge-book">${logo(play.hedge_book)}${esc(bookName(play.hedge_book))}</div><strong><span class="side-label">NO</span> ${esc(odds(play.hedge_odds))}</strong><small>${esc(sides[1])}</small><small>Updated ${esc(time(play.hedge_updated_at))}</small>${marketLink(play.hedge_link, 'Open market')}</td>
+      <td class="conversion" data-label="Conversion"><strong>${finite(play.conversion_pct) ? Number(play.conversion_pct).toFixed(2) + '%' : '\u2014'}</strong><small>${esc(money(play.retained_cash))} ${push ? 'worst-case cash retained' : 'cash retained'}</small><small class="payouts">Bonus wins: ${esc(money(bonusPayout))}<br>Hedge wins: ${esc(money(hedgePayout))}${pushPayout}</small>${pushNote}</td>
+      <td class="bonus-cell" data-label="Bonus bet"><strong class="selection-quote"><span class="side-label">${esc(bonusSide)}</span><span>${esc(odds(play.bonus_odds))}</span></strong><small>${esc(money(play.bonus_amount))} bonus</small><small>Updated ${esc(time(play.bonus_updated_at))}</small>${marketLink(play.bonus_link, 'Open market')}</td>
+      <td class="hedge-cell" data-label="Cash hedge"><div class="hedge-book">${logo(play.hedge_book)}${esc(bookName(play.hedge_book))}</div><strong class="selection-quote"><span class="side-label">${esc(hedgeSide)}</span><span>${esc(odds(play.hedge_odds))}</span></strong><small>Updated ${esc(time(play.hedge_updated_at))}</small>${marketLink(play.hedge_link, 'Open market')}</td>
       <td class="cash-cell" data-label="Cash needed"><strong>${esc(money(play.hedge_cash))}</strong><small>Order: ${esc(money(play.hedge_order_stake))}${esc(contracts)}<br>Fee: ${esc(money(play.hedge_fee))}</small>${play.fee_note ? `<small class="fee-note">${esc(play.fee_note)}</small>` : ''}</td>
       <td class="liquidity-cell" data-label="Hedge capacity"><span class="liquidity-badge ${verified ? '' : 'unknown'}">${verified ? 'Quoted amount fits' : 'Limit unverified'}</span><small>${verified ? `${esc(money(play.hedge_liquidity))} quoted stake available` : 'Confirm the accepted stake'}</small>${maxBonus}${play.liquidity_note ? `<small>${esc(play.liquidity_note)}</small>` : ''}</td>
     </tr>`;
@@ -111,7 +116,7 @@
     $('summary-books').textContent = groups.length.toLocaleString('en-US');
     $('ranking-note').textContent = `Showing ${shown.toLocaleString('en-US')} plays, up to ${limit} per bonus book. Highest conversion first within each book, sized to ${money(amount)}.`;
     $('book-jumps').innerHTML = groups.map((group, index) => `<a href="#hedge-book-${index}">${logo(group.book)}${esc(bookName(group.book))}<span>${group.plays.length}</span></a>`).join('');
-    $('book-groups').innerHTML = groups.map((group, index) => `<section class="hedge-group" id="hedge-book-${index}" aria-labelledby="hedge-heading-${index}"><div class="group-heading"><h2 id="hedge-heading-${index}">${logo(group.book)}${esc(bookName(group.book))} bonus</h2><p>Top ${group.plays.length} of ${Number(group.total ?? group.plays.length).toLocaleString('en-US')} matching plays</p></div><div class="hedge-table-wrap" role="region" aria-label="${esc(bookName(group.book))} hedge rankings" tabindex="0"><table class="hedge-table"><caption class="sr-only">${esc(bookName(group.book))} bonus bet hedges, highest conversion first</caption><thead><tr><th scope="col">Player / market</th><th scope="col">Conversion</th><th scope="col">Bonus bet \u00b7 YES</th><th scope="col">Cash hedge \u00b7 NO</th><th scope="col">Cash needed</th><th scope="col">Hedge capacity</th></tr></thead><tbody>${group.plays.map(renderRow).join('')}</tbody></table></div></section>`).join('');
+    $('book-groups').innerHTML = groups.map((group, index) => `<section class="hedge-group" id="hedge-book-${index}" aria-labelledby="hedge-heading-${index}"><div class="group-heading"><h2 id="hedge-heading-${index}">${logo(group.book)}${esc(bookName(group.book))} bonus</h2><p>Top ${group.plays.length} of ${Number(group.total ?? group.plays.length).toLocaleString('en-US')} matching plays</p></div><div class="hedge-table-wrap" role="region" aria-label="${esc(bookName(group.book))} hedge rankings" tabindex="0"><table class="hedge-table"><caption class="sr-only">${esc(bookName(group.book))} bonus bet hedges, highest conversion first</caption><thead><tr><th scope="col">Player / game / market</th><th scope="col">Conversion</th><th scope="col">Bonus bet</th><th scope="col">Cash hedge</th><th scope="col">Cash needed</th><th scope="col">Hedge capacity</th></tr></thead><tbody>${group.plays.map(renderRow).join('')}</tbody></table></div></section>`).join('');
     const coverage = data.coverage || [];
     const unavailable = coverage.filter(item => item.status !== 'available');
     notice('coverage-status', unavailable.length ? `Unavailable feeds: ${unavailable.map(item => marketNames[item.market] || item.market).join(', ')}. Rankings include only usable current feeds.` : '');
@@ -120,7 +125,7 @@
     $('empty-results').hidden = shown !== 0;
     $('empty-message').textContent = unavailable.length === coverage.length && coverage.length ? 'Current feeds are unavailable. Refresh after prices are published.' : 'Try a smaller bonus, a higher cash cap or more books. Unknown-limit hedges are available as an explicit filter option; their accepted stake still needs to be checked.';
     const exclusions = data.summary?.excluded || {};
-    const exclusionLabels = { liquidity: 'insufficient or unknown liquidity', cash: 'cash cap', conversion: 'minimum conversion', stale_quotes: 'old quotes', event_time: 'started or unverified games', no_hedge: 'no opposite quote', conflicts: 'conflicting markets' };
+    const exclusionLabels = { liquidity: 'insufficient or unknown liquidity', cash: 'cash cap', conversion: 'minimum conversion', stale_quotes: 'old quotes', event_time: 'started or unverified games', no_hedge: 'no opposite quote', conflicts: 'conflicting markets', settlement: 'incompatible or unknown settlement' };
     const counts = Object.entries(exclusionLabels).filter(([key]) => Number(exclusions[key]) > 0).map(([key, label]) => `${Number(exclusions[key]).toLocaleString('en-US')} ${label}`);
     $('excluded-note').textContent = counts.length ? `Filtered candidates: ${counts.join(' \u00b7 ')}.` : '';
     $('updated').textContent = `Checked ${time(data.generated_at)}`;
@@ -176,7 +181,7 @@
     const query = new URLSearchParams(window.location.search);
     const values = { amount: 'bonus-amount', limit: 'top-limit', min_conversion: 'min-conversion', max_cash: 'max-cash' };
     Object.entries(values).forEach(([key, id]) => { if (query.has(key)) $(id).value = query.get(key); });
-    if (['all', 'hr', 'atgs', 'attd'].includes(query.get('market'))) $('market-filter').value = query.get('market');
+    if (Object.prototype.hasOwnProperty.call(marketNames, query.get('market'))) $('market-filter').value = query.get('market');
     if (['verified', 'any'].includes(query.get('liquidity'))) $('liquidity-filter').value = query.get('liquidity');
     [['books', selectedBooks], ['hedge_books', selectedHedgeBooks]].forEach(([key, selected]) => { (query.get(key) || '').split(',').filter(book => /^[a-z0-9_]{1,30}$/.test(book)).forEach(book => selected.add(book)); });
     pickerSummary();

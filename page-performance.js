@@ -76,8 +76,8 @@ function startTableRefresh(refresh, { intervalMs = 30000 } = {}) {
 		return existing;
 	}
 	activeTableRefreshController?.dispose();
+	// Pausing applies only to the current page visit, never to the next page.
 	let enabled = true;
-	try { enabled = localStorage.getItem('ev_table_auto_refresh') !== 'false'; } catch (_) {}
 	let busy = false, failed = false, stopped = false, disposed = false;
 	let nextAt = null, timer = null, ticker = null, running = null, activity = 0;
 	const visible = () => document.visibilityState !== 'hidden' && !stopped;
@@ -157,7 +157,6 @@ function startTableRefresh(refresh, { intervalMs = 30000 } = {}) {
 		if (disposed || enabled === !!value) return;
 		enabled = !!value;
 		refresh.autoRefreshEnabled = enabled;
-		try { localStorage.setItem('ev_table_auto_refresh', String(enabled)); } catch (_) {}
 		clearSchedule();
 		oddsLiveWatchers.get(refresh)?.setEnabled();
 		if (enabled) run();
@@ -178,6 +177,10 @@ function startTableRefresh(refresh, { intervalMs = 30000 } = {}) {
 		if (!stopped) return;
 		stopped = false;
 		ticker = setInterval(render, 1000);
+		// Back/forward navigation can restore this controller from the page cache.
+		enabled = true;
+		refresh.autoRefreshEnabled = true;
+		oddsLiveWatchers.get(refresh)?.setEnabled();
 		visibilityChanged();
 	}
 	const controller = {
@@ -207,7 +210,7 @@ function startTableRefresh(refresh, { intervalMs = 30000 } = {}) {
 	window.addEventListener('pagehide', pageHidden);
 	window.addEventListener('pageshow', pageShown);
 	ticker = setInterval(render, 1000);
-	// A saved pause never prevents the initial authenticated data load.
+	// Load immediately, then schedule the next refresh after rendering completes.
 	run();
 	return controller;
 }

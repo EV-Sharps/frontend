@@ -1,23 +1,26 @@
 /* The collector supplies game clocks. Never run a simulated clock in the browser. */
 PAGE = 'nfl_tracker';
-SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.search).get('sport')) ? new URLSearchParams(window.location.search).get('sport') : 'nfl';
+SPORT = ['nfl', 'ncaaf', 'nhl', 'nba'].includes(new URLSearchParams(window.location.search).get('sport')) ? new URLSearchParams(window.location.search).get('sport') : 'nfl';
 
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const sport = SPORT;
   const hockey = sport === 'nhl';
-  const league = sport === 'ncaaf' ? 'College football' : hockey ? 'NHL' : 'NFL';
+  const basketball = sport === 'nba';
+  const league = sport === 'ncaaf' ? 'College football' : hockey ? 'NHL' : basketball ? 'NBA' : 'NFL';
   const scoreName = hockey ? 'goal' : 'touchdown';
   const scoreTitle = hockey ? 'Goals' : 'Touchdowns';
-  const startName = hockey ? 'Puck drop' : 'Kickoff';
+  const startName = hockey ? 'Puck drop' : basketball ? 'Tipoff' : 'Kickoff';
   const dataset = `${sport}_tracker`;
   document.title = `${league} Game Tracker | +EV Sharps`;
   $('league-name').textContent = league.toUpperCase();
-  $('football-legend').hidden = hockey;
+  $('football-legend').hidden = hockey || basketball;
+  $('all-scorers').hidden = basketball;
+  $('kotc').hidden = !basketball;
   $('scoring-label').textContent = scoreTitle.toUpperCase();
   $('touchdown-close').setAttribute('aria-label', `Close ${scoreTitle.toLowerCase()}`);
-  if (hockey) {
+  if (hockey || basketball) {
     $('tracker-tagline').textContent = 'EVERY GAME, ONE SCREEN';
   }
   $('tracker-footer-label').textContent = `${league} Game Tracker`;
@@ -45,10 +48,12 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   let allScorersOpen = false;
   let statsHTML = null, statsScroll = null, statsGameOptions = null, statsCategoryOptions = null;
   let statsTriggerGameId = null;
+  let kotcHTML = null, kotcScroll = null;
   const statCategories = {
     passing: 'Passing', rushing: 'Rushing', receiving: 'Receiving', defensive: 'Defense',
     fumbles: 'Fumbles', kicking: 'Kicking', kickReturns: 'Kick returns', puntReturns: 'Punt returns', punting: 'Punting',
     forwards: 'Forwards', defenses: 'Defensemen', defensemen: 'Defensemen', goalies: 'Goalies', skaters: 'Skaters',
+    basketball: 'Basketball',
   };
   const statLabel = category => statCategories[category] || String(category).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
   const summaryDelayed = game => game.freshness?.summary_stale || (game.status?.state === 'in' && age(game.freshness?.summary_updated) > Math.max(60, (number(snapshot?.summary_interval_seconds) || 30) * 2));
@@ -238,6 +243,11 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   function playerStatGroups(game) {
     const groups = new Map();
     for (const player of Array.isArray(game.details?.players) ? game.details.players : []) {
+      if (basketball && player.did_not_play === true) {
+        if (!groups.has('basketball')) groups.set('basketball', []);
+        groups.get('basketball').push({ player, values: { Status: player.did_not_play_reason ? `DNP (${player.did_not_play_reason})` : 'DNP' } });
+        continue;
+      }
       for (const [category, values] of Object.entries(player.categories || {})) {
         if (!values || typeof values !== 'object' || Array.isArray(values) || !Object.keys(values).length) continue;
         if (!groups.has(category)) groups.set(category, []);
@@ -343,6 +353,124 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     $('stats-content').scrollTop = 0;
   }
 
+  function kotcGameDate(game) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(game.date || '')) return game.date;
+    const start = new Date(game.start);
+    if (!Number.isFinite(start.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(start);
+    const part = type => parts.find(value => value.type === type)?.value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+
+  function kotcData() {
+    // The scoreboard can carry yesterday's unfinished games. Rank this date only.
+    // Deliberately independent of both tracker filters.
+    const allGames = orderedGames(), games = allGames.filter(game => kotcGameDate(game) === snapshot?.date);
+    const outsideSlate = allGames.length - games.length;
+    const started = games.filter(game => ['in', 'post'].includes(game.status?.state));
+    const rows = [], waiting = [];
+    let excluded = 0;
+    for (const game of started) {
+      const players = new Map();
+      for (const player of Array.isArray(game.details?.players) ? game.details.players : []) {
+        const key = player.id ?? [player.team_id || player.team, player.name || player.player].join(':');
+        players.set(String(key), player);
+      }
+      let reported = 0;
+      for (const player of players.values()) {
+        const values = ['pts', 'reb', 'ast'].map(key => player.stats?.[key]);
+        // Normalized components must all be reported. Missing values are never zero.
+        if (player.did_not_play === true || values.some(value => typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+          excluded++;
+          continue;
+        }
+        const [pts, reb, ast] = values;
+        rows.push({ game, player, pts, reb, ast, pra: pts + reb + ast });
+        reported++;
+      }
+      if (!reported) waiting.push(game);
+    }
+    rows.sort((a, b) => b.pra - a.pra || String(a.player.name || a.player.player || '').localeCompare(String(b.player.name || b.player.player || '')) || String(a.player.id || '').localeCompare(String(b.player.id || '')) || String(a.game.id).localeCompare(String(b.game.id)));
+    let rank = 0;
+    rows.forEach((row, index) => {
+      if (!index || row.pra !== rows[index - 1].pra) rank = index + 1;
+      row.rank = rank;
+    });
+    return { games, started, rows, waiting, excluded, outsideSlate };
+  }
+
+  function kotcBoxDelayed(game) {
+    return summaryDelayed(game) || !Number.isFinite(Date.parse(game.freshness?.summary_updated));
+  }
+
+  function updateKOTCFreshness() {
+    if (!basketball || !$('kotc-dialog').open) return;
+    const { started, waiting, excluded, outsideSlate } = kotcData();
+    const delayed = started.filter(game => game.details && kotcBoxDelayed(game));
+    const boardDelayed = snapshot?.scoreboard_stale || age(snapshot?.scoreboard_updated) > Math.max(45, (number(snapshot?.poll_interval_seconds) || 15) * 3);
+    const status = $('kotc-feed-status');
+    const gameNames = games => games.map(game => `${abbrev(game.away)} at ${abbrev(game.home)}`).join(', ');
+    status.classList.toggle('is-delayed', Boolean(requestFailed || delayed.length || waiting.length || boardDelayed));
+    status.textContent = [
+      requestFailed ? 'Updates interrupted. Showing the last received stats.' : '',
+      boardDelayed ? 'Scoreboard delayed; game status and clocks may lag.' : '',
+      delayed.length ? `Box scores delayed or freshness unknown: ${gameNames(delayed)}.` : '',
+      waiting.length ? `PRA stats pending: ${gameNames(waiting)}.` : '',
+      excluded ? `${excluded} player row${excluded === 1 ? '' : 's'} with missing stats or DNP excluded.` : '',
+      outsideSlate ? `${outsideSlate} game${outsideSlate === 1 ? '' : 's'} outside this slate date or without a confirmed date not ranked.` : '',
+      'Includes the entire slate, including finished games. Updates automatically. Game filters do not limit this view.',
+    ].filter(Boolean).join(' ');
+    const games = new Map(started.map(game => [String(game.id), game]));
+    for (const label of $('kotc-content').querySelectorAll('[data-kotc-freshness]')) {
+      const game = games.get(label.dataset.kotcFreshness);
+      if (!game) continue;
+      const delayed = kotcBoxDelayed(game);
+      label.classList.toggle('is-delayed', Boolean(requestFailed || delayed));
+      label.textContent = requestFailed ? 'Updates interrupted' : delayed ? 'Box score delayed / freshness unknown' : `Stats fetched ${elapsed(age(game.freshness?.summary_updated))} ago`;
+    }
+  }
+
+  function renderKOTC() {
+    if (!basketball || !$('kotc-dialog').open) return;
+    const { games, started, rows } = kotcData();
+    $('kotc-slate-status').textContent = `${$('slate-date').textContent} / Points + rebounds + assists / ${rows.length} player${rows.length === 1 ? '' : 's'} ranked. Current totals; ties share a rank.`;
+    const html = rows.length ? `<div class="gt-kotc-table-wrap" tabindex="0" role="region" aria-label="PRA leaderboard">
+      <table class="gt-kotc-table"><caption class="gt-sr-only">Current PRA totals across all NBA games on this slate</caption>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">PRA</th><th scope="col">PTS</th><th scope="col">REB</th><th scope="col">AST</th><th scope="col">Game / status</th></tr></thead>
+      <tbody>${rows.map(({ game, player, pts, reb, ast, pra, rank }) => {
+        const team = [game.away, game.home].find(team => (team?.id != null && String(team.id) === String(player.team_id)) || (team?.key && team.key === player.team));
+        const teamName = team ? abbrev(team) : String(player.team || '?').toUpperCase();
+        return `<tr data-kotc-player="${escape(player.id)}" data-kotc-game="${escape(game.id)}" data-pra="${pra}"${rank === 1 ? ' class="is-leader"' : ''}>
+          <td class="gt-kotc-rank">${rank}</td><th scope="row">${escape(player.name || player.player || 'Player not reported')}<small>${escape(teamName)}</small></th>
+          <td class="gt-kotc-pra">${pra}</td><td>${pts}</td><td>${reb}</td><td>${ast}</td>
+          <td class="gt-kotc-game"><strong>${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}</strong><span>${escape(gameScoreStatus(game))}</span><small data-kotc-freshness="${escape(game.id)}"></small></td></tr>`;
+      }).join('')}</tbody></table></div>` : `<p class="gt-td-empty">${!games.length ? 'No NBA games scheduled for this date.' : !started.length ? 'PRA leaders will appear after tipoff.' : 'PRA stats are not available yet. The leaderboard will update with the box scores.'}</p>`;
+    if (html !== kotcHTML) {
+      const content = $('kotc-content'), top = content.scrollTop;
+      const previousTable = content.querySelector('.gt-kotc-table-wrap');
+      const left = previousTable?.scrollLeft || 0, focused = document.activeElement === previousTable;
+      content.innerHTML = html;
+      const table = content.querySelector('.gt-kotc-table-wrap');
+      if (table) {
+        table.scrollLeft = left;
+        if (focused) table.focus({ preventScroll: true });
+      }
+      content.scrollTop = top;
+      kotcHTML = html;
+    }
+    updateKOTCFreshness();
+  }
+
+  function openKOTC() {
+    if (!basketball || !snapshot) return;
+    kotcHTML = null;
+    kotcScroll = { x: window.scrollX, y: window.scrollY };
+    document.documentElement.classList.add('gt-dialog-open');
+    $('kotc-dialog').showModal();
+    renderKOTC();
+    $('kotc-content').scrollTop = 0;
+  }
+
   function safeURL(value, image = false) {
     try {
       const url = new URL(value);
@@ -359,7 +487,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   }
 
   function offense(game) {
-    if (hockey || game.status?.state !== 'in' || /HALFTIME|SUSPEND|DELAY|END_PERIOD/.test(game.status?.name || '')) return null;
+    if (hockey || basketball || game.status?.state !== 'in' || /HALFTIME|SUSPEND|DELAY|END_PERIOD/.test(game.status?.name || '')) return null;
     const s = game.situation || {};
     for (const side of ['away', 'home']) {
       const team = game[side];
@@ -508,7 +636,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     const live = status.state === 'in';
     const phase = status.detail || (live ? 'In progress' : status.state === 'post' ? 'Final' : 'Scheduled');
     const downText = normalDown ? (s.down_distance_text || `${['', '1st', '2nd', '3rd', '4th'][down]} & ${distance ?? '?'}`) : null;
-    const situation = hockey ? (live ? [periodLabel(status), status.clock].filter(Boolean).join(' / ') || 'In progress' : status.state === 'post' ? 'Game complete' : `${startName} ${kickoff(game)}`) : live ? downText || (/HALFTIME/.test(status.name || '') ? 'Halftime' : 'Awaiting next possession') : status.state === 'post' ? 'Game complete' : 'Kickoff ' + kickoff(game);
+    const situation = hockey || basketball ? (live ? basketball && /HALFTIME/.test(status.name || '') ? 'Halftime' : [periodLabel(status), status.clock].filter(Boolean).join(' / ') || 'In progress' : status.state === 'post' ? 'Game complete' : `${startName} ${kickoff(game)}`) : live ? downText || (/HALFTIME/.test(status.name || '') ? 'Halftime' : 'Awaiting next possession') : status.state === 'post' ? 'Game complete' : 'Kickoff ' + kickoff(game);
     const direction = side ? `${escape(abbrev(game[side]))} moving ${side === 'away' ? 'right →' : '← left'}` : 'Possession not reported';
     const last = game.last_play;
     const playClock = last?.clock ? `${periodLabel(last)} ${last.clock}${last.clock_type === 'elapsed' ? ' elapsed' : ''}`.trim() : '';
@@ -521,7 +649,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
       <div class="gt-scoreboard">${teamRow(game, 'away', side)}${teamRow(game, 'home', side)}</div>
       <div class="gt-situation"><strong>${escape(situation)}</strong><span>${hockey ? escape(hockeySituation) : side ? escape(abbrev(game[side])) + ' ball' : ''}</span></div>
       ${onIceHTML(game)}
-      ${hockey ? '' : `<div class="gt-field-wrap"><div class="gt-field" role="img" aria-label="${escape(x === null ? 'Field position unavailable' : `${s.possession_text || 'Ball on field'}, ${abbrev(game[side])} possession`)}">
+      ${hockey || basketball ? '' : `<div class="gt-field-wrap"><div class="gt-field" role="img" aria-label="${escape(x === null ? 'Field position unavailable' : `${s.possession_text || 'Ball on field'}, ${abbrev(game[side])} possession`)}">
         <div class="gt-endzone">${escape(abbrev(game.away))}</div><div class="gt-field-yardage">
           ${red ? `<div class="gt-field-zone" style="${side === 'away' ? 'right' : 'left'}:0"></div>` : ''}
           ${[10, 30, 50, 70, 90].map(n => `<span class="gt-yard-label" style="left:${n}%">${n > 50 ? 100 - n : n}</span>`).join('')}
@@ -532,13 +660,14 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
         <div class="gt-field-caption"><span>${live ? direction : status.state === 'post' ? 'Final score' : 'Waiting for kickoff'}</span><span>${x !== null ? escape(s.possession_text || '') : '-'}</span></div>
       </div>`}
       <section class="gt-last-play"><div class="gt-play-heading"><h3>LAST PLAY</h3><span>${escape(playClock)}</span></div><p class="gt-play-text">${escape(playText)}</p></section>
-      <div class="gt-game-foot"><span class="gt-game-age"></span><div class="gt-game-actions"><button type="button" class="gt-touchdowns" data-touchdowns="${escape(game.id)}" aria-haspopup="dialog" aria-controls="touchdown-dialog" aria-label="${scoreTitle} for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">${scoreTitle}${tdCount === null ? '' : ` <span>${tdCount}</span>`}</button><button type="button" class="gt-touchdowns" data-stats="${escape(game.id)}" aria-haspopup="dialog" aria-controls="stats-dialog" aria-label="Stats for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Stats</button>${url ? `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">Game details ↗</a>` : '<span>ESPN</span>'}</div></div>`;
+      <div class="gt-game-foot"><span class="gt-game-age"></span><div class="gt-game-actions">${basketball ? '' : `<button type="button" class="gt-touchdowns" data-touchdowns="${escape(game.id)}" aria-haspopup="dialog" aria-controls="touchdown-dialog" aria-label="${scoreTitle} for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">${scoreTitle}${tdCount === null ? '' : ` <span>${tdCount}</span>`}</button>`}<button type="button" class="gt-touchdowns" data-stats="${escape(game.id)}" aria-haspopup="dialog" aria-controls="stats-dialog" aria-label="Stats for ${escape(abbrev(game.away))} at ${escape(abbrev(game.home))}">Stats</button>${url ? `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">Game details ↗</a>` : '<span>ESPN</span>'}</div></div>`;
   }
 
   function render() {
     if (!snapshot) return;
     $('all-scorers').disabled = false;
     $('all-stats').disabled = false;
+    $('kotc').disabled = !basketball;
     const ordered = orderedGames();
     renderGamePicker(ordered);
     const selected = ordered.filter(game => selectedGames === null || selectedGames.has(String(game.id)));
@@ -574,6 +703,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     $('games').setAttribute('aria-busy', 'false');
     renderTouchdowns();
     renderStats();
+    renderKOTC();
     updateFreshness();
   }
 
@@ -585,12 +715,12 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     $('connection').className = 'gt-connection ' + (stale || requestFailed ? 'is-stale' : 'is-current');
     $('feed-age').textContent = `Scoreboard fetched ${elapsed(seconds)} ago · 15s refresh`;
     $('freshness-status').hidden = !stale;
-    $('freshness-status').textContent = `The scoreboard feed is delayed. Scores, ${hockey ? 'shots' : 'possession'} and clock show the last received update.`;
+    $('freshness-status').textContent = `The scoreboard feed is delayed. Scores, ${hockey ? 'shots' : basketball ? 'game status' : 'possession'} and clock show the last received update.`;
     for (const entry of cards.values()) {
       const freshness = entry.game.freshness || {};
       const gameAge = age(freshness.scoreboard_updated || snapshot.scoreboard_updated);
       const gameStale = freshness.scoreboard_stale || gameAge > threshold;
-      const detailsStale = hockey && summaryDelayed(entry.game);
+      const detailsStale = (hockey || basketball) && summaryDelayed(entry.game);
       const label = entry.element.querySelector('.gt-game-age');
       label.textContent = `${gameStale ? 'Delayed · ' : ''}Fetched ${elapsed(gameAge)} ago${detailsStale ? ' / Details delayed' : ''}`;
       label.classList.toggle('gt-game-stale', Boolean(gameStale || detailsStale));
@@ -599,6 +729,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
     }
     updateTouchdownFreshness();
     updateStatsFreshness();
+    updateKOTCFreshness();
   }
 
   async function load() {
@@ -626,7 +757,7 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
       if (snapshot && Date.parse(next.updated) < Date.parse(snapshot.updated)) throw Error('older snapshot');
       snapshot = next; requestFailed = false;
       $('request-status').hidden = !snapshot.partial || Boolean(snapshot.scoreboard_stale);
-      $('request-status').textContent = hockey ? 'Some game details are delayed. Scores and clock use the latest available scoreboard; shots and last plays may lag.' : 'Some game details are delayed. Scores and last plays use the latest available scoreboard.';
+      $('request-status').textContent = hockey ? 'Some game details are delayed. Scores and clock use the latest available scoreboard; shots and last plays may lag.' : basketball ? 'Some box scores are delayed. Scores and clock use the latest available scoreboard; player stats and last plays may lag.' : 'Some game details are delayed. Scores and last plays use the latest available scoreboard.';
       render();
     } catch (_) {
       // Leaving the tab cancels work without displaying a network error. A late
@@ -692,6 +823,29 @@ SPORT = ['nfl', 'ncaaf', 'nhl'].includes(new URLSearchParams(window.location.sea
   });
   $('all-scorers').addEventListener('click', () => openTouchdowns());
   $('all-stats').addEventListener('click', () => openStats());
+  $('kotc').addEventListener('click', openKOTC);
+  $('kotc-close').addEventListener('click', () => $('kotc-dialog').close());
+  $('kotc-dialog').addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const items = [...event.currentTarget.querySelectorAll('button:not(:disabled), [tabindex="0"]')].filter(element => element.getClientRects().length);
+    const first = items[0], last = items[items.length - 1];
+    if (first && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus({ preventScroll: true });
+    }
+  });
+  $('kotc-dialog').addEventListener('click', event => {
+    if (event.target !== $('kotc-dialog')) return;
+    const bounds = event.target.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.target.close();
+  });
+  $('kotc-dialog').addEventListener('close', () => {
+    kotcHTML = null;
+    document.documentElement.classList.remove('gt-dialog-open');
+    $('kotc').focus({ preventScroll: true });
+    if (kotcScroll) window.scrollTo({ left: kotcScroll.x, top: kotcScroll.y, behavior: 'instant' });
+    kotcScroll = null;
+  });
   for (const id of ['stats-game', 'stats-category']) $(id).addEventListener('change', () => {
     renderStats();
     $('stats-content').scrollTop = 0;

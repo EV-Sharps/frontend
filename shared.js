@@ -210,6 +210,7 @@ const PAGE_SECTIONS = [
 			{ label: "📝 Main Recap", value: "main_recap?sport=nba", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nba", tier: "sharp" },
 			{ label: "🏀 Live", value: "live?sport=nba", tier: "sharp" },
+			{ label: "🏀 NBA Game Tracker", value: "nfl_tracker?sport=nba", tier: "free" },
 			{ label: "🏀 KOTC", value: "kotc", tier: "free" },
 			{ label: "📊 Results", value: "analysis?sport=nba", tier: "free" },
 			{ label: "3PTM (Free)", value: "threes", tier: "free" },
@@ -343,7 +344,7 @@ function pagePickerValue() {
 	if (["main", "main_recap", "outliers", "live", "analysis", "movement", "bets"].includes(page)) {
 		return `${page}?sport=${SPORT || new URLSearchParams(window.location.search).get("sport") || "mlb"}`;
 	}
-	if (page === "nfl_tracker" && ["nhl", "ncaaf"].includes(SPORT)) return `${page}?sport=${SPORT}`;
+	if (page === "nfl_tracker" && ["nhl", "ncaaf", "nba"].includes(SPORT)) return `${page}?sport=${SPORT}`;
 	if (page === "devig-results" && (SPORT || new URLSearchParams(window.location.search).get("sport")) === "nfl") return "devig-results?sport=nfl";
 	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : SPORT === "nba" ? "parlays?market=nba" : "parlays";
 	return page;
@@ -6559,6 +6560,7 @@ const FB_FIELDS = {
 	line:        { enabled: "fb-line-enabled", min: "fb-line-min", max: "fb-line-max" },
 	hrVsPitcher: { enabled: "fb-hrvspitcher-enabled" },
 	position:    { enabled: "fb-position-enabled", value: "fb-position-value" },
+	lineup:      { enabled: "fb-lineup-enabled", value: "fb-lineup-value" },
 	teamTotal:   { enabled: "fb-teamtotal-enabled", min: "fb-teamtotal-min" },
 	ttoi:        { enabled: "fb-ttoi-enabled", min: "fb-ttoi-min" },
 };
@@ -6599,6 +6601,35 @@ function initPointsTeamTotalFilterUI() {
 		<div class="fb-subrow">
 			<input id="fb-teamtotal-min" type="number" value="${teamTotalDefaultMin()}" min="0" step="0.25" placeholder="Min">
 		</div>`;
+	menu.prepend(section);
+}
+
+function initNbaFilterUI() {
+	if (!isNbaTeamTotalPage() || document.getElementById('fb-position-enabled')) return;
+	const menu = document.getElementById('filterbuilder-options');
+	if (!menu) return;
+	const section = document.createElement('div');
+	section.innerHTML = `
+		<label><input type="checkbox" id="fb-position-enabled"> Position</label>
+		<div class="fb-subrow">
+			<select id="fb-position-value" aria-label="Player position">
+				<option value="PG">PG - Point guard</option>
+				<option value="SG">SG - Shooting guard</option>
+				<option value="SF">SF - Small forward</option>
+				<option value="PF">PF - Power forward</option>
+				<option value="C">C - Center</option>
+				<option value="G">Guards (PG / SG)</option>
+				<option value="F">Forwards (SF / PF)</option>
+			</select>
+		</div>
+		<label><input type="checkbox" id="fb-lineup-enabled"> Lineup status</label>
+		<div class="fb-subrow">
+			<select id="fb-lineup-value" aria-label="Team lineup status">
+				<option value="confirmed">Confirmed</option>
+				<option value="unconfirmed">Not confirmed</option>
+			</select>
+		</div>`;
+	section.addEventListener('click', event => event.stopPropagation());
 	menu.prepend(section);
 }
 
@@ -6708,13 +6739,13 @@ function initFilterBuilderWindow() {
 		liquidity.querySelector('.fb-stat-hint').textContent = "EV row follows the play's Over / Under side.";
 	}
 	const rules = section('Player & odds');
-	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position', teamTotal: isPointsTeamTotalPage() ? 'Est. Team Pts' : 'Est. Team Goals', ttoi: 'TTOI (min)' };
+	const titles = { line: 'Odds range', homerRate: 'Recent hits', bpp: 'BPP minimum', due: 'Due for HR', hrVsPitcher: 'HR vs pitcher', position: 'Position', lineup: 'Lineup status', teamTotal: isPointsTeamTotalPage() ? 'Est. Team Pts' : 'Est. Team Goals', ttoi: 'TTOI (min)' };
 	const labels = {
 		'fb-line-min': 'Minimum American odds', 'fb-line-max': 'Maximum American odds',
 		'fb-homerrate-min': 'Minimum hits', 'fb-homerrate-window': 'Recent hit period', 'fb-bpp-min': 'Minimum BPP percentage',
 		'fb-teamtotal-min': isPointsTeamTotalPage() ? 'Minimum estimated team points' : 'Minimum estimated team goals', 'fb-ttoi-min': 'Minimum L5 average time on ice in minutes'
 	};
-	['line', 'position', 'teamTotal', 'ttoi', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
+	['line', 'position', 'lineup', 'teamTotal', 'ttoi', 'homerRate', 'bpp', 'due', 'hrVsPitcher'].forEach(type => {
 		const checkbox = getControl(FB_FIELDS[type].enabled);
 		if (!checkbox) return;
 		const label = checkbox.closest('label');
@@ -6726,6 +6757,8 @@ function initFilterBuilderWindow() {
 		const title = type === 'homerRate' && ['dingers', 'dingers2', 'barrels', 'charts'].includes(PAGE) ? 'Recent homers' : titles[type];
 		label.replaceChildren(checkbox, document.createTextNode(title));
 		if (type === 'line') label.title = 'Filter the play\'s American odds';
+		if (type === 'position' && isNbaTeamTotalPage()) label.title = 'Uses the player\'s lineup position when available, otherwise their listed position';
+		if (type === 'lineup') label.title = 'Team lineup status, including bench players. Not confirmed includes expected and unavailable lineups.';
 		if (type === 'due') label.title = 'Positive HR gap z-score';
 		if (type === 'hrVsPitcher') label.title = 'Has hit a home run against this pitcher';
 		if (type === 'teamTotal') label.title = `Minimum estimated full-game ${isPointsTeamTotalPage() ? 'points' : 'goals'} for the player's team`;
@@ -6891,6 +6924,21 @@ function matchesNhlPosition(value, selected) {
 		.map(pos => aliases[pos.trim()] || pos.trim());
 	const allowed = selected === 'F' ? ['C', 'LW', 'RW', 'F', 'W'] : selected === 'W' ? ['LW', 'RW', 'W'] : [selected];
 	return positions.some(pos => pos && allowed.includes(pos));
+}
+
+function matchesNbaPosition(value, selected) {
+	const aliases = { 'POINT GUARD': 'PG', 'SHOOTING GUARD': 'SG', 'SMALL FORWARD': 'SF', 'POWER FORWARD': 'PF', CENTER: 'C', CENTRE: 'C', GUARD: 'G', FORWARD: 'F' };
+	const positions = (Array.isArray(value) ? value : [value]).flatMap(pos => String(pos || '').toUpperCase().split(/[/,;|\-]/))
+		.map(pos => aliases[pos.trim()] || pos.trim());
+	const allowed = selected === 'G' ? ['PG', 'SG', 'G'] : selected === 'F' ? ['SF', 'PF', 'F'] : [selected];
+	return positions.some(pos => pos && allowed.includes(pos));
+}
+
+function matchesNbaLineup(row, selected) {
+	const status = String(row.lineupStatus || '').trim().toLowerCase();
+	// Confirmation describes the team's lineup, including players on its bench.
+	const confirmed = status ? status === 'confirmed' : row.confirmed === true;
+	return selected === 'confirmed' ? confirmed : selected === 'unconfirmed' ? !confirmed : false;
 }
 
 function nhlFilterHitRate(row, window) {
@@ -7066,7 +7114,11 @@ function passesFilterBuilder(row) {
 		const value = numFrom(row[field]);
 		if (!Number.isFinite(value) || !Number.isFinite(min) || value < min) return false;
 	}
-	if (c.position?.enabled && !matchesNhlPosition(row.pos, c.position.value)) return false;
+	const isNba = String(row.sport || (typeof SPORT !== 'undefined' ? SPORT : '')).toLowerCase() === 'nba';
+	if (c.position?.enabled && !(isNba
+		? matchesNbaPosition(row.lineupPosition || row.pos, c.position.value)
+		: matchesNhlPosition(row.pos, c.position.value))) return false;
+	if (c.lineup?.enabled && (!isNba || !matchesNbaLineup(row, c.lineup.value))) return false;
 	if (c.hitRate?.enabled) {
 		for (const rule of (c.hitRate.rows || [])) {
 			const threshold = numFrom(rule.value);
@@ -7241,6 +7293,7 @@ function initFilterBuilderUI() {
 	dd.dataset.filterBuilderInit = "1";
 	initLiquidityFilterUI();
 	initNhlFilterUI();
+	initNbaFilterUI();
 	initPointsTeamTotalFilterUI();
 	initFilterBuilderWindow();
 

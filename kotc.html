@@ -471,7 +471,7 @@
 								</div>
 								<div>
 									<input id="custom_oppPosRank" type="checkbox">
-									<label for="custom_oppPosRank">Opp Pos Rank</label>
+									<label for="custom_oppPosRank">DvP rank by per-36 rate</label>
 								</div>
 								<div>
 									<input id="custom_hitRate" type="checkbox">
@@ -540,6 +540,12 @@
 			await changeFilter();
 		});
 
+		function kotcDefenseRank(row) {
+			const rank = row.oppPosRank;
+			return !row.blurred && row.dvpRankBasis === "per_36" && Number.isFinite(row.dvpMinutes) && row.dvpMinutes > 0
+				&& Number.isInteger(rank) && rank >= 1 && rank <= 30 ? rank : null;
+		}
+
 		let loaded = false;
 		function renderTable(data) {
 			TABLE = new Tabulator("#table", {
@@ -583,7 +589,16 @@
 					
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
-					{title: "DvP<br>Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
+					{title: "DvP Rank<br>By per-36 rate", field: "oppPosRank", width: 100,
+						headerTooltip: "Current-season rank against the player's source position group (guards, forwards or centers). 1 = fewest allowed per 36 combined actual opposing-player minutes; ties share a rank. 36 is the display unit, not assumed playing time.",
+						formatter: cell => kotcDefenseRank(cell.getRow().getData()) == null ? "-" : rankingFormatter(cell),
+						sorter: (a, b, aRow, bRow, column, direction) => {
+							const x = kotcDefenseRank(aRow.getData()), y = kotcDefenseRank(bRow.getData());
+							if (x == null && y == null) return 0;
+							if (x == null) return direction === "asc" ? 1 : -1;
+							if (y == null) return direction === "asc" ? -1 : 1;
+							return x - y;
+						}},
 					{field: "game", visible: false}
 				]
 			});
@@ -694,7 +709,7 @@
 			return TABLE.replaceData(rows);
 		};
 	</script>
-	<script type="text/javascript" src="card.js"></script>
+	<script type="text/javascript" src="card.js?v=20261022-dvp36"></script>
 	<script type="text/javascript" src="weights.js"></script>
 	<script>handleSession();</script>
 </body>

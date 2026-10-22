@@ -1,8 +1,8 @@
-/* Current-season opponent production by the source's observed position groups. */
+/* Current-season opponent production per 36 combined minutes by source position group. */
 (function (root) {
   'use strict';
-  const keys = ['dvpRank', 'dvpAllowed', 'dvpGames'];
-  const defaultKeys = ['dvpRank'];
+  const keys = ['dvpRank', 'dvpAllowed36', 'dvpAllowed', 'dvpGames', 'dvpMinutes'];
+  const defaultKeys = ['dvpRank', 'dvpAllowed36'];
   const pages = ['nba', 'pts', 'threes'];
   const stats = {
     pts:['points','pts/g'], reb:['rebounds','reb/g'], ast:['assists','ast/g'],
@@ -13,7 +13,9 @@
   };
   const positions = {G:'guards', F:'forwards', C:'centers', PG:'point guards', SG:'shooting guards', SF:'small forwards', PF:'power forwards'};
   const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+  const positive = value => finite(value) > 0 ? value : null;
   const integer = value => Number.isInteger(value) && value > 0 ? value : null;
+  const metricValue = (values, metric, fallback) => values != null && Object.hasOwn(values, metric) ? values[metric] : fallback;
   const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
   const format = value => new Intl.NumberFormat('en-US', {maximumFractionDigits:2}).format(value);
   const ordinal = value => root.addSuffix ? root.addSuffix(value) : `${value}${value % 100 >= 11 && value % 100 <= 13 ? 'th' : ({1:'st',2:'nd',3:'rd'})[value % 10] || 'th'}`;
@@ -22,24 +24,33 @@
   function info(row) {
     const rawOpp = String(row.opp || '').toLowerCase();
     const opp = defense?.team_aliases?.[rawOpp] || rawOpp;
-    const rawPosition = String(row.dvpPosition || row.pos || '').toUpperCase();
+    const rawPosition = String(row.dvpPosition || '').toUpperCase();
     const position = defense?.position_aliases?.[rawPosition] || rawPosition;
     const metric = defense?.prop_metrics?.[row.prop] || row.prop;
     const sample = defense?.data?.[opp]?.[position];
     return {opp, position, positionLabel:positions[position] || position || 'this position', metric, sample,
-      stat:stats[metric], teams:integer(sample?.ranked_teams_by_metric?.[metric] ?? sample?.ranked_teams)};
+      stat:stats[metric], teams:integer(metricValue(sample?.ranked_teams_by_metric, metric, sample?.ranked_teams))};
   }
 
   function setFeed(feed) {
     const metadata = feed?.defenseVsPosition;
-    defense = metadata?.window === 'season' && metadata?.season_type === 'regular' && metadata?.position_basis === 'source_groups' ? metadata : null;
+    defense = metadata?.schema_version === 2 && metadata?.rank_basis === 'per_36'
+      && metadata?.window === 'season' && metadata?.season_type === 'regular'
+      && metadata?.position_basis === 'source_groups' ? metadata : null;
     for (const row of feed?.data || []) {
-      if (row.blurred || !row.dvpPosition || Object.hasOwn(row, 'dvpAllowed')) continue;
-      const {sample, metric, position, stat} = info(row);
-      const games = integer(sample?.games_by_metric?.[metric] ?? sample?.games);
-      if (!defense || !['G','F','C'].includes(position) || !stat || !games || finite(sample?.per_game?.[metric]) == null) continue;
-      row.dvpRank = integer(sample.ranks?.[metric]);
+      // Explicit new fields (including nulls) remain authoritative. An old row
+      // can only gain /36 fields from compatible metadata and a known group.
+      if (row.blurred || !row.dvpPosition || ['dvpAllowed36','dvpMinutes','dvpRankBasis'].some(key => Object.hasOwn(row, key))) continue;
+      const {sample, metric, position, stat, teams} = info(row);
+      const games = integer(metricValue(sample?.games_by_metric, metric, sample?.games));
+      if (!defense || !['G','F','C'].includes(position) || !stat || !games
+        || finite(sample?.per_game?.[metric]) == null || finite(sample?.per_36?.[metric]) == null || positive(sample?.minutes) == null) continue;
+      const rank = integer(sample.ranks?.[metric]);
+      row.dvpRank = rank && teams && rank <= teams && teams <= 30 ? rank : null;
+      row.dvpAllowed36 = sample.per_36[metric];
       row.dvpAllowed = sample.per_game[metric];
+      row.dvpMinutes = sample.minutes;
+      row.dvpRankBasis = 'per_36';
       row.dvpGames = games;
       row.dvpPosition = position;
     }
@@ -48,19 +59,30 @@
   }
 
   function value(row, key) {
-    // A scraped legacy oppPosRank alone is never evidence of this season's sample.
-    if (!defense || row.blurred || !row.dvpPosition || !['G','F','C'].includes(info(row).position) || !info(row).stat || !integer(row.dvpGames) || finite(row.dvpAllowed) == null) return null;
-    return key === 'dvpAllowed' ? finite(row[key]) : integer(row[key]);
+    // Neither a legacy rank nor a new label proves that the rate uses minutes.
+    const context = info(row);
+    if (row.blurred || row.dvpRankBasis !== 'per_36' || !row.dvpPosition || !context.opp
+      || !['G','F','C'].includes(context.position) || !context.stat || !integer(row.dvpGames)
+      || positive(row.dvpMinutes) == null || finite(row.dvpAllowed36) == null || finite(row.dvpAllowed) == null) return null;
+    if (key === 'dvpAllowed36' || key === 'dvpAllowed') return finite(row[key]);
+    if (key === 'dvpMinutes') return positive(row[key]);
+    if (key === 'dvpRank') {
+      const rank = integer(row[key]);
+      return rank && rank <= (context.teams || 30) && rank <= 30 ? rank : null;
+    }
+    return key === 'dvpGames' ? integer(row[key]) : null;
   }
 
   function description(row) {
-    const rank = value(row, 'dvpRank'), allowed = value(row, 'dvpAllowed'), games = value(row, 'dvpGames');
-    if (allowed == null || games == null) return 'No current-season defense-vs-position data for this prop.';
+    const rank = value(row, 'dvpRank'), allowed36 = value(row, 'dvpAllowed36'), allowed = value(row, 'dvpAllowed');
+    const games = value(row, 'dvpGames'), minutes = value(row, 'dvpMinutes');
+    if (allowed36 == null || games == null || minutes == null) return 'No current-season defense-vs-position data per 36 minutes for this prop.';
     const {opp, positionLabel, stat, teams} = info(row);
     const lines = [`${opp.toUpperCase()} vs ${positionLabel} — ${stat[0]}`,
-      `${format(allowed)} allowed per game across ${games} completed regular-season ${games === 1 ? 'game' : 'games'}.`,
-      rank == null ? 'Rank unavailable.' : `Rank ${rank}${teams ? ` of ${teams}` : ''}; 1 means fewest allowed. Ties share a rank.`,
-      'Totals cover all opposing players in this position group per defensive game, including zero production. This is not an individual player projection or a prop hit rate.'];
+      `${format(allowed36)} allowed per 36 minutes. ${format(allowed)} allowed per game across ${games} completed regular-season ${games === 1 ? 'game' : 'games'}.`,
+      rank == null ? 'Rank unavailable.' : `Rank ${rank}${teams ? ` of ${teams}` : ''}; 1 means fewest allowed per 36 minutes. Ties share a rank.`,
+      `Rate = total production by all opposing ${positionLabel} / their ${format(minutes)} combined actual minutes × 36, including zero production.`,
+      '36 minutes is the display unit, not an assumed playing time. This is not an individual player projection or a prop hit rate.'];
     if (games < 5) lines.push('Early sample: fewer than 5 completed games.');
     if (defense?.season != null) lines.push(`Season: ${defense.season}.`);
     if (defense?.as_of) lines.push(`Season data through ${defense.as_of}${defense.partial ? '; incomplete coverage' : ''}.`);
@@ -73,7 +95,9 @@
     if (number == null) return '<span class="nba-defense-empty">-</span>';
     const {position, stat} = info(row);
     const main = key === 'dvpRank' ? ordinal(number) : format(number);
-    const caption = key === 'dvpRank' ? `${position} · ${row.dvpGames}g` : key === 'dvpAllowed' ? stat[1] : number < 5 ? 'early sample' : 'games';
+    const caption = key === 'dvpRank' ? `${position} · ${row.dvpGames}g`
+      : key === 'dvpAllowed36' ? stat[1].replace('/g','/36') : key === 'dvpAllowed' ? stat[1]
+      : key === 'dvpMinutes' ? 'minutes' : number < 5 ? 'early sample' : 'games';
     const detail = escape(description(row));
     const classes = `nba-defense-value${key === 'dvpRank' ? ' nba-defense-context' : ''}${row.dvpGames < 5 ? ' nba-defense-early' : ''}`;
     return `<button type="button" class="${classes}" title="${detail}" aria-label="${detail}"><strong>${escape(main)}</strong><small>${escape(caption)}</small></button>`;
@@ -88,12 +112,14 @@
   }
 
   function items() {
-    return [['dvpRank','Opponent vs position rank','Vs position<br>Rank',78],
+    return [['dvpRank','Opponent vs position rank by per-36 rate','Vs position rank<br>By per-36 rate',110],
+      ['dvpAllowed36','Allowed per 36 minutes vs position','Allowed<br>/ 36 min',110],
       ['dvpAllowed','Allowed per game vs position','Allowed<br>/ game',100],
-      ['dvpGames','Defense sample games','Sample<br>Games',80]].map(([key,label,title,width]) => ({key,label,cols:[{
+      ['dvpGames','Defense sample games','Sample<br>Games',80],
+      ['dvpMinutes','Defense sample minutes','Sample<br>Minutes',90]].map(([key,label,title,width]) => ({key,label,cols:[{
         field:key,title,width,variableHeight:true,cssClass:'nba-defense-cell',visible:defaultKeys.includes(key),
         headerSortStartingDir:key === 'dvpRank' ? 'asc' : 'desc',
-        headerTooltip:'Current-season opponent production against this position group. 1 = fewest allowed; ties share a rank. Tap or hover for the stat and sample.',
+        headerTooltip:'Current-season opponent production per 36 combined actual minutes played by opposing players in this position group. Rank 1 = fewest allowed per 36; ties share a rank. Tap or hover for the stat, games and minutes.',
         formatter:cell => render(cell.getRow().getData(),key),
         sorter:(a,b,aRow,bRow,column,direction) => compare(aRow.getData(),bRow.getData(),key,direction)
       }]}));

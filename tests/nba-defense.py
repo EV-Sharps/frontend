@@ -21,20 +21,23 @@ class Quiet(SimpleHTTPRequestHandler):
         return str(args.root/'_missing')
 
 def fixture(page):
-    prop='3ptm' if page=='threes' else 'pts'
+    prop='3ptm' if page=='threes' else 'fb' if page=='fb' else 'pts'
     base={'prop':prop,'dt':'2099-10-22','team':'phi','pos':'PG','sport':'nba','handicap':.5,'under':False,
           'book':'fd','line':150,'bookOdds':{'fd':'150/-175','pn':'130/-155','circa':'135/-160'},
           'liquidity':{},'logs':[0,1,2],'hitRate':66,'hitRateLYR':50,'avgMin':30,'teamTotal':115,'oppRank':10}
     rows=[dict(base,id=1,player='known guard',opp='gsw',game='phi @ gsw',dvpPosition='G'),
           dict(base,id=2,player='zero guard',opp='ny',game='phi @ ny',dvpPosition='G'),
           dict(base,id=3,player='unknown guard',opp='bos',game='phi @ bos',oppPosRank=28),
-          dict(base,id=4,player='locked guard',opp='gsw',game='phi @ gsw',blurred=True)]
-    return {'data':rows,'props':[prop],'games':['phi @ gsw','phi @ ny','phi @ bos'],'updated':{},
+          dict(base,id=4,player='locked guard',opp='gsw',game='phi @ gsw',blurred=True),
+          dict(base,id=5,player='zero minute guard',opp='mia',game='phi @ mia',dvpPosition='G',
+               dvpRank=1,dvpAllowed=0,dvpAllowed36=0,dvpMinutes=0,dvpRankBasis='per_36',dvpGames=2),
+          dict(base,id=6,player='legacy guard',opp='bos',game='phi @ bos',dvpPosition='G',dvpRank=28,dvpAllowed=26.5,dvpGames=2)]
+    return {'data':rows,'props':[prop],'games':['phi @ gsw','phi @ ny','phi @ bos','phi @ mia'],'updated':{},
       'times':{row['game']:'2099-10-22T23:00:00Z' for row in rows},'defenseVsPosition':{
-        'season':'2026-27','as_of':'2026-10-22','window':'season','season_type':'regular','position_basis':'source_groups','partial':True,
+        'schema_version':2,'rank_basis':'per_36','season':'2026-27','as_of':'2026-10-22','window':'season','season_type':'regular','position_basis':'source_groups','partial':True,
         'team_aliases':{'gsw':'gs'},'position_aliases':{'PG':'G'},'prop_metrics':{prop:prop},
-        'data':{'gs':{'G':{'games':2,'per_game':{prop:26.5},'ranks':{prop:3},'ranked_teams_by_metric':{prop:4}}},
-                'ny':{'G':{'games':2,'per_game':{prop:0},'ranks':{prop:1},'ranked_teams_by_metric':{prop:4}}}}}}
+        'data':{'gs':{'G':{'games':2,'minutes':180,'per_game':{prop:26.5},'per_36':{prop:10.6},'ranks':{prop:3},'ranked_teams_by_metric':{prop:4}}},
+                'ny':{'G':{'games':2,'minutes':180,'per_game':{prop:0},'per_36':{prop:0},'ranks':{prop:1},'ranked_teams_by_metric':{prop:4}}}}}}
 
 server=ThreadingHTTPServer(('127.0.0.1',0),Quiet)
 Thread(target=server.serve_forever,daemon=True).start()
@@ -54,52 +57,63 @@ try:
                 page.route('**/api/**',lambda route:route.fulfill(json=fixture(name)))
                 page.goto(f'http://localhost:{server.server_port}/{name}.html?view={view}&devig=pn-circa&weight=1-1')
                 count="document.querySelectorAll('#card-container .data-card').length" if view=='mobile' else "TABLE?.getData().length"
-                page.wait_for_function(f"document.getElementById('data-status')?.hidden === true && {count} === 4")
+                page.wait_for_function(f"document.getElementById('data-status')?.hidden === true && {count} === 6")
                 assert page.evaluate("TABLE.getColumn('dvpRank').isVisible()"),(name,view)
+                assert page.evaluate("TABLE.getColumn('dvpAllowed36').isVisible()"),(name,view)
                 assert not page.evaluate("TABLE.getColumn('dvpAllowed').isVisible()")
                 assert not page.evaluate("TABLE.getColumn('dvpGames').isVisible()")
+                assert not page.evaluate("TABLE.getColumn('dvpMinutes').isVisible()")
                 assert page.evaluate("RES.data.find(row=>row.player==='known guard').dvpPosition")=='G'
+                assert page.evaluate("RES.data.find(row=>row.player==='known guard').dvpRankBasis")=='per_36'
                 if view=='mobile':
-                    page.wait_for_function("document.querySelectorAll('#card-container .data-card').length===4")
-                    assert page.locator('#card-container .nba-defense-card').count()==3
+                    page.wait_for_function("document.querySelectorAll('#card-container .data-card').length===6")
+                    assert page.locator('#card-container .nba-defense-card').count()==10
+                    assert page.locator('#card-container .nba-defense-card .nba-defense-value').count()==4
                     card=page.locator('#card-container .data-card').filter(has=page.locator('.nba-defense-value')).first
                     card.locator('.card-arrow-container').click()
                     card.locator('.nba-defense-value').first.click()
                     assert page.locator('#nba-defense-dialog').is_visible()
                     assert 'vs guards' in page.locator('#nba-defense-dialog p').inner_text()
                     assert 'expanded' in card.get_attribute('class'),'Opening DVP details must not collapse the mobile card'
-                    if name=='nba':page.screenshot(path=str(args.overlay/'nba-dvp-mobile.png'))
+                    assert 'per 36 minutes' in page.locator('#nba-defense-dialog p').inner_text()
+                    if name=='nba':page.screenshot(path=str(args.overlay/'nba-dvp36-mobile.png'))
                     page.locator('#nba-defense-dialog button').click()
                     page.evaluate("changeView('compact')")
-                page.evaluate("TABLE.showColumn('dvpAllowed');TABLE.showColumn('dvpGames');TABLE.clearSort();")
+                page.evaluate("TABLE.showColumn('dvpAllowed');TABLE.showColumn('dvpGames');TABLE.showColumn('dvpMinutes');TABLE.clearSort();")
                 page.wait_for_function("[...document.querySelectorAll('.tabulator-cell[tabulator-field=\"dvpAllowed\"]')].some(el=>el.textContent.includes('26.5'))")
                 assert page.locator('.tabulator-cell[tabulator-field="dvpAllowed"]').all_text_contents().count('0pts/g' if name!='threes' else '03PM/g')==1
+                assert page.locator('.tabulator-cell[tabulator-field="dvpAllowed36"]').all_text_contents().count('0pts/36' if name!='threes' else '03PM/36')==1
+                assert page.locator('.tabulator-cell[tabulator-field="dvpAllowed36"] .nba-defense-empty').count()==4
+                assert page.locator('.tabulator-cell[tabulator-field="dvpMinutes"] .nba-defense-value').count()==2
                 details=page.locator('.tabulator-cell[tabulator-field="dvpRank"] .nba-defense-value').first
                 assert details.locator('small').is_visible(),'Compact rank must show its position and sample'
                 assert details.locator('small').inner_text()=='G · 2g'
                 assert 'nba-defense-early' in details.get_attribute('class')
                 assert details.locator('small').evaluate('el=>getComputedStyle(el).fontWeight')=='700'
                 assert details.evaluate('el=>el.scrollWidth <= el.closest(".tabulator-cell").clientWidth'),'Compact rank must fit its column'
-                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp-compact.png'))
+                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp36-compact.png'))
                 details.scroll_into_view_if_needed();details.click()
                 assert page.locator('#nba-defense-dialog').is_visible()
                 text=page.locator('#nba-defense-dialog p').inner_text()
                 assert 'vs guards' in text and 'Ties share a rank' in text and 'Early sample' in text and 'incomplete coverage' in text
-                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp-desktop.png'))
+                assert '10.6 allowed per 36 minutes' in text and '180 combined actual minutes' in text and 'not an assumed playing time' in text
+                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp36-desktop.png'))
                 page.locator('#nba-defense-dialog button').click()
                 if name=='nba':
                     assert page.evaluate("buildNbaColumns(['player','oppPosRank','opp']).filter(column=>column.field==='dvpRank').length")==1
                 for direction,expected in [('asc',['zero guard','known guard']),('desc',['known guard','zero guard'])]:
-                    page.evaluate('direction=>TABLE.setSort("dvpAllowed",direction)',direction)
+                    page.evaluate('direction=>TABLE.setSort("dvpAllowed36",direction)',direction)
                     assert page.evaluate("TABLE.getData('active').map(row=>row.player)")[:2]==expected
                 page.evaluate("""() => {ENABLE_AUTH=true;CURR_USER={metadata:{[PAGE]:['player','oppPosRank']}};showHideUserTable(true);}""")
                 assert page.evaluate("TABLE.getColumn('dvpRank').isVisible()")
+                assert not page.evaluate("TABLE.getColumn('dvpAllowed36').isVisible()")
                 assert not page.evaluate("TABLE.getColumn('dvpAllowed').isVisible()")
+                assert not page.evaluate("TABLE.getColumn('dvpMinutes').isVisible()")
                 page.evaluate("CURR_USER.metadata[PAGE]=['player'];showHideUserTable(true)")
                 assert not page.evaluate("TABLE.getColumn('dvpRank').isVisible()")
                 if view=='mobile':
                     page.evaluate("changeView('mobile')")
-                    page.wait_for_function("document.querySelectorAll('#card-container .data-card').length===4")
+                    page.wait_for_function("document.querySelectorAll('#card-container .data-card').length===6")
                     assert page.locator('#card-container .nba-defense-card').count()==0
                 assert errors==[],(name,view,errors)
                 page.close()

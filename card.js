@@ -840,10 +840,13 @@ function updateExistingCard(card, rowData) {
 	
 	const collapsedBody = card.querySelector('.card-body-collapsed');
 	const dvp = rowData.dvpRank === undefined ? rowData.oppPosRank : rowData.dvpRank;
+	const nbaDvp = rowData.sport === "nba" || ["nba", "pts", "threes", "fb", "kotc"].includes(PAGE);
+	const per36Dvp = rowData.dvpRankBasis === "per_36";
+	const fallbackDvp = nbaDvp && (rowData.blurred || !per36Dvp || !Number.isFinite(rowData.dvpMinutes) || rowData.dvpMinutes <= 0) ? null : dvp;
 	const dvpPill = window.NbaDefense?.pages.includes(PAGE)
 		? NbaDefense.renderCard(rowData, NbaDefense.keys.filter(key => TABLE?.getColumn(key)?.isVisible()))
-		: dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
-					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
+		: fallbackDvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(fallbackDvp)}; font-weight:600; font-size:0.85rem;">
+					${addSuffix(fallbackDvp)} <span style="opacity:0.85; font-weight:500;">${per36Dvp ? "DvP Rank (per-36 rate)" : "DvP Rank"}</span>
 				</div>`: "";
 	const stadiumPill = (PAGE === "dingers") ? `<div class="metric-pill">L:${rowData.stadiumRankLeft} R:${rowData.stadiumRankRight} B:${rowData.stadiumRank}<span style="opacity:0.85; font-weight:500;">Stadium</span></div>` : "";
 	const bppPill = (PAGE === "dingers" && rowData.bpp) ? `<div class="metric-pill" style="color:${getHRFactorColor(parseInt(rowData.bpp))}; font-weight:600; font-size:0.85rem;">

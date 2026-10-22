@@ -552,11 +552,15 @@
 								</div>
 								<div>
 									<input id="custom_dvpRank" type="checkbox">
-									<label for="custom_dvpRank">Opponent vs position rank</label>
+									<label for="custom_dvpRank">Opponent vs position rank by per-36 rate</label>
+								</div><div>
+									<input id="custom_dvpAllowed36" type="checkbox"><label for="custom_dvpAllowed36">Allowed per 36 minutes vs position</label>
 								</div><div>
 									<input id="custom_dvpAllowed" type="checkbox"><label for="custom_dvpAllowed">Allowed per game vs position</label>
 								</div><div>
 									<input id="custom_dvpGames" type="checkbox"><label for="custom_dvpGames">Defense sample games</label>
+								</div><div>
+									<input id="custom_dvpMinutes" type="checkbox"><label for="custom_dvpMinutes">Defense sample minutes</label>
 								</div>
 								<div>
 									<input id="custom_hitRate" type="checkbox">
@@ -610,7 +614,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
-	<script src="nba-defense.js"></script>
+	<script src="nba-defense.js?v=20261022-per36"></script>
 	<script src="player-lines.js"></script>
 	<script src="price-history.js"></script>
 	<script src="player-history.js"></script>

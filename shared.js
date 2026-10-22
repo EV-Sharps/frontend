@@ -1033,9 +1033,10 @@ function recordROIHeaderFormatter() {
 function recordROIColumn() {
 	return {
 		title: 'Record', titleFormatter: recordROIHeaderFormatter,
-		field: 'roiRecord', width: 80, minWidth: 80, headerSort: false,
+		field: 'roiRecord', width: 80, minWidth: 80, headerSort: true,
+		sorter: recordROISorter, headerSortStartingDir: 'desc',
 		formatter: recordROIFormatter, visible: recordColumnVisible(),
-		headerTooltip: 'Historical W\u2013L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.'
+		headerTooltip: 'Click to sort by ROI%. Historical W\u2013L and ROI grouped into 100-point American odds ranges and 1-percentage-point EV ranges, e.g. +500 to below +600 odds and 8% to below 9% EV.'
 	};
 }
 
@@ -1215,7 +1216,10 @@ function initializeOddsTableView(table) {
 	table.on('columnsLoaded', capture);
 	// Open depends on book, side and checkpoint fields, not its synthetic field.
 	table.on('rowUpdated', row => row.reformat());
-	return capture();
+	return capture().then(() => {
+		// Record/Open can be inserted after tableBuilt; restore their saved slots too.
+		if (table === TABLE) restoreSharedColumnOrder();
+	});
 }
 
 // ── Watchlist ────────────────────────────────────────────────────────────────
@@ -4044,6 +4048,56 @@ function decorateCustomizeColumnRow(checkbox) {
 	});
 }
 
+function ensureColumnReorderModal() {
+	let modal = document.getElementById('col-reorder-modal');
+	if (modal?.dataset.sharedReorder) return modal;
+	if (!modal) {
+		modal = document.createElement('div');
+		modal.id = 'col-reorder-modal';
+	}
+	// Older pages used an inline z-index below Customize and an unbounded list.
+	modal.removeAttribute('style');
+	modal.style.display = 'none';
+	modal.classList.add('customize-reorder');
+	modal.dataset.sharedReorder = '1';
+	modal.setAttribute('role', 'dialog');
+	modal.setAttribute('aria-modal', 'true');
+	modal.setAttribute('aria-label', 'Reorder columns');
+	modal.innerHTML = `<div class="modal-content devig-panel">
+		<div class="modal-header"><h3>Reorder columns</h3><button type="button" onclick="closeColReorder()" aria-label="Close reorder">&times;</button></div>
+		<p>Drag visible columns into your preferred order.</p>
+		<div id="col-reorder-list"></div>
+		<p id="col-reorder-status" role="status" hidden></p>
+		<div class="action-footer"><button type="button" class="btn-primary" onclick="saveColReorder()">Save</button><button type="button" onclick="closeColReorder()">Cancel</button></div>
+	</div>`;
+	document.body.appendChild(modal);
+	modal.addEventListener('click', event => { if (event.target === modal) closeColReorderModal(); });
+	let wasOpen = false, trigger;
+	new MutationObserver(() => {
+		const open = modal.style.display !== 'none';
+		if (open === wasOpen) return;
+		wasOpen = open;
+		if (open) {
+			trigger = document.activeElement;
+			modal.querySelector('button').focus({ preventScroll: true });
+		} else trigger?.focus({ preventScroll: true });
+	}).observe(modal, { attributes: true, attributeFilter: ['style'] });
+	document.addEventListener('keydown', event => {
+		if (modal.style.display === 'none') return;
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			closeColReorderModal();
+		} else if (event.key === 'Tab') {
+			const buttons = [...modal.querySelectorAll('button')].filter(button => !button.disabled);
+			const first = buttons[0], last = buttons.at(-1);
+			if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+			else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+		}
+	}, true);
+	return modal;
+}
+
 function initCustomizeWindow() {
 	const overlay = document.getElementById('overlay');
 	const panel = overlay?.querySelector('.overlay-content');
@@ -4058,7 +4112,14 @@ function initCustomizeWindow() {
 	const controls = selects.map(select => ({ select, label: panel.querySelector(`label[for="${select.id}"]`)?.textContent.trim() || select.id }));
 	const save = panel.querySelector('#save-table');
 	const status = panel.querySelector('#save-status');
-	const reorder = [...panel.querySelectorAll('button')].find(button => /openColReorder/.test(button.getAttribute('onclick') || ''));
+	let reorder = [...panel.querySelectorAll('button')].find(button => /openColReorder/.test(button.getAttribute('onclick') || ''));
+	if (!reorder) {
+		reorder = document.createElement('button');
+		reorder.type = 'button';
+		reorder.textContent = 'Reorder';
+		reorder.addEventListener('click', () => openColReorder());
+	}
+	reorder.disabled = !TABLE?.getColumnDefinitions;
 	const close = [...panel.querySelectorAll('button')].find(button => /closeOverlay/.test(button.getAttribute('onclick') || ''));
 	const guest = [...panel.querySelectorAll('.loggedOut')];
 	const shell = document.createElement('div');
@@ -4159,14 +4220,8 @@ function initCustomizeWindow() {
 	overlay.addEventListener('change', refreshCustomizeWindow);
 	new MutationObserver(refreshCustomizeWindow).observe(items, { childList: true, subtree: true });
 	overlay.addEventListener('click', event => { if (event.target === overlay) closeOverlay(); });
-	const reorderModal = document.getElementById('col-reorder-modal');
+	const reorderModal = reorder ? ensureColumnReorderModal() : null;
 	if (reorderModal) {
-		document.body.appendChild(reorderModal);
-		reorderModal.classList.add('customize-reorder');
-		reorderModal.querySelector('.modal-content')?.style.removeProperty('max-width');
-		reorderModal.setAttribute('role', 'dialog'); reorderModal.setAttribute('aria-modal', 'true');
-		reorderModal.setAttribute('aria-label', 'Reorder columns');
-		reorderModal.addEventListener('click', event => { if (event.target === reorderModal) closeColReorderModal(); });
 		new MutationObserver(() => {
 			const open = reorderModal.style.display !== 'none' && reorderModal.getClientRects().length > 0;
 			panel.inert = open;
@@ -4193,6 +4248,8 @@ function initCustomizeWindow() {
 function refreshCustomizeWindow() {
 	const overlay = document.getElementById('overlay');
 	if (!overlay?.classList.contains('customize-window')) return;
+	const reorder = overlay.querySelector('.cx-reorder');
+	if (reorder) reorder.disabled = !TABLE?.getColumnDefinitions;
 	// Late table initialization can add Open, Record, or Line controls.
 	overlay.querySelectorAll('#items input[type="checkbox"]').forEach(checkbox => {
 		decorateCustomizeColumnRow(checkbox);
@@ -5440,7 +5497,22 @@ async function loadHeatmapData(_retriesLeft = 10) {
 	// now that the record and ROI data is available, including compact ROI bars.
 	if (typeof TABLE !== 'undefined' && TABLE && typeof TABLE.getRows === 'function') {
 		TABLE.getRows().forEach(row => row.reformat());
+		const sorters = TABLE.getSorters();
+		if (sorters.some(sort => sort.field === 'roiRecord')) {
+			TABLE.setSort(sorters.map(({ field, dir }) => ({ column: field, dir })));
+		}
 	}
+}
+
+function recordROISorter(a, b, aRow, bRow, column, dir) {
+	const roi = row => row.prop === 'separator' ? null : getRowROI(row)?.roi;
+	const left = roi(aRow.getData());
+	const right = roi(bRow.getData());
+	// Rows without history stay below numeric ROI in either direction.
+	if (!Number.isFinite(left) && !Number.isFinite(right)) return 0;
+	if (!Number.isFinite(left)) return dir === 'asc' ? 1 : -1;
+	if (!Number.isFinite(right)) return dir === 'asc' ? -1 : 1;
+	return left - right;
 }
 
 function recordROIFormatter(cell) {
@@ -5824,23 +5896,38 @@ function buildColumnsFromOrder(savedOrder, defaultOrder, items, starColFn = null
  * @param {Function} isItemVisible  - (meta) => bool; omit hidden items
  */
 function openColReorderModal(items, defaultOrder, savedOrder, isItemVisible) {
+	if (typeof ensureColumnReorderModal === 'function') ensureColumnReorderModal();
+	const status = document.getElementById('col-reorder-status');
+	if (status) status.hidden = true;
 	({ savedOrder, defaultOrder, items } = withRecordColumnOrder(savedOrder, defaultOrder, items));
 	({ savedOrder, defaultOrder, items } = withOpeningColumnOrder(savedOrder, defaultOrder, items));
 	const itemMap = Object.fromEntries(items.map(i => [i.key, i]));
-	const displayOrder = completeColumnOrder(savedOrder, defaultOrder, items);
+	const leaves = column => column.columns?.length ? column.columns.flatMap(leaves) : [column];
+	const liveColumns = TABLE?.getColumns?.() || [];
+	const liveByField = new Map(liveColumns.map(column => [column.getField(), column]));
+	const fieldsByKey = new Map(items.map(item => [item.key, item.cols.flatMap(leaves).map(column => column.field)]));
+	const keysByField = new Map(items.flatMap(item => fieldsByKey.get(item.key).map(field => [field, item.key])));
+	const liveOrder = [...new Set(liveColumns.map(column => keysByField.get(column.getField())).filter(Boolean))];
+	const displayOrder = completeColumnOrder(liveOrder.length ? liveOrder : savedOrder, defaultOrder, items);
 	const list = document.getElementById('col-reorder-list');
 	list.innerHTML = '';
 	list._fullColumnOrder = displayOrder;
 	displayOrder.forEach(key => {
 		const meta = itemMap[key];
 		if (!meta) return;
-		if (isItemVisible && !isItemVisible(meta)) return;
+		const columns = fieldsByKey.get(key).map(field => liveByField.get(field)).filter(Boolean);
+		if (columns.length ? !columns.some(column => column.isVisible()) : isItemVisible && !isItemVisible(meta)) return;
 		const item = document.createElement('div');
 		item.dataset.key = key;
 		item.draggable = true;
 		item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#172027;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:grab;user-select:none;font-size:13px;touch-action:none;';
 		const label = meta.key === 'kelly' ? `${kellyFractionLabel()} Kelly` : meta.label;
-		item.innerHTML = `<span style="color:#555;font-size:16px;line-height:1;">⋮⋮</span><span>${label}</span>`;
+		const grip = document.createElement('span');
+		grip.style.cssText = 'color:#555;font-size:16px;line-height:1;';
+		grip.textContent = '⋮⋮';
+		const name = document.createElement('span');
+		name.textContent = label;
+		item.append(grip, name);
 		item.addEventListener('dragstart', e => {
 			_colReorderDragSrc = item;
 			e.dataTransfer.effectAllowed = 'move';
@@ -5897,6 +5984,29 @@ function closeColReorderModal() {
 	document.getElementById('col-reorder-modal').style.display = 'none';
 }
 
+// Column rebuilds otherwise reset unsaved visibility, header searches and sorting.
+// Keep the underlying preference for fields combined by the Stacked view, too.
+function applySharedColumnOrder(table, definitions, postApply) {
+	const view = typeof oddsTableViewStates !== 'undefined' ? oddsTableViewStates.get(table) : null;
+	const visibility = (table.getColumns?.() || []).map(column => {
+		const field = column.getField();
+		return [field, view?.visibility[field] ?? column.isVisible()];
+	});
+	const filters = table.getHeaderFilters?.() || [];
+	const sort = table.getSorters?.().map(({ field, dir }) => ({ column: field, dir }));
+	table.setColumns(definitions);
+	if (postApply) postApply();
+	for (const [field, visible] of visibility) {
+		const column = field && table.getColumn(field);
+		if (column) { if (visible) column.show(); else column.hide(); }
+	}
+	for (const { field, value } of filters) {
+		if (table.getColumn(field)) table.setHeaderFilterValue(field, value);
+	}
+	if (sort) table.setSort(sort.filter(({ column }) => table.getColumn(column)));
+	if (table === TABLE && typeof updateHeaders === 'function') updateHeaders();
+}
+
 /**
  * Read the reorder list, persist to Supabase, apply to TABLE, then close.
  *
@@ -5906,6 +6016,8 @@ function closeColReorderModal() {
  */
 async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	const list = document.getElementById('col-reorder-list');
+	const status = document.getElementById('col-reorder-status');
+	if (status) status.hidden = true;
 	const visibleOrder = [...list.querySelectorAll('[data-key]')].map(i => i.dataset.key);
 	const visibleKeys = new Set(visibleOrder);
 	let visibleIndex = 0;
@@ -5913,17 +6025,28 @@ async function saveColReorderModal(storageKey, buildColsFn, postSaveFn) {
 	// Switching views can make those groups visible again after this save.
 	const newOrder = (list._fullColumnOrder || visibleOrder)
 		.map(key => visibleKeys.has(key) ? visibleOrder[visibleIndex++] : key);
-	if (CURR_USER?.metadata) {
-		CURR_USER.metadata[storageKey] = newOrder;
+	if (typeof CURR_USER !== 'undefined' && CURR_USER?.metadata &&
+		typeof CURR_SESSION !== 'undefined' && CURR_SESSION?.user) {
+		const metadata = { ...CURR_USER.metadata, [storageKey]: newOrder };
 		if (["tds-order", "tds2-order", "ftd-order", "nfl-order"].includes(storageKey)) {
-			CURR_USER.metadata[`${PAGE}-snaps-order-version`] = 1;
+			metadata[`${PAGE}-snaps-order-version`] = 1;
 		}
-		await SB.from('profiles').update({ metadata: CURR_USER.metadata }).eq('id', CURR_SESSION.user.id);
+		try {
+			const { error } = await SB.from('profiles').update({ metadata }).eq('id', CURR_SESSION.user.id);
+			if (error) throw error;
+		} catch (error) {
+			if (status) {
+				status.textContent = 'Could not save column order. Please try again.';
+				status.hidden = false;
+			}
+			return false;
+		}
+		CURR_USER.metadata = metadata;
 		if (typeof cacheProfile === "function") cacheProfile(CURR_USER);
 	}
-	TABLE.setColumns(buildColsFn(newOrder));
-	if (postSaveFn) postSaveFn();
+	applySharedColumnOrder(TABLE, buildColsFn(newOrder), postSaveFn);
 	closeColReorderModal();
+	return true;
 }
 
 function initChkddActions(root = document) {
@@ -7323,3 +7446,149 @@ function renderFilters() {
 	}
 	initFilterBuilderUI();
 }
+
+// Pages with their own builders keep their handlers. Other primary tables share
+// this adapter, including report pages whose columns contain nested groups.
+const sharedColumnReorderStates = new WeakMap();
+const sharedColumnReorderOrders = new Map();
+let sharedColumnReorderModel = null;
+
+function openColReorder() { openSharedColumnReorder(); }
+function closeColReorder() { closeColReorderModal(); }
+async function saveColReorder() {
+	const model = sharedColumnReorderModel;
+	if (!model || model.table !== TABLE) return;
+	await saveColReorderModal(model.storageKey, order => {
+		sharedColumnReorderOrders.set(sharedColumnReorderVisitKey(model.storageKey), [...order]);
+		return model.build(order);
+	});
+}
+const sharedColumnReorderOpen = openColReorder;
+
+function sharedColumnReorderStorageKey() {
+	const path = location.pathname.split('/').pop().replace(/\.html$/, '');
+	return `${['olympics', 'nfl_futures', 'implied', 'dynasty', 'stats2'].includes(path) ? path : PAGE || path}-order`;
+}
+
+function sharedColumnReorderVisitKey(storageKey) {
+	return `${typeof CURR_USER !== 'undefined' && CURR_USER?.id || 'guest'}:${storageKey}`;
+}
+
+function sharedColumnReorderLabel(definition, fields) {
+	if (fields.length === 1) {
+		const checkbox = document.getElementById(`custom_${fields[0].replaceAll('.', '_')}`);
+		const label = checkbox?.labels?.[0]?.textContent.trim();
+		if (label) return label;
+	}
+	const text = document.createElement('span');
+	text.innerHTML = String(definition.title || '');
+	return text.textContent.trim() || fields.join(' / ');
+}
+
+function createSharedColumnReorderModel(table) {
+	const leaves = definition => definition.columns?.length ? definition.columns.flatMap(leaves) : [definition];
+	const clone = definition => ({ ...definition, ...(definition.columns ? { columns: definition.columns.map(clone) } : {}) });
+	const definitions = table.getColumnDefinitions().map(clone);
+	const occurrences = new Map();
+	const items = [];
+	const slots = definitions.map(definition => {
+		const columns = leaves(definition);
+		const fields = columns.map(column => column.field).filter(Boolean);
+		// Buttons, frozen identity columns and hidden utility fields keep their slots.
+		if (definition.frozen || columns.some(column => column.frozen) ||
+			(!definition.columns && !String(definition.title || '').trim()) ||
+			!fields.length || fields.every(field => String(field).startsWith('_'))) return { definition };
+		const base = `${definition.columns ? 'group' : 'column'}:${[...fields].sort().join('|')}`;
+		const occurrence = occurrences.get(base) || 0;
+		occurrences.set(base, occurrence + 1);
+		const key = occurrence ? `${base}:${occurrence}` : base;
+		items.push({ key, label: sharedColumnReorderLabel(definition, fields), cols: [definition], fields });
+		return { key, definition };
+	});
+	const defaultOrder = items.map(item => item.key);
+	const byKey = new Map(items.map(item => [item.key, item.cols[0]]));
+	return {
+		table, storageKey: sharedColumnReorderStorageKey(), items, defaultOrder,
+		build(order) {
+			const keys = completeColumnOrder(order, defaultOrder, items);
+			let index = 0;
+			return slots.map(slot => clone(slot.key ? byKey.get(keys[index++]) : slot.definition));
+		},
+		isVisible(item) {
+			return item.fields.some(field => table.getColumn(field)?.isVisible());
+		},
+	};
+}
+
+function openSharedColumnReorder() {
+	if (!TABLE?.getColumnDefinitions) return;
+	ensureColumnReorderModal();
+	sharedColumnReorderModel = createSharedColumnReorderModel(TABLE);
+	const model = sharedColumnReorderModel;
+	openColReorderModal(model.items, model.defaultOrder, model.defaultOrder, model.isVisible);
+}
+
+function ensureSharedColumnReorderButton() {
+	const overlay = document.getElementById('overlay');
+	if (overlay) {
+		const button = overlay.querySelector('.cx-reorder');
+		if (button) button.disabled = false;
+		return;
+	}
+	if (document.getElementById('shared-column-reorder')) return;
+	const customize = document.getElementById('customize') || document.getElementById('tracker-customize-btn') ||
+		document.querySelector('button[onclick*="openCustomize"]');
+	const host = customize?.parentElement || document.getElementById('header');
+	if (!host) return;
+	const button = document.createElement('button');
+	button.id = 'shared-column-reorder';
+	button.type = 'button';
+	button.textContent = 'Reorder';
+	button.setAttribute('aria-label', 'Reorder columns');
+	button.addEventListener('click', openSharedColumnReorder);
+	if (customize) customize.after(button); else host.appendChild(button);
+}
+
+function initSharedColumnReorder() {
+	if (openColReorder !== sharedColumnReorderOpen || !TABLE?.getColumnDefinitions) return null;
+	const table = TABLE;
+	let state = sharedColumnReorderStates.get(table);
+	if (state) return state;
+	state = { ready: false };
+	sharedColumnReorderStates.set(table, state);
+	const ready = () => {
+		if (state.ready || table !== TABLE) return;
+		state.ready = true;
+		ensureSharedColumnReorderButton();
+		restoreSharedColumnOrder();
+	};
+	table.on('tableBuilt', ready);
+	if (table.initialized || table.element?.querySelector('.tabulator-header')) setTimeout(ready, 0);
+	return state;
+}
+
+function restoreSharedColumnOrder() {
+	const state = initSharedColumnReorder();
+	if (!state?.ready) return;
+	const model = createSharedColumnReorderModel(TABLE);
+	const order = sharedColumnReorderOrders.get(sharedColumnReorderVisitKey(model.storageKey)) ||
+		(typeof CURR_USER !== 'undefined' ? CURR_USER?.metadata?.[model.storageKey] : null);
+	if (!Array.isArray(order)) return;
+	const next = completeColumnOrder(order, model.defaultOrder, model.items);
+	if (next.every((key, index) => key === model.defaultOrder[index])) return;
+	return applySharedColumnOrder(model.table, model.build(next));
+}
+
+function observeSharedColumnReorder() {
+	if (openColReorder !== sharedColumnReorderOpen) return;
+	initSharedColumnReorder();
+	// Observe only table containers' direct children. Row updates inside their
+	// holders never notify this observer; construction and replacement do.
+	const observer = new MutationObserver(() => initSharedColumnReorder());
+	document.querySelectorAll('#table, [id^="table-"], [id*="-table"]').forEach(root => {
+		if (!root.parentElement?.closest('.tabulator')) observer.observe(root, { childList: true });
+	});
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeSharedColumnReorder, { once: true });
+else setTimeout(observeSharedColumnReorder, 0);

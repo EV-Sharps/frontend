@@ -870,23 +870,29 @@
 
 		function openColReorder() {
 			const savedOrder = CURR_USER?.metadata?.[`${PAGE}-order`] || NBA_DEFAULT_COL_ORDER;
-			const isVisible = (key) => {
-				const items = getNbaColumnItems();
-				const item = items.find(i => i.key === key);
-				if (!item) return true;
-				return item.cols.every(c => c.visible !== false);
-			};
-			openColReorderModal(getNbaColumnItems(), NBA_DEFAULT_COL_ORDER, savedOrder, isVisible);
+			openColReorderModal(getNbaColumnItems(), NBA_DEFAULT_COL_ORDER, savedOrder);
 		}
 
 		function closeColReorder() { closeColReorderModal(); }
 
-		function saveColReorder() {
-			saveColReorderModal(`${PAGE}-order`, buildNbaColumns, () => showHideUserTable(true));
+		let nbaProfileOrder = '';
+		async function saveColReorder() {
+			await saveColReorderModal(`${PAGE}-order`, buildNbaColumns, () => showHideUserTable(true));
+			nbaProfileOrder = JSON.stringify(CURR_USER?.metadata?.[`${PAGE}-order`] || []);
+		}
+
+		async function restoreSavedColumnOrder() {
+			await tableReady;
+			const order = CURR_USER?.metadata?.[`${PAGE}-order`];
+			if (!Array.isArray(order) || JSON.stringify(order) === nbaProfileOrder) return;
+			nbaProfileOrder = JSON.stringify(order);
+			applySharedColumnOrder(TABLE, buildNbaColumns(order));
+			showHideUserTable(true);
 		}
 
 let loaded = false;
 		function renderTable(data) {
+			nbaProfileOrder = JSON.stringify(CURR_USER?.metadata?.[`${PAGE}-order`] || []);
 			const allProps = [...new Set(data.map(row => row.prop))];
 			TABLE = new Tabulator("#table", {
 				tooltipsHeader: true,

@@ -19,6 +19,7 @@ function setup() {
         querySelectorAll() { return this.children; },
     };
     const modal = { style: {} };
+    const status = {};
     const state = { persisted: null, columns: null, cached: false };
     const context = vm.createContext({
         supportsOddsViews: () => false,
@@ -27,8 +28,8 @@ function setup() {
         CURR_USER: { metadata: {} },
         CURR_SESSION: { user: { id: 'fixture' } },
         document: {
-            getElementById: id => id === 'col-reorder-list' ? list : modal,
-            createElement: () => ({ dataset: {}, style: {}, addEventListener() {} }),
+            getElementById: id => id === 'col-reorder-list' ? list : id === 'col-reorder-status' ? status : modal,
+            createElement: () => ({ dataset: {}, style: {}, append() {}, addEventListener() {} }),
         },
         SB: { from: () => ({ update: payload => ({ eq: async () => {
             state.persisted = plain(payload.metadata);
@@ -42,7 +43,7 @@ function setup() {
     vm.runInContext(source.slice(source.indexOf('function snapShareColumnOrder('),
         source.indexOf('const percentFormatter =')), context);
     const build = order => context.buildColumnsFromOrder(order, canonical, items);
-    return { context, list, modal, state, build };
+    return { context, list, modal, status, state, build };
 }
 
 test('legacy Stacked orders restore Best Book alongside the inserted Open column', () => {
@@ -130,4 +131,17 @@ test('resaving a legacy Stacked profile repairs omission and retains an explicit
     context.openColReorderModal(items, canonical, explicit, visible);
     await context.saveColReorderModal('dingers-order', build);
     assert.deepEqual(state.persisted['dingers-order'], [...explicit, 'openingPrice']);
+});
+
+test('a rejected profile save keeps the dialog open without caching or applying the rejected order', async () => {
+    const { context, modal, status, state, build } = setup();
+    context.SB = { from: () => ({ update: () => ({ eq: async () => ({ error: { message: 'save denied' } }) }) }) };
+    context.openColReorderModal(items, canonical);
+    assert.equal(await context.saveColReorderModal('dingers-order', build), false);
+    assert.deepEqual(plain(context.CURR_USER.metadata), {});
+    assert.equal(state.cached, false);
+    assert.equal(state.columns, null);
+    assert.equal(modal.style.display, 'flex');
+    assert.equal(status.hidden, false);
+    assert.match(status.textContent, /could not save/i);
 });

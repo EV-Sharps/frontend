@@ -741,9 +741,10 @@
 
 		function renderPitcherTable(data, prefix="") {
 			document.querySelector(`#${prefix}pitcher-name`).textContent =`${title(data.player)} (${data.pitch_hand}HP)`;
-			for (side of ["l", "r"]) {
+			const activeSide = document.querySelector('#pitcher-splits-toggle .toggle-btn.is-active')?.dataset.target || 'l';
+			for (const side of ["l", "r"]) {
 				const tableId = `${prefix}pitcher-table-${side}`;
-				TABLE = new Tabulator("#"+tableId, {
+				const table = new Tabulator("#"+tableId, {
 					tooltipsHeader: true,
 					placeholder:"Data Loading...",
 					layout: "fitData",
@@ -761,6 +762,10 @@
 					},
 					columns: MIX_COLS,
 				});
+				if (!prefix && side === activeSide) {
+					TABLE = table;
+					initSharedColumnReorder();
+				}
 			}
 		}
 
@@ -814,6 +819,12 @@
 				const side = btn.dataset.target;
 				panelL.classList.toggle('is-hidden', side !== 'l');
 				panelR.classList.toggle('is-hidden', side !== 'r');
+				const table = Tabulator.findTable(`#pitcher-table-${side}`)[0];
+				if (table) {
+					TABLE = table;
+					restoreSharedColumnOrder();
+					table.redraw(true);
+				}
 			});
 		})();
 	function downloadCSV() {

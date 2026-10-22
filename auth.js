@@ -572,6 +572,7 @@ function hydrateAfterProfileLoad() {
 	if (typeof refreshWatchlistStars === "function") refreshWatchlistStars();
 	if (typeof refreshTrackerFromProfile === "function") refreshTrackerFromProfile();
 	if (typeof restoreSavedColumnOrder === "function") restoreSavedColumnOrder();
+	if (typeof restoreSharedColumnOrder === "function") restoreSharedColumnOrder();
 	if (typeof changeFilter === "function") changeFilter();
 }
 

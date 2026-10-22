@@ -3958,6 +3958,7 @@ function loadWeights() {
 }
 
 function showHideUserTable(loaded) {
+	window.NbaDefense?.migrateProfile(CURR_USER, PAGE);
 	initKellyToggle();
 	ensureLineColumnControl();
 	ensureOpeningColumnControl();

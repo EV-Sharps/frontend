@@ -103,16 +103,41 @@
     ...['1h', '2h', '1q', '2q', '3q', '4q'].flatMap(period => nflMainProps.map(prop => `${period}_${prop}`)),
     'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
   const nhlPropOrder = ['attd', 'atgs', 'sog', 'pts', 'ast', 'sv', 'saves', 'pp_pts', 'fgs', 'no_goal'];
+  const nbaPropNames = {
+    pts: 'Points', reb: 'Rebounds', oreb: 'Offensive rebounds', dreb: 'Defensive rebounds',
+    ast: 'Assists', '3ptm': 'Made threes', '3pta': 'Three-point attempts',
+    fgm: 'Field goals made', fga: 'Field goal attempts', ftm: 'Free throws made', fta: 'Free throw attempts',
+    'pts+reb': 'Points + rebounds', 'pts+ast': 'Points + assists', 'reb+ast': 'Rebounds + assists',
+    'pts+reb+ast': 'Points + rebounds + assists', stl: 'Steals', blk: 'Blocks',
+    'blk+stl': 'Blocks + steals', 'stl+blk': 'Blocks + steals', to: 'Turnovers',
+    dd: 'Double-double', td: 'Triple-double', ml: 'Moneyline', spread: 'Point spread',
+    total: 'Game total', tt: 'Team total', team_total: 'Team total',
+    home_total: 'Home team total', away_total: 'Away team total',
+  };
+  function nbaMarketLabel(prop) {
+    const period = /^([12])h_(.+)$/.exec(prop) || /^([1-4])q_(.+)$/.exec(prop);
+    if (period) {
+      const label = nbaMarketLabel(period[2]);
+      return label ? `${['1st', '2nd', '3rd', '4th'][Number(period[1]) - 1]} ${prop[1] === 'h' ? 'half' : 'quarter'} · ${label}` : null;
+    }
+    return nbaPropNames[prop] || null;
+  }
+  const nbaFullGameOrder = Object.keys(nbaPropNames);
+  const nbaPropOrder = [...nbaFullGameOrder,
+    ...['1h', '2h', '1q', '2q', '3q', '4q'].flatMap(period => nbaFullGameOrder.map(prop => `${period}_${prop}`))];
   const goalTier = prop => prop === 'atgs' ? 1 : /^[1-9]\d*\+goals$/.test(prop) ? Number.parseInt(prop, 10) : null;
   const goalMarketLabel = prop => goalTier(prop) === null ? null : `ATGS - ${goalTier(prop)}+ goals`;
-  const supportedSports = ['nhl', 'nfl'];
-  const sportFromSearch = search => new URLSearchParams(search).get('sport') === 'nfl' ? 'nfl' : 'nhl';
+  const supportedSports = ['nhl', 'nfl', 'nba'];
+  const sportFromSearch = search => {
+    const requested = new URLSearchParams(search).get('sport');
+    return supportedSports.includes(requested) ? requested : 'nhl';
+  };
   const compareProps = (a, b, league = 'nhl') => {
-    const order = league === 'nfl' ? propOrder : nhlPropOrder;
+    const order = league === 'nba' ? nbaPropOrder : league === 'nfl' ? propOrder : nhlPropOrder;
     const tdTier = prop => prop === 'attd' ? 1 : /^[1-9]\d*\+td$/.test(prop) ? Number.parseInt(prop, 10) : null;
     const index = prop => {
       if (league === 'nfl') prop = canonicalNflProp(prop);
-      if (goalTier(prop) !== null) return order.indexOf('atgs');
+      if (league !== 'nba' && goalTier(prop) !== null) return order.indexOf('atgs');
       if (league === 'nfl' && (tdTier(prop) !== null || prop.startsWith('tds_over_'))) return order.indexOf('attd');
       if (league === 'nfl' && prop.startsWith('tds_under_')) return order.indexOf('no_td');
       return order.includes(prop) ? order.indexOf(prop) : order.length;
@@ -303,7 +328,7 @@
   function offsetDate(day, offset) { return new Date(Date.parse(day + 'T12:00:00Z') + offset * 86400000).toISOString().slice(0, 10); }
   function presetRange(preset, data, now = new Date()) {
     const today = easternDate(now), end = offsetDate(today, -1);
-    // Match Analysis's July 1 season boundary for NFL and NHL, including Jan-June.
+    // Match Analysis's July 1 season boundary, including Jan-June.
     const year = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0);
     const seasonStart = `${year}-07-01`;
     const ranges = { yesterday: { start: end, end }, l7: { start: offsetDate(end, -6), end },
@@ -367,7 +392,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, nflMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, nflMarketLabel, nbaMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -398,6 +423,7 @@
     ast: 'Assists', goals: 'Goals', assists: 'Assists', points: 'Points', ml: 'Moneyline', spread: 'Puck line', total: 'Game total', tt: 'Team total',
     blocks: 'Blocked shots', bs: 'Blocked shots', hits: 'Hits', 'sog+bs': 'Shots + blocks', home_total: 'Home team total', away_total: 'Away team total', pp_pts: 'Power-play points' };
   const propName = prop => {
+    if (sport === 'nba') return nbaMarketLabel(prop) || String(prop).replaceAll('_', ' ');
     if (sport === 'nfl' && nflMarketLabel(prop)) return nflMarketLabel(prop);
     if (goalMarketLabel(prop)) return goalMarketLabel(prop);
     if (prop.startsWith('goals_under_')) return `Under ${prop.slice('goals_under_'.length)} goals`;
@@ -461,7 +487,7 @@
       const hit = row.best_hit;
       if (!hit) return { hitLabel: { rebuild: 'Rebuild report for best hits', none: 'No settled wins', unavailable: 'Best hit unavailable' }[row.hit_status] || 'Best hit unavailable', hitDetail: '' };
       const odds = `${hit.odds > 0 ? '+' : ''}${hit.odds}`;
-      const market = hit.prop.replace(/^[123]p_/, '');
+      const market = hit.prop.replace(/^(?:[123]p|[12]h|[1-4]q)_/, '');
       const lineLabel = market === 'ml' ? '' : market === 'spread'
         ? ` ${Number(hit.line) > 0 ? '+' : ''}${hit.line}` : ` ${hit.under ? 'u' : 'o'}${hit.line}`;
       return { hitLabel: `${hit.player ? sharePlayerName(hit.player) : hit.game} ${odds}`, hitDetail: `${propName(hit.prop).replace(/ \(.*\)$/, '')}${lineLabel} · ${dayLabel(hit.date)}${row.book === 'best' ? ` · ${shareBookName(hit.book)}` : ''}` };
@@ -870,6 +896,8 @@
     if (goalLinesNote) goalLinesNote.hidden = sport !== 'nhl';
     const nflMarketsNote = $('nfl-markets-note');
     if (nflMarketsNote) nflMarketsNote.hidden = sport !== 'nfl';
+    const nbaMarketsNote = $('nba-markets-note');
+    if (nbaMarketsNote) nbaMarketsNote.hidden = sport !== 'nba';
     $('page-title').textContent = `${sport.toUpperCase()} devig results`;
     document.title = `${sport.toUpperCase()} devig results | +EV Sharps`;
     $('report-window').textContent = sport === 'nfl' ? 'Current season · ET' : 'Last 7 complete days · ET';

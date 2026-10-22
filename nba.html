@@ -24,6 +24,7 @@
 			}
 		}
 	</style>
+	<link href="nba-defense.css" rel="stylesheet">
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -578,8 +579,12 @@
 									<label for="custom_oppRank">Opp Rank</label>
 								</div>
 								<div>
-									<input id="custom_oppPosRank" type="checkbox">
-									<label for="custom_oppPosRank">Opp Pos Rank</label>
+									<input id="custom_dvpRank" type="checkbox">
+									<label for="custom_dvpRank">Opponent vs position rank</label>
+								</div><div>
+									<input id="custom_dvpAllowed" type="checkbox"><label for="custom_dvpAllowed">Allowed per game vs position</label>
+								</div><div>
+									<input id="custom_dvpGames" type="checkbox"><label for="custom_dvpGames">Defense sample games</label>
 								</div>
 								<div>
 									<input id="custom_hitRate" type="checkbox">
@@ -635,6 +640,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="nba-defense.js"></script>
 	<script src="player-lines.js"></script>
 	<script src="price-history.js"></script>
 	<script src="player-history.js"></script>
@@ -645,12 +651,13 @@
 		
 		parseURLParams();
 		SPORT = "nba";
+		if (NbaDefense.pages.includes(PAGE)) DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE].filter(key => key !== "oppPosRank"), ...NbaDefense.defaultKeys])];
 		if (FIRST_BASKET_PAGE) {
 			document.title = "First Basket | +EV Sharps";
 			// This market is a yes-only selection; ignore unrelated NBA prop/side links.
 			PROP = "fb";
 			OU = "o";
-			for (const key of ["handicap", "prop", "oppRank", "oppPosRank", "logs", "hitRate", "hitRateLYR"]) {
+			for (const key of ["handicap", "prop", "oppRank", "dvpRank", "dvpAllowed", "dvpGames", "logs", "hitRate", "hitRateLYR"]) {
 				document.getElementById(`custom_${key}`)?.closest("div")?.remove();
 			}
 		}
@@ -665,6 +672,7 @@
 			return API_BASE + `/api/${PAGE}`;
 		}, async (data) => {
 			RES = data;
+			NbaDefense.setFeed(data);
 			if (FIRST_BASKET_PAGE) {
 				RES.data = RES.data.filter(row => row.prop === "fb" && !row.under);
 				RES.props = ["fb"];
@@ -725,7 +733,7 @@
 		
 		const NBA_DEFAULT_COL_ORDER = [
 			'ev', 'book', 'player', 'handicap', 'prop', 'fairVal', 'implied', 'kelly',
-			'opp', 'teamTotal', 'oppRank', 'oppPosRank',
+			'opp', 'teamTotal', 'oppRank', ...NbaDefense.keys,
 			'bookOdds_circa', 'bookOdds_fd', 'bookOdds_dk', 'bookOdds_b365', 'bookOdds_mgm',
 			'bookOdds_espn', 'bookOdds_cz', 'bookOdds_fn', 'bookOdds_br', 'bookOdds_hr',
 			'bookOdds_hr_az', 'bookOdds_bv', 'bookOdds_re', 'bookOdds_fl', 'bookOdds_kambi',
@@ -780,9 +788,7 @@
 				{ key: 'oppRank', label: 'Opp Rank', cols: [
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50}
 				]},
-				{ key: 'oppPosRank', label: 'DvP Rank', cols: [
-					{title: "DvP<br>Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50}
-				]},
+				...NbaDefense.items(),
 				{ key: 'bookOdds_circa', label: 'Circa', cols: [
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa", width: 70, sorter: "number", formatter: evOddsFormatter}
 				]},
@@ -857,19 +863,19 @@
 				]},
 				...getNbaHistoryHitRateColumnItems()
 			].filter(item => !FIRST_BASKET_PAGE || ![
-				"handicap", "prop", "oppRank", "oppPosRank", "logs", "hitRate", "hitRateLYR", "hitRates_career", "hitRates_bvt"
+				"handicap", "prop", "oppRank", "dvpRank", "dvpAllowed", "dvpGames", "logs", "hitRate", "hitRateLYR", "hitRates_career", "hitRates_bvt"
 			].includes(item.key));
 		}
 
 		function buildNbaColumns(savedOrder) {
 			return buildColumnsFromOrder(
-				savedOrder, NBA_DEFAULT_COL_ORDER, getNbaColumnItems(), null,
+				FIRST_BASKET_PAGE ? savedOrder : NbaDefense.columnOrder(savedOrder, NBA_DEFAULT_COL_ORDER), NBA_DEFAULT_COL_ORDER, getNbaColumnItems(), null,
 				[{field: "game", visible: false}]
 			);
 		}
 
 		function openColReorder() {
-			const savedOrder = CURR_USER?.metadata?.[`${PAGE}-order`] || NBA_DEFAULT_COL_ORDER;
+			const savedOrder = FIRST_BASKET_PAGE ? CURR_USER?.metadata?.[`${PAGE}-order`] || NBA_DEFAULT_COL_ORDER : NbaDefense.columnOrder(CURR_USER?.metadata?.[`${PAGE}-order`], NBA_DEFAULT_COL_ORDER);
 			openColReorderModal(getNbaColumnItems(), NBA_DEFAULT_COL_ORDER, savedOrder);
 		}
 

@@ -19,6 +19,7 @@
 			width: 100%;
 		}
 	</style>
+	<link href="nba-defense.css" rel="stylesheet">
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -550,8 +551,12 @@
 									<label for="custom_oppRank">Opp Rank</label>
 								</div>
 								<div>
-									<input id="custom_oppPosRank" type="checkbox">
-									<label for="custom_oppPosRank">Opp Pos Rank</label>
+									<input id="custom_dvpRank" type="checkbox">
+									<label for="custom_dvpRank">Opponent vs position rank</label>
+								</div><div>
+									<input id="custom_dvpAllowed" type="checkbox"><label for="custom_dvpAllowed">Allowed per game vs position</label>
+								</div><div>
+									<input id="custom_dvpGames" type="checkbox"><label for="custom_dvpGames">Defense sample games</label>
 								</div>
 								<div>
 									<input id="custom_hitRate" type="checkbox">
@@ -605,6 +610,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="nba-defense.js"></script>
 	<script src="player-lines.js"></script>
 	<script src="price-history.js"></script>
 	<script src="player-history.js"></script>
@@ -614,6 +620,7 @@
 		
 		parseURLParams();
 		SPORT = "nba";
+		if (NbaDefense.pages.includes(PAGE)) DEFAULT_FIELDS[PAGE] = [...new Set([...DEFAULT_FIELDS[PAGE].filter(key => key !== "oppPosRank"), ...NbaDefense.defaultKeys])];
 
 		window.addEventListener("resize", () => {
 			MOBILE = window.innerWidth <= 600;
@@ -623,6 +630,7 @@
 		const tableReady = new Promise(resolve => { resolveTableReady = resolve; });
 		const fetchProps = createDataRefresh(() => API_BASE+`/api/threes`, async (data) => {
 			RES = data;
+			NbaDefense.setFeed(data);
 			UPDATED[PAGE] = data["updated"];
 
 			const gameMenu = document.getElementById("game-options");
@@ -802,7 +810,7 @@
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					getNbaTeamTotalColumn(),
 					{title: "Opp<br>Rank", field: "oppRank", formatter: rankingFormatter, width: 50},
-					{title: "DvP<br>Rank", field: "oppPosRank", formatter: rankingFormatter, width: 50},
+					...NbaDefense.items().flatMap(item => item.cols),
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},

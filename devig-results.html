@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Devig results | +EV Sharps</title>
-  <meta name="description" content="Explore NFL and NHL devig results by market, date, odds, method, reference and betting book.">
+  <meta name="description" content="Explore NBA, NFL and NHL devig results by market, date, odds, method, reference and betting book.">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="devig-results.css?v=20261014-kelly">
   <link rel="icon" href="logos/icon2.png">
@@ -16,7 +16,7 @@
   </header>
   <main class="dv-main">
     <div class="dv-intro">
-      <div><p class="dv-eyebrow">RESULTS LAB <span id="sport-label">NHL</span></p><h1 id="page-title">NHL devig results</h1><p class="dv-lede">Archived devig results, broken down by price, reference and betting book.</p><label class="dv-sport-control">Sport <select id="sport-filter"><option value="nhl">NHL</option><option value="nfl">NFL</option></select></label></div>
+      <div><p class="dv-eyebrow">RESULTS LAB <span id="sport-label">NHL</span></p><h1 id="page-title">NHL devig results</h1><p class="dv-lede">Archived devig results, broken down by price, reference and betting book.</p><label class="dv-sport-control">Sport <select id="sport-filter"><option value="nhl">NHL</option><option value="nfl">NFL</option><option value="nba">NBA</option></select></label></div>
       <div class="dv-report-meta"><span id="report-window">Last 7 complete days · ET</span><small id="generated">Loading published results…</small><button id="refresh" type="button">Refresh results <span aria-hidden="true">↻</span></button></div>
     </div>
     <div id="request-status" class="dv-notice" role="status" hidden></div>
@@ -34,6 +34,7 @@
         </div>
         <p id="goal-lines-note" class="dv-caption" hidden>1+ goals = over 0.5; 2+ goals = over 1.5. Choose a market to compare each line separately.</p>
         <p id="nfl-markets-note" class="dv-caption" hidden>Choose a market to compare touchdowns, player props and game lines separately. Available markets depend on the published report.</p>
+        <p id="nba-markets-note" class="dv-caption" hidden>Choose a market to compare player props, game lines and half or quarter lines separately. Available markets depend on the published report.</p>
         <div class="dv-filter-row dv-strategy-row">
           <span class="dv-filter-title">Analyze one strategy</span>
           <label>Devig reference <select id="reference-filter"></select></label><label>Method <select id="method-filter"></select></label>
@@ -86,6 +87,6 @@
   <script src="shared.js?v=20261012-devig-nfl"></script>
   <script src="auth.js"></script>
   <script src="devig-results-share.js?v=20261012-dense-matrix"></script>
-  <script src="devig-results.js?v=20261014-nfl-markets"></script>
+  <script src="devig-results.js?v=20261022-nba-markets"></script>
 </body>
 </html>

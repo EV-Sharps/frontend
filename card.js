@@ -840,7 +840,9 @@ function updateExistingCard(card, rowData) {
 	
 	const collapsedBody = card.querySelector('.card-body-collapsed');
 	const dvp = rowData.dvpRank === undefined ? rowData.oppPosRank : rowData.dvpRank;
-	const dvpPill = dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
+	const dvpPill = window.NbaDefense?.pages.includes(PAGE)
+		? NbaDefense.renderCard(rowData, NbaDefense.keys.filter(key => TABLE?.getColumn(key)?.isVisible()))
+		: dvp ? `<div class="metric-pill" style="color:${getTDsOppRankColor(dvp)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(dvp)} <span style="opacity:0.85; font-weight:500;">DvP Rank</span>
 				</div>`: "";
 	const stadiumPill = (PAGE === "dingers") ? `<div class="metric-pill">L:${rowData.stadiumRankLeft} R:${rowData.stadiumRankRight} B:${rowData.stadiumRank}<span style="opacity:0.85; font-weight:500;">Stadium</span></div>` : "";

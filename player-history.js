@@ -1,10 +1,75 @@
-function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.handicap, roundPercent = Math.round }) {
+function createNbaHistoryLoader(root, { maxEntries = 48, maxPending = 8, timeoutMs = 15000 } = {}) {
+	const fields = ['careerLogs', 'bvtLogs', 'awayLogs', 'homeLogs'];
+	const cache = new Map(), pending = new Map();
+	let currentToken;
+	return function load(key) {
+		if (typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key)) return Promise.reject(new Error('Invalid history key'));
+		const token = typeof ACCESS_TOKEN === 'string' ? ACCESS_TOKEN : '';
+		if (token !== currentToken) { cache.clear(); pending.clear(); currentToken = token; }
+		if (cache.has(key)) {
+			const data = cache.get(key);
+			cache.delete(key); cache.set(key, data);
+			return Promise.resolve(data);
+		}
+		if (pending.has(key)) return pending.get(key);
+		if (pending.size >= maxPending) return Promise.reject(new Error('History requests busy'));
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), timeoutMs);
+		const work = Promise.resolve().then(async () => {
+			const url = new URL('/api/nba-history', API_BASE);
+			url.searchParams.set('key', key);
+			const response = await root.fetch(url.toString(), {
+				headers: { Authorization: `Bearer ${token}` }, signal: controller.signal
+			});
+			if (!response.ok) {
+				const error = new Error('History request failed');
+				if (response.status === 404) error.code = 'history_not_found';
+				throw error;
+			}
+			const data = await response.json();
+			if (data?.key !== key || !fields.every(field => Array.isArray(data[field])
+				&& data[field].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0))) {
+				throw new Error('Invalid history response');
+			}
+			const result = Object.freeze(Object.fromEntries(fields.map(field => [field, Object.freeze([...data[field]])])));
+			if (currentToken === token) {
+				cache.set(key, result);
+				while (cache.size > maxEntries) cache.delete(cache.keys().next().value);
+			}
+			return result;
+		}).finally(() => {
+			clearTimeout(timer);
+			if (pending.get(key) === work) pending.delete(key);
+		});
+		pending.set(key, work);
+		return work;
+	};
+}
+
+function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.handicap, roundPercent = Math.round, loadHistory }) {
 	const logFields = { logs: 'logs', career: 'careerLogs', bvt: 'bvtLogs', away: 'awayLogs', home: 'homeLogs' };
 	const colors = { hit: '#36d399', miss: '#c57580', push: '#94a3b8', gap: '#659be8', current: '#c388ff', average: '#f2bd60', median: '#5dd8cf' };
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
 	const display = value => Number.isInteger(value) ? String(value) : Number(value.toFixed(1)).toString();
 	let dialog, selected, view, range = '20', opener, priceHistory;
+	let historyGeneration = 0, historyState;
+	const longHistory = () => view !== 'logs' && view !== 'pricehistory' && view !== 'due';
+
+	function loadSelectedHistory() {
+		const row = selected, generation = historyGeneration;
+		historyState = 'loading';
+		loadHistory(row.historyKey).then(history => {
+			if (generation !== historyGeneration || selected !== row || !dialog?.open) return;
+			Object.assign(row, history); // Modal-only copy; never enlarge the polled odds rows.
+			historyState = 'ready';
+			if (longHistory()) render();
+		}).catch(error => {
+			if (generation !== historyGeneration || selected !== row || !dialog?.open) return;
+			historyState = error?.code === 'history_not_found' ? 'expired' : 'error';
+			if (longHistory()) render();
+		});
+	}
 
 	function dueOf(row) {
 		// Goal-gap history describes any goal, not a 2+ or first-goal result.
@@ -27,6 +92,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 	}
 
 	function close() {
+		historyGeneration++;
 		purgeChart();
 		destroyPriceHistory();
 		if (dialog?.open) dialog.close();
@@ -77,11 +143,13 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		});
 		dialog.addEventListener('close', () => {
 			if (dialog.open) return;
+			historyGeneration++;
 			purgeChart();
 			destroyPriceHistory();
 			if (opener?.isConnected) opener.focus({ preventScroll: true });
 		});
 		dialog.addEventListener('cancel', () => {
+			historyGeneration++;
 			purgeChart();
 			destroyPriceHistory();
 		});
@@ -214,10 +282,27 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 	}
 
 	function renderLogs() {
-		const all = logsOf(selected[logFields[view]]);
-		const values = range === 'all' ? all : all.slice(-Number(range));
 		const empty = dialog.querySelector('.nhl-history-empty');
 		const note = dialog.querySelector('.nhl-history-note');
+		if (longHistory() && historyState && historyState !== 'ready') {
+			summary([]);
+			note.textContent = '';
+			empty.textContent = historyState === 'loading' ? 'Loading player history…'
+				: historyState === 'expired' ? 'History for this table is no longer available. Refresh the page and try again. '
+				: 'Unable to load player history. ';
+			empty.setAttribute('role', 'status');
+			if (historyState !== 'loading') {
+				const retry = document.createElement('button');
+				retry.type = 'button';
+				retry.textContent = 'Retry';
+				retry.onclick = () => { loadSelectedHistory(); render(); };
+				empty.append(retry);
+			}
+			empty.hidden = false;
+			return;
+		}
+		const all = logsOf(selected[logFields[view]]);
+		const values = range === 'all' ? all : all.slice(-Number(range));
 		const opponent = String(selected.opp || '').toUpperCase();
 		const venue = view === 'away' || view === 'home' ? view : '';
 		const games = view === 'bvt' ? `meetings vs ${opponent || 'this opponent'}` : venue ? `${venue} games` : view === 'career' ? 'career games' : 'games';
@@ -284,7 +369,10 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		if (!row?.player || row.blurred || row.prop === 'separator') return;
 		ensureDialog();
 		if (!dialog.open) opener = document.activeElement;
-		selected = row;
+		historyGeneration++;
+		const lazy = loadHistory && row.historyKey != null;
+		selected = lazy ? { ...row } : row;
+		historyState = lazy ? 'loading' : null;
 		range = '20';
 		const due = dueOf(row);
 		view = due ? 'due' : 'logs';
@@ -299,6 +387,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		dialog.querySelector('[data-history-action="card"]').hidden = typeof showCardModal !== 'function';
 		if (!dialog.open) dialog.showModal();
 		render();
+		if (lazy) loadSelectedHistory();
 	}
 
 	return { open, close };
@@ -311,6 +400,7 @@ window.NhlHistory = createPlayerHistory(window, {
 });
 window.NbaHistory = createPlayerHistory(window, {
 	prefix: 'nba-history',
+	loadHistory: createNbaHistoryLoader(window),
 	views: { logs: 'Game logs', career: 'Career', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
 	// Match whole percentages from the NBA feed, including half-to-even ties.
 	roundPercent: value => value % 1 === 0.5 ? Math.round(value / 2) * 2 : Math.round(value),

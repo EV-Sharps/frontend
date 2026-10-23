@@ -93,14 +93,15 @@
   function render(row, key) {
     const number = value(row, key);
     if (number == null) return '<span class="nba-defense-empty">-</span>';
-    const {position, stat} = info(row);
+    const {stat} = info(row);
     const main = key === 'dvpRank' ? ordinal(number) : format(number);
-    const caption = key === 'dvpRank' ? `${position} · ${row.dvpGames}g`
+    const caption = key === 'dvpRank' ? ''
       : key === 'dvpAllowed36' ? stat[1].replace('/g','/36') : key === 'dvpAllowed' ? stat[1]
       : key === 'dvpMinutes' ? 'minutes' : number < 5 ? 'early sample' : 'games';
+    const color = key === 'dvpRank' ? root.getTDsOppRankColor?.(number) : null;
     const detail = escape(description(row));
     const classes = `nba-defense-value${key === 'dvpRank' ? ' nba-defense-context' : ''}${row.dvpGames < 5 ? ' nba-defense-early' : ''}`;
-    return `<button type="button" class="${classes}" title="${detail}" aria-label="${detail}"><strong>${escape(main)}</strong><small>${escape(caption)}</small></button>`;
+    return `<button type="button" class="${classes}" title="${detail}" aria-label="${detail}"><strong${color ? ` style="color:${escape(color)}"` : ''}>${escape(main)}</strong>${caption ? `<small>${escape(caption)}</small>` : ''}</button>`;
   }
 
   function compare(a, b, key, direction) {
@@ -112,7 +113,7 @@
   }
 
   function items() {
-    return [['dvpRank','Opponent vs position rank by per-36 rate','Vs position rank<br>By per-36 rate',110],
+    return [['dvpRank','Opponent vs position rank by per-36 rate','Vs Pos<br>Rank',50],
       ['dvpAllowed36','Allowed per 36 minutes vs position','Allowed<br>/ 36 min',110],
       ['dvpAllowed','Allowed per game vs position','Allowed<br>/ game',100],
       ['dvpGames','Defense sample games','Sample<br>Games',80],

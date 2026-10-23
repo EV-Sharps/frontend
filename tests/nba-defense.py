@@ -3,6 +3,7 @@ import argparse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+import tempfile
 from urllib.parse import unquote, urlparse
 from playwright.sync_api import sync_playwright
 
@@ -10,6 +11,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--root',type=Path,required=True)
 parser.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[1])
 args=parser.parse_args()
+artifacts=Path(tempfile.gettempdir())
 
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self,*values):pass
@@ -43,9 +45,10 @@ server=ThreadingHTTPServer(('127.0.0.1',0),Quiet)
 Thread(target=server.serve_forever,daemon=True).start()
 try:
     with sync_playwright() as p:
-        browser=p.chromium.launch(headless=True)
+        browser=p.chromium.launch(headless=True,args=['--disable-logging',f'--log-file={artifacts/"nba-defense-browser.log"}'])
         for name in ('nba','pts','threes'):
-            for view,width in (('compact',1440),('mobile',390)):
+            cases=[('compact',1440),('mobile',390)]+([('table',320)] if name=='nba' else [])
+            for view,width in cases:
                 page=browser.new_page(viewport={'width':width,'height':900},has_touch=True)
                 page.set_default_timeout(8000)
                 errors=[]
@@ -76,7 +79,7 @@ try:
                     assert 'vs guards' in page.locator('#nba-defense-dialog p').inner_text()
                     assert 'expanded' in card.get_attribute('class'),'Opening DVP details must not collapse the mobile card'
                     assert 'per 36 minutes' in page.locator('#nba-defense-dialog p').inner_text()
-                    if name=='nba':page.screenshot(path=str(args.overlay/'nba-dvp36-mobile.png'))
+                    if name=='nba':page.screenshot(path=str(artifacts/'nba-dvp36-mobile.png'))
                     page.locator('#nba-defense-dialog button').click()
                     page.evaluate("changeView('compact')")
                 page.evaluate("TABLE.showColumn('dvpAllowed');TABLE.showColumn('dvpGames');TABLE.showColumn('dvpMinutes');TABLE.clearSort();")
@@ -86,20 +89,42 @@ try:
                 assert page.locator('.tabulator-cell[tabulator-field="dvpAllowed36"] .nba-defense-empty').count()==4
                 assert page.locator('.tabulator-cell[tabulator-field="dvpMinutes"] .nba-defense-value').count()==2
                 details=page.locator('.tabulator-cell[tabulator-field="dvpRank"] .nba-defense-value').first
-                assert details.locator('small').is_visible(),'Compact rank must show its position and sample'
-                assert details.locator('small').inner_text()=='G · 2g'
+                assert details.inner_text()=='3rd','Position rank must show only its ordinal rank'
+                assert details.locator('small').count()==0,'Position/sample context belongs in hover or tap details'
+                assert page.evaluate("TABLE.getColumn('dvpRank').getWidth()===50 && TABLE.getColumn('oppRank').getWidth()===50"),(name,view)
+                rank_colors=page.evaluate("""() => TABLE.getRows().filter(row=>NbaDefense.value(row.getData(),'dvpRank')!=null).map(row=>{
+                    const rank=NbaDefense.value(row.getData(),'dvpRank'),strong=row.getCell('dvpRank').getElement().querySelector('strong');
+                    const expected=document.createElement('span'); expected.style.color=getTDsOppRankColor(rank);
+                    return [getComputedStyle(strong).color,expected.style.color];
+                })""")
+                assert len(rank_colors)==2 and all(actual==expected for actual,expected in rank_colors),(name,view,rank_colors)
+                title=details.get_attribute('title')
+                assert 'vs guards' in title and '10.6 allowed per 36 minutes' in title and '26.5 allowed per game' in title
+                assert '2 completed regular-season games' in title and '180 combined actual minutes' in title
+                assert details.get_attribute('aria-label')==title
                 assert 'nba-defense-early' in details.get_attribute('class')
-                assert details.locator('small').evaluate('el=>getComputedStyle(el).fontWeight')=='700'
                 assert details.evaluate('el=>el.scrollWidth <= el.closest(".tabulator-cell").clientWidth'),'Compact rank must fit its column'
-                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp36-compact.png'))
+                if name=='nba' and view=='compact':page.screenshot(path=str(artifacts/'nba-dvp36-compact.png'))
                 details.scroll_into_view_if_needed();details.click()
                 assert page.locator('#nba-defense-dialog').is_visible()
                 text=page.locator('#nba-defense-dialog p').inner_text()
                 assert 'vs guards' in text and 'Ties share a rank' in text and 'Early sample' in text and 'incomplete coverage' in text
                 assert '10.6 allowed per 36 minutes' in text and '180 combined actual minutes' in text and 'not an assumed playing time' in text
-                if name=='nba' and view=='compact':page.screenshot(path=str(args.overlay/'nba-dvp36-desktop.png'))
+                if name=='nba' and view=='compact':page.screenshot(path=str(artifacts/'nba-dvp36-desktop.png'))
                 page.locator('#nba-defense-dialog button').click()
                 if name=='nba':
+                    header=page.locator('.tabulator-header [tabulator-field="dvpRank"]')
+                    assert round(header.bounding_box()['width'])==50
+                    assert header.locator('.tabulator-col-title').evaluate('el=>el.scrollWidth<=el.clientWidth'),'Position-rank header must fit 50px'
+                    height=page.locator('.tabulator-header').bounding_box()['height']
+                    page.evaluate("async()=>{await TABLE.getColumn('dvpRank').updateDefinition({title:'Opp<br>Rank'});TABLE.redraw(true);}")
+                    baseline=page.locator('.tabulator-header').bounding_box()['height']
+                    assert height<=baseline+1,(view,height,baseline)
+                    page.evaluate("async()=>{await TABLE.getColumn('dvpRank').updateDefinition({title:'Vs Pos<br>Rank'});TABLE.redraw(true);}")
+                    if width==320:
+                        details.scroll_into_view_if_needed()
+                        page.screenshot(path=str(artifacts/'nba-dvp-rank-table-320.png'))
+                    print('NBA header',view,width,'height',height,'Opp Rank baseline',baseline,flush=True)
                     assert page.evaluate("buildNbaColumns(['player','oppPosRank','opp']).filter(column=>column.field==='dvpRank').length")==1
                 for direction,expected in [('asc',['zero guard','known guard']),('desc',['known guard','zero guard'])]:
                     page.evaluate('direction=>TABLE.setSort("dvpAllowed36",direction)',direction)

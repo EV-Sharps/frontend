@@ -1,4 +1,5 @@
 .tabulator-row .tabulator-cell.nba-defense-cell { height: auto; min-height: 42px; }
+.tabulator .tabulator-header .tabulator-col[tabulator-field="dvpRank"] .tabulator-col-title { padding-right: 0; }
 .nba-defense-value {
 	display: inline-flex; flex-direction: column; justify-content: center; gap: 2px;
 	min-height: 34px; max-width: 100%; margin: 0; padding: 2px 3px;
@@ -7,7 +8,6 @@
 }
 .nba-defense-value strong { font-size: 13px; font-variant-numeric: tabular-nums; }
 .nba-defense-value small { font-size: 10px; opacity: .75; white-space: nowrap; }
-.nba-defense-context small { opacity: 1; }
 .nba-defense-early small { color: #e5bc79; font-weight: 700; opacity: 1; }
 .nba-defense-value:hover { background: rgba(128, 155, 175, .12); }
 .nba-defense-value:focus-visible { outline: 2px solid #91bfd8; outline-offset: 1px; }
@@ -15,7 +15,6 @@
 #table:not(.stacked-odds) .tabulator-cell.nba-defense-cell { min-height: 24px; }
 #table:not(.stacked-odds) .nba-defense-value { flex-direction: row; align-items: baseline; gap: 4px; min-height: 16px; padding: 0 2px; }
 #table:not(.stacked-odds) .nba-defense-value small { display: none; }
-#table:not(.stacked-odds) .nba-defense-context small { display: inline; font-size: 8px; }
 #nba-defense-dialog {
 	box-sizing: border-box; width: min(440px, calc(100vw - 28px)); max-height: 85vh;
 	margin: auto; padding: 22px; border: 1px solid #43515b; border-radius: 12px;

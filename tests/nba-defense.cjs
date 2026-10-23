@@ -32,7 +32,7 @@ test('source cohort replaces fabricated five-position labels, with season and sa
   assert.match(D.description(row),/Early sample/);
   assert.match(D.description(row),/Season: 2026-27/);
   assert.match(D.render(row,'dvpRank'),/3rd/);
-  assert.match(D.render(row,'dvpRank'),/G · 2g/);
+  assert.doesNotMatch(D.render(row,'dvpRank'),/<small>|G · 2g/);
   assert.match(D.render(row,'dvpRank'),/nba-defense-context nba-defense-early/);
   assert.doesNotMatch(D.render({...row,dvpGames:8},'dvpRank'),/nba-defense-early/);
 });

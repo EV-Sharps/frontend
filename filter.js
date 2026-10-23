@@ -1871,9 +1871,10 @@ function changeFilter(render = true) {
 		if (maxOdds && !(r.line < parseInt(maxOdds, 10))) return false;
 		if (props.length && !props.includes(r.prop)) return false;
 		if (noGamesSelected || (games.length && !games.includes(r.game))) return false;
-		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r)) return false;
+		if (typeof passesFilterBuilder === "function" && !passesFilterBuilder(r, { skipMarketDisagreements: true })) return false;
 		return true;
 	});
+	if (typeof filterMarketDisagreements === "function") filtered = filterMarketDisagreements(filtered);
 
 	if (!filtered.length) {
 		let t = "No data for this devig. Adjust Devig books or your filters.";

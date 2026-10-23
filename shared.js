@@ -6596,6 +6596,87 @@ async function initDevPicker(data) {
 // metadata. Active filters only last for the current page visit.
 
 let FB_CONFIG = {};
+let FB_MARKET_DISAGREEMENT_COUNT = 0;
+
+// Only compare actual quotes on this row's market and side. Never infer an Under
+// from a one-sided Over, or count regional Hard Rock feeds as separate books.
+const MARKET_CONSENSUS_BOOKS = new Set(["circa", "pn", "fd", "dk", "b365", "espn", "mgm", "bol", "fn", "hr", "hr_az", "hr_oh", "bv", "cz", "fl", "br", "kambi", "re"]);
+
+function marketQuoteProbability(value, under) {
+	if (typeof value !== 'string' && typeof value !== 'number') return null;
+	const token = String(value).split('/')[under ? 1 : 0]?.trim();
+	if (!token || !/^[+-]?\d+(?:\.\d+)?$/.test(token)) return null;
+	const odds = Number(token);
+	if (!Number.isFinite(odds) || Math.abs(odds) < 100) return null;
+	return odds > 0 ? 100 / (odds + 100) : -odds / (100 - odds);
+}
+
+function marketMedian(values) {
+	const sorted = [...values].sort((a, b) => a - b);
+	const mid = Math.floor(sorted.length / 2);
+	return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function getExtremeMarketDisagreement(row) {
+	if (!row?.bookOdds || typeof row.bookOdds !== 'object') return null;
+	const entries = Object.entries(row.bookOdds).map(([book, value]) =>
+		[book, marketQuoteProbability(value, !!row.under)]).filter(([, p]) => p !== null);
+	const family = book => /^hr(?:_az|_oh)?$/.test(book) ? 'hr' : book;
+	const peers = new Map();
+	for (const [book, p] of entries) {
+		if (!MARKET_CONSENSUS_BOOKS.has(book)) continue;
+		const key = family(book);
+		if (!peers.has(key)) peers.set(key, []);
+		peers.get(key).push(p);
+	}
+	if (peers.size < 3) return null;
+	const consensus = [...peers].map(([book, prices]) => [book, marketMedian(prices)]);
+	const excluded = typeof DEVIG_EXCLUDED !== 'undefined' ? DEVIG_EXCLUDED : [];
+	const selection = typeof DEVIG !== 'undefined' ? String(DEVIG || '') : '';
+	const devig = selection.split(';')[0].replace(/^only\+/, '');
+	const devigBooks = devig.split('+');
+	let references;
+	if (typeof VIG !== 'undefined' && VIG === '0') {
+		// The % vs devig view uses raw references equally, regardless of weights.
+		if (!selection) references = entries.map(([book]) => book);
+		else {
+			references = getDevigReferenceBooks().filter(book => !excluded.includes(book));
+			if (!selection.includes('+')) references = references.slice(0, 1);
+		}
+	} else {
+		if (typeof getUserWeights !== 'function') return null;
+		const weights = getUserWeights();
+		// Match averageDevigs' contributing books, including its best-book rule.
+		references = entries.filter(([book]) => Number.isFinite(weights[book]) && weights[book] > 0
+			&& (!devig || !devig.includes('+') || book !== row.book || devigBooks.includes(book)))
+			.map(([book]) => book);
+	}
+	const contributing = new Set(references.filter(book => !excluded.includes(book)));
+	for (const [book, probability] of entries) {
+		if (!contributing.has(book) || probability <= 0.15) continue;
+		const others = consensus.filter(([key]) => key !== family(book)).map(([, p]) => p);
+		if (others.length < 3) continue;
+		const medianProbability = marketMedian(others);
+		if (probability > 3 * medianProbability && probability - medianProbability >= 0.15) {
+			return { book, probability, medianProbability, peerCount: others.length };
+		}
+	}
+	return null;
+}
+
+function filterMarketDisagreements(rows) {
+	initFilterBuilderUI(true);
+	let count = 0;
+	const filtered = rows.filter(row => {
+		if (!getExtremeMarketDisagreement(row)) return true;
+		count++;
+		return !!FB_CONFIG.marketDisagreements?.enabled;
+	});
+	FB_MARKET_DISAGREEMENT_COUNT = count;
+	updateFilterBuilderButtonLabel();
+	refreshFilterBuilderWindow();
+	return filtered;
+}
 
 const PITCHER_STAT_FIELDS = [
 	"barrel_batted_rate", "barrel_batted_ratePercentile", "exit_velocity_avg", "exit_velocity_avgPercentile",
@@ -6675,6 +6756,7 @@ function passesLiquidityRule(row, config, side, inclusive = false) {
 
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
+	marketDisagreements: { enabled: "fb-market-disagreements-enabled" },
 	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
 	liquidityOver: { enabled: "fb-liquidity-over-enabled", book: "fb-liquidity-over-book", amount: "fb-liquidity-over-amount" },
 	liquidityEV:   { enabled: "fb-liquidity-ev-enabled", book: "fb-liquidity-ev-book", amount: "fb-liquidity-ev-amount" },
@@ -6831,6 +6913,11 @@ function initFilterBuilderWindow() {
 		return el;
 	};
 	const liquidity = menu.querySelector('.fb-liquidity-group');
+	const market = section('Market comparison');
+	market.innerHTML = `
+		<div class="fb-rule"><label class="fb-rule-toggle"><input type="checkbox" id="fb-market-disagreements-enabled" aria-describedby="fb-market-disagreements-help fb-market-disagreements-status"> Show extreme market disagreements</label></div>
+		<p id="fb-market-disagreements-help" class="fb-stat-hint">Hidden by default: a devig price implies over 3&times; the median probability and at least 15 percentage points more, compared with 3+ other sportsbooks. Exchanges are excluded from the consensus.</p>
+		<p id="fb-market-disagreements-status" class="fb-stat-hint" role="status"></p>`;
 	if (liquidity) {
 		section('', 'fb-liquidity-section').appendChild(liquidity);
 		[['liquidityOver', 'Over'], ['liquidity', 'Under'], ['liquidityEV', 'EV row']].forEach(([type, title]) => {
@@ -6991,11 +7078,17 @@ function refreshFilterBuilderWindow() {
 	};
 	const dirty = activeConfig(readFilterBuilderFromDOM()) !== activeConfig(FB_CONFIG);
 	const count = filterBuilderRuleCount(FB_CONFIG);
-	document.getElementById('fb-active-summary').textContent = count ? `${count} active` : 'None active';
+	const hidden = FB_CONFIG.marketDisagreements?.enabled ? 0 : FB_MARKET_DISAGREEMENT_COUNT;
+	document.getElementById('fb-active-summary').textContent = [count ? `${count} active` : '', hidden ? `${hidden} hidden` : ''].filter(Boolean).join(' · ') || 'None active';
 	const status = document.getElementById('fb-draft-status');
-	status.textContent = dirty ? 'Changes not applied' : count ? 'Filters applied' : 'Choose rules above';
+	status.textContent = dirty ? 'Changes not applied' : count || hidden ? 'Filters applied' : 'Choose rules above';
 	status.classList.toggle('is-dirty', dirty);
 	menu.querySelector('.fb-apply')?.classList.toggle('has-changes', dirty);
+	const marketStatus = document.getElementById('fb-market-disagreements-status');
+	if (marketStatus) {
+		const n = FB_MARKET_DISAGREEMENT_COUNT;
+		marketStatus.textContent = n ? `${n} matching row${n === 1 ? '' : 's'} ${FB_CONFIG.marketDisagreements?.enabled ? 'shown' : 'hidden'} in the current selection.` : 'No extreme disagreements in the current selection.';
+	}
 }
 
 function positionFilterBuilderWindow() {
@@ -7230,7 +7323,7 @@ function applyFilterBuilderToDOM(config) {
 	});
 }
 
-function passesFilterBuilder(row) {
+function passesFilterBuilder(row, options = {}) {
 	const c = FB_CONFIG;
 	for (const [type, field, defaultMin] of [['teamTotal', 'teamTotal', teamTotalDefaultMin()], ['ttoi', 'avgTOI', 20]]) {
 		if (!c[type]?.enabled) continue;
@@ -7312,6 +7405,7 @@ function passesFilterBuilder(row) {
 		}
 	}
 
+	if (!options.skipMarketDisagreements && !c.marketDisagreements?.enabled && getExtremeMarketDisagreement(row)) return false;
 	return true;
 }
 
@@ -7320,6 +7414,10 @@ function updateFilterBuilderButtonLabel() {
 	if (!btn) return;
 	const n = filterBuilderRuleCount(FB_CONFIG);
 	btn.textContent = n === 0 ? "None" : `${n} Filter${n === 1 ? "" : "s"}`;
+	if (FB_MARKET_DISAGREEMENT_COUNT && !FB_CONFIG.marketDisagreements?.enabled) {
+		btn.textContent = `${n ? `${n} Filter${n === 1 ? '' : 's'} · ` : ''}${FB_MARKET_DISAGREEMENT_COUNT} hidden`;
+	}
+	if (typeof syncTopFilterStates === 'function') syncTopFilterStates();
 }
 
 function getSavedFilterBuilders() {
@@ -7411,8 +7509,29 @@ function applyFilterBuilder() {
 	if (typeof changeFilter === "function") return changeFilter();
 }
 
-function initFilterBuilderUI() {
-	const dd = document.getElementById("filterbuilder-dd");
+function initFilterBuilderUI(createIfMissing = false) {
+	let dd = document.getElementById("filterbuilder-dd");
+	// Older odds pages lack a Filter menu. Always offer a way to reveal rows
+	// hidden by the shared market comparison filter on those pages too.
+	if (!dd) {
+		if (!createIfMissing) return;
+		const strip = document.getElementById('center-dropdown');
+		if (!strip || !document.getElementById('book-select')) return;
+		dd = document.createElement('div');
+		dd.id = 'filterbuilder-dd';
+		dd.className = 'chkdd tf-field';
+		dd.innerHTML = `
+			<label for="filterbuilder-dd-button" class="select-label">Filter</label>
+			<button id="filterbuilder-dd-button" class="chkdd-btn tf-input" type="button">None</button>
+			<div class="chkdd-menu" id="filterbuilder-options">
+				<div class="fb-toprow"><select id="fb-saved-select"><option value="">Load saved filter...</option></select><button type="button" onclick="deleteSavedFilterBuilder()">Delete</button></div>
+				<div class="fb-toprow"><input id="fb-name-input" type="text" placeholder="Filter name"><button type="button" onclick="saveFilterBuilder()">Save As</button></div>
+				<span id="fb-save-status"></span>
+				<button type="button" onclick="clearFilterBuilder()">Clear</button>
+				<button type="button" onclick="applyFilterBuilder()">Apply</button>
+			</div>`;
+		strip.insertBefore(dd, strip.querySelector(':scope > #view-toggle-container, :scope > #customize'));
+	}
 	if (!dd || dd.dataset.filterBuilderInit) return;
 	dd.dataset.filterBuilderInit = "1";
 	initLiquidityFilterUI();

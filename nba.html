@@ -678,8 +678,8 @@
 			RES = data;
 			NbaDefense.setFeed(data);
 			if (FIRST_BASKET_PAGE) {
-				RES.data = RES.data.filter(row => row.prop === "fb" && !row.under);
-				RES.props = ["fb"];
+				RES.data = RES.data.filter(row => ["fb", "ftb"].includes(row.prop) && !row.under);
+				RES.props = ["fb", "ftb"];
 			}
 			UPDATED[PAGE] = data["updated"];
 

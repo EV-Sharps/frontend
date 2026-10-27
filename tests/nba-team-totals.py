@@ -5,14 +5,16 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+import tempfile
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument('--assets', type=Path, default=ROOT, help='Fallback assets for a staged frontend')
 args = parser.parse_args()
+artifacts = Path(tempfile.gettempdir())
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -37,11 +39,28 @@ def fixture(name, prop, points, sport, handicap=0.5):
     }
 
 
+def check_team_pill_layout(page):
+    card = page.locator('#card-container .data-card').first
+    if 'expanded' not in (card.get_attribute('class') or ''):
+        card.locator('.card-arrow-container').click()
+    pill, game = card.locator('.nba-team-total'), card.locator('.card-game-pill')
+    assert pill.is_visible() and game.is_visible()
+    assert pill.locator('span').inner_text() == 'Est. Team Pts'
+    assert pill.evaluate('el => el.previousElementSibling.classList.contains("card-game-pill")')
+    points_bounds, game_bounds = pill.bounding_box(), game.bounding_box()
+    assert abs(points_bounds['y'] - game_bounds['y']) <= 1, 'Team points must sit on the Game pill row'
+    assert points_bounds['x'] >= game_bounds['x'] + game_bounds['width'] - 1
+    assert pill.locator('strong').bounding_box()['y'] < pill.locator('span').bounding_box()['y']
+    assert card.evaluate('el => el.scrollWidth <= el.clientWidth + 1')
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+
+
 server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
 Thread(target=server.serve_forever, daemon=True).start()
 try:
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = playwright.chromium.launch(headless=True, args=[
+            '--disable-logging', f'--log-file={artifacts / "nba-team-totals-browser.log"}'])
         cases = [(name, 1440, 'compact') for name in ('nba', 'pts', 'threes', 'fb')]
         cases.extend((name, 390, 'mobile') for name in ('nba', 'pts', 'threes', 'fb'))
         for name, width, view in cases:
@@ -69,10 +88,25 @@ try:
             page.wait_for_function(f"document.getElementById('data-status')?.hidden === true && {count} === 4")
             assert page.evaluate('PAGE') == name, 'First Basket must preserve its own page settings through redirect'
             if view == 'mobile':
-                assert page.locator('#card-container .nba-team-total').all_text_contents() == [
-                    'Est. Team Pts: 120.25', 'Est. Team Pts: 110.00',
-                    'Est. Team Pts: 99.75', 'Est. Team Pts: -']
-                assert all(page.locator('#card-container .nba-team-total').nth(i).is_visible() for i in range(4))
+                assert page.locator('#card-container .nba-team-total strong').all_text_contents() == ['120.25', '110.00', '99.75', '-']
+                assert page.locator('#card-container .card-row.nba-team-total').count() == 0
+                assert page.locator('#card-container .expanded-ranks > .card-game-pill + .nba-team-total').count() == 4
+                check_team_pill_layout(page)
+                missing = page.locator('#card-container .data-card').last
+                missing.locator('.card-arrow-container').click()
+                expect(missing.locator('.nba-team-total strong')).to_have_text('-')
+                expect(missing.locator('.nba-team-total')).to_be_visible()
+                if name in ('nba', 'fb'):
+                    for card_width in (320, 1440):
+                        page.set_viewport_size({'width': card_width, 'height': 900})
+                        check_team_pill_layout(page)
+                        page.screenshot(path=str(artifacts / f'{name}-team-total-card-{card_width}.png'))
+                    page.set_viewport_size({'width': width, 'height': 900})
+                if name == 'nba':
+                    payload['data'][0]['teamTotal'] = 121.5
+                    page.locator('.table-refresh-now').click()
+                    expect(page.locator('#card-container .nba-team-total strong').first).to_have_text('121.50')
+                    check_team_pill_layout(page)
                 page.evaluate("changeView('compact')")
                 page.wait_for_function("TABLE.getData().length === 4")
             assert page.evaluate("TABLE.getColumn('teamTotal').isVisible()")
@@ -139,3 +173,4 @@ try:
         browser.close()
 finally:
     server.shutdown()
+    server.server_close()

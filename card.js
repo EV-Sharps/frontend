@@ -806,12 +806,14 @@ function updateExistingCard(card, rowData) {
 
 	const teamPoints = rowData.teamTotal;
 	const nbaTeamTotal = ["nba", "pts", "threes", "fb"].includes(PAGE)
-		? `<div class="card-row nba-team-total" title="Estimated full-game team points from the game total and spread; median across books.">Est. Team Pts: <strong>${teamPoints == null || teamPoints === "" || !Number.isFinite(Number(teamPoints)) ? "-" : Number(teamPoints).toFixed(2)}</strong></div>` : "";
+		? `<div class="metric-pill nba-team-total" title="Estimated full-game team points from the game total and spread; median across books.">
+			<strong style="font-size:0.85rem;">${teamPoints == null || teamPoints === "" || !Number.isFinite(Number(teamPoints)) ? "-" : Number(teamPoints).toFixed(2)}</strong>
+			<span style="opacity:0.85; font-size:0.72rem; white-space:nowrap;">Est. Team Pts</span>
+		</div>` : "";
 	header.innerHTML = `
 		<div class="card-row player-prop-row">${playerRowContent}</div>
 		<div class="card-row ev-book-row">${evBookRowContent}</div>
 		<div class="card-row all-books-row">${allBooksHtml}</div>
-		${nbaTeamTotal}
 
 		<!-- Top metrics -->
 		<div class="expanded-metrics" style="display:flex; gap:8px; justify-content:space-between;">
@@ -859,9 +861,14 @@ function updateExistingCard(card, rowData) {
 			: `<div class="metric-pill" style="font-weight:600; font-size:0.85rem;"><img class="wind" src="logos/${_w.windLogo}" style="height:14px;vertical-align:middle;"> ${_w.wind} mph ${_w.temp}</div>`
 	) : "";
 	const oppRankValue = resolveOppRankValue(rowData);
+	const gamePill = `<div class="metric-pill card-game-pill">
+		<div style="font-weight:700; font-size:0.95rem;display:flex;">${gameImg}</div>
+		<div style="opacity:0.85; font-size:0.72rem;">Game</div>
+	</div>`;
 	collapsedBody.innerHTML = liveMain || firstBasket ? `
 		<div class="card-expanded" style="display:flex; flex-direction:column; gap:10px;">
-			<div style="font-weight:700;display:flex;justify-content:center;">${gameImg}</div>
+			${firstBasket ? `<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">${gamePill}${nbaTeamTotal}</div>`
+				: `<div style="font-weight:700;display:flex;justify-content:center;">${gameImg}</div>`}
 			<div style="text-align:center;">${String(rowData.game || rowData.gameId || '').toUpperCase()}</div>
 		</div>
 	` : `
@@ -869,10 +876,8 @@ function updateExistingCard(card, rowData) {
 
 			<!-- Matchup ranks -->
 			<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-				<div class="metric-pill">
-					<div style="font-weight:700; font-size:0.95rem;display: flex;">${gameImg}</div>
-					<div style="opacity:0.85; font-size:0.72rem;">Game</div>
-				</div>
+				${gamePill}
+				${nbaTeamTotal}
 				<div class="metric-pill" style="color:${getTDsOppRankColor(oppRankValue)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(oppRankValue)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>
 				</div>

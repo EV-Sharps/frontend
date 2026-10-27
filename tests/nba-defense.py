@@ -5,7 +5,7 @@ from pathlib import Path
 from threading import Thread
 import tempfile
 from urllib.parse import unquote, urlparse
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--root',type=Path,required=True)
@@ -41,6 +41,22 @@ def fixture(page):
         'data':{'gs':{'G':{'games':2,'minutes':180,'per_game':{prop:26.5},'per_36':{prop:10.6},'ranks':{prop:3},'ranked_teams_by_metric':{prop:4}}},
                 'ny':{'G':{'games':2,'minutes':180,'per_game':{prop:0},'per_36':{prop:0},'ranks':{prop:1},'ranked_teams_by_metric':{prop:4}}}}}}
 
+def check_rank_card_layout(page,card):
+    rank=card.locator('.nba-defense-card-rank')
+    button=rank.locator('.nba-defense-value')
+    caption=rank.locator(':scope > span')
+    assert rank.count()==1 and button.is_visible()
+    assert caption.inner_text()=='DvP per 36min'
+    assert button.locator('small').count()==0
+    assert rank.evaluate("el=>el.firstElementChild.classList.contains('nba-defense-value')")
+    value_bounds,caption_bounds=button.bounding_box(),caption.bounding_box()
+    assert value_bounds['y']+value_bounds['height']<=caption_bounds['y']+1,'Rank must sit above its compact caption'
+    assert rank.evaluate('el=>el.scrollWidth<=el.clientWidth+1')
+    assert card.evaluate('el=>el.scrollWidth<=el.clientWidth+1')
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    assert '10.6 allowed per 36 minutes' in button.get_attribute('title')
+    assert button.get_attribute('aria-label')==button.get_attribute('title')
+
 server=ThreadingHTTPServer(('127.0.0.1',0),Quiet)
 Thread(target=server.serve_forever,daemon=True).start()
 try:
@@ -57,7 +73,8 @@ try:
                 page.route('https://**/*',lambda route:route.fulfill(body='',content_type='application/javascript'))
                 page.route('**/auth.js',lambda route:route.fulfill(body=(args.root/'auth.js').read_text(encoding='utf-8').replace('let ENABLE_AUTH = true;','let ENABLE_AUTH = false;'),content_type='application/javascript'))
                 page.route('**/record_*.js',lambda route:route.fulfill(body="let RECORD_UPD=''; let RECORD={worst:{best:{}}};",content_type='application/javascript'))
-                page.route('**/api/**',lambda route:route.fulfill(json=fixture(name)))
+                payload=fixture(name)
+                page.route('**/api/**',lambda route:route.fulfill(json=payload))
                 page.goto(f'http://localhost:{server.server_port}/{name}.html?view={view}&devig=pn-circa&weight=1-1')
                 count="document.querySelectorAll('#card-container .data-card').length" if view=='mobile' else "TABLE?.getData().length"
                 page.wait_for_function(f"document.getElementById('data-status')?.hidden === true && {count} === 6")
@@ -74,6 +91,14 @@ try:
                     assert page.locator('#card-container .nba-defense-card .nba-defense-value').count()==4
                     card=page.locator('#card-container .data-card').filter(has=page.locator('.nba-defense-value')).first
                     card.locator('.card-arrow-container').click()
+                    assert page.locator('#card-container .nba-defense-card-rank').count()==5,'Blurred rows must not expose a rank card'
+                    check_rank_card_layout(page,card)
+                    if name=='nba':
+                        for card_width in (320,1440):
+                            page.set_viewport_size({'width':card_width,'height':900})
+                            check_rank_card_layout(page,card)
+                            page.screenshot(path=str(artifacts/f'nba-dvp-card-{card_width}.png'))
+                        page.set_viewport_size({'width':width,'height':900})
                     card.locator('.nba-defense-value').first.click()
                     assert page.locator('#nba-defense-dialog').is_visible()
                     assert 'vs guards' in page.locator('#nba-defense-dialog p').inner_text()
@@ -81,6 +106,17 @@ try:
                     assert 'per 36 minutes' in page.locator('#nba-defense-dialog p').inner_text()
                     if name=='nba':page.screenshot(path=str(artifacts/'nba-dvp36-mobile.png'))
                     page.locator('#nba-defense-dialog button').click()
+                    if name=='nba':
+                        ranks=payload['defenseVsPosition']['data']['gs']['G']['ranks']
+                        prop=payload['props'][0]
+                        ranks[prop]=2
+                        page.locator('.table-refresh-now').click()
+                        expect(card.locator('.nba-defense-card-rank strong')).to_have_text('2nd')
+                        assert 'Rank 2 of 4' in card.locator('.nba-defense-card-rank button').get_attribute('title')
+                        check_rank_card_layout(page,card)
+                        ranks[prop]=3
+                        page.locator('.table-refresh-now').click()
+                        expect(card.locator('.nba-defense-card-rank strong')).to_have_text('3rd')
                     page.evaluate("changeView('compact')")
                 page.evaluate("TABLE.showColumn('dvpAllowed');TABLE.showColumn('dvpGames');TABLE.showColumn('dvpMinutes');TABLE.clearSort();")
                 page.wait_for_function("[...document.querySelectorAll('.tabulator-cell[tabulator-field=\"dvpAllowed\"]')].some(el=>el.textContent.includes('26.5'))")

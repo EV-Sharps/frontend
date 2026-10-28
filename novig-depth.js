@@ -22,7 +22,17 @@
     const magnitude = Math.round(Math.abs(value));
     return `${value >= 0 || magnitude === 100 ? '+' : '-'}${magnitude}`;
   };
-  const sideName = side => side === 'under' ? 'No goal' : 'Goal';
+  const SCORERS = {
+    atgs: {sport: 'nhl', endpoint: '/api/atgs-depth', title: 'Anytime goalscorer', yes: 'Goal', no: 'No goal'},
+    hr: {sport: 'mlb', endpoint: '/api/homers-depth', title: 'Home run', yes: 'Home run', no: 'No home run'},
+    attd: {sport: 'nfl', endpoint: '/api/attd-depth', title: 'Anytime touchdown', yes: 'Touchdown', no: 'No touchdown'}
+  };
+  function scorerMarket(row) {
+    const market = Object.hasOwn(SCORERS, row?.prop) ? SCORERS[row.prop] : null;
+    return market && ['0.5', '.5', .5].includes(row.handicap)
+      && (!row.sport || String(row.sport).toLowerCase() === market.sport) ? market : null;
+  }
+  const sideName = (side, market = SCORERS.atgs) => side === 'under' ? market.no : market.yes;
   const outcomeName = side => side === 'under' ? 'No' : 'Yes';
   const opposite = side => side === 'under' ? 'over' : 'under';
 
@@ -237,8 +247,8 @@
     const provider = providerFor(options), now = options.now ?? Date.now();
     const denied = reason => ({loadable: false, reason, provider});
     if (options.discover && (options.book || options.exchange) && !['nv', 'novig', 'kal', 'kalshi', 'px', 'prophetx'].includes(options.book || options.exchange)) return denied('Full depth is unavailable for this exchange.');
-    if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap)
-        || !row.game || !row.player) return denied('Depth is unavailable for this selection.');
+    const market = scorerMarket(row);
+    if (!market || row.blurred || !row.game || !row.player) return denied('Depth is unavailable for this selection.');
     const manifest = payload.depthAvailable?.[row.game]?.[row.player]?.[provider.book];
     const start = payload.times?.[row.game];
     const observed = timestamp(manifest?.updated), expires = timestamp(manifest?.expires_at), starts = timestamp(start);
@@ -252,8 +262,8 @@
     if (!date || date !== easternDate(starts) || (row.dt && row.date && row.dt !== row.date)) return denied('Depth does not match this game date.');
     const token = syncAccess();
     // Detail discovery and strict icons share one request/cache; each view applies its own freshness bounds.
-    const key = JSON.stringify([provider.book, row.game, row.player, start, token]);
-    return {loadable: true, provider, manifest, start, observed: options.discover ? -Infinity : observed,
+    const key = JSON.stringify([market.sport, provider.book, row.game, row.player, start, token]);
+    return {loadable: true, provider, market, manifest, start, observed: options.discover ? -Infinity : observed,
       expires: options.discover ? Infinity : expires, key, token, generation: lazy.generation};
   }
 
@@ -297,7 +307,7 @@
     const timer = root.setTimeout(() => controller.abort(), 15000);
     request.promise = Promise.resolve().then(async () => {
       const base = typeof API_BASE === 'string' ? API_BASE : root.location?.origin;
-      const url = new URL('/api/atgs-depth', base);
+      const url = new URL(context.market.endpoint, base);
       for (const [key, value] of Object.entries({book: context.provider.book, game: row.game, player: row.player, start: context.start})) url.searchParams.set(key, value);
       const response = await root.fetch(url.toString(), {headers: {Authorization: `Bearer ${context.token}`}, signal: controller.signal});
       if (!response.ok) {
@@ -308,7 +318,7 @@
       }
       const result = await response.json();
       const entry = result?.entry;
-      if (result?.schemaVersion !== 1 || result.book !== context.provider.book || result.game !== row.game
+      if (result?.schemaVersion !== 1 || (result.sport ?? 'nhl') !== context.market.sport || result.book !== context.provider.book || result.game !== row.game
           || result.player !== row.player || timestamp(result.start) !== timestamp(context.start)
           || !entry || timestamp(entry.updated) < context.observed || !inspectEntry(row, payload, options, entry).available) {
         throw new Error('This order book does not match the current selection. Refresh the table and try again.');
@@ -338,7 +348,8 @@
     const now = options.now ?? Date.now();
     const side = options.side === 'under' || options.side === 'over' ? options.side : row?.under ? 'under' : 'over';
     const unavailable = reason => ({available: false, reason, side});
-    if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap) || !row.game || !row.player) return unavailable('Depth is unavailable for this selection.');
+    const market = scorerMarket(row);
+    if (!market || row.blurred || !row.game || !row.player) return unavailable('Depth is unavailable for this selection.');
     if (!entry || entry.schema_version !== 1 || typeof entry.market_id !== 'string' || !entry.market_id || !Array.isArray(entry.sides)) return unavailable(`No current ${provider.name} resting orders.`);
     const observed = timestamp(entry.updated), expires = timestamp(entry.expires_at), starts = timestamp(entry.starts_at);
     if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts || expires <= observed || expires > starts || now - observed > provider.maxAge || expires <= now || starts <= now) return unavailable(`${provider.name} depth expired or the game has started. Refresh for current data.`);
@@ -361,7 +372,7 @@
       return {side: outcome, orders: takingOrders(source.orders, options), truncated: source.truncated === true,
         quote: bestBook(row, options.updated || payload.updated, outcome, now)};
     });
-    return {available: true, side, entry, provider, maxLevels: provider.maxLevels, orders, takingOrders: takingOrders(opposed.orders, options), takingTruncated: opposed.truncated === true,
+    return {available: true, side, entry, provider, market, maxLevels: provider.maxLevels, orders, takingOrders: takingOrders(opposed.orders, options), takingTruncated: opposed.truncated === true,
       availableBooks, truncated: selected.truncated === true, quote, comparison: compareOrders(orders, quote), now};
   }
 
@@ -491,7 +502,7 @@
 
   // Cards do not use Tabulator formatters. Add the same shortcut to each book tile.
   function enhanceCards() {
-    if (typeof PAGE === 'undefined' || PAGE !== 'atgs') return;
+    if (typeof PAGE === 'undefined' || !['atgs', 'dingers', 'tds'].includes(PAGE)) return;
     const container = document.getElementById('card-container');
     if (!container) return;
     if (!state.observer) {
@@ -586,7 +597,7 @@
   }
 
   function quoteLink(quote, side) {
-    // Current ATGS feed links are saved Goal selections, even on Under rows.
+    // Scorer feed links are saved Yes selections, even on Under rows.
     if (side !== 'over') return '';
     let value = quote.link;
     try { if (typeof resolveLink === 'function' && typeof value === 'string') value = resolveLink(value); } catch (_) { value = ''; }
@@ -633,7 +644,7 @@
         return `<li class="nv-depth-chart-row" aria-label="${label} ${american(order.odds)}, ${escape(value)} available"><span class="nv-depth-chart-odds">${american(order.odds)}</span><span class="nv-depth-chart-track"><span class="nv-depth-chart-fill" aria-hidden="true" style="--depth-width:${width.toFixed(4)}%"></span><span class="nv-depth-chart-amount" title="${escape(dollars(order.stake_usd))}">${escape(compactStake([order]))}</span></span></li>`;
       }).join('');
       const average = availableAverage(orders);
-      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${sideName(side)} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${sideName(side)}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? `<p class="nv-depth-note">Top ${result.maxLevels || 20} price levels shown.</p>` : ''}</section>`;
+      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${sideName(side, result.market)} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${sideName(side, result.market)}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? `<p class="nv-depth-note">Top ${result.maxLevels || 20} price levels shown.</p>` : ''}</section>`;
     }).join('');
     return `<div class="nv-depth-books" style="--depth-rows:${Math.max(1, ...books.map(book => book.orders.length))}">${panels}</div><p class="nv-depth-chart-key">Bars use the same dollar scale on both sides. Average odds cover the displayed liquidity.</p>${observedFooter(result.entry)}`;
   }
@@ -643,7 +654,7 @@
     const books = result.availableBooks.map(book => ({...book, orders: book.orders.slice(0, 3)}));
     const maximum = Math.max(0, ...books.flatMap(book => book.orders.map(order => order.stake_usd)));
     return `<header class="nv-depth-preview-header"><strong>${escape(row.player)}</strong><span>${escape(result.provider?.name || 'Novig')} · Available to take</span></header><div class="nv-depth-preview-books">${books.map(({side, orders}) =>
-      `<section class="nv-depth-preview-side" data-preview-side="${side}" aria-label="${outcomeName(side)} ${sideName(side)}"><h3>${outcomeName(side)} <small>${sideName(side)}</small></h3>${orders.length ? `<ol>${orders.map(order => `<li class="nv-depth-preview-level"><b class="nv-depth-preview-odds">${american(order.odds)}</b><span class="nv-depth-preview-size" style="--preview-fill:${(maximum ? order.stake_usd / maximum * 100 : 0).toFixed(3)}%">${escape(compactStake([order]))}</span></li>`).join('')}</ol><p class="nv-depth-preview-total">Shown <strong>${escape(wholeStake(orders))}</strong></p>` : '<p class="nv-depth-preview-empty">No liquidity</p>'}</section>`
+      `<section class="nv-depth-preview-side" data-preview-side="${side}" aria-label="${outcomeName(side)} ${sideName(side, result.market)}"><h3>${outcomeName(side)} <small>${sideName(side, result.market)}</small></h3>${orders.length ? `<ol>${orders.map(order => `<li class="nv-depth-preview-level"><b class="nv-depth-preview-odds">${american(order.odds)}</b><span class="nv-depth-preview-size" style="--preview-fill:${(maximum ? order.stake_usd / maximum * 100 : 0).toFixed(3)}%">${escape(compactStake([order]))}</span></li>`).join('')}</ol><p class="nv-depth-preview-total">Shown <strong>${escape(wholeStake(orders))}</strong></p>` : '<p class="nv-depth-preview-empty">No liquidity</p>'}</section>`
     ).join('')}</div><footer>Top 3 prices per side · Before fees<br>Click icon for full book</footer>`;
   }
 
@@ -659,13 +670,13 @@
       const link = quoteLink(quote, side);
       const quoteText = `${escape(quote.name)} ${american(quote.odds)}`;
       const book = link ? `<a href="${escape(link)}" target="_blank" rel="noopener noreferrer">${quoteText} ↗</a>` : `<strong>${quoteText}</strong>`;
-      summary = `<p class="nv-depth-best">Best fresh ${sideName(side).toLowerCase()} price: ${book} <span>(${percent(quote.probability)} implied)</span></p>`;
+      summary = `<p class="nv-depth-best">Best fresh ${sideName(side, result.market).toLowerCase()} price: ${book} <span>(${percent(quote.probability)} implied)</span></p>`;
       if (comparison.matching.length) {
-        summary += `<p class="nv-depth-comparison ${comparison.substantial ? 'nv-depth-comparison-strong' : ''}">Better price than resting orders · ${escape(wholeStake(comparison.matching))} maker stake${comparison.substantial ? '' : ` · below ${dollars(comparison.threshold)} highlight threshold`}</p><div class="nv-depth-metrics"><div><span>Matching maker stake · ${sideName(side)}</span><strong>${escape(wholeStake(comparison.matching))}</strong></div><div><span>Opposite taker stake · ${sideName(other)}</span><strong>${escape(wholeStake(comparison.matching, true))}</strong></div><div><span>Average requested odds</span><strong>${american(comparison.weightedOdds)} <small>${percent(comparison.weightedProbability)}</small></strong></div></div>`;
+        summary += `<p class="nv-depth-comparison ${comparison.substantial ? 'nv-depth-comparison-strong' : ''}">Better price than resting orders · ${escape(wholeStake(comparison.matching))} maker stake${comparison.substantial ? '' : ` · below ${dollars(comparison.threshold)} highlight threshold`}</p><div class="nv-depth-metrics"><div><span>Matching maker stake · ${sideName(side, result.market)}</span><strong>${escape(wholeStake(comparison.matching))}</strong></div><div><span>Opposite taker stake · ${sideName(other, result.market)}</span><strong>${escape(wholeStake(comparison.matching, true))}</strong></div><div><span>Average requested odds</span><strong>${american(comparison.weightedOdds)} <small>${percent(comparison.weightedProbability)}</small></strong></div></div>`;
       } else summary += '<p>No sportsbook price is better than these resting-order prices.</p>';
     }
     const rows = orders.map(order => `<tr${matching.has(order) ? ' class="nv-depth-matching"' : ''}><td>${american(order.odds)}<small>${escape(order.probability)} probability</small></td><td>${escape(wholeStake([order]))}</td><td><div class="nv-depth-bar" aria-hidden="true" style="--depth-width:${Math.max(1, order.opposite_stake_usd / maxStake * 100).toFixed(2)}%"></div><span>${american(order.opposite_odds)}</span><strong>${escape(wholeStake([order], true))}</strong></td></tr>`).join('');
-    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side)}</strong>. Taking them backs <strong>${sideName(other)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Goal links open the saved sportsbook selection; No-goal links are unavailable. This view places no bets.</p></footer>`;
+    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side, result.market)}</strong>. Taking them backs <strong>${sideName(other, result.market)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side, result.market)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other, result.market)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side, result.market).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Yes links open the saved sportsbook selection; No links are unavailable. This view places no bets.</p></footer>`;
   }
 
   function renderLoading(result, compact = false) {
@@ -693,8 +704,12 @@
     dialog.querySelector('.nv-depth-eyebrow').textContent = `${provider.name.toUpperCase()} · ORDER BOOK`;
     dialog.querySelector('.nv-depth-close').setAttribute('aria-label', `Close ${provider.name} depth`);
     dialog.querySelector('#novig-depth-title').textContent = state.row.player;
-    dialog.querySelector('#novig-depth-subtitle').textContent = `${state.row.game} · ${state.row.dt || state.row.date} · Anytime goalscorer`;
-    dialog.querySelectorAll('[data-depth-side]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.depthSide === state.side)));
+    dialog.querySelector('#novig-depth-subtitle').textContent = `${state.row.game} · ${state.row.dt || state.row.date} · ${scorerMarket(state.row)?.title || 'Scorer'}`;
+    dialog.querySelectorAll('[data-depth-side]').forEach(button => {
+      const side = button.dataset.depthSide;
+      button.textContent = `${outcomeName(side)} · ${sideName(side, scorerMarket(state.row) || SCORERS.atgs)}`;
+      button.setAttribute('aria-pressed', String(side === state.side));
+    });
     dialog.querySelectorAll('[data-depth-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.depthMode === state.mode)));
     dialog.querySelector('.nv-depth-tabs').hidden = state.mode === 'available';
     const content = dialog.querySelector('#novig-depth-content');
@@ -736,7 +751,7 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceCards, {once: true});
     else enhanceCards();
   }
-  const api = {MAX_AGE_MS, MIN_SIGNAL_STAKE_USD, formatter, open, close, refresh, inspect, load, normalizeOrders, compareOrders, bestBook, safeLink, quoteLink, timestamp, easternDate, impliedFraction,
+  const api = {scorerMarket, MAX_AGE_MS, MIN_SIGNAL_STAKE_USD, formatter, open, close, refresh, inspect, load, normalizeOrders, compareOrders, bestBook, safeLink, quoteLink, timestamp, easternDate, impliedFraction,
     complementProbability, takingOrders, wholeStake, americanFromProbability, renderResult, renderPreview};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NovigDepth = api;

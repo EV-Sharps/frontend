@@ -92,13 +92,14 @@
     }
     const levels = {over: [], under: []};
     const updated = options.updated || payload.updated || {};
+    const scorer = root.NovigDepth?.scorerMarket({...selected, handicap: result.line});
     const depthFields = {nv: 'novigDepth', kal: 'kalshiDepth', px: 'prophetxDepth'};
     for (const book of BOOKS) {
       const entry = depthFields[book] ? payload?.[depthFields[book]]?.[selected.game]?.[selected.player] : undefined;
       const advertised = Object.prototype.hasOwnProperty.call(payload.depthAvailable?.[selected.game]?.[selected.player] || {}, book);
       const discover = options.discover === true && Object.prototype.hasOwnProperty.call(depthFields, book);
-      // These feeds provide the 0.5 ATGS book, never an alternate goal line.
-      if (selected.prop === 'atgs' && result.line === .5 && (entry !== undefined || advertised || discover)) {
+      // Scorer depth is for 1+ goals, home runs or touchdowns, never alternate lines.
+      if (scorer && (entry !== undefined || advertised || discover)) {
         const inspector = (book === 'px' && options.prophetxDepth) || (book === 'kal' && options.kalshiDepth) || options.novigDepth || root.NovigDepth;
         let depth;
         try { depth = inspector?.inspect(current[0], payload, {now, updated, book, discover}); } catch (_) { /* Invalid depth is unavailable. */ }
@@ -225,7 +226,7 @@
       if (select.innerHTML !== optionsHtml) select.innerHTML = optionsHtml;
       select.value = String(line);
       select.disabled = choices.length < 2;
-      const goals = selected.prop === 'atgs' && line === .5;
+      const scorer = root.NovigDepth?.scorerMarket({...selected, handicap: line});
       const maxStake = Math.max(0, ...['over', 'under'].flatMap(side => result.sides[side].groups.map(group => group.stake || 0)));
       const books = BOOKS.filter(book => ['over', 'under'].some(side => result.sides[side].levels.some(level => level.book === book)));
       const legend = books.length ? `<div class="prediction-depth-legend" aria-label="Liquidity colors">${books.map(book => `<span data-book="${book}"><i aria-hidden="true"></i>${NAMES[book]}</span>`).join('')}</div>` : '';
@@ -233,7 +234,7 @@
       const html = `${retry}${legend}<div class="prediction-depth-books">${['over', 'under'].map(side => {
         const yes = side === 'over';
         const label = yes ? 'Yes' : 'No';
-        const outcome = goals ? yes ? 'Goal' : 'No goal' : `${yes ? 'Over' : 'Under'}${line === null ? '' : ` ${line}`}`;
+        const outcome = scorer ? yes ? scorer.yes : scorer.no : `${yes ? 'Over' : 'Under'}${line === null ? '' : ` ${line}`}`;
         return `<section class="prediction-depth-book" data-depth-side="${side}" aria-label="${label} · ${escape(outcome)} order book"><header class="prediction-depth-book-header"><h4>${label}</h4><span>${escape(outcome)}</span></header>${renderSide(result, side, {maxStake, footnote: false})}</section>`;
       }).join('')}</div><p class="prediction-depth-note">Matching displayed odds share a row. Colors show each market's liquidity; bars use the same dollar scale on both sides. ${footnote}</p>`;
       if (content.innerHTML !== html) content.innerHTML = html;

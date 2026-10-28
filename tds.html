@@ -13,6 +13,7 @@
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
+	<link href="novig-depth.css" rel="stylesheet">
 	<link href="price-history.css" rel="stylesheet">
 	<link href="nfl-defense.css" rel="stylesheet">
 	<style>
@@ -659,6 +660,7 @@
 	<script src="player-history.js"></script>
 	<script src="nfl-usage.js"></script>
 	<script src="nfl-defense.js"></script>
+	<script src="novig-depth.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "tds";
@@ -814,10 +816,10 @@
 				{ key: 'bookOdds_fl', label: 'Fliff', cols: [{ title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_kambi', label: 'Bally (Kambi)', cols: [{ title: `Bally<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi", width: 75, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'bookOdds_bol', label: 'BetOnline', cols: [{ title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 75, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 75, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: 'bookOdds_nv', label: 'NoVig', cols: [{ title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 75, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_px', label: 'ProphetX', cols: [{ title: `PX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'px'}) }] },
+				{ key: 'bookOdds_nv', label: 'NoVig', cols: [{ title: `NV<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'nv'}) }] },
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [{ title: `POLY<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 75, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 75, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [{ title: `KAL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'kal'}) }] },
 				{ key: 'bookOdds_pn', label: 'Pinnacle', cols: [{ title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: 'snaps', label: 'Snap %', cols: [NflUsage.snapColumn(snapShareColumn())] },
 				...NflUsage.items(),

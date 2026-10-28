@@ -7,6 +7,7 @@
 	<title>⚾ MLB Dingers | +EV Sharps</title>
 	<link href="tabulator.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
+	<link href="novig-depth.css" rel="stylesheet">
 	<!-- <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script> --> 
 	<link rel="icon" type="image/x-icon" href="logos/icon.png">
 </head>
@@ -929,6 +930,7 @@
 	<link href="price-history.css" rel="stylesheet">
 	<script src="price-history.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="novig-depth.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "dingers";
@@ -1259,9 +1261,9 @@
 				{ key: 'bookOdds_fl',     label: 'Fliff',            cols: [{title: `FL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fl"], short=true)}`, field: "bookOdds.fl", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_kambi',  label: 'Kambi',            cols: [{title: `Kambi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kambi"], short=true)}`, field: "bookOdds.kambi", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'bookOdds_bol',    label: 'BetOnline',        cols: [{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 70, minWidth: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, minWidth: 70, sorter: "number", formatter: evOddsFormatter}] },
-				{ key: 'bookOdds_px',     label: 'ProphetX',         cols: [{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter}] },
+				{ key: 'bookOdds_kal',    label: 'Kalshi',           cols: [{title: `Kalshi<br><a src='https://kalshi.com/r/evdingers'>Referral</a><br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 100, minWidth: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'kal'})}] },
+				{ key: 'bookOdds_nv',     label: 'NoVig',            cols: [{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 100, minWidth: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'nv'})}] },
+				{ key: 'bookOdds_px',     label: 'ProphetX',         cols: [{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 110, minWidth: 110, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter, {book: 'px'})}] },
 				{ key: 'bookOdds_poly',   label: 'Polymarket',       cols: [{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 110, minWidth: 110, sorter: "number", formatter: evOddsFormatter, visible: false}] },
 				{ key: 'bookOdds_pn',     label: 'Pinnacle',         cols: [{title: `PN<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["pn"], short=true)}`, field: "bookOdds.pn", width: 70, sorter: "number", formatter: evOddsFormatter}] },
 				{ key: 'pitcher_grp',     label: 'Vs Pitcher',       cols: [{title: "Pitcher", field: "pitcherCols", columns: [{title: "Name", field: "pitcher", width: 80, formatter: pitcherFormatter},{title: "HR/PA %", field: "percs.hr_pa", width: 60, formatter: allowedFormatter},{title: "Homers", field: "percs.home_run", width: 60, formatter: allowedFormatter},{title: "Vs Pitcher", field: "bvp", hozAlign: "left", formatter: bvpFormatter, width: 75}]}] },

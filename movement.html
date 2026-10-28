@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Line movement | +EV Sharps</title>
-  <meta name="description" content="Search today's captured player and team markets, chart sportsbook prices and compare the largest changes in fair probability.">
+  <meta name="description" content="Browse recent sportsbook price moves, compare captured prices and explore each play's fair probability history.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="movement.css?v=20261002-fair2">
+  <link rel="stylesheet" href="movement.css?v=20261028-recent1">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="movement-page">
@@ -19,24 +19,44 @@
   </header>
   <main class="movement-main">
     <div class="movement-intro">
-      <div><p class="eyebrow">FOLLOW THE MARKET</p><h1>Line movement</h1><p>Find a player or team. See how their price moved, and where fair value is changing across the slate.</p></div>
+      <div><p class="eyebrow">FOLLOW THE MARKET</p><h1>Find the move.</h1><p>Browse recent price changes. Pick a play to see the books behind it.</p></div>
       <div class="refresh"><span id="slate-date">Today's captures</span><small id="updated">Loading movement...</small><button type="button" id="refresh">Refresh</button></div>
     </div>
-    <p class="day-note" id="day-note">Today only · Resets at midnight Eastern · Captured before game time</p>
+    <p class="day-note" id="day-note">Captured pre-game prices · About every 30 minutes · Times Eastern</p>
     <p id="request-status" class="notice" role="status" hidden></p>
     <section id="access-panel" class="panel empty" hidden><h2>Line movement is included with Sharp</h2><p id="access-message">Sign in to explore today's price history.</p><a id="access-login" href="profile">Sign in</a> <a id="access-pricing" href="pricing">View plans</a></section>
     <div id="movement-content" hidden>
+      <section class="window-toolbar" aria-label="Movement time window">
+        <div><span class="toolbar-label">Movement window</span><span id="window-range" class="muted">Last 6 hours</span></div>
+        <div class="window-chips" role="group" aria-label="Choose movement window">
+          <button type="button" data-window="1h" aria-pressed="false">1H</button><button type="button" data-window="3h" aria-pressed="false">3H</button><button type="button" data-window="6h" aria-pressed="true">6H</button><button type="button" data-window="12h" aria-pressed="false">12H</button><button type="button" data-window="today" aria-pressed="false">Today</button>
+        </div>
+      </section>
+      <p id="window-coverage" class="window-coverage" role="status" hidden></p>
       <section class="panel filters" aria-label="Filter the slate">
         <label>Sport<select id="sport-select"><option value="mlb">MLB</option><option value="nfl">NFL</option><option value="nhl">NHL</option><option value="nba">NBA</option><option value="ncaaf">College football</option><option value="ncaab">College basketball</option><option value="wnba">WNBA</option><option value="soccer">Soccer</option><option value="preseason">NFL preseason</option><option value="baseball_ncaa">College baseball</option><option value="cup">World Cup</option><option value="ufc">UFC</option></select></label>
         <label class="search-label">Player or team<input id="player-search" type="search" autocomplete="off" placeholder="Search the slate"></label>
+        <div id="advanced-filters" class="advanced-filters">
         <div class="prop-field"><span id="prop-label">Props</span><details id="prop-picker"><summary id="prop-summary" aria-labelledby="prop-label prop-summary">All props</summary><div class="prop-menu"><button id="all-props" type="button">All props</button><div id="prop-options"></div></div></details></div>
         <label>Side<select id="side-select"><option value="0">First side · Over / Yes</option><option value="1">Second side · Under / No</option><option value="2">Third side · three-way only</option></select></label>
-        <label>Fair value reference<select id="reference-select"><option value="consensus">Sportsbook consensus</option></select></label>
+        <label>Fair reference<select id="reference-select"><option value="consensus">Sportsbook consensus</option></select></label>
         <label>Show movers<select id="direction-select"><option value="all">Largest moves, either way</option><option value="shortening">Shortening · more likely</option><option value="drifting">Drifting · less likely</option></select></label>
+        </div>
+        <button type="button" id="toggle-filters" class="toggle-filters" aria-controls="advanced-filters" aria-expanded="false">More filters <span aria-hidden="true">+</span></button>
       </section>
-      <section class="panel chart-panel" aria-labelledby="chart-title">
-        <div class="section-heading"><div><p class="eyebrow">PRICE HISTORY</p><h2 id="chart-title">Choose a selection from the slate</h2><p id="chart-subtitle" class="muted"></p></div><label class="chart-scale">Chart scale<select id="chart-scale"><option value="american">American odds</option><option value="probability">Probability</option></select></label></div>
+      <div class="movement-workspace">
+      <section class="panel slate-panel" aria-labelledby="slate-title">
+        <div class="section-heading"><div><p class="eyebrow">BROWSE THE SLATE</p><h2 id="slate-title">Recent movers</h2></div><span id="catalog-count" role="status"></span></div>
+        <p class="muted slate-help">Largest fair-probability changes in your window. Choose a play to explore its price history.</p>
+        <p id="empty-slate" class="empty-state" role="status" hidden></p>
+        <div id="catalog-wrap" class="play-feed" role="region" aria-label="Line movement plays" tabindex="0"><div id="catalog-rows"></div></div>
+        <div class="pagination" id="pagination" hidden><button id="previous-page" type="button">Previous</button><span id="page-range"></span><button id="next-page" type="button">Next</button></div>
+      </section>
+      <section class="panel chart-panel" id="play-detail" aria-labelledby="chart-title">
+        <button type="button" id="back-to-plays" class="back-to-plays">← Back to plays</button>
+        <div class="section-heading"><div><p class="eyebrow">SELECTED PLAY</p><h2 id="chart-title">Choose a play</h2><p id="chart-subtitle" class="muted"></p></div><label class="chart-scale">Chart scale<select id="chart-scale"><option value="american">American odds</option><option value="probability">Probability</option></select></label></div>
         <div id="selection-metrics" class="selection-metrics" hidden></div>
+        <div class="chart-toolbar"><div><strong>Price movement</strong><small id="chart-window-label">Last 6 hours · captured prices</small></div><div class="window-chips window-chips-small" role="group" aria-label="Chart movement window"><button type="button" data-window="1h" aria-pressed="false">1H</button><button type="button" data-window="3h" aria-pressed="false">3H</button><button type="button" data-window="6h" aria-pressed="true">6H</button><button type="button" data-window="12h" aria-pressed="false">12H</button><button type="button" data-window="today" aria-pressed="false">Today</button></div></div>
         <p id="chart-status" class="muted" role="status">Loading today's selections...</p>
         <div id="movement-chart" aria-label="Price history chart" hidden></div>
         <fieldset id="book-picker" hidden>
@@ -51,20 +71,13 @@
           <div id="book-options"></div>
           <p class="book-picker-hint">Hover the chart for prices at that capture. Focus a book to follow its line.</p>
         </fieldset>
-        <p id="chart-footnote" class="muted" hidden>Bold green is fair value after removing the margin. Other lines are the books' quoted prices. Gaps mean no usable quote was captured.</p>
+        <p id="chart-footnote" class="muted" hidden>Bold cyan is fair value after removing the margin. Other lines are captured book prices. Gaps mean no usable quote was captured.</p>
       </section>
-      <section class="panel slate-panel" aria-labelledby="slate-title">
-        <div class="section-heading"><div><p class="eyebrow">ACROSS THE SLATE</p><h2 id="slate-title">Biggest fair value moves</h2></div><span id="catalog-count" role="status"></span></div>
-        <p class="muted slate-help">Ranked by change in fair probability from the first usable matched capture to the latest. First and latest fair values show their actual capture times and reference books; unmatched values are not ranked as moves. A positive move means a shorter fair price; a negative move means a longer price. Select a row to chart its exact line.</p>
-        <p id="empty-slate" class="empty-state" role="status" hidden></p>
-        <div id="catalog-wrap" class="table-wrap" role="region" aria-label="Today's line movement selections" tabindex="0">
-          <table class="movement-table"><caption class="sr-only">Fair odds and probability changes for each exact player or team market</caption><thead><tr><th>Selection</th><th>First fair</th><th>Latest fair</th><th>Move</th><th>Fair captures (ET)</th><th class="chart-column"><span class="sr-only">Chart</span></th></tr></thead><tbody id="catalog-rows"></tbody></table>
-        </div>
-        <div class="pagination" id="pagination" hidden><button id="previous-page" type="button">Previous</button><span id="page-range"></span><button id="next-page" type="button">Next</button></div>
-      </section>
+      </div>
       <details class="panel methodology"><summary>How to read these moves</summary>
         <p>Fair value removes the sportsbook margin by dividing each side's implied probability by the sum of all sides at the same book. Both sides are required (all three for a three-way market); missing prices are never invented.</p>
-        <p>Sportsbook consensus compares at least two sportsbooks with actual paired prices at the latest capture and an earlier usable capture. It starts at the first capture with that coverage, even if the earliest raw capture has only one-sided prices. The same group is required throughout the fair chart; missing members create gaps. If there is no matched group, available endpoint fair values are shown separately with their book coverage, including single-book values, without a consensus move. Select one reference book to see its fair value alone; a missing endpoint stays blank.</p>
+        <p>Your window applies to both the play list and chart. The baseline uses the most recent available quote at the start of that window, or the first usable capture within it. An earlier quote carried into the window is marked on the chart; it is not a new observation. Windows are limited to today's Eastern-date history.</p>
+        <p>Sportsbook consensus compares at least two sportsbooks with actual paired prices at the baseline and latest usable capture. The same group is required throughout the fair chart; missing members create gaps. If there is no matched group, endpoint fair values are shown with their book coverage, without a consensus move. Select one reference book to see its fair value alone; a missing endpoint stays blank.</p>
         <p>Movement is measured in percentage points, not the numerical difference between American prices. The chart's American-odds axis spaces prices by probability, so crossing even money does not create an artificial jump. On the probability scale, book lines show implied probability including margin; the fair line excludes margin.</p>
         <p id="capture-methodology">History starts with the first observed pre-game capture today, not a sportsbook's official opening price. New captures are recorded about every 30 minutes. Each handicap is tracked separately; NHL anytime goalscorer includes only 0.5 (1+ goal). History resets at midnight Eastern.</p>
       </details>
@@ -72,6 +85,6 @@
   </main>
   <script src="plotly-3.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261002-fair2"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261028-recent1"></script>
 </body>
 </html>

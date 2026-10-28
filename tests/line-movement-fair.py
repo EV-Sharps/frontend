@@ -1,5 +1,6 @@
 """Offline browser regression for NHL 0.5 lines and fair capture coverage."""
 from copy import deepcopy
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -8,6 +9,30 @@ import tempfile
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Optional read-only fallback lets a staged test run against unchanged assets.
+ASSETS = Path(os.environ.get('MOVEMENT_TEST_ASSETS', str(ROOT)))
+
+
+def asset_path(relative):
+    staged = ROOT / relative
+    return staged if staged.is_file() else ASSETS / relative
+
+
+def window_metadata(data, query):
+    updated = datetime.fromisoformat(data['updated'].replace('Z', '+00:00'))
+    window = query.get('window', '6h')
+    start = updated - timedelta(hours=24 if window == 'today' else int(window[:-1]))
+    data.update(window=window, window_start=start.isoformat(), window_end=updated.isoformat())
+    return data
+
+
+def select_card(page, index=0):
+    back = page.locator('#back-to-plays')
+    if page.viewport_size['width'] <= 850 and back.is_visible():
+        back.click()
+    page.locator('#catalog-rows .movement-play').nth(index).click()
+
 NOW = datetime(2026, 10, 2, 19, 0, tzinfo=timezone.utc)
 stamp = lambda minutes=0: (NOW + timedelta(minutes=minutes)).isoformat()
 
@@ -66,37 +91,37 @@ with sync_playwright() as p:
                     data['points'].append(dict(ts=ts, prices={'fd': 450-index*50, 'pn': 400-index*25, 'circa': 410-index*30},
                                               fair=400 if probability == .2 else 326 if probability else None,
                                               probability=probability))
-            route.fulfill(json=data)
+            route.fulfill(json=window_metadata(data, query))
         elif 'cdn.jsdelivr.net' in request_url:
             route.fulfill(content_type='application/javascript', body="""window.supabase = {createClient: () => ({auth: {
                 getSession: async () => ({data: {session: {access_token: 'fixture-token'}}}),
                 onAuthStateChange: fn => {window.authChanged = fn; return {};}
             }})};""")
         elif request_url.startswith('https://ev-sharps.test/'):
-            asset = ROOT / request_url.split('/', 3)[3].split('?', 1)[0]
+            asset = asset_path(request_url.split('/', 3)[3].split('?', 1)[0])
             route.fulfill(path=asset) if asset.is_file() else route.fulfill(status=404, body='')
         else:
             route.fulfill(status=404, body='')
 
     page.route('**/*', intercept)
     page.goto('https://ev-sharps.test/movement.html?sport=nhl')
-    expect(page.locator('#catalog-rows tr')).to_have_count(4)
+    expect(page.locator('#catalog-rows .movement-play')).to_have_count(4)
     expect(page.locator('#catalog-count')).to_have_text('4 selections')
     expect(page.locator('#chart-title')).to_have_text('Matched Skater')
     assert not any(item.get('id') in [f'{5:024x}', f'{6:024x}'] for item in state['requests'])
     expect(page.locator('#chart-subtitle')).to_contain_text('Anytime goalscorer (1+)')
-    expect(page.locator('#chart-subtitle')).to_contain_text('0.5')
+    expect(page.locator('#chart-subtitle')).to_contain_text('Yes')
     expect(page.locator('#selection-metrics')).to_contain_text('2:45 PM')
     assert '2:30 PM' not in page.locator('#selection-metrics').inner_text()
-    expect(page.locator('#selection-metrics')).to_contain_text('2 books')
-    assert '2:45 PM' in page.locator('#catalog-rows tr').first.locator('td').nth(4).inner_text()
+    expect(page.locator('#selection-metrics')).to_contain_text('2 reference books')
+    assert '2:45 PM' in page.locator('#catalog-rows .movement-play').first.locator('.play-baseline').inner_text()
     page.wait_for_function("document.getElementById('movement-chart').data?.some(t => t.meta?.fair)")
     assert page.evaluate("document.getElementById('movement-chart').data.find(t => t.meta?.fair).y") == [None, 20, 23.5]
     assert page.evaluate("document.getElementById('movement-chart').data.find(t => t.meta?.fair).connectgaps") is False
     assert 'only 0.5' in page.locator('#capture-methodology').text_content()
 
     # Endpoint values remain visible even without a comparable consensus series.
-    page.locator('#catalog-rows tr').nth(1).locator('button').click()
+    select_card(page, 1)
     expect(page.locator('#chart-title')).to_have_text('Independent Skater')
     expect(page.locator('#selection-metrics')).to_contain_text('Single book · Pinnacle')
     expect(page.locator('#selection-metrics')).to_contain_text('Single book · Circa')
@@ -108,13 +133,18 @@ with sync_playwright() as p:
     output = Path(tempfile.mkdtemp(prefix='movement-fair-'))
     page.screenshot(path=str(output/'independent-desktop.png'), full_page=True)
     page.set_viewport_size({'width': 390, 'height': 844})
+    select_card(page, 1)
     page.clock.run_for(400)
     page.wait_for_function("document.getElementById('movement-chart')._fullLayout.width <= 390")
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+    expect(page.locator('#selection-metrics')).to_contain_text('Single book · Pinnacle')
+    expect(page.locator('#selection-metrics')).to_contain_text('Single book · Circa')
     page.screenshot(path=str(output/'independent-mobile.png'), full_page=True)
+    page.set_viewport_size({'width': 1440, 'height': 1050})
+    page.clock.run_for(400)
 
     # No usable pair is not described as merely waiting for a second raw capture.
-    page.locator('#catalog-rows tr').nth(3).locator('button').click()
+    select_card(page, 3)
     expect(page.locator('#selection-metrics')).to_contain_text('Paired quotes unavailable')
     expect(page.locator('#chart-status')).to_contain_text('no opposite-side prices are estimated')
     assert 'Awaiting next capture' not in page.locator('#selection-metrics').inner_text()
@@ -122,11 +152,11 @@ with sync_playwright() as p:
     # Explicit reference retains the known first fair and a gap at missing latest.
     page.select_option('#reference-select', 'pn')
     page.clock.run_for(20)
-    page.locator('#catalog-rows tr').nth(2).locator('button').click()
+    select_card(page, 2)
     expect(page.locator('#chart-title')).to_have_text('Missing Latest Skater')
     expect(page.locator('#chart-status')).to_contain_text('not the latest capture')
     cards = page.locator('#selection-metrics > div')
-    expect(cards.nth(0).locator('strong')).to_have_text('+400')
+    expect(cards.nth(3).locator('strong')).to_have_text('+400')
     expect(cards.nth(1).locator('strong')).to_have_text('-')
     expect(cards.nth(1)).to_contain_text('No paired quotes')
     page.wait_for_function("document.getElementById('movement-chart').data?.some(t => t.meta?.fair)")
@@ -138,7 +168,7 @@ with sync_playwright() as p:
                  first_fair=first['current_fair'], change_pp=0)
     page.select_option('#reference-select', 'consensus')
     page.clock.run_for(20)
-    page.locator('#catalog-rows tr').first.locator('button').click()
+    select_card(page)
     expect(page.locator('#selection-metrics')).to_contain_text('Awaiting next fair capture')
     expect(page.locator('#chart-status')).to_contain_text('First usable fair capture')
     assert page.locator('#selection-metrics > div').nth(2).locator('strong').inner_text() == '-'
@@ -152,7 +182,7 @@ with sync_playwright() as p:
     assert any(item.get('offset') == '100' for item in state['requests'])
 
     # Exercise the real collector -> API shapes too, when review fixtures exist.
-    fixture_dir = ROOT.parent / 'odds' / 'out_line_movement_review'
+    fixture_dir = ASSETS.parent / 'odds' / 'out_line_movement_review'
     real_paths = [fixture_dir / f'nhl_detail_{kind}.json' for kind in ['matched', 'single', 'raw']]
     if all(path.is_file() for path in real_paths):
         details = [json.loads(path.read_text(encoding='utf-8')) for path in real_paths]
@@ -161,11 +191,13 @@ with sync_playwright() as p:
         state['payload']['rows'] = [data['selection'] for data in details]
         state['payload']['total'] = len(details)
         page.clock.set_fixed_time(datetime.fromisoformat(state['payload']['updated'].replace('Z', '+00:00')))
-        page.goto('https://ev-sharps.test/movement.html?sport=nhl')
-        expect(page.locator('#catalog-rows tr')).to_have_count(3)
+        # These archived expectations describe a complete Eastern day. Request
+        # Today explicitly rather than clipping them to the rolling 6h default.
+        page.goto('https://ev-sharps.test/movement.html?sport=nhl&window=today')
+        expect(page.locator('#catalog-rows .movement-play')).to_have_count(3)
         for index, data in enumerate(details):
             selected = data['selection']
-            page.locator('#catalog-rows tr').nth(index).locator('button').click()
+            select_card(page, index)
             expect(page.locator('#chart-title')).to_have_text(selected['player'].title())
             if selected['fair_comparable']:
                 page.wait_for_function("document.getElementById('movement-chart').data?.some(t => t.meta?.fair)")
@@ -177,6 +209,7 @@ with sync_playwright() as p:
                     expect(page.locator('#selection-metrics')).to_contain_text('Single book')
             if selected.get('note'):
                 expect(page.locator('#chart-status')).to_have_text(selected['note'])
+        print('Archived real fixture replay passed: matched, single-book and raw-only, using window=today.')
     assert not errors, errors
     browser.close()
     print(f'Line movement fair coverage checks passed. Screenshots: {output}')

@@ -14,7 +14,21 @@
   const bookNames = { circa: 'Circa', pn: 'Pinnacle', fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', mgm: 'BetMGM', cz: 'Caesars', br: 'BetRivers', espn: 'ESPN BET', fn: 'Fanatics', hr: 'Hard Rock', bv: 'Bovada', bol: 'BetOnline', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi', kambi: 'Kambi', re: 'Rebet', fl: 'Fliff', poly: 'Polymarket', hr_az: 'Hard Rock AZ', hr_oh: 'Hard Rock OH' };
   const propNames = { hr: 'Home runs', h: 'Hits', r: 'Runs', rbi: 'RBIs', tb: 'Total bases', so: 'Strikeouts', k: 'Strikeouts', attd: 'Anytime touchdown', anytime_td: 'Anytime touchdown', td: 'Touchdowns', atgs: 'Anytime goalscorer', g: 'Goals', goals: 'Goals', sog: 'Shots on goal', shots: 'Shots on goal', pts: 'Points', points: 'Points', reb: 'Rebounds', ast: 'Assists', pass_yd: 'Passing yards', rush_yd: 'Rushing yards', rec_yd: 'Receiving yards', rec: 'Receptions', ml: 'Moneyline', spread: 'Spread', total: 'Total' };
   const bookName = key => bookNames[key] || title(key);
-  const propName = key => key === 'atgs' && SPORT === 'nhl' ? 'Anytime goalscorer (1+)' : propNames[key] || title(key);
+  const periodNames = { '1h': '1st half', '2h': '2nd half', '1q': '1st quarter', '2q': '2nd quarter', '3q': '3rd quarter', '4q': '4th quarter', '1p': '1st period', '2p': '2nd period', '3p': '3rd period' };
+  const extraProps = { '3ptm': 'Threes made', '3pta': 'Three-point attempts', stl: 'Steals', blk: 'Blocks', to: 'Turnovers', fgm: 'Field goals made', fga: 'Field goal attempts', ftm: 'Free throws made', fta: 'Free throw attempts', oreb: 'Offensive rebounds', dreb: 'Defensive rebounds', 'pts+reb': 'Points + rebounds', 'pts+ast': 'Points + assists', 'reb+ast': 'Rebounds + assists', 'pts+reb+ast': 'Points + rebounds + assists', 'blk+stl': 'Blocks + steals', 'stl+blk': 'Steals + blocks', away_total: 'Team total', home_total: 'Team total', fb: 'First basket' };
+  function propName(key) {
+    const period = /^(1h|2h|1q|2q|3q|4q|1p|2p|3p)_/.exec(key);
+    if (period) return `${periodNames[period[1]]} · ${propName(String(key).slice(period[0].length))}`;
+    if (key === 'dd') return 'Double double';
+    if (key === 'td' && ['nba', 'wnba', 'ncaab'].includes(SPORT)) return 'Triple double';
+    return key === 'atgs' && SPORT === 'nhl' ? 'Anytime goalscorer (1+)' : extraProps[key] || propNames[key] || title(key);
+  }
+  function selectionName(row) {
+    if (row.player) return title(row.player);
+    const team = /(?:^|_)(away|home)_total$/.exec(row.prop);
+    const teams = String(row.game || '').split(/\s*@\s*/);
+    return String(team && teams.length === 2 ? teams[team[1] === 'home' ? 1 : 0] : row.game || '').toUpperCase();
+  }
   const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '-';
   const gameTime = value => value && Number.isFinite(Date.parse(value)) ? `${new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}, ${time(value)} ET` : '-';
   const easternDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -28,6 +42,9 @@
     return { color: colors[index % colors.length], dash: ['solid', 'dash', 'dot'][Math.floor(index / colors.length) % 3] };
   }
   const selectedProps = new Set((url.searchParams.get('props') || '').split(',').filter(Boolean));
+  const windows = ['1h', '3h', '6h', '12h', 'today'];
+  let movementWindow = windows.includes(url.searchParams.get('window')) ? url.searchParams.get('window') : '6h';
+  const windowName = () => movementWindow === 'today' ? 'Today' : `Last ${parseInt(movementWindow, 10)} ${movementWindow === '1h' ? 'hour' : 'hours'}`;
   const hiddenBooks = new Set();
   let catalog = null, detail = null, selectedId = '', offset = 0, day = dayOf(), ready = false;
   let summaryController = null, detailController = null, summaryVersion = 0, detailVersion = 0, debounceTimer, midnightTimer;
@@ -44,6 +61,8 @@
   }
   function sideName(row) { return row.side_labels?.[row.side] || `Side ${Number(row.side || 0) + 1}`; }
   function marketName(row) {
+    const binary = ['atgs', 'attd', 'anytime_td', 'dd'].includes(row.prop) || (row.prop === 'td' && ['nba', 'wnba', 'ncaab'].includes(SPORT));
+    if (binary && finite(row.handicap) && Number(row.handicap) === .5 && [0, 1].includes(Number(row.side))) return `${propName(row.prop)} · ${Number(row.side) === 1 ? 'No' : 'Yes'}`;
     const hasLine = row.handicap !== '' && row.handicap !== null && row.handicap !== undefined;
     const line = String(row.prop).includes('spread') && Number(row.side) === 1 && finite(row.handicap) ? -Number(row.handicap) : row.handicap;
     return `${propName(row.prop)} · ${title(sideName(row))}${hasLine ? ` ${line}` : ''}`;
@@ -61,6 +80,10 @@
     if (!finite(row[`${endpoint}_fair`])) return 'No paired quotes';
     const books = fairBooks(row, endpoint);
     return books.length === 1 ? `Single book · ${bookName(books[0])}` : books.length ? `${books.length} books · ${books.map(bookName).join(', ')}` : 'Reference unavailable';
+  }
+  function compactCoverage(row, endpoint) {
+    const books = fairBooks(row, endpoint);
+    return books.length > 1 && finite(row[`${endpoint}_fair`]) ? `${books.length} ${row.fair_comparable === false ? 'books · unmatched' : 'reference books'}` : fairCoverage(row, endpoint);
   }
   function referenceName() { return $('reference-select').value === 'consensus' ? 'Sportsbook consensus' : bookName($('reference-select').value); }
   function rowStatus(row) {
@@ -84,7 +107,7 @@
   function moveClass(row) { const value = usableMove(row); return finite(value) && Number(value) > 0 ? 'shortening' : finite(value) && Number(value) < 0 ? 'drifting' : 'unchanged'; }
   function syncURL() {
     const next = new URL(window.location.href);
-    const values = { sport: SPORT, query: $('player-search').value.trim(), props: [...selectedProps].join(','), side: $('side-select').value, reference: $('reference-select').value, direction: $('direction-select').value };
+    const values = { sport: SPORT, query: $('player-search').value.trim(), props: [...selectedProps].join(','), side: $('side-select').value, reference: $('reference-select').value, direction: $('direction-select').value, window: movementWindow };
     for (const [key, value] of Object.entries(values)) {
       if (value && !(key === 'side' && value === '0') && !['consensus', 'all'].includes(value)) next.searchParams.set(key, value);
       else next.searchParams.delete(key);
@@ -92,7 +115,7 @@
     history.replaceState(null, '', next);
   }
   function params(id) {
-    const query = new URLSearchParams({ sport: SPORT, side: $('side-select').value, reference: $('reference-select').value });
+    const query = new URLSearchParams({ sport: SPORT, side: $('side-select').value, reference: $('reference-select').value, window: movementWindow });
     if (id) query.set('id', id);
     else {
       query.set('query', $('player-search').value.trim());
@@ -180,13 +203,44 @@
     $('reference-select').replaceChildren(new Option('Sportsbook consensus', 'consensus'), ...books.map(book => new Option(bookName(book), book)));
     $('reference-select').value = reference;
   }
+  function renderWindow(data = catalog) {
+    document.querySelectorAll('[data-window]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.window === movementWindow)));
+    const bounds = data?.window_start && data?.window_end ? `${time(data.window_start)}–${time(data.window_end)} ET` : '';
+    $('window-range').textContent = `${windowName()}${bounds ? ` · ${bounds}` : ''}`;
+    notice('window-coverage', data?.history_truncated ? `Earlier history is unavailable. Showing retained captures from ${time(data.window_start)} ET; each day resets at midnight Eastern.` : '');
+    $('chart-window-label').textContent = `${windowName()} · captured prices`;
+    $('slate-title').textContent = movementWindow === 'today' ? "Today's movers" : 'Recent movers';
+  }
+  function bestCaptured(row) {
+    if (['started', 'stale'].includes(rowStatus(row))) return null;
+    return Object.entries(row.current_prices || {}).reduce((best, [book, price]) => {
+      const probability = implied(price);
+      return probability !== null && (!best || probability < best.probability) ? {book, price, probability} : best;
+    }, null);
+  }
+  const initials = value => title(value).split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0]).join('');
+  function bestMarkup(best) {
+    if (!best) return '<strong>—</strong><small>No current quote</small>';
+    const logo = best.book === 'kambi' ? 'parx' : best.book.startsWith('hr_') ? 'hr' : best.book;
+    return `<strong>${odds(best.price)}</strong><small class="captured-book"><img src="logos/${encodeURIComponent(logo)}.png" alt="" width="14" height="14">${esc(bookName(best.book))}</small>`;
+  }
   function renderRows() {
     if (!catalog) return;
     const rows = (catalog.rows || []).filter(row => visibleMarket(row) && ($('direction-select').value === 'all' || finite(usableMove(row))));
-    $('catalog-rows').innerHTML = rows.map(row => `<tr data-id="${esc(row.id)}" class="${row.id === selectedId ? 'is-selected' : ''}"><td><strong>${esc(title(row.player || row.game))}</strong><small>${esc(marketName(row))}</small><small>${esc(String(row.game || '').toUpperCase())} · ${esc(gameTime(row.start))}</small></td><td><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)}</small><small class="fair-coverage">${esc(fairCoverage(row, 'first'))}</small></td><td><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small><small class="fair-coverage">${esc(fairCoverage(row, 'current'))}</small></td><td class="${moveClass(row)}"><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></td><td>${esc(time(fairTime(row, 'first')))} → ${esc(time(fairTime(row, 'current')))}<small>${Number(row.point_count) || 0} captured points</small></td><td><button class="chart-row" type="button" aria-label="Chart ${esc(title(row.player || row.game))}, ${esc(marketName(row))}" aria-pressed="${row.id === selectedId}">Chart</button></td></tr>`).join('');
+    const scrollTop = $('catalog-wrap').scrollTop;
+    const focused = $('catalog-rows').contains(document.activeElement) ? document.activeElement.dataset.id : null;
+    $('catalog-rows').innerHTML = rows.map(row => `<button type="button" data-id="${esc(row.id)}" class="movement-play${row.id === selectedId ? ' is-selected' : ''}" aria-pressed="${row.id === selectedId}" aria-label="Chart ${esc(selectionName(row))}, ${esc(marketName(row))}">
+      <span class="play-context"><span class="sport-tag">${esc(SPORT.toUpperCase())}</span><span>${esc(String(row.game || '').toUpperCase())}</span><span class="play-chevron" aria-hidden="true">${row.id === selectedId ? '✓' : '↗'}</span></span>
+      <span class="play-heading"><span class="player-monogram" aria-hidden="true">${esc(initials(selectionName(row)))}</span><span class="play-identity"><strong class="play-name">${esc(selectionName(row))}</strong><span class="play-market">${esc(marketName(row))}</span></span></span>
+      <span class="play-start">${esc(gameTime(row.start))}</span>
+      <span class="play-metrics"><span class="play-price"><span>Best captured</span>${bestMarkup(bestCaptured(row))}</span><span title="${esc(fairCoverage(row, 'current'))}"><span>Current fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small></span><span class="${moveClass(row)}"><span>${esc(movementWindow === 'today' ? 'Today' : movementWindow.toUpperCase())} move</span><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></span></span>
+      <span class="play-baseline"><span>${row.fair_comparable === false ? 'No matched comparison' : `Baseline ${odds(row.first_fair)} → ${odds(row.current_fair)}`}</span><span>${esc(time(fairTime(row, 'first')))}–${esc(time(fairTime(row, 'current')))} ET</span></span>
+    </button>`).join('');
+    $('catalog-wrap').scrollTop = scrollTop;
+    if (focused) [...$('catalog-rows').children].find(card => card.dataset.id === focused)?.focus({preventScroll: true});
     $('catalog-wrap').hidden = rows.length === 0;
     const filtered = $('player-search').value.trim() || selectedProps.size || $('direction-select').value !== 'all' || $('side-select').value !== '0';
-    notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another player, prop or side.' : 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.');
+    notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another player, prop or side.' : movementWindow === 'today' ? 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.' : 'No recorded selections in this window. Try a wider window or Today.');
     $('catalog-count').textContent = `${Number(catalog.total) || 0} selections`;
     $('pagination').hidden = !(catalog.total > limit || offset > 0);
     $('previous-page').disabled = offset === 0;
@@ -195,7 +249,7 @@
   }
   function renderMetrics(row) {
     $('selection-metrics').hidden = false;
-    $('selection-metrics').innerHTML = `<div><span>First captured fair</span><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)} · ${esc(time(fairTime(row, 'first')))} ET</small><small>${esc(fairCoverage(row, 'first'))}</small></div><div><span>Latest captured fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)} · ${esc(time(fairTime(row, 'current')))} ET</small><small>${esc(fairCoverage(row, 'current'))}</small></div><div><span>Fair probability move</span><strong class="${moveClass(row)}">${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></div>`;
+    $('selection-metrics').innerHTML = `<div class="metric-best"><span>Best captured price</span>${bestMarkup(bestCaptured(row))}</div><div title="${esc(fairCoverage(row, 'current'))}"><span>Current fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)} · ${esc(time(fairTime(row, 'current')))} ET</small><small class="fair-coverage">${esc(compactCoverage(row, 'current'))}</small></div><div><span>${esc(windowName())} move</span><strong class="${moveClass(row)}">${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></div><div title="${esc(fairCoverage(row, 'first'))}"><span>Window baseline</span><strong>${odds(row.first_fair)}</strong><small>${percent(row.first_probability)} · ${esc(time(fairTime(row, 'first')))} ET</small><small class="fair-coverage">${esc(compactCoverage(row, 'first'))}</small>${row.first_fair_carried ? '<small>Earlier recorded prices</small>' : ''}</div>`;
   }
   function implied(value) { return finite(value) && Math.abs(Number(value)) >= 100 ? (Number(value) > 0 ? 100 / (Number(value) + 100) : -Number(value) / (-Number(value) + 100)) : null; }
   function fairFromProbability(p) { return p >= .5 ? -100 * p / (1 - p) : 100 * (1 - p) / p; }
@@ -228,7 +282,7 @@
   }
   function updatePriceReadout(index = chartPoints.length - 1) {
     const point = chartPoints[index];
-    $('book-price-time').textContent = point ? `${index === chartPoints.length - 1 ? 'Latest capture' : 'Captured'} · ${time(point.ts)} ET` : '';
+    $('book-price-time').textContent = point ? `${point.carried ? 'Earlier prices at window start' : index === chartPoints.length - 1 ? 'Latest capture' : 'Captured'} · ${time(point.ts)} ET` : '';
     $('book-options').querySelectorAll('.movement-book').forEach(item => {
       const price = point?.prices?.[item.dataset.book];
       const value = item.querySelector('.book-price');
@@ -280,10 +334,11 @@
   function renderChart() {
     if (!detail?.selection) return;
     const row = detail.selection;
-    $('chart-title').textContent = title(row.player || row.game);
+    $('chart-title').textContent = selectionName(row);
     $('chart-subtitle').textContent = `${marketName(row)} · ${String(row.game || '').toUpperCase()} · ${gameTime(row.start)} · ${referenceName()}`;
     renderMetrics(row);
-    const points = (detail.points || []).filter(point => dayOf(point.ts) === day);
+    const windowStart = Date.parse(detail.window_start), windowEnd = Date.parse(detail.window_end);
+    const points = (detail.points || []).filter(point => dayOf(point.ts) === day && (!Number.isFinite(windowStart) || Date.parse(point.ts) >= windowStart) && (!Number.isFinite(windowEnd) || Date.parse(point.ts) <= windowEnd));
     chartPoints = points;
     const books = [...new Set(points.flatMap(point => Object.keys(point.prices || {})))].sort();
     if (!books.includes(focusedBook) || hiddenBooks.has(focusedBook)) focusedBook = '';
@@ -305,10 +360,10 @@
     else if (Number(row.point_count) < 2) message = 'First capture recorded. Movement appears after a second capture.';
     if (row.note && message !== row.note) message = `${message} ${row.note}`.trim();
     notice('chart-status', message);
-    if (!points.length) { $('movement-chart').hidden = true; notice('chart-status', 'No recorded prices for this selection today.'); return; }
+    if (!points.length) { $('movement-chart').hidden = true; notice('chart-status', movementWindow === 'today' ? 'No recorded prices for this selection today.' : 'No recorded prices for this selection in this window. Try a wider window or Today.'); return; }
     const probabilityScale = $('chart-scale').value === 'probability';
     const x = points.map(point => Date.parse(point.ts));
-    const times = points.map(point => `${time(point.ts)} ET`);
+    const times = points.map(point => `${time(point.ts)} ET${point.carried ? ' · Earlier recorded prices' : ''}`);
     const traces = books.filter(book => !hiddenBooks.has(book)).map(book => ({
       type: 'scatter', mode: 'lines+markers', name: bookName(book), x, meta: { book },
       y: points.map(point => { const p = implied(point.prices?.[book]); return p === null ? null : p * 100; }),
@@ -321,11 +376,11 @@
       type: 'scatter', mode: 'lines+markers', name: `${referenceName()} fair`, x, meta: { fair: true }, opacity: focusedBook ? .55 : 1,
       y: points.map(point => finite(point.probability) ? Number(point.probability) * 100 : null),
       customdata: points.map((point, index) => [times[index], odds(point.fair)]),
-      line: { color: '#8dedb4', width: 3.5, shape: 'hv' }, marker: { size: 6 }, connectgaps: false,
+      line: { color: '#66d7ee', width: 3.5, shape: 'hv' }, marker: { size: 6 }, connectgaps: false,
       hovertemplate: '<b>Fair %{customdata[1]}</b><br>%{customdata[0]}<br>Fair probability: %{y:.2f}%<extra></extra>',
     });
     $('chart-footnote').hidden = false;
-    $('chart-footnote').textContent = `${points.some(point => finite(point.probability)) ? `Bold green is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are` : 'Lines are'} quoted book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. ${row.fair_comparable === false && $('reference-select').value === 'consensus' ? 'Endpoint fair values above may use different books and are not connected as a consensus move. ' : ''}Times are Eastern.`;
+    $('chart-footnote').textContent = `${points.some(point => finite(point.probability)) ? `Bold cyan is fair value after removing the margin${cohort.length ? ` (${cohort.map(bookName).join(', ')})` : ''}. Other lines are` : 'Lines are'} captured book prices${probabilityScale ? ', shown as implied probability including margin' : ''}. Gaps mean a usable quote was unavailable. ${points.some(point => point.carried) ? 'The window starts with earlier recorded prices, not a new observation. ' : ''}${row.fair_comparable === false && $('reference-select').value === 'consensus' ? 'Endpoint fair values may use different books and are not connected as a consensus move. ' : ''}Captured about every ${Number(catalog?.interval_minutes) || 30} minutes; these are not live quotes. Times are Eastern.`;
     if (!traces.length) { $('movement-chart').hidden = true; notice('chart-status', 'Select a sportsbook to display its captured prices.'); return; }
     if (!window.Plotly) { notice('chart-status', 'The chart could not load. Refresh this page to try again.'); return; }
     const yValues = traces.flatMap(trace => trace.y).filter(finite);
@@ -333,8 +388,9 @@
     const padding = Math.max(.12, (Math.max(...yValues) - Math.min(...yValues)) * .12);
     const low = Math.max(.01, Math.min(...yValues) - padding), high = Math.min(99.99, Math.max(...yValues) + padding);
     const tickIndexes = [...new Set(Array.from({ length: Math.min(6, points.length) }, (_, index) => Math.round(index * (points.length - 1) / Math.max(1, Math.min(6, points.length) - 1))))];
+    if (!$('play-detail').getClientRects().length) { $('movement-chart').hidden = true; return; }
     $('movement-chart').hidden = false;
-    const chartKey = `${SPORT}:${row.id}:${row.side}:${$('reference-select').value}:${day}:${probabilityScale}`;
+    const chartKey = `${SPORT}:${row.id}:${row.side}:${$('reference-select').value}:${day}:${movementWindow}:${probabilityScale}`;
     if (plottedKey !== chartKey) zoomedX = zoomedY = false;
     const currentRange = zoomedY ? $('movement-chart')._fullLayout?.yaxis.range : null;
     const currentTimes = zoomedX ? $('movement-chart')._fullLayout?.xaxis.range : null;
@@ -354,7 +410,7 @@
   async function loadDetail(id, force = false) {
     if (!id || !ready) return;
     const existing = detail?.selection;
-    if (!force && existing?.id === id) return;
+    if (!force && existing?.id === id) { renderChart(); return; }
     detailController?.abort();
     const version = ++detailVersion, controller = new AbortController();
     detailController = controller;
@@ -364,9 +420,10 @@
     try {
       const data = await request(params(id), controller);
       if (version !== detailVersion || !data) return;
-      if (resetDay() || data.day !== day || data.sport !== SPORT) { clearChart('Waiting for today’s captures.'); return; }
+      if (resetDay() || data.day !== day || data.sport !== SPORT) { clearChart('Waiting for captures in this window.'); return; }
+      if (data.window !== movementWindow) { clearChart('Chosen window is unavailable. Refresh after the movement service updates.'); return; }
       detail = data;
-      if (!data.selection || !visibleMarket(data.selection)) { clearChart(`No recorded prices for this selection today.${SPORT === 'nhl' ? ' NHL anytime goalscorer history includes only the 0.5 line (1+ goal).' : ''}`); return; }
+      if (!data.selection || !visibleMarket(data.selection)) { clearChart(`${movementWindow === 'today' ? 'No recorded prices for this selection today.' : 'No recorded prices for this selection in this window. Try a wider window or Today.'}${SPORT === 'nhl' ? ' NHL anytime goalscorer history includes only the 0.5 line (1+ goal).' : ''}`); return; }
       renderChart();
     } catch (error) {
       if (version === detailVersion) {
@@ -389,7 +446,11 @@
       if (resetDay()) return;
       $('access-panel').hidden = true;
       $('movement-content').hidden = false;
-      if (data.day !== day || data.sport !== SPORT) { clearRows('Waiting for today’s captures.'); clearChart('Waiting for today’s captures.'); notice('request-status', 'Today’s capture file is not available yet.'); return; }
+      if (data.day !== day || data.sport !== SPORT) { clearRows('Waiting for captures in this window.'); clearChart('Waiting for captures in this window.'); notice('request-status', 'Capture data for this window is not available yet.'); return; }
+      if (data.window !== movementWindow) {
+        const message = 'Chosen window is unavailable. Refresh after the movement service updates.';
+        clearRows(message); clearChart(message); notice('request-status', message); return;
+      }
       const previousUpdate = catalog?.updated;
       // Older API deployments may still return alternate ATGS lines. Keep their
       // server offsets for pagination; new payloads arrive filtered already.
@@ -397,16 +458,17 @@
       data.rows = (data.rows || []).filter(visibleMarket);
       if (!offset && data.total === originalRowCount) data.total = data.rows.length;
       catalog = data;
-      renderOptions(data); renderRows();
+      renderOptions(data); renderRows(); renderWindow(data);
       $('updated').textContent = data.updated ? `Latest capture ${time(data.updated)} ET` : 'Waiting for first capture';
       const interval = Number(data.interval_minutes) || 30;
-      $('day-note').textContent = `Today only · Resets at midnight Eastern · Pre-game captures about every ${interval} minutes`;
+      $('day-note').textContent = `Captured pre-game prices · About every ${interval} minutes · Not live odds · Resets at midnight Eastern`;
       $('capture-methodology').textContent = `History starts with the first observed pre-game capture today, not a sportsbook’s official opening price. New captures are recorded about every ${interval} minutes. Each handicap is tracked separately; NHL anytime goalscorer includes only 0.5 (1+ goal). Fair timestamps mark usable paired prices, which may begin after the first raw capture. History resets at midnight Eastern. Captures older than ${Number(data.max_age_minutes) || 60} minutes and started games are excluded from current mover rankings; their recorded charts remain available today.`;
       notice('request-status', data.status === 'stale' ? 'The latest capture is out of date. Showing recorded history while waiting for a new capture.' : data.status === 'awaiting_today' ? 'Waiting for today’s first capture. Yesterday’s history has been cleared.' : '');
       const rows = data.rows || [];
-      const chosen = rows.find(row => row.id === selectedId) || rows[0];
-      if (chosen) await loadDetail(chosen.id, previousUpdate !== data.updated || !detail || detail.selection?.id !== chosen.id);
-      else { selectedId = ''; detailVersion++; detailController?.abort(); clearChart('Search another player or prop, or return after the first capture.'); }
+      const chosen = rows.find(row => row.id === selectedId) || rows.find(row => finite(usableMove(row))) || rows[0];
+      if (chosen) await loadDetail(chosen.id, previousUpdate !== data.updated || !detail || detail.selection?.id !== chosen.id
+        || detail.window !== data.window || detail.window_start !== data.window_start || detail.window_end !== data.window_end);
+      else { selectedId = ''; detailVersion++; detailController?.abort(); clearChart(movementWindow === 'today' ? 'Search another player or prop, or return after the first capture.' : 'No recorded prices in this window. Try a wider window or Today.'); }
     } catch (error) {
       if (version !== summaryVersion) return;
       if (error.status === 401 || error.status === 403) { access(error.status); return; }
@@ -414,10 +476,11 @@
       if (!catalog) { $('movement-content').hidden = false; clearRows('Movement could not be loaded. Use Refresh to try again.'); clearChart('Price history is unavailable until the slate loads.'); }
     } finally { if (version === summaryVersion) { summaryController = null; $('refresh').disabled = false; } }
   }
-  function filterChanged(delay = 0) {
+  function filterChanged(delay = 0, keepDetail = false) {
     cancelRequests(); clearTimeout(debounceTimer); offset = 0;
+    if (!keepDetail) $('movement-content').classList.remove('show-play-detail');
     clearRows(); clearChart('Loading matching selections...');
-    syncURL();
+    syncURL(); renderWindow(null);
     debounceTimer = setTimeout(refresh, delay);
   }
   $('sport-select').addEventListener('change', () => {
@@ -428,6 +491,12 @@
     filterChanged();
   });
   $('player-search').addEventListener('input', () => filterChanged(250));
+  $('toggle-filters').addEventListener('click', () => {
+    const expanded = $('toggle-filters').getAttribute('aria-expanded') !== 'true';
+    $('toggle-filters').setAttribute('aria-expanded', String(expanded));
+    $('toggle-filters').closest('.filters').classList.toggle('filters-expanded', expanded);
+    $('toggle-filters').innerHTML = `${expanded ? 'Fewer filters' : 'More filters'} <span aria-hidden="true">${expanded ? '−' : '+'}</span>`;
+  });
   ['side-select', 'reference-select', 'direction-select'].forEach(id => $(id).addEventListener('change', () => filterChanged()));
   $('prop-options').addEventListener('change', event => {
     if (!event.target.matches('input')) return;
@@ -437,9 +506,29 @@
   });
   $('all-props').addEventListener('click', () => { selectedProps.clear(); $('prop-options').querySelectorAll('input').forEach(input => { input.checked = false; }); $('prop-summary').textContent = 'All props'; filterChanged(); });
   document.addEventListener('click', event => { if (!$('prop-picker').contains(event.target)) $('prop-picker').open = false; });
+  document.querySelectorAll('[data-window]').forEach(button => button.addEventListener('click', () => {
+    if (button.dataset.window === movementWindow) return;
+    movementWindow = button.dataset.window;
+    filterChanged(0, true);
+  }));
   $('catalog-rows').addEventListener('click', event => {
-    const row = event.target.closest('tr[data-id]');
-    if (row) { loadDetail(row.dataset.id); $('chart-title').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    const row = event.target.closest('.movement-play[data-id]');
+    if (row) {
+      const mobile = window.matchMedia('(max-width: 850px)').matches;
+      if (mobile) $('movement-content').classList.add('show-play-detail');
+      loadDetail(row.dataset.id);
+      if (mobile) {
+        $('play-detail').scrollIntoView({behavior: 'smooth', block: 'start'});
+        $('back-to-plays').focus({preventScroll: true});
+      }
+    }
+  });
+  $('catalog-rows').addEventListener('error', event => { if (event.target.matches('img')) event.target.hidden = true; }, true);
+  $('selection-metrics').addEventListener('error', event => { if (event.target.matches('img')) event.target.hidden = true; }, true);
+  $('back-to-plays').addEventListener('click', () => {
+    $('movement-content').classList.remove('show-play-detail');
+    $('slate-title').scrollIntoView({behavior: 'smooth', block: 'start'});
+    [...$('catalog-rows').children].find(card => card.dataset.id === selectedId)?.focus({preventScroll: true});
   });
   $('book-options').addEventListener('change', event => { if (!event.target.matches('input')) return; if (event.target.checked) hiddenBooks.delete(event.target.value); else hiddenBooks.add(event.target.value); renderChart(); });
   $('book-options').addEventListener('click', event => {
@@ -455,9 +544,10 @@
     focusedBook = ''; renderChart();
   });
   $('chart-scale').addEventListener('change', renderChart);
+  window.matchMedia('(max-width: 850px)').addEventListener('change', () => { if (detail?.selection) renderChart(); });
   if (window.ResizeObserver) new ResizeObserver(() => {
     const chart = $('movement-chart');
-    if (!chart.hidden && chart.data && window.Plotly && (chart._fullLayout?.width !== chart.clientWidth || chart._fullLayout?.height !== chart.clientHeight)) {
+    if (!chart.hidden && chart.getClientRects().length && chart.clientWidth > 0 && chart.clientHeight > 0 && chart.data && chart._fullLayout && window.Plotly && (chart._fullLayout.width !== chart.clientWidth || chart._fullLayout.height !== chart.clientHeight)) {
       Plotly.relayout(chart, { width: chart.clientWidth, height: chart.clientHeight });
     }
   }).observe($('movement-chart'));
@@ -490,5 +580,5 @@
   }, 60000);
   document.addEventListener('visibilitychange', () => { resetDay(); if (document.visibilityState !== 'hidden') refresh(); });
   window.refreshMovement = refresh;
-  setDayLabel(); scheduleMidnight(); boot();
+  renderWindow(null); setDayLabel(); scheduleMidnight(); boot();
 })();

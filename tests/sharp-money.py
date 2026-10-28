@@ -60,15 +60,40 @@ def depth_entry(book):
         starts_at=START,updated=(NOW-timedelta(seconds=20)).isoformat(),expires_at=(NOW+timedelta(minutes=3)).isoformat())
 
 
+def assert_layout(page, width):
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), width
+    for selector in ['.sm-filters', '#picks-table-wrap', '.sm-opportunity:visible', '#selection-panel:visible', '.sm-ladder:visible']:
+        for element in page.locator(selector).all():
+            box=element.bounding_box()
+            assert box and box['x'] >= -1 and box['x']+box['width'] <= width+1, (selector,box)
+            assert element.evaluate('el=>el.scrollWidth <= el.clientWidth+1'), selector
+    if width<=900 and page.locator('#selection-panel').is_visible():
+        assert page.locator('#selection-panel').evaluate('el=>getComputedStyle(el).maxHeight==="none" && el.scrollHeight<=el.clientHeight+1')
+
+
+def assert_desktop_detail_scroll(page):
+    original=page.viewport_size
+    page.set_viewport_size(dict(width=1440,height=700))
+    panel=page.locator('#selection-panel')
+    assert panel.evaluate('el=>el.clientHeight<=664 && el.scrollHeight>el.clientHeight'), 'Long desktop detail must scroll within its viewport cap'
+    page.evaluate('window.scrollTo(0,document.getElementById("picks-table-wrap").getBoundingClientRect().top+scrollY)')
+    panel.evaluate('el=>el.scrollTop=el.scrollHeight')
+    panel_box=panel.bounding_box();tail=panel.locator('.sm-detail > .sm-detail-footnote').bounding_box()
+    assert tail['y']>=panel_box['y'] and tail['y']+tail['height']<=panel_box['y']+panel_box['height']+1
+    assert panel_box['y']>=-1 and panel_box['y']+panel_box['height']<=701, panel_box
+    panel.evaluate('el=>el.scrollTop=0')
+    page.set_viewport_size(original);page.evaluate('window.scrollTo(0,0)')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--frontend',type=Path,default=Path(__file__).resolve().parents[1])
     parser.add_argument('--overlay',type=Path)
     args=parser.parse_args(); frontend=args.frontend.resolve(); overlay=args.overlay.resolve() if args.overlay else None
     artifacts=Path(mkdtemp(prefix='sharp-money-browser-'))
-    state=dict(payload=sample(),status=200,fail=False,requests=[],depth=[])
+    state=dict(payload=sample(),status=200,fail=False,requests=[],depth=[],depth_status=200)
     with sync_playwright() as p:
-        browser=p.chromium.launch(headless=True)
+        browser=p.chromium.launch(headless=True,args=['--disable-logging',f'--log-file={artifacts / "chromium.log"}'])
         def intercept(route):
             url=urlsplit(route.request.url);state['requests'].append(route.request.url)
             if url.path=='/api/sharp-money':
@@ -77,7 +102,7 @@ def main():
             elif url.path in ['/api/atgs-depth','/api/attd-depth','/api/homers-depth']:
                 query={key:values[0] for key,values in parse_qs(url.query).items()};state['depth'].append((url.path,query))
                 sport={'/api/atgs-depth':'nhl','/api/attd-depth':'nfl','/api/homers-depth':'mlb'}[url.path]
-                route.fulfill(json=dict(schemaVersion=1,sport=sport,book=query['book'],game=query['game'],player=query['player'],start=query['start'],entry=depth_entry(query['book'])))
+                route.fulfill(status=state['depth_status'],json=dict(schemaVersion=1,sport=sport,book=query['book'],game=query['game'],player=query['player'],start=query['start'],entry=depth_entry(query['book'])))
             elif url.hostname=='cdn.jsdelivr.net':
                 route.fulfill(content_type='application/javascript',body='''window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'test-token'}}}),onAuthStateChange:fn=>{window.authChanged=fn;return {}}}})};''')
             elif url.hostname in ['ev-sharps.test','127.0.0.1']:
@@ -100,7 +125,19 @@ def main():
         assert page.locator('.pp-tab.active').get_attribute('data-key')=='other'
         assert 'Sharp Money' in page.locator('.pp-page-btn.current-page.pp-sharp').inner_text()
         page.locator('#page-picker-btn').click()
-        first.locator('.rec-toggle').click()
+        expect(first.locator('.sm-select')).to_have_attribute('aria-pressed','true')
+        expect(page.locator('#sm-detail-title')).to_have_text('Ryan Winterton')
+        expect(page.locator('.sm-featured-price strong')).to_have_text('+800')
+        expect(page.locator('.sm-ladder .sm-level')).to_have_count(1)
+        level=page.locator('.sm-ladder .sm-level[data-price="-733"]')
+        expect(level.locator('.sm-level-size')).to_have_text('$176')
+        expect(page.locator('.sm-depth-summary > strong')).to_have_text('$176')
+        assert set(level.locator('.sm-level-segment').evaluate_all('(els)=>els.map(el=>el.dataset.book)'))=={'nv','kal'}
+        for segment in level.locator('.sm-level-segment').all():
+            assert segment.get_attribute('title').endswith(': $88')
+            assert abs(segment.bounding_box()['width']/level.locator('.sm-level-bar').bounding_box()['width']-.5)<.01
+        assert len(set(level.locator('.sm-level-segment').evaluate_all('(els)=>els.map(el=>getComputedStyle(el).backgroundColor)')))==2
+        page.locator('details[data-section="history"] summary').click()
         expect(page.locator('.sm-history-chart').first).to_be_visible()
         assert 'all-exchange captures' in page.locator('.sm-history-caption').first.inner_text()
         page.locator('[data-depth-book=kal]').first.click()
@@ -108,13 +145,48 @@ def main():
         expect(page.locator('#novig-depth-dialog .nv-depth-books')).to_be_visible()
         assert state['depth'][-1][0]=='/api/atgs-depth'
         page.locator('#novig-depth-dialog .nv-depth-close').click()
+        assert_desktop_detail_scroll(page)
+        assert_layout(page,1440)
         page.screenshot(path=str(artifacts/'desktop.png'),full_page=True)
+
+        # The single detail pane follows keyboard selection and survives refreshed offers for the same outcome.
+        receiver=page.locator('.rec-pick').filter(has_text='Test Receiver')
+        receiver.locator('.sm-select').focus();receiver.locator('.sm-select').press('Enter')
+        expect(page.locator('#sm-detail-title')).to_have_text('Test Receiver')
+        selected_key=receiver.get_attribute('data-key')
+        expect(page.locator('.rec-pick.is-selected')).to_have_count(1)
+        expect(page.locator('#selection-panel')).to_have_count(1)
+        page.locator('#selection-content [data-depth-book="kal"]').focus()
+        state['payload']=deepcopy(sample());state['payload']['data'][1]['offers'][0]['odds']=300
+        page.evaluate('refreshSharpMoney()')
+        expect(page.locator('.sm-featured-price strong')).to_have_text('+300')
+        assert page.locator('.rec-pick.is-selected').get_attribute('data-key')==selected_key
+        expect(page.locator('#sm-detail-title')).to_have_text('Test Receiver')
+        expect(page.locator('#selection-content [data-depth-book="kal"]')).to_be_focused()
+        state['payload']['data']=[row for row in state['payload']['data'] if row['sport']!='nfl']
+        page.evaluate('refreshSharpMoney()')
+        expect(page.locator('#sm-detail-title')).to_have_text('Ryan Winterton')
+        assert selected_key != page.locator('.rec-pick.is-selected').get_attribute('data-key')
+        assert 'Test Receiver' not in page.locator('#selection-content').inner_text()
+        state['payload']=dict(sample(),data=[]);page.evaluate('refreshSharpMoney()')
+        expect(page.locator('#selection-panel')).to_be_hidden()
+        expect(page.locator('#selection-content')).to_be_empty()
+        expect(page.locator('.sm-ladder')).to_have_count(0)
+        state['payload']=sample();page.evaluate('refreshSharpMoney()')
+        expect(page.locator('.rec-pick')).to_have_count(4)
+        under=page.locator('.rec-pick').filter(has_text='No goal')
+        under.locator('.sm-select').click();under_key=under.get_attribute('data-key')
         page.select_option('#sport-filter','nhl');expect(page.locator('.rec-pick')).to_have_count(2)
+        assert page.locator('.rec-pick.is-selected').get_attribute('data-key')==under_key
         page.select_option('#book-filter','dk');expect(page.locator('.rec-pick')).to_have_count(0)
+        expect(page.locator('#selection-panel')).to_be_hidden();expect(page.locator('#selection-content')).to_be_empty()
         page.select_option('#support-preset','custom');page.locator('#support-custom').fill('50')
         expect(page.locator('.rec-pick')).to_have_count(1)
-        assert page.locator('.sm-book').first.inner_text().startswith('DraftKings +900')
+        expect(page.locator('.sm-book').first).to_have_text('DraftKings')
+        expect(page.locator('.sm-odds').first).to_have_text('+900')
+        expect(page.locator('.sm-featured-price strong')).to_have_text('+900')
         page.select_option('#book-filter','fd');page.select_option('#support-preset','100')
+        page.locator('.sm-advanced summary').click()
         page.select_option('#exchange-filter','nv');expect(page.locator('.rec-pick')).to_have_count(1)
         assert '$100' in page.locator('.sm-support').first.inner_text()
         page.select_option('#support-preset','250');expect(page.locator('.rec-pick')).to_have_count(0)
@@ -125,12 +197,25 @@ def main():
         page.locator('#search-filter').fill('missing');expect(page.locator('.rec-pick')).to_have_count(0)
         page.locator('#search-filter').fill('')
         page.select_option('#sport-filter','');page.select_option('#book-filter','')
-        page.set_viewport_size(dict(width=320,height=1000))
-        expect(page.locator('.rec-pick')).to_have_count(4)
-        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
-        assert page.locator('.sm-player').first.bounding_box()['width'] >= 250
-        page.locator('.rec-toggle').first.click();page.locator('.rec-toggle').first.click()
-        page.screenshot(path=str(artifacts/'mobile-320.png'),full_page=True)
+        page.locator('.sm-advanced summary').click()
+        for width in [390,320]:
+            page.set_viewport_size(dict(width=width,height=1000))
+            if page.locator('#back-to-list').is_visible():page.locator('#back-to-list').click()
+            expect(page.locator('.rec-pick')).to_have_count(4)
+            expect(page.locator('.sm-list-pane')).to_be_visible()
+            expect(page.locator('#selection-panel')).to_be_hidden()
+            assert_layout(page,width)
+            page.screenshot(path=str(artifacts/f'mobile-list-{width}.png'),full_page=True)
+            first.locator('.sm-select').focus();first.locator('.sm-select').press('Enter')
+            expect(page.locator('#selection-panel')).to_be_visible()
+            expect(page.locator('.sm-list-pane')).to_be_hidden()
+            expect(page.locator('#sm-detail-title')).to_be_focused()
+            expect(page.locator('.sm-ladder .sm-level[data-price="-733"]')).to_have_count(1)
+            assert_layout(page,width)
+            page.screenshot(path=str(artifacts/f'mobile-detail-{width}.png'),full_page=True)
+            page.locator('#back-to-list').click()
+            expect(page.locator('.rec-pick.is-selected .sm-select')).to_be_focused()
+        page.set_viewport_size(dict(width=1440,height=1050))
         # Reject duplicate rows, injection, stale venues and future observations.
         validation=page.evaluate('''payload=>{const now=Date.now(), row=payload.data[0];
           const duplicate=structuredClone(payload);duplicate.data.push(structuredClone(row));
@@ -147,6 +232,7 @@ def main():
         # On sign-out all saved private data is removed before the next response.
         state['status']=401;page.evaluate("window.authChanged('SIGNED_OUT',null)")
         expect(page.locator('.rec-pick')).to_have_count(0);expect(page.locator('#access-panel')).to_be_visible()
+        expect(page.locator('#selection-content')).to_be_empty()
         state['status']=403;page.evaluate("window.authChanged('SIGNED_IN',{access_token:'analyst'})")
         expect(page.locator('#access-panel')).to_be_visible()
         state['status']=200;page.evaluate("window.authChanged('SIGNED_IN',{access_token:'sharp'})")
@@ -154,6 +240,7 @@ def main():
         # A still-visible page hides prices as the saved snapshot expires.
         page.clock.fast_forward(301000);expect(page.locator('.rec-pick')).to_have_count(0)
         expect(page.locator('#freshness-status')).to_be_visible()
+        expect(page.locator('#selection-content')).to_be_empty()
         assert not errors,errors
         # Local failures stay local; the paused production service is never a fallback.
         state['fail']=True;state['requests']=[]
@@ -171,6 +258,20 @@ def main():
         assert any(url.startswith('http://127.0.0.1:5051/api/sharp-money') for url in state['requests'])
         assert not any('railway.app' in url for url in state['requests'])
         assert local.locator('#picks a, #picks [data-depth-book]').count()==0
+        assert local.locator('#selection-content a, #selection-content [data-depth-book]').count()==0
+        expect(local.locator('.sm-support-bars')).to_be_visible()
+        assert not any('/api/atgs-depth' in url or '/api/attd-depth' in url or '/api/homers-depth' in url for url in state['requests'])
+        # Failed current depth retains clearly labeled snapshot bars and supports an explicit retry.
+        state['payload']=sample();state['depth_status']=503
+        local.goto('http://127.0.0.1:8765/sharp-money.html')
+        expect(local.locator('#sm-depth-status')).to_contain_text('Showing aggregate support from the snapshot')
+        expect(local.locator('.sm-support-bars')).to_be_visible()
+        expect(local.locator('#sm-depth-retry')).to_be_visible()
+        state['depth_status']=200;local.locator('#sm-depth-retry').click()
+        expect(local.locator('.sm-ladder .sm-level[data-price="-733"] .sm-level-size')).to_have_text('$176')
+        expect(local.locator('#sm-depth-retry')).to_be_hidden()
+        expect(local.locator('.sm-support-bars')).to_have_count(0)
+        local.close()
         state['requests']=[]
         page.clock.set_fixed_time(NOW)
         page.goto('https://ev-sharps.test/sharp-money.html?api=http://127.0.0.1:5051')

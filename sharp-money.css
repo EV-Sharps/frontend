@@ -1,65 +1,281 @@
-.sm-explainer { margin: 0 0 22px; padding: 13px 16px; border-left: 3px solid #67bcab; background: #1b2827; color: #b9cbc8; font-size: 12px; line-height: 1.65; }
-.sm-explainer strong { color: #e5f5ef; }
-.sm-demo { background: #382f1c; border-color: #9d8145; color: #ffe3a5; font-weight: 600; }
-.sm-filters { align-items: end; gap: 12px; }
-.sm-filters label { flex: 1 1 145px; min-width: 0; }
-.sm-filters .sm-search { flex: 2 1 230px; }
-.sm-filters select, .sm-filters input { width: 100%; min-width: 0; height: 37px; border: 1px solid #41474b; border-radius: 5px; background: #26292b; color: #e8e6e3; font: inherit; font-size: 12px; padding: 8px 10px; }
-.sm-table { min-width: 1000px; }
+/* Sharp Money: compact opportunities with a selected order-book detail. */
+body.sharp-money-page {
+  --sm-bg: #0b1826; --sm-panel: #132235; --sm-border: #2d455e;
+  --sm-text: #edf4fb; --sm-muted: #9aafc3; --sm-mint: #7cdeb6;
+  --sm-nv: #ac91ed; --sm-kal: #58c780; --sm-px: #45c7b9;
+  background: var(--sm-bg); color: var(--sm-text);
+}
+.sharp-money-page .rec-header { max-width: 1460px; gap: 20px; padding: 16px 24px; border-color: var(--sm-border); }
+.sharp-money-page .rec-header nav { flex: 1; min-width: 0; gap: 12px; }
+.sharp-money-page .rec-header #account-link { margin-left: auto; white-space: nowrap; }
+.sharp-money-page main.rec-main { max-width: 1460px; padding: 24px 24px 0; }
+.sharp-money-page .rec-intro { margin-bottom: 15px; gap: 28px; }
+.sharp-money-page .rec-intro h1 { color: #f0f6fd; font-size: 30px; margin-bottom: 7px; }
+.sharp-money-page .rec-eyebrow { color: #94b0c8; letter-spacing: 1.25px; margin-bottom: 8px; }
+.sharp-money-page .rec-eyebrow span { color: var(--sm-mint); background: #173631; border-color: #365e57; }
+.sharp-money-page .rec-lede { color: var(--sm-muted); max-width: 680px; line-height: 1.6; font-size: 12px; }
+.sharp-money-page .rec-refresh { color: #c0d3e5; }
+.sharp-money-page .rec-refresh small { color: var(--sm-muted); }
+.sharp-money-page button, .sharp-money-page select, .sharp-money-page .rec-button { background: #182c40; border-color: #36516b; color: #dcebf7; border-radius: 6px; }
+.sharp-money-page button:hover, .sharp-money-page select:hover { background: #203951; border-color: #6085a6; }
+.sharp-money-page :focus-visible { outline: 2px solid #8bc4f5; outline-offset: 3px; }
+.sm-explainer { margin: 0 0 15px; padding: 10px 13px; border: 1px solid #284640; border-left: 3px solid #5ba88d; border-radius: 5px; background: #102925; color: #b4cbc4; font-size: 11px; line-height: 1.6; }
+.sm-explainer strong { color: #e0f2e9; font-weight: 600; }
+.sm-demo { background: #352b1b; border-color: #8c7345; color: #ffe3a5; font-weight: 600; }
+.sharp-money-page .sm-summary { border-color: var(--sm-border); border-radius: 7px; background: #102033; padding: 9px 13px; margin-bottom: 16px; gap: 18px; flex-wrap: wrap; }
+.sharp-money-page .sm-summary > div { display: flex; gap: 8px; min-width: 0; }
+.sharp-money-page .sm-summary > div + div { border-color: var(--sm-border); padding-left: 18px; }
+.sharp-money-page .sm-summary strong { font-size: 18px; color: #e6f1fc; }
+.sharp-money-page .sm-summary span { font-size: 10px; color: var(--sm-muted); }
+.sm-filters { align-items: end; gap: 10px; }
+.sm-filters > label { flex: 1 1 125px; min-width: 0; color: #a4b9cc; font-size: 10px; }
+.sm-filters > .sm-search { flex: 2 1 220px; }
+.sm-filters select, .sm-filters input { min-width: 0; width: 100%; height: 36px; margin: 0; border: 1px solid #304a64; border-radius: 6px; background: #112237; color: #e2edf8; font: inherit; font-size: 12px; padding: 7px 9px; }
+.sm-filters input::placeholder { color: #7e99b1; opacity: 1; }
+.sm-advanced { flex: 0 0 auto; color: #a9c1d6; font-size: 11px; }
+.sm-advanced > summary { list-style: none; height: 36px; display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid #304a64; border-radius: 6px; background: #112237; cursor: pointer; user-select: none; }
+.sm-advanced > summary::-webkit-details-marker { display: none; }
+.sm-advanced > summary::after { content: '⌄'; font-size: 13px; color: #90b2cf; }
+.sm-advanced[open] { flex-basis: 100%; }
+.sm-advanced[open] > summary { width: fit-content; margin-bottom: 10px; border-color: #527896; }
+.sm-advanced[open] > summary::after { transform: rotate(180deg); }
+.sm-advanced-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 700px; padding: 12px; background: #0e1f31; border: 1px solid var(--sm-border); border-radius: 7px; }
+.sm-advanced-fields label { min-width: 0; }
+.sharp-money-page .rec-caption { color: #91a9bf; font-size: 11px; margin: 13px 0 12px; }
+.sharp-money-page .sm-workspace { display: grid; grid-template-columns: minmax(340px, .9fr) minmax(430px, 1.2fr); align-items: start; gap: 22px; min-width: 0; overflow: visible; }
+.sm-list-pane, .sm-picks, .sm-selection, #selection-content { min-width: 0; }
+.sm-picks { display: grid; gap: 12px; }
+.sharp-money-page .sm-opportunity.rec-pick { display: block; margin: 0; padding: 0; border: 1px solid var(--sm-border); border-radius: 9px; background: var(--sm-panel); overflow: hidden; transition: border-color .15s, background .15s; }
+.sharp-money-page .sm-opportunity.rec-pick:nth-child(4n + 3) { background: var(--sm-panel); }
+.sharp-money-page .sm-opportunity.rec-pick:hover { border-color: #6186aa; background: #172b40; }
+.sharp-money-page .sm-opportunity.rec-pick.is-selected { background: #193149; border-color: #83b4de; box-shadow: inset 3px 0 #80b6df; }
+.sharp-money-page .sm-opportunity .rec-toggle.sm-select { display: block; width: 100%; min-width: 0; min-height: 0; height: auto; padding: 13px 14px 11px; border: 0; border-radius: 0; background: transparent; color: var(--sm-text); text-align: left; white-space: normal; font-size: 12px; cursor: pointer; box-shadow: none; }
+.sharp-money-page .sm-opportunity .rec-toggle.sm-select:hover { background: transparent; color: var(--sm-text); }
+.sharp-money-page .sm-opportunity .rec-toggle.sm-select:focus-visible { outline-offset: -3px; border-radius: 8px; }
+.sharp-money-page .sm-select span { transform: none; }
+/* The shared rec-toggle rules set every span to inline-block. */
+.sharp-money-page .sm-select .sm-card-head, .sharp-money-page .sm-select .sm-card-offer,
+.sharp-money-page .sm-select .sm-card-reference, .sharp-money-page .sm-select .sm-card-foot { display: flex; }
+.sharp-money-page .sm-select .sm-card-body { display: grid; }
+.sharp-money-page .sm-select .sm-card-selection, .sharp-money-page .sm-select .sm-player,
+.sharp-money-page .sm-select .sm-support { display: block; }
+.sharp-money-page .sm-select .sm-book, .sharp-money-page .sm-select .sm-source-logos { display: inline-flex; }
+.sm-card-head { display: flex; align-items: center; gap: 7px; min-width: 0; margin-bottom: 11px; color: #99b1c7; font-size: 10px; }
+.sm-sport { display: inline-flex; align-items: center; padding: 2px 5px; border-radius: 4px; background: #253d55; color: #c0daf0; font-size: 9px; font-weight: 700; letter-spacing: .05em; flex-shrink: 0; }
+.sm-game { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-start { margin-left: auto; flex-shrink: 0; color: #8ea9bf; font-size: 9px; }
+.sm-card-body { display: grid; grid-template-columns: minmax(88px, 110px) minmax(0, 1fr); align-items: start; gap: 12px; }
+.sm-card-body .sm-support { min-width: 0; padding-top: 1px; }
+.sm-support > strong { display: block; color: var(--sm-mint); font-size: 27px; font-weight: 700; line-height: 1.1; letter-spacing: -.65px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sm-support > span { display: block; margin-top: 5px; color: #9bb6c9; font-size: 9px; line-height: 1.3; }
+.sm-card-selection, .sm-player { min-width: 0; }
+.sm-player > strong { display: block; color: #f0f5fa; font-size: 14px; line-height: 1.35; font-weight: 650; overflow-wrap: anywhere; }
+.sm-player > span, .sm-player > small { display: block; margin-top: 2px; color: #acbfd1; font-size: 10px; line-height: 1.35; }
+.sm-card-offer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.sm-book { display: inline-flex; align-items: center; min-width: 0; gap: 6px; color: #b7cbdd; font-size: 10px; }
+.sm-book img, .sm-source-logos img { display: block; width: 17px; height: 17px; object-fit: contain; flex-shrink: 0; }
+.sm-book > span { min-width: 0; overflow-wrap: anywhere; }
+.sm-card-offer .sm-odds { color: #edf6ff; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-card-reference { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; font-size: 9px; color: #839db4; }
+.sm-card-reference > strong { color: #bbcce0; font-size: 11px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.sm-source-logos { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
+.sm-source-logos img { width: 13px; height: 13px; }
+.sm-card-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid #2c445a; padding-top: 9px; margin-top: 12px; color: #86a0b7; font-size: 9px; }
+.sm-advantage { color: var(--sm-mint); }
+.sm-advantage > strong { font-size: 11px; font-variant-numeric: tabular-nums; }
+.sm-age { margin-left: auto; min-width: 0; text-align: right; color: #8ba4b9; }
+.sm-card-foot > :last-child:not(.sm-age):not(.sm-advantage) { color: #92bddf; }
+.sm-selection { position: sticky; top: 18px; max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); border: 1px solid #36526d; border-radius: 10px; background: var(--sm-panel); box-shadow: 0 8px 30px #020c1730; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #42617d #102033; }
+.sm-selection::-webkit-scrollbar { width: 7px; }
+.sm-selection::-webkit-scrollbar-track { background: #102033; border-radius: 10px; }
+.sm-selection::-webkit-scrollbar-thumb { background: #42617d; border: 2px solid #102033; border-radius: 10px; }
+.sm-selection::-webkit-scrollbar-thumb:hover { background: #6689a8; }
+.sharp-money-page #back-to-list { display: none; }
+.sm-detail { padding: 22px; color: #bccdde; font-size: 12px; line-height: 1.55; }
+.sm-detail-heading { display: flex; align-items: flex-start; gap: 19px; margin-bottom: 18px; }
+.sm-detail-support { flex: 0 0 auto; max-width: 43%; }
+.sm-detail-support > strong { display: block; color: var(--sm-mint); font-size: 38px; letter-spacing: -.9px; line-height: 1.1; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sm-detail-support > span, .sm-detail-support > small { display: block; font-size: 10px; color: #a9bfcf; margin-top: 5px; }
+.sm-detail-event { min-width: 0; padding-top: 2px; }
+.sharp-money-page .sm-detail-event h2 { color: #eef5fb; font-size: 21px; line-height: 1.25; letter-spacing: -.35px; margin: 0 0 5px; overflow-wrap: anywhere; }
+.sm-detail-event p { margin: 0; color: #9cb2c8; font-size: 11px; }
+.sm-detail-event small, .sm-detail-event time { color: #8da5bd; font-size: 10px; }
+.sm-featured-offer { display: flex; align-items: center; gap: 15px; background: #1a3046; border: 1px solid #3b5975; border-radius: 8px; padding: 15px; margin-bottom: 16px; }
+.sm-featured-selection { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+.sm-featured-selection > img { width: 31px; height: 31px; object-fit: contain; flex-shrink: 0; }
+.sm-featured-selection > div { min-width: 0; }
+.sm-featured-selection strong { display: block; color: #eaf3fc; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.sm-featured-selection small, .sm-featured-selection span { display: block; color: #a1b9cf; font-size: 10px; }
+.sm-featured-price { color: #eef7fe; font-size: 28px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-featured-price small { display: block; color: #91adc5; font-size: 9px; font-weight: 400; letter-spacing: 0; margin-top: 5px; text-align: right; }
+.sm-featured-price > strong { font-size: inherit; }
+.sm-featured-price > span { display: block; color: #91adc5; font-size: 9px; font-weight: 400; letter-spacing: 0; margin-top: 5px; text-align: right; }
+.sharp-money-page .sm-bet-link { border: 1px solid #4e7b9c; border-radius: 5px; background: #254967; color: #dbf0ff; font-size: 11px; font-weight: 600; padding: 8px 11px; white-space: nowrap; flex-shrink: 0; }
+.sharp-money-page .sm-bet-link:hover { background: #2c577b; text-decoration: none; }
+.sm-detail-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px; gap: 10px; }
+.sm-detail-metrics > div { min-width: 0; border-right: 1px solid #2f465e; padding-right: 10px; }
+.sm-detail-metrics > div:last-child { border: 0; padding-right: 0; }
+.sm-detail-metrics strong { display: block; color: #e1ecf5; font-size: 17px; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sm-detail-metrics .sm-advantage > strong { color: var(--sm-mint); }
+.sm-detail-metrics span, .sm-detail-metrics small { display: block; margin-top: 3px; color: #8fa8bf; font-size: 10px; }
+.sm-detail h3 { color: #dcebf8; font-size: 13px; margin: 0; font-weight: 600; }
+.sm-orderbook { padding-top: 17px; border-top: 1px solid #314a61; }
+.sm-depth-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.sm-depth-toolbar > div { min-width: 0; }
+.sm-depth-toolbar p, .sm-depth-toolbar small { color: #8da8c0; font-size: 10px; margin: 3px 0 0; }
+.sm-depth-toolbar button { flex: 0 0 auto; padding: 5px 9px; font-size: 10px; }
+.sm-depth-summary { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; color: #c1d2e1; font-size: 11px; }
+.sm-depth-summary strong { color: #edf6fe; font-size: 16px; font-variant-numeric: tabular-nums; }
+.sm-depth-summary > div > span { display: block; color: #91aabd; font-size: 9px; margin-top: 2px; }
+.sm-depth-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: #90a9bd; font-size: 9px; margin-bottom: 12px; }
+.sm-depth-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.sm-depth-legend img { width: 12px; height: 12px; object-fit: contain; }
+.sm-depth-legend i, .sm-depth-legend b { width: 7px; height: 7px; border-radius: 2px; display: inline-block; background: #8fa8bd; }
+.sm-ladder, .sm-support-bars { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.sm-level { display: grid; grid-template-columns: 55px 63px minmax(0, 1fr) 64px; align-items: center; gap: 10px; min-height: 30px; padding: 2px 0; font-variant-numeric: tabular-nums; }
+.sm-level-sources { display: inline-flex; align-items: center; gap: 4px; min-width: 0; flex-wrap: wrap; color: #adc3d7; font-size: 9px; }
+.sm-level-sources img { width: 14px; height: 14px; object-fit: contain; flex-shrink: 0; }
+.sm-level-price { color: #e4eef8; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.sm-level-bar-track { display: flex; align-items: center; width: 100%; min-width: 0; height: 22px; border-radius: 3px; background: #0d1b2a; overflow: hidden; }
+.sm-level-bar { display: flex; align-items: stretch; min-width: 0; max-width: 100%; height: 100%; border-radius: 3px; overflow: hidden; }
+.sm-level-segment { display: block; flex-shrink: 0; height: 100%; min-width: 1px; background: #659db9; }
+.sm-level-segment + .sm-level-segment { border-left: 1px solid #13223566; }
+.sm-level-segment[data-book="nv"], .sm-depth-legend [data-book="nv"] > i { background: var(--sm-nv); }
+.sm-level-segment[data-book="kal"], .sm-depth-legend [data-book="kal"] > i { background: var(--sm-kal); }
+.sm-level-segment[data-book="px"], .sm-depth-legend [data-book="px"] > i { background: var(--sm-px); }
+.sm-level.is-unqualified .sm-level-bar, .sm-level.is-muted .sm-level-bar { opacity: .42; }
+.sm-level-size { color: #c5d5e4; font-size: 12px; font-weight: 600; text-align: right; white-space: nowrap; }
+.sm-depth-note, .sm-depth-status { color: #8fa8be; font-size: 10px; line-height: 1.6; margin: 11px 0 0; overflow-wrap: anywhere; }
+.sm-depth-status { border: 1px solid #2b4359; background: #102032; padding: 9px 11px; border-radius: 5px; }
+.sm-support-bars { margin-top: 9px; }
+.sm-support-bars .sm-level-price { color: #9ab1c6; font-size: 11px; font-weight: 400; }
+.sm-level-price small { display: block; color: #819cb2; font-size: 9px; }
+.sm-venue-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.sm-venue-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; font-size: 10px; }
+.sm-venue-actions img { width: 13px; height: 13px; object-fit: contain; }
+.sm-detail-section { border-top: 1px solid #2f475e; margin-top: 18px; }
+.sm-detail-section > summary { cursor: pointer; color: #bdd1e3; font-size: 11px; font-weight: 600; padding: 12px 0; }
+.sm-detail-section > summary:hover { color: #eef5fd; }
+.sm-detail-section > summary > span { margin-left: 5px; color: #819cb2; font-size: 9px; font-weight: 400; }
+.sm-offers { padding: 0; margin: 0; list-style: none; }
+.sm-offers li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 9px; padding: 10px 0; border-top: 1px solid #294157; }
+.sm-offers li.is-selected { border-left: 2px solid var(--sm-mint); padding-left: 10px; }
+.sm-alternative-book { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.sm-alternative-book > img { width: 18px; height: 18px; object-fit: contain; }
 .sharp-money-page .rec-offer { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-width: 0; flex-wrap: wrap; }
-.sharp-money-page .rec-offer strong { font-size: 13px; }
-.sm-player { min-width: 195px; }
-.sm-player > strong { display: block; font-size: 13px; }
-.sm-outcome { color: #b3d5e4 !important; }
-.sm-support strong { font-size: 16px; color: #d1f5df; }
-.sm-advantage strong { color: #85d8b5; }
-.sm-detail { padding: 20px; color: #bfccd4; font-size: 12px; line-height: 1.65; }
-.sm-detail h2 { font-size: 16px; color: #f1f4f6; margin: 0 0 12px; }
-.sm-detail h3 { color: #dce8ec; font-size: 13px; margin: 0 0 8px; }
-.sm-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr); gap: 24px; }
-.sm-detail-grid > section { min-width: 0; }
-.sm-detail p { margin: 9px 0 12px; }
-.sm-venues { display: flex; flex-wrap: wrap; gap: 5px; }
-.sm-venue { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #3b5058; border-radius: 4px; padding: 3px 6px; white-space: nowrap; font-size: 10px; color: #c0d5dd; }
-.sm-offers, .sm-venue-list { list-style: none; padding: 0; margin: 0; }
-.sm-offers li, .sm-venue-list li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 9px; padding: 10px 0; border-top: 1px solid #34414a; }
-.sm-offers li.is-selected { border-left: 2px solid #67bcab; padding-left: 9px; }
-.sm-offers .sm-offer-context { display: grid; gap: 2px; text-align: right; color: #c4d0d6; }
-.sm-offers small, .sm-venue-list small { display: block; color: #9eacb6; }
-.sm-detail button { font-size: 11px; }
-.sm-history { margin-top: 20px; }
-.sm-history-chart { width: 100%; max-width: 650px; height: 155px; display: block; background: #141e24; border: 1px solid #34414a; border-radius: 5px; }
-.sm-history-chart text { fill: #a7b7c4; font: 10px system-ui, sans-serif; }
-.sm-history-chart line { stroke: #344650; stroke-width: 1; }
-.sm-history-chart circle { fill: #82dfb7; }
-.sm-history-caption { color: #9eacb6; font-size: 11px; }
+.sharp-money-page .rec-offer strong { color: #e3f0fa; font-size: 12px; }
+.sm-offer-context { display: grid; gap: 2px; text-align: right; color: #a9bfd1; font-size: 10px; }
+.sm-offer-context small { color: #819cb2; font-size: 9px; }
+.sm-history { margin-top: 12px; }
+.sm-history-chart { display: block; width: 100%; max-width: 650px; height: 155px; background: #0f1d2c; border: 1px solid #294157; border-radius: 5px; }
+.sm-history-chart text { fill: #90a9bd; font: 10px system-ui, sans-serif; }
+.sm-history-chart line { stroke: #304b63; }
+.sm-history-chart circle { fill: #7cdeb6; }
+.sm-history-caption { color: #8fa8be; font-size: 10px; margin: 9px 0; }
+.sm-detail-footnote { color: #819bb2; font-size: 10px; line-height: 1.6; margin: 17px 0 0; }
 .sm-sidebar { margin-top: 22px; }
-.sm-summary { flex-wrap: wrap; gap: 15px 24px; }
-.sm-summary > div + div { padding-left: 24px; }
-.sharp-money-page #show-more { display: block; margin: 14px auto; }
-@media (max-width: 860px) {
-  .sharp-money-page .rec-header { padding: 13px 14px; gap: 8px; }
-  .sharp-money-page .rec-header nav { gap: 10px; }
-  .sharp-money-page .rec-brand { font-size: 18px; }
-  .sharp-money-page main.rec-main { padding: 20px 14px 0; }
-  .sharp-money-page .rec-intro { align-items: flex-start; flex-direction: column; gap: 14px; }
-  .sharp-money-page .rec-refresh { justify-items: start; }
-  .sm-summary { padding: 12px; gap: 13px; }
-  .sm-summary > div { display: grid; gap: 2px; }
-  .sm-summary > div + div { padding-left: 13px; }
-  .sm-summary strong { font-size: 20px; }
-  .sm-filters label { flex-basis: calc(50% - 6px); }
-  .sm-filters .sm-search { flex-basis: 100%; }
-  .sm-table { min-width: 0; display: block; }
-  .sm-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .sm-table tbody { display: block; }
-  .sm-table .rec-pick { display: grid; grid-template-columns: 1fr 1fr; padding: 13px; gap: 12px; border-bottom: 1px solid #495157; }
-  .sm-table .rec-pick > td { display: block; grid-area: auto; padding: 0; border: 0; min-width: 0; text-align: left; }
-  .sm-table .rec-pick > .sm-player { grid-column: 1 / -1; }
-  .sm-table .rec-pick [data-label]::before { content: attr(data-label); display: block; font-size: 9px; color: #98aab5; margin-bottom: 4px; }
-  .sm-table .rec-details-cell { display: flex !important; align-items: end; justify-content: end; }
-  .sm-table .rec-detail-row, .sm-table .rec-detail-row > td { display: block; }
-  .sm-detail { padding: 15px; }
-  .sm-detail-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .sm-offers .sm-offer-context { text-align: left; }
+.sharp-money-page .rec-method, .sharp-money-page .rec-coverage { background: #102033; border-color: #2d455e; color: #a4bacd; }
+.sharp-money-page .rec-method p { color: #91aabd; }
+.sharp-money-page .rec-empty { border-color: #385570; color: #cbdfed; }
+.sharp-money-page .rec-empty p { color: #94afc5; }
+.sharp-money-page .rec-footer { max-width: 1460px; padding: 20px 24px; color: #8099ae; }
+.sharp-money-page #show-more { display: block; margin: 14px auto 0; padding: 8px 18px; font-size: 11px; }
+@media (max-width: 1100px) {
+  .sharp-money-page .sm-workspace { grid-template-columns: minmax(300px, .9fr) minmax(390px, 1.2fr); gap: 16px; }
+  .sm-detail { padding: 17px; }
+  .sm-detail-heading { gap: 14px; }
+  .sm-detail-support > strong { font-size: 32px; }
+  .sharp-money-page .sm-detail-event h2 { font-size: 18px; }
+  .sm-featured-offer { padding: 12px; gap: 10px; flex-wrap: wrap; }
+  .sm-featured-price { font-size: 25px; }
+  .sm-level { grid-template-columns: 47px 58px minmax(0, 1fr) 60px; gap: 7px; }
+}
+@media (max-width: 900px) {
+  .sharp-money-page .rec-header { padding: 13px 16px; }
+  .sharp-money-page main.rec-main { padding: 20px 16px 0; }
+  .sharp-money-page .sm-workspace { display: block; }
+  .sm-list-pane { max-width: 640px; margin: 0 auto; }
+  .sharp-money-page .sm-selection { display: none; position: static; width: 100%; max-width: 720px; max-height: none; margin: 0 auto; overflow: visible; }
+  .sm-workspace.is-detail-open .sm-list-pane { display: none; }
+  .sharp-money-page .sm-workspace.is-detail-open .sm-selection { display: block; }
+  .sharp-money-page #back-to-list { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; margin: 12px 15px 0; padding: 5px 0; color: #9ec5e7; font-size: 11px; }
+  .sharp-money-page #back-to-list:hover { color: #dcefff; text-decoration: underline; }
+  .sm-detail { padding: 17px; }
+  .sm-featured-offer { flex-wrap: nowrap; }
+  .sm-card-body { grid-template-columns: minmax(88px, .72fr) minmax(0, 2fr); }
+  .sm-support > strong { font-size: 31px; }
+  .sm-player > strong { font-size: 15px; }
+  .sm-card-offer .sm-odds { font-size: 20px; }
+  .sm-card-head, .sm-card-foot { font-size: 10px; }
+  .sm-start { font-size: 10px; }
+}
+@media (max-width: 600px) {
+  .sharp-money-page .rec-header { padding: 12px 11px; gap: 12px; }
+  .sharp-money-page .rec-header .rec-brand { font-size: 17px; }
+  .sharp-money-page .rec-header nav { gap: 8px; font-size: 10px; }
+  .sharp-money-page .rec-header .select-wrapper { min-width: 0; }
+  .sharp-money-page main.rec-main { padding: 18px 12px 0; }
+  .sharp-money-page .rec-intro { display: block; margin-bottom: 14px; }
+  .sharp-money-page .rec-intro h1 { font-size: 26px; }
+  .sharp-money-page .rec-eyebrow { font-size: 9px; }
+  .sharp-money-page .rec-lede { font-size: 11px; }
+  .sharp-money-page .rec-refresh { margin-top: 12px; font-size: 10px; }
+  .sharp-money-page .rec-refresh small { font-size: 9px; }
+  .sm-explainer { font-size: 10px; padding: 9px 11px; line-height: 1.6; }
+  .sharp-money-page .sm-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 9px 10px; margin-bottom: 13px; }
+  .sharp-money-page .sm-summary > div { display: grid; gap: 2px; align-content: start; }
+  .sharp-money-page .sm-summary > div + div { padding-left: 9px; }
+  .sharp-money-page .sm-summary strong { font-size: 17px; }
+  .sharp-money-page .sm-summary span { font-size: 9px; }
+  .sm-filters { gap: 8px; }
+  .sm-filters > label { flex: 1 1 calc(50% - 4px); font-size: 9px; }
+  .sm-filters > .sm-search { flex-basis: 100%; }
+  .sm-filters > #support-custom-label { flex-basis: calc(50% - 4px); }
+  .sm-filters select, .sm-filters input { height: 35px; font-size: 11px; padding: 7px 8px; }
+  .sm-advanced { flex: 1 1 calc(50% - 4px); }
+  .sm-advanced > summary { justify-content: space-between; height: 35px; }
+  .sm-advanced-fields { grid-template-columns: minmax(0, 1fr); gap: 9px; padding: 10px; }
+  .sharp-money-page .rec-caption { font-size: 10px; line-height: 1.55; margin: 11px 0; }
+  .sm-picks { gap: 10px; }
+  .sharp-money-page .sm-opportunity .rec-toggle.sm-select { padding: 12px; }
+  .sm-card-body { grid-template-columns: minmax(72px, .8fr) minmax(0, 1.85fr); gap: 10px; }
+  .sm-support > strong { font-size: 27px; }
+  .sm-player > strong { font-size: 14px; }
+  .sm-card-head { gap: 5px; font-size: 9px; }
+  .sm-start { font-size: 9px; }
+  .sm-card-offer .sm-odds { font-size: 18px; }
+  .sm-card-foot { font-size: 9px; gap: 5px; }
+  .sm-detail { padding: 15px 12px; }
+  .sm-detail-heading { gap: 12px; margin-bottom: 15px; }
+  .sm-detail-support > strong { font-size: 30px; }
+  .sm-detail-support > span, .sm-detail-support > small { font-size: 9px; }
+  .sharp-money-page .sm-detail-event h2 { font-size: 17px; }
+  .sm-detail-event p { font-size: 10px; }
+  .sm-featured-offer { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 11px; gap: 10px; }
+  .sm-featured-selection > img { width: 26px; height: 26px; }
+  .sm-featured-selection strong { font-size: 12px; }
+  .sm-featured-selection { gap: 8px; }
+  .sm-featured-price { font-size: 25px; }
+  .sharp-money-page .sm-bet-link { grid-column: 1 / -1; justify-self: end; margin-left: 0; padding: 6px 10px; font-size: 10px; }
+  .sm-detail-metrics { gap: 8px; }
+  .sm-detail-metrics > div { padding-right: 8px; }
+  .sm-detail-metrics strong { font-size: 15px; }
+  .sm-detail-metrics span, .sm-detail-metrics small { font-size: 9px; }
+  .sm-depth-summary { font-size: 10px; }
+  .sm-depth-summary strong { font-size: 14px; }
+  .sm-depth-legend { gap: 9px; }
+  .sm-level { grid-template-columns: 44px 51px minmax(0, 1fr) 55px; gap: 6px; min-height: 28px; }
+  .sm-level-sources { gap: 2px; }
+  .sm-level-sources img { width: 13px; height: 13px; }
+  .sm-level-price, .sm-level-size { font-size: 11px; }
+  .sm-level-bar-track { height: 19px; }
+  .sm-depth-toolbar { gap: 7px; }
+  .sm-detail h3 { font-size: 12px; }
+  .sm-depth-note, .sm-depth-status, .sm-detail-footnote { font-size: 9px; }
+  .sm-offer-context { text-align: left; }
+  .sm-history-chart { height: auto; min-height: 115px; }
+  .sharp-money-page .rec-footer { padding: 17px 12px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sharp-money-page .sm-opportunity.rec-pick { transition: none; }
 }

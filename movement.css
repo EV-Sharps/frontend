@@ -1,12 +1,12 @@
 html:has(.movement-page) { height: auto; overflow: auto; }
-body.movement-page { margin: 0; min-height: 100vh; height: auto; overflow: auto; background: #131719; color: #edf1f3; font: 14px Inter, system-ui, sans-serif; }
+body.movement-page { margin: 0; min-height: 100vh; height: auto; overflow: auto; background: #0f1116; color: #e6e9ef; font: 14px Inter, system-ui, sans-serif; }
 body.movement-page::before { display: none; }
 .movement-page * { box-sizing: border-box; }
 .movement-page [hidden] { display: none !important; }
 .movement-page a { color: #8dcbf7; }
-.movement-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; border-bottom: 1px solid #303a40; }
+.movement-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; border-bottom: 1px solid #2a3042; }
 .movement-header .brand { font-size: 22px; font-weight: 750; color: #f0f4f5; text-decoration: none; }
-.movement-header .brand span { color: #76dcac; }
+.movement-header .brand span { color: #77c3ff; }
 .movement-header nav { display: flex; align-items: center; gap: 20px; }
 main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px; height: auto; overflow: visible; padding: 30px; margin: auto; }
 .movement-page h1 { font-size: clamp(27px, 3vw, 36px); margin: 7px 0 12px; text-align: left; letter-spacing: -.7px; }
@@ -14,58 +14,58 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 .movement-page p { line-height: 1.65; }
 .movement-intro { display: flex; justify-content: space-between; gap: 25px; align-items: start; margin-bottom: 18px; }
 .movement-intro p:not(.eyebrow) { color: #b1bdc5; max-width: 680px; margin-bottom: 0; }
-.movement-page .eyebrow { font-size: 10px; font-weight: 700; color: #82d3ac; letter-spacing: 1.4px; margin: 0 0 8px; }
+.movement-page .eyebrow { font-size: 10px; font-weight: 700; color: #77c3ff; letter-spacing: 1.4px; margin: 0 0 8px; }
 .movement-page .refresh { display: grid; justify-items: end; gap: 8px; font-size: 12px; min-width: 180px; }
 .movement-page .refresh small { color: #a5b5bd; }
-.movement-page .panel { border: 1px solid #354047; background: #1b2226; border-radius: 8px; margin-bottom: 20px; padding: 24px; }
-.movement-page .day-note { font-size: 12px; color: #a7bab1; border-left: 2px solid #76dcac; padding-left: 12px; margin: 0 0 22px; }
+.movement-page .panel { border: 1px solid #2a3042; background: #151a22; border-radius: 8px; margin-bottom: 20px; padding: 24px; }
+.movement-page .day-note { font-size: 12px; color: #9aa3b2; border-left: 2px solid #77c3ff; padding-left: 12px; margin: 0 0 22px; }
 .movement-page .section-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .movement-page .section-heading > span { font-size: 12px; color: #a4b3bd; }
 .movement-page label { display: grid; gap: 7px; font-size: 12px; color: #bdc9d0; min-width: 0; }
-.movement-page button, .movement-page select, .movement-page input { font: inherit; color: #edf3f6; background: #202b32; border: 1px solid #4a5b67; border-radius: 4px; padding: 10px 12px; }
+.movement-page button, .movement-page select, .movement-page input { font: inherit; color: #edf3f6; background: #1c2431; border: 1px solid #344155; border-radius: 4px; padding: 10px 12px; }
 .movement-page select, .movement-page input { width: 100%; min-width: 0; }
 .movement-page input::placeholder { color: #93a5b1; }
 .movement-page button { cursor: pointer; }
-.movement-page button:hover:not(:disabled) { background: #34434e; border-color: #85a2b8; }
+.movement-page button:hover:not(:disabled) { background: #243247; border-color: #77c3ff; }
 .movement-page button:disabled { cursor: default; opacity: .5; }
 .movement-page :focus-visible { outline: 2px solid #a9e1ff; outline-offset: 3px; }
 .movement-page .filters { display: grid; grid-template-columns: .65fr 1.3fr 1.2fr; gap: 16px; padding: 20px 24px; }
 .movement-page .prop-field { display: grid; gap: 7px; min-width: 0; font-size: 12px; color: #bdc9d0; align-content: start; }
 #prop-picker { position: relative; }
-#prop-picker > summary { cursor: pointer; border: 1px solid #4a5b67; background: #202b32; border-radius: 4px; padding: 10px 12px; color: #edf3f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.movement-page .prop-menu { position: absolute; z-index: 12; left: 0; right: 0; top: calc(100% + 6px); min-width: 200px; max-height: 350px; overflow: auto; border: 1px solid #526575; border-radius: 6px; background: #202b32; padding: 10px; box-shadow: 0 12px 25px #0008; }
+#prop-picker > summary { cursor: pointer; border: 1px solid #344155; background: #1c2431; border-radius: 4px; padding: 10px 12px; color: #edf3f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.movement-page .prop-menu { position: absolute; z-index: 12; left: 0; right: 0; top: calc(100% + 6px); min-width: 200px; max-height: 350px; overflow: auto; border: 1px solid #344155; border-radius: 6px; background: #1c2431; padding: 10px; box-shadow: 0 12px 25px #0008; }
 .movement-page .prop-menu button { width: 100%; margin-bottom: 8px; text-align: left; }
 .movement-page .prop-menu label { display: flex; align-items: center; gap: 8px; padding: 7px 4px; cursor: pointer; }
-.movement-page input[type=checkbox] { width: 15px; height: 15px; margin: 0; accent-color: #76dcac; flex-shrink: 0; }
+.movement-page input[type=checkbox] { width: 15px; height: 15px; margin: 0; accent-color: #77c3ff; flex-shrink: 0; }
 .movement-page .muted { color: #a6b7c1; font-size: 12px; }
 .movement-page .chart-scale { width: 155px; flex-shrink: 0; }
 #chart-subtitle { margin: 9px 0 0; }
 .movement-page .selection-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 760px; margin: 20px 0 8px; }
-.movement-page .selection-metrics > div { border-left: 2px solid #3f535b; padding-left: 13px; }
+.movement-page .selection-metrics > div { border-left: 2px solid #2a3042; padding-left: 13px; }
 .movement-page .selection-metrics strong { display: block; font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums; margin: 5px 0; }
 .movement-page .selection-metrics span, .movement-page .selection-metrics small { font-size: 11px; color: #9eb0ba; }
 #movement-chart { width: 100%; height: 420px; min-height: 350px; }
 #chart-status { padding: 20px 0; }
-#book-picker { min-width: 0; margin: 12px 0 0; padding: 10px; border: 1px solid #3c4950; border-radius: 6px; }
+#book-picker { min-width: 0; margin: 12px 0 0; padding: 10px; border: 1px solid #2a3042; border-radius: 6px; }
 #book-picker legend { padding: 0 6px; color: #c5d3db; font-size: 12px; font-weight: 600; }
 .movement-page .book-picker-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 #book-price-time { font-size: 11px; font-variant-numeric: tabular-nums; }
 .movement-page .book-picker-actions { display: flex; gap: 5px; margin-left: auto; }
 .movement-page .book-picker-actions button { min-width: 42px; padding: 5px 9px; font-size: 11px; }
 #book-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 210px)); gap: 8px; }
-.movement-page .movement-book { display: grid; grid-template-columns: minmax(0, 1fr) 41px; min-width: 0; background: #202c34; border: 1px solid #42535f; border-radius: 5px; }
+.movement-page .movement-book { display: grid; grid-template-columns: minmax(0, 1fr) 41px; min-width: 0; background: #1c2431; border: 1px solid #344155; border-radius: 5px; }
 .movement-page #book-options .movement-book label { display: grid; grid-template-columns: 15px 16px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 4px 6px; padding: 7px 6px; cursor: pointer; }
 .movement-page .movement-book input { grid-column: 1; grid-row: 1; }
 .movement-page .movement-book .book-logo { grid-column: 2; grid-row: 1; width: 16px; height: 16px; object-fit: contain; }
 .movement-page .movement-book .book-name { grid-column: 3; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c7d6df; font-size: 11px; line-height: 1.2; }
 .movement-page .movement-book .book-price { grid-column: 2 / 4; grid-row: 2; color: #edf5fa; font-size: 14px; line-height: 1.2; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .movement-page .movement-book .book-swatch { grid-column: 1; grid-row: 2; display: block; width: 16px; height: 0; border-top: 3px solid var(--book-color, currentColor); }
-.movement-page .movement-book .book-focus { align-self: stretch; padding: 4px; border: 0; border-left: 1px solid #42535f; border-radius: 0 4px 4px 0; background: #263640; color: #bbd3e2; font-size: 10px; }
+.movement-page .movement-book .book-focus { align-self: stretch; padding: 4px; border: 0; border-left: 1px solid #344155; border-radius: 0 4px 4px 0; background: #223047; color: #bbd3e2; font-size: 10px; }
 .movement-page .movement-book:focus-within { outline: 2px solid #a9e1ff; outline-offset: 2px; }
 .movement-page .movement-book .book-focus:focus-visible { outline-offset: -3px; }
-.movement-page .movement-book.is-focused { border-color: #8ac6ef; background: #243c4b; }
+.movement-page .movement-book.is-focused { border-color: #8ac6ef; background: #21334a; }
 .movement-page .movement-book.is-focused .book-focus { color: #132534; background: #a9d7f4; border-color: #8ac6ef; }
-.movement-page .movement-book.is-hidden { background: #171e22; border-style: dashed; border-color: #38464f; }
+.movement-page .movement-book.is-hidden { background: #111722; border-style: dashed; border-color: #2a3042; }
 .movement-page .movement-book.is-hidden .book-name, .movement-page .movement-book.is-hidden .book-price { color: #8b9da8; }
 .movement-page .movement-book.is-hidden .book-logo, .movement-page .movement-book.is-hidden .book-swatch { opacity: .4; }
 .movement-page .book-picker-hint { margin: 10px 0 0; color: #9fb2bf; font-size: 11px; }
@@ -73,21 +73,9 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 .movement-page .empty { padding: 36px; }
 .movement-page .empty a { display: inline-block; margin: 10px 20px 0 0; }
 .movement-page .empty-state { padding: 30px 0; color: #a6b7c1; }
-.movement-page .table-wrap { overflow: auto; border: 1px solid #3c4950; border-radius: 5px; max-height: 610px; }
-.movement-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-.movement-table th, .movement-table td { padding: 13px 15px; border-bottom: 1px solid #34424a; text-align: right; white-space: nowrap; }
-.movement-table th { font-size: 11px; color: #b8c9d3; background: #28333a; position: sticky; top: 0; z-index: 2; }
-.movement-table th:first-child, .movement-table td:first-child { text-align: left; min-width: 240px; white-space: normal; }
-.movement-table td strong { font-size: 14px; font-weight: 600; }
-.movement-table td small { display: block; color: #98adb9; font-size: 10px; line-height: 1.6; margin-top: 4px; }
-.movement-table tbody tr { cursor: pointer; }
-.movement-table tbody tr:hover { background: #253239; }
-.movement-table tbody tr.is-selected { background: #223c30; }
-.movement-table tr:last-child td { border-bottom: 0; }
-.movement-page .shortening { color: #91e7b4; }
-.movement-page .drifting { color: #eeaba5; }
+.movement-page .shortening { color: #77c3ff; }
+.movement-page .drifting { color: #f3adad; }
 .movement-page .unchanged { color: #c3cdd4; }
-.movement-table .chart-row { font-size: 11px; padding: 7px 10px; }
 .movement-page .pagination { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 16px; font-size: 12px; color: #a6b7c1; }
 .movement-page .methodology { color: #a7b9c5; font-size: 12px; }
 .movement-page .methodology summary { cursor: pointer; color: #d3e1ea; font-size: 13px; }
@@ -116,7 +104,7 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
   #book-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .movement-table th, .movement-table td { padding: 11px; }
   .movement-table th:first-child, .movement-table td:first-child { min-width: 195px; }
-  .movement-table td:first-child { position: sticky; left: 0; background: #1b2226; }
+  .movement-table td:first-child { position: sticky; left: 0; background: #151a22; }
   .movement-table .is-selected td:first-child { background: #223c30; }
   .movement-table th:first-child { left: 0; z-index: 3; }
 }
@@ -125,4 +113,136 @@ main.movement-main { display: block; flex: none; width: 100%; max-width: 1450px;
 }
 
 .movement-page .selection-metrics small { display: block; overflow-wrap: anywhere; line-height: 1.5; }
-.movement-table .fair-coverage { white-space: normal; min-width: 110px; max-width: 230px; }
+
+/* A compact play feed stays beside the selected market's full price history. */
+.movement-header { padding: 16px 28px; background: #111620; border-color: #2a3042; }
+main.movement-main { max-width: 1560px; padding: 24px 28px; }
+.movement-intro { align-items: center; margin-bottom: 14px; }
+.movement-page h1 { font-size: 32px; margin: 4px 0 7px; letter-spacing: -.9px; }
+.movement-intro p:not(.eyebrow) { margin-top: 0; font-size: 13px; }
+.movement-page .eyebrow { color: #77c3ff; letter-spacing: 1.25px; }
+.movement-page .day-note { margin-bottom: 20px; color: #9aa3b2; }
+.movement-page .panel { border-color: #2a3042; border-radius: 10px; }
+.movement-page .filters { margin: 0 0 20px; padding: 17px 18px; background: #131923; }
+.advanced-filters { display: contents; }
+.movement-page .toggle-filters { display: none; }
+.movement-page .filters select, .movement-page .filters input, #prop-picker > summary { padding: 9px 10px; font-size: 12px; background: #1a2230; }
+.movement-page .window-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.window-toolbar > div:first-child { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; min-width: 0; }
+.movement-page .toolbar-label { font-size: 13px; font-weight: 650; color: #e6e9ef; }
+.movement-page .window-coverage { margin: -4px 0 16px; font-size: 11px; line-height: 1.6; color: #b1c7dc; }
+.movement-page .window-chips { display: flex; flex-shrink: 0; gap: 4px; padding: 4px; border: 1px solid #2a3042; border-radius: 8px; background: #111720; }
+.movement-page .window-chips button { border: 1px solid transparent; border-radius: 5px; padding: 7px 13px; background: transparent; color: #9aa3b2; font-size: 12px; font-weight: 650; }
+.movement-page .window-chips button[aria-pressed="true"] { color: #101d2c; background: #77c3ff; border-color: #77c3ff; }
+.movement-page .window-chips button:hover:not([aria-pressed="true"]) { color: #e6e9ef; background: #202d40; }
+.movement-workspace { display: grid; grid-template-columns: minmax(360px, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.movement-page .slate-panel { padding: 18px; min-width: 0; }
+.slate-panel .section-heading { align-items: center; margin-bottom: 8px; }
+.slate-panel .eyebrow { font-size: 9px; margin-bottom: 6px; }
+.slate-panel h2 { font-size: 18px; }
+.slate-panel .slate-help { font-size: 11px; line-height: 1.6; margin: 0 0 15px; color: #9aa3b2; }
+#catalog-count { flex-shrink: 0; font-size: 11px; }
+.play-feed { max-height: min(960px, calc(100vh - 280px)); min-height: 260px; overflow: auto; scrollbar-width: thin; scrollbar-color: #344155 transparent; padding: 2px; margin: -2px; }
+#catalog-rows { display: grid; gap: 10px; }
+.movement-page .movement-play { display: block; width: 100%; padding: 14px; border: 1px solid #2d3749; border-radius: 8px; background: #171e29; text-align: left; color: #e6e9ef; position: relative; transition: border-color .15s, background .15s; }
+.movement-page .movement-play:hover { border-color: #526782; background: #1d2736; }
+.movement-page .movement-play.is-selected { background: #1b2c40; border-color: #77c3ff; box-shadow: inset 3px 0 #77c3ff; }
+.play-context { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #9aaabd; font-size: 10px; font-weight: 550; letter-spacing: .35px; }
+.sport-tag { padding: 3px 6px; border: 1px solid #354459; border-radius: 4px; color: #c2d0e3; font-size: 9px; letter-spacing: .5px; }
+.play-chevron { margin-left: auto; font-size: 15px; line-height: 1; color: #7d93ab; }
+.is-selected .play-chevron { color: #77c3ff; }
+.play-heading { display: flex; align-items: center; gap: 10px; }
+.player-monogram { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 50%; border: 1px solid #3a4c63; background: #233247; color: #9acfff; font-size: 12px; font-weight: 700; }
+.play-identity { display: grid; gap: 5px; min-width: 0; }
+.play-name { font-size: 15px; line-height: 1.25; font-weight: 650; overflow-wrap: anywhere; }
+.play-market { color: #c3cedc; font-size: 11px; line-height: 1.45; }
+.play-start { display: block; margin: 9px 0 13px; color: #8fa0b5; font-size: 10px; }
+.play-metrics { display: grid; grid-template-columns: 1fr .92fr 1.06fr; gap: 8px; padding: 11px 0; border-top: 1px solid #2d3b50; border-bottom: 1px solid #2d3b50; }
+.play-metrics > span { min-width: 0; }
+.play-metrics > span > span, .play-metrics small { display: block; font-size: 9px; line-height: 1.45; color: #99aabe; }
+.play-metrics strong { display: block; margin: 5px 0 4px; font-size: 18px; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.4px; }
+.play-price strong { color: #c3e5ff; }
+.movement-page .captured-book { display: flex; align-items: center; gap: 5px; }
+.captured-book img { object-fit: contain; border-radius: 2px; flex-shrink: 0; }
+.play-baseline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; margin-top: 9px; color: #8fa0b5; font-size: 9px; font-variant-numeric: tabular-nums; }
+.movement-page .pagination { justify-content: space-between; gap: 8px; font-size: 10px; padding-top: 3px; }
+.movement-page .pagination button { padding: 7px 9px; font-size: 11px; }
+.movement-page .chart-panel { position: sticky; top: 18px; min-width: 0; padding: 22px; max-height: calc(100vh - 36px); overflow: auto; scrollbar-width: thin; scrollbar-color: #344155 transparent; }
+.chart-panel .section-heading { gap: 18px; margin-bottom: 18px; }
+.chart-panel .section-heading > div { min-width: 0; }
+.chart-panel h2 { font-size: 25px; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; letter-spacing: -.4px; }
+.movement-page .chart-scale { width: 128px; font-size: 10px; }
+.chart-scale select { font-size: 11px; padding: 8px; }
+#chart-subtitle { line-height: 1.7; color: #a9b8ca; font-size: 11px; }
+.movement-page .selection-metrics { max-width: none; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 24px; }
+.movement-page .selection-metrics > div { padding: 12px 10px; border: 1px solid #2a3548; background: #111924; border-radius: 7px; min-width: 0; }
+.movement-page .selection-metrics > div.metric-best { background: #182a3d; border-color: #3c5c79; }
+.movement-page .selection-metrics span { font-size: 10px; color: #a6b4c6; }
+.movement-page .selection-metrics strong { font-size: 23px; margin: 9px 0 7px; letter-spacing: -.5px; }
+.movement-page .selection-metrics small { font-size: 9px; color: #9babbd; }
+.movement-page .selection-metrics .metric-best strong { color: #a9daff; }
+.chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #2a3042; padding-top: 18px; }
+.chart-toolbar > div:first-child { min-width: 0; }
+.chart-toolbar strong { display: block; font-size: 13px; font-weight: 600; }
+.chart-toolbar small { display: block; color: #91a3b8; font-size: 10px; margin-top: 6px; }
+.movement-page .window-chips-small { gap: 2px; padding: 3px; }
+.movement-page .window-chips-small button { font-size: 10px; padding: 5px 8px; }
+#movement-chart { height: 340px; min-height: 290px; margin-top: 5px; }
+#chart-status { font-size: 11px; padding: 10px 0; }
+#book-options { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 7px; }
+#book-picker { padding: 12px; margin-top: 4px; }
+#chart-footnote { font-size: 10px; line-height: 1.7; margin: 15px 0 0; }
+.movement-page .back-to-plays { display: none; }
+.movement-page .methodology { margin-top: 2px; padding: 18px 22px; }
+@media (min-width: 1150px) { .movement-page .filters { grid-template-columns: .55fr 1.1fr .9fr 1fr 1.15fr 1.2fr; gap: 11px; } }
+@media (min-width: 851px) and (max-width: 1150px) {
+  .movement-workspace { grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: 14px; }
+  .movement-page .chart-panel { padding: 16px; }
+  .movement-page .selection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-toolbar { flex-wrap: wrap; }
+}
+@media (max-width: 850px) {
+  .movement-workspace { display: block; }
+  .movement-page .chart-panel { position: static; max-height: none; overflow: visible; display: none; }
+  .show-play-detail .chart-panel { display: block; }
+  .show-play-detail .slate-panel { display: none; }
+  .movement-page .back-to-plays { display: inline-flex; padding: 7px 0; margin: 0 0 18px; border: 0; background: transparent; color: #77c3ff; font-size: 12px; }
+  .play-feed { max-height: none; overflow: visible; min-height: 0; }
+  .movement-page .slate-panel { padding: 18px; }
+  .movement-page .selection-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  main.movement-main { padding: 20px 12px; }
+  .movement-header { padding: 14px 16px; }
+  .movement-page h1 { font-size: 29px; }
+  .movement-intro p:not(.eyebrow) { font-size: 12px; }
+  .movement-page .day-note { font-size: 10px; line-height: 1.8; margin-bottom: 18px; }
+  .movement-page .window-toolbar { display: grid; gap: 11px; }
+  .window-toolbar > div:first-child { justify-content: space-between; }
+  #window-range { font-size: 10px; }
+  .window-toolbar .window-chips { width: 100%; }
+  .window-toolbar .window-chips button { flex: 1; padding: 8px; }
+  .movement-page .filters { gap: 13px 10px; padding: 15px 12px; }
+  .advanced-filters { display: none; grid-column: 1 / -1; }
+  .filters-expanded .advanced-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 10px; }
+  .movement-page .toggle-filters { display: flex; grid-column: 1 / -1; justify-content: space-between; padding: 5px 0 0; border: 0; background: transparent; color: #a8ccec; font-size: 11px; }
+  .movement-page .filters label, .movement-page .prop-field { font-size: 10px; }
+  .movement-page .slate-panel { padding: 15px 11px; }
+  .movement-page .movement-play { padding: 13px; }
+  .play-metrics strong { font-size: 18px; }
+  .play-name { font-size: 16px; }
+  .movement-page .chart-panel { padding: 17px 12px; }
+  .chart-panel .section-heading { flex-wrap: nowrap; gap: 10px; }
+  .chart-panel h2 { font-size: 23px; }
+  .movement-page .chart-scale { width: 112px; }
+  .movement-page .selection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .movement-page .selection-metrics > div { padding: 11px; }
+  .movement-page .selection-metrics strong { font-size: 23px; }
+  .chart-toolbar { flex-wrap: wrap; gap: 12px; }
+  .chart-toolbar .window-chips { width: 100%; }
+  .chart-toolbar .window-chips button { flex: 1; padding: 7px; font-size: 11px; }
+  #movement-chart { height: 320px; min-height: 290px; }
+  #book-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #book-picker { padding: 8px; }
+  .movement-page .methodology { padding: 15px; }
+}

@@ -1,5 +1,6 @@
 """Offline dense-price chart checks: ticks, stable book styles and local controls."""
 from copy import deepcopy
+import os
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -12,6 +13,30 @@ from playwright.sync_api import expect, sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Optional read-only fallback lets a staged test run against unchanged assets.
+ASSETS = Path(os.environ.get('MOVEMENT_TEST_ASSETS', str(ROOT)))
+
+
+def asset_path(relative):
+    staged = ROOT / relative
+    return staged if staged.is_file() else ASSETS / relative
+
+
+def window_metadata(data, query):
+    updated = datetime.fromisoformat(data['updated'].replace('Z', '+00:00'))
+    window = query.get('window', '6h')
+    start = updated - timedelta(hours=24 if window == 'today' else int(window[:-1]))
+    data.update(window=window, window_start=start.isoformat(), window_end=updated.isoformat())
+    return data
+
+
+def select_card(page, index=0):
+    back = page.locator('#back-to-plays')
+    if page.viewport_size['width'] <= 850 and back.is_visible():
+        back.click()
+    page.locator('#catalog-rows .movement-play').nth(index).click()
+
 NOW = datetime(2026, 10, 2, 19, 0, tzinfo=timezone.utc)
 BOOKS = ["b365", "bol", "br", "bv", "circa", "cz", "dk", "espn", "fd", "fn", "hr", "kal", "mgm", "nv", "pn", "px"]
 NAMES = dict(zip(BOOKS, ["bet365", "BetOnline", "BetRivers", "Bovada", "Circa", "Caesars", "DraftKings", "ESPN BET",
@@ -97,14 +122,15 @@ try:
                             fair = [105, 100, -103, -107][index]
                         probability = 100 / (fair + 100) if fair > 0 else -fair / (100 - fair)
                         data["points"].append(dict(ts=timestamp, prices=prices, fair=fair, probability=probability))
-                route.fulfill(json=data)
+                route.fulfill(json=window_metadata(data, query))
             elif "cdn.jsdelivr.net" in address:
                 route.fulfill(content_type="application/javascript", body="""window.supabase = {createClient: () => ({auth: {
                     getSession: async () => ({data: {session: {access_token:'fixture-token'}}}),
                     onAuthStateChange: () => ({})
                 }})};""")
             elif address.startswith(f"http://localhost:{server.server_port}/"):
-                route.continue_()
+                asset = asset_path(urlsplit(address).path.lstrip('/'))
+                route.fulfill(path=asset) if asset.is_file() else route.fulfill(status=404, body='')
             else:
                 route.fulfill(status=404, body="")
 
@@ -176,17 +202,18 @@ try:
         assert_ticks(page)
 
         # Missing books in another selection must not shift every following color/dash.
-        page.locator('#catalog-rows tr').nth(1).locator('button').click()
+        select_card(page, 1)
         expect(page.locator('#chart-title')).to_have_text('Shohei Ohtani')
         for name, style in styles(page).items():
             assert style == baseline[name], (name, style, baseline[name])
-        page.locator('#catalog-rows tr').first.locator('button').click()
+        select_card(page)
         expect(page.locator('#chart-title')).to_have_text('Aaron Judge')
         assert styles(page) == baseline
         assert_ticks(page)
         page.screenshot(path=str(Path(gettempdir()) / 'movement-dense-desktop.png'), full_page=True)
 
         page.set_viewport_size({"width": 390, "height": 844})
+        select_card(page)
         page.clock.run_for(400)
         page.wait_for_function("document.getElementById('movement-chart')._fullLayout.width <= 390")
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')

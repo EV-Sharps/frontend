@@ -1,0 +1,122 @@
+.nv-depth-cell { display: flex; align-items: center; justify-content: center; gap: 3px; height: 100%; max-height: 100%; }
+.nv-depth-existing-odds { position: relative; min-width: 0; flex: 1; }
+.nv-depth-trigger { display: inline-flex; flex-shrink: 0; justify-content: center; align-items: center; width: 22px; height: 20px; padding: 2px; border: 1px solid var(--border, #2a3042); border-radius: 5px; color: var(--accent, #77c3ff); background: var(--panel, #151a22); cursor: pointer; }
+.nv-depth-trigger:disabled { opacity: .4; cursor: default; }
+.nv-depth-card-trigger { width: auto; min-width: 30px; min-height: 28px; padding: 4px 6px; gap: 4px; }
+.nv-depth-trigger:hover { background: #284361; }
+.nv-depth-trigger:focus-visible, #novig-depth-dialog button:focus-visible, #novig-depth-dialog a:focus-visible { outline: 2px solid var(--accent, #77c3ff); outline-offset: 3px; }
+/* Keep the original stacked spacing with a small corner shortcut. */
+#table.stacked-odds .nv-depth-cell { display: block; position: relative; width: 100%; }
+#table.stacked-odds .nv-depth-existing-odds { box-sizing: border-box; width: 100%; padding-right: 16px; }
+#table.stacked-odds .nv-depth-existing-odds .odds-betslip-link { right: -16px !important; }
+#table.stacked-odds .nv-depth-cell > .nv-depth-trigger { position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; padding: 2px; border: 0; border-radius: 3px; background: transparent; }
+#table.stacked-odds .nv-depth-cell > .nv-depth-trigger svg { width: 12px; height: 12px; }
+#table.stacked-odds .nv-depth-cell > .nv-depth-trigger:hover { background: #77c3ff20; }
+#novig-depth-dialog { box-sizing: border-box; width: min(920px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--border, #2a3042); border-radius: 16px; background: var(--bg, #0f1116); color: var(--text, #e6e9ef); font-family: Arial, sans-serif; box-shadow: 0 22px 90px #0008; }
+#novig-depth-dialog::backdrop { background: #02080dd9; }
+#novig-depth-dialog[open] { display: flex; flex-direction: column; }
+#novig-depth-dialog * { box-sizing: border-box; }
+.nv-depth-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px 24px 12px; }
+.nv-depth-eyebrow { color: var(--accent, #77c3ff); letter-spacing: .12em; font-size: 10px; font-weight: 700; margin: 0 0 9px; }
+#novig-depth-title { margin: 0; text-transform: capitalize; font-size: 25px; line-height: 1.2; color: #f4f9fa; }
+#novig-depth-subtitle { color: var(--muted, #9aa3b2); font-size: 12px; margin: 7px 0 0; }
+.nv-depth-close { flex-shrink: 0; width: 34px; height: 34px; border: 1px solid var(--border, #2a3042); border-radius: 8px; background: var(--panel, #151a22); color: #f1f6f8; font-size: 24px; cursor: pointer; }
+.nv-depth-tabs { display: flex; gap: 6px; padding: 0 24px 14px; }
+.nv-depth-tabs[hidden] { display: none; }
+.nv-depth-modes { display: flex; gap: 16px; padding: 0 24px 14px; }
+.nv-depth-modes button { padding: 6px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #9eb8c8; font-size: 12px; cursor: pointer; }
+.nv-depth-modes button[aria-pressed="true"] { color: #eef8fa; border-bottom-color: var(--accent, #77c3ff); }
+.nv-depth-tabs button { padding: 8px 22px; border: 1px solid var(--border, #2a3042); border-radius: 7px; color: #c5d3dd; background: var(--panel, #151a22); font-size: 13px; cursor: pointer; }
+.nv-depth-tabs button[aria-pressed="true"] { color: var(--bg, #0f1116); border-color: var(--accent, #77c3ff); background: var(--accent, #77c3ff); font-weight: bold; }
+.nv-depth-content { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 0 24px 22px; font-size: 13px; }
+.nv-depth-summary { padding: 14px 16px; background: #192c38; border: 1px solid #2e4655; border-radius: 10px; }
+.nv-depth-summary p { margin: 0 0 9px; line-height: 1.5; }
+.nv-depth-summary p:last-child { margin-bottom: 0; }
+.nv-depth-best { color: #cad8e2; }
+.nv-depth-best a { color: var(--accent, #77c3ff); text-decoration: underline; text-underline-offset: 3px; font-weight: bold; }
+.nv-depth-best > span { font-size: 11px; color: #a9bdc9; white-space: nowrap; }
+.nv-depth-comparison { color: #c3d4dd; font-weight: bold; }
+.nv-depth-comparison-strong { color: #9be7c3; }
+.nv-depth-metrics { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 12px; border-top: 1px solid #35505e; padding-top: 12px; }
+.nv-depth-metrics span { display: block; font-size: 10px; color: #aec2cf; line-height: 1.4; margin-bottom: 4px; }
+.nv-depth-metrics strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.nv-depth-metrics small { display: inline-block; font-size: 11px; font-weight: normal; color: #adc6d1; }
+.nv-depth-explainer { color: #b7c9d3; font-size: 12px; line-height: 1.6; margin: 14px 0 12px; }
+.nv-depth-totals { display: flex; justify-content: space-between; gap: 14px; color: #a9bcc9; font-size: 11px; margin-bottom: 8px; }
+.nv-depth-totals strong { color: #e4eef3; font-size: 12px; margin-left: 4px; }
+.nv-depth-table-wrap { overflow-x: auto; border: 1px solid #304652; border-radius: 8px; }
+.nv-depth-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.nv-depth-table th { color: #a5bdcb; font-size: 11px; font-weight: normal; background: #172a36; padding: 10px 12px; line-height: 1.5; text-align: right; }
+.nv-depth-table th:first-child, .nv-depth-table td:first-child { text-align: left; }
+.nv-depth-table td { padding: 11px 12px; border-top: 1px solid #263e4c; position: relative; }
+.nv-depth-table td:first-child { font-weight: bold; }
+.nv-depth-table td small { display: block; font-size: 9px; color: #97afbd; font-weight: normal; margin-top: 3px; max-width: 190px; overflow-wrap: anywhere; }
+.nv-depth-table td:last-child { width: 45%; }
+.nv-depth-available-table td:last-child { width: 64%; }
+.nv-depth-available-table td { padding-top: 13px; padding-bottom: 13px; }
+.nv-depth-top-price { color: #b6cbd7; }
+.nv-depth-top-price strong { color: #edf6fa; }
+.nv-depth-table td:last-child > span, .nv-depth-table td:last-child > strong { position: relative; z-index: 1; }
+.nv-depth-table td:last-child > span { float: left; }
+.nv-depth-bar { position: absolute; right: 0; top: 4px; bottom: 4px; width: var(--depth-width); background: #254e65; opacity: .55; border-left: 2px solid #4f8ba1; }
+.nv-depth-matching td:first-child { color: #a1ebc8; }
+.nv-depth-matching .nv-depth-bar { background: #285d55; border-color: #71b9a2; }
+.nv-depth-note { color: #92aab9; font-size: 11px; line-height: 1.6; margin: 10px 0; }
+.nv-depth-footer { border-top: 1px solid #2c4351; margin-top: 14px; padding-top: 12px; color: #99afbd; font-size: 11px; line-height: 1.6; }
+.nv-depth-footer > span { color: #c3d5df; }
+.nv-depth-footer p { margin: 6px 0 0; }
+.nv-depth-unavailable, .nv-depth-empty { padding: 18px; background: #192c38; border-radius: 8px; line-height: 1.6; }
+.nv-depth-books { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.nv-depth-book { min-width: 0; padding: 20px 18px 16px; border: 1px solid var(--border, #2a3042); border-radius: 12px; background: var(--panel, #151a22); }
+.nv-depth-book-header { display: flex; align-items: baseline; gap: 9px; }
+.nv-depth-book-header h3 { margin: 0; color: var(--accent, #77c3ff); font-size: 24px; line-height: 1.2; }
+.nv-depth-book-header > span { color: #b6c9d4; font-size: 12px; }
+.nv-depth-book-caption { margin: 7px 0 18px; color: var(--muted, #9aa3b2); font-size: 11px; }
+.nv-depth-chart { display: grid; align-content: start; gap: 6px; min-height: calc(var(--depth-rows) * 35px - 6px); margin: 0; padding: 0; list-style: none; }
+.nv-depth-chart-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; min-height: 29px; font-variant-numeric: tabular-nums; }
+.nv-depth-chart-odds { color: #f2f7fa; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.nv-depth-chart-track { display: flex; align-items: center; min-width: 0; padding-right: 52px; }
+.nv-depth-chart-fill { flex: 0 0 auto; width: var(--depth-width); min-width: 2px; height: 28px; border-radius: 0 5px 5px 0; background: linear-gradient(90deg, #284361, var(--accent, #77c3ff)); box-shadow: inset 0 1px 0 #c5e6ff33; }
+.nv-depth-chart-amount { flex: 0 0 auto; margin-left: 7px; color: var(--muted, #9aa3b2); font-size: 12px; white-space: nowrap; }
+.nv-depth-book-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border, #2a3042); color: #9bb7c7; font-size: 11px; }
+.nv-depth-book-total > strong { color: var(--accent, #77c3ff); font-size: 22px; font-variant-numeric: tabular-nums; }
+.nv-depth-book-average { flex-basis: 100%; font-size: 11px; line-height: 1.8; }
+.nv-depth-book-average b { display: inline-block; margin: 0 3px; padding: 1px 7px; border: 1px solid var(--border, #2a3042); border-radius: 12px; background: var(--bg, #0f1116); color: #eef5f8; font-weight: 500; }
+.nv-depth-book-quote { display: flex; flex-direction: column; gap: 5px; margin: 16px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.nv-depth-book-quote > span { color: #94afc0; font-size: 10px; }
+.nv-depth-chart-empty { min-height: 70px; margin: 0; padding: 12px 0; color: #a3b8c5; font-size: 12px; line-height: 1.6; }
+.nv-depth-chart-key { margin: 12px 0 0; color: #93adbd; font-size: 11px; line-height: 1.5; }
+@media (max-width: 520px) {
+  #novig-depth-dialog { width: calc(100vw - 12px); max-height: calc(100dvh - 12px); border-radius: 12px; }
+  .nv-depth-header { padding: 17px 13px 12px; gap: 8px; }
+  #novig-depth-title { font-size: 21px; }
+  .nv-depth-tabs { padding: 0 13px 12px; }
+  .nv-depth-modes { padding: 0 13px 12px; gap: 14px; }
+  .nv-depth-content { padding: 0 13px 16px; font-size: 12px; }
+  .nv-depth-summary { padding: 12px; }
+  .nv-depth-metrics { gap: 10px; grid-template-columns: 1fr 1fr; }
+  .nv-depth-metrics > div:last-child { grid-column: 1 / -1; }
+  .nv-depth-metrics strong { font-size: 17px; }
+  .nv-depth-table th, .nv-depth-table td { padding: 9px 7px; }
+  .nv-depth-table th { font-size: 10px; }
+  .nv-depth-table { font-size: 12px; }
+  .nv-depth-totals { flex-wrap: wrap; gap: 4px; }
+  .nv-depth-books { gap: 8px; }
+  .nv-depth-book { padding: 13px 9px 12px; border-radius: 9px; }
+  .nv-depth-book-header { display: block; }
+  .nv-depth-book-header h3 { font-size: 20px; }
+  .nv-depth-book-header > span { display: block; margin-top: 4px; font-size: 10px; }
+  .nv-depth-book-caption { margin: 7px 0 13px; font-size: 9px; }
+  .nv-depth-chart { gap: 5px; min-height: calc(var(--depth-rows) * 29px - 5px); }
+  .nv-depth-chart-row { grid-template-columns: 34px minmax(0, 1fr); gap: 4px; min-height: 24px; }
+  .nv-depth-chart-odds { font-size: 10px; }
+  .nv-depth-chart-track { padding-right: 31px; }
+  .nv-depth-chart-fill { height: 23px; border-radius: 0 3px 3px 0; }
+  .nv-depth-chart-amount { margin-left: 4px; font-size: 9px; }
+  .nv-depth-book-total { gap: 5px; margin-top: 15px; padding-top: 11px; font-size: 9px; }
+  .nv-depth-book-total > strong { font-size: 17px; }
+  .nv-depth-book-average { font-size: 9px; }
+  .nv-depth-book-average b { margin: 0 1px; padding: 1px 4px; }
+  .nv-depth-book-quote { margin-top: 12px; font-size: 10px; }
+  .nv-depth-book-quote > span { font-size: 9px; }
+}

@@ -14,6 +14,7 @@
 	<link href="flatpickr.min.css" rel="stylesheet">
 	<link href="style.css" rel="stylesheet">
 	<link href="price-history.css" rel="stylesheet">
+	<link href="novig-depth.css" rel="stylesheet">
 	<style>
 		#table {
 			width: 100%;
@@ -642,6 +643,7 @@
 	<script src="player-lines.js"></script>
 	<script src="price-history.js"></script>
 	<script src="player-history.js"></script>
+	<script src="novig-depth.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "atgs";
@@ -768,7 +770,7 @@
 				{ key: "bookOdds_kal",   label: "Kalshi",            cols: [{ title: "KAL<br>" + timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], true), field: "bookOdds.kal", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: "bookOdds_poly",  label: "Polymarket",        cols: [{ title: "POLY<br>" + timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], true), field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter }] },
 				{ key: "bookOdds_px",    label: "ProphetX",          cols: [{ title: "PX<br>" + timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], true), field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter }] },
-				{ key: "bookOdds_nv",    label: "NoVig",             cols: [{ title: "NV<br>" + timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], true), field: "bookOdds.nv", width: 70, sorter: "number", formatter: evOddsFormatter }] },
+				{ key: "bookOdds_nv",    label: "NoVig",             cols: [{ title: "NV<br>" + timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], true), field: "bookOdds.nv", width: 100, sorter: "number", formatter: NovigDepth.formatter(evOddsFormatter) }] },
 				{ key: "hitRate",        label: "Season Hit Rate",   cols: [{ title: "Season</br>Hit Rate", field: "hitRate", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateLYR",     label: "Last Year Hit Rate", cols: [{ title: "Last Year</br>Hit Rate", field: "hitRateLYR", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },
 				{ key: "hitRateCareer",  label: "Career Hit Rate",   cols: [{ title: "Career</br>Hit Rate", field: "hitRateCareer", sorter: "number", formatter: percentFormatterLYR, width: MOBILE ? 40 : 60, responsive: 2 }] },

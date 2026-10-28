@@ -233,24 +233,28 @@
     return value;
   }
   function manifestContext(row, payload, options = {}) {
-    if (!Object.prototype.hasOwnProperty.call(payload || {}, 'depthAvailable')) return null;
+    if (!options.discover && !Object.prototype.hasOwnProperty.call(payload || {}, 'depthAvailable')) return null;
     const provider = providerFor(options), now = options.now ?? Date.now();
     const denied = reason => ({loadable: false, reason, provider});
+    if (options.discover && (options.book || options.exchange) && !['nv', 'novig', 'kal', 'kalshi', 'px', 'prophetx'].includes(options.book || options.exchange)) return denied('Full depth is unavailable for this exchange.');
     if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap)
         || !row.game || !row.player) return denied('Depth is unavailable for this selection.');
     const manifest = payload.depthAvailable?.[row.game]?.[row.player]?.[provider.book];
-    if (!manifest || typeof manifest !== 'object') return denied(`No current ${provider.name} order book.`);
     const start = payload.times?.[row.game];
-    const observed = timestamp(manifest.updated), expires = timestamp(manifest.expires_at), starts = timestamp(start);
-    if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts
-        || expires <= observed || expires > starts || expires <= now || starts <= now || now - observed > provider.maxAge) {
+    const observed = timestamp(manifest?.updated), expires = timestamp(manifest?.expires_at), starts = timestamp(start);
+    if (![now, starts].every(Number.isFinite) || starts <= now) return denied('Depth does not match an upcoming game start.');
+    if (!options.discover && (!manifest || typeof manifest !== 'object')) return denied(`No current ${provider.name} order book.`);
+    if (!options.discover && (![observed, expires].every(Number.isFinite) || observed > now || observed >= starts
+        || expires <= observed || expires > starts || expires <= now || now - observed > provider.maxAge)) {
       return denied(`${provider.name} depth expired or the game has started. Refresh for current data.`);
     }
     const date = row.dt || row.date;
     if (!date || date !== easternDate(starts) || (row.dt && row.date && row.dt !== row.date)) return denied('Depth does not match this game date.');
     const token = syncAccess();
-    const key = JSON.stringify([provider.book, row.game, row.player, start, manifest.updated, token]);
-    return {loadable: true, provider, manifest, start, observed, expires, key, token, generation: lazy.generation};
+    // Detail discovery and strict icons share one request/cache; each view applies its own freshness bounds.
+    const key = JSON.stringify([provider.book, row.game, row.player, start, token]);
+    return {loadable: true, provider, manifest, start, observed: options.discover ? -Infinity : observed,
+      expires: options.discover ? Infinity : expires, key, token, generation: lazy.generation};
   }
 
   function inspect(row, payload, options = {}) {
@@ -259,8 +263,12 @@
     if (context) {
       const side = options.side || (row?.under ? 'under' : 'over');
       if (!context.loadable) return {available: false, side, ...context};
+      if (options.discover) {
+        const inline = inspectEntry(row, payload, options, payload?.[context.provider.field]?.[row.game]?.[row.player]);
+        if (inline.available) return inline;
+      }
       const cached = lazy.cache.get(context.key);
-      if (cached && cached.expires > (options.now ?? Date.now())) {
+      if (cached && cached.expires > (options.now ?? Date.now()) && timestamp(cached.entry.updated) >= context.observed) {
         const result = inspectEntry(row, payload, options, cached.entry);
         if (result.available) return result;
         lazy.cache.delete(context.key);
@@ -277,7 +285,7 @@
     const current = inspect(row, payload, options);
     if (current.available || !current.loadable) return Promise.resolve(current);
     const context = manifestContext(row, payload, options);
-    if (lazy.pending.has(context.key)) return lazy.pending.get(context.key).promise;
+    if (lazy.pending.has(context.key)) return lazy.pending.get(context.key).promise.then(() => inspect(row, payload, options));
     if (current.status === 'error' && !options.retry) return Promise.resolve(current);
     if (lazy.pending.size >= 8) {
       remember(lazy.errors, context.key, 'Other order books are loading. Try again.');
@@ -306,9 +314,9 @@
         throw new Error('This order book does not match the current selection. Refresh the table and try again.');
       }
       syncAccess();
-      const fresh = manifestContext(row, payload, options);
+      const fresh = manifestContext(row, payload, {...options, discover: true});
       if (lazy.generation === context.generation && fresh?.loadable && fresh.key === context.key) {
-        remember(lazy.cache, context.key, {entry: freezeEntry(entry), expires: Math.min(context.expires, timestamp(entry.expires_at))});
+        remember(lazy.cache, context.key, {entry: freezeEntry(entry), expires: timestamp(entry.expires_at)});
       }
     }).catch(error => {
       syncAccess();

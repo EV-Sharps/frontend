@@ -48,7 +48,6 @@ test('hover, focus and click share one selected-book request and reuse cache acr
   f.payload.depthAvailable[f.row.game][f.row.player].kal = clone(f.payload.depthAvailable[f.row.game][f.row.player].nv);
   const snapshot = JSON.stringify(f.payload);
   const a = h.depth.load(f.row, f.payload), b = h.depth.load({...f.row, under: true}, f.payload, {retry: true});
-  assert.equal(a, b);
   assert.equal(h.depth.inspect(f.row, f.payload).status, 'loading');
   await flush();
   assert.equal(h.requests.length, 1);
@@ -62,6 +61,7 @@ test('hover, focus and click share one selected-book request and reuse cache acr
   assert.equal(request.options.headers.Authorization, 'Bearer fixture-token');
   h.respond(0, f.result);
   assert.equal((await a).available, true);
+  assert.equal((await b).side, 'under');
   assert.equal((await h.depth.load({...f.row, under: true}, f.payload)).side, 'under');
   assert.equal(h.requests.length, 1);
   assert.equal(JSON.stringify(f.payload), snapshot);
@@ -173,4 +173,105 @@ test('bounded cache evicts oldest entries without expanding feed rows', async ()
   }
   assert.equal(h.depth.inspect(first.row, first.payload).status, 'idle');
   assert.equal(h.requests.length, 49);
+});
+
+function forBook(f, book) {
+  const result = clone(f.result);
+  result.book = book;
+  if (book === 'px') for (const side of result.entry.sides) {
+    side.orders = [{opposite_odds: side.side === 'over' ? -300 : 400, opposite_stake_usd: '123.45'}];
+  }
+  return result;
+}
+
+test('explicit panel discovery finds all three books with absent markers but never probes Poly', async () => {
+  const h = harness(), f = fixture(); f.payload.depthAvailable = {};
+  f.row.bookOdds.px = '600/-700'; f.row.bookOdds.poly = '500/-600';
+  f.payload.updated.poly = stamp(-60000);
+  const original = JSON.stringify(f.payload);
+  const before = h.aggregate.collect(f.row, f.payload.data, f.payload, {discover: true});
+  assert.deepEqual(Array.from(before.sources.filter(x => x.kind === 'pending'), x => x.book), ['nv', 'px', 'kal']);
+  assert.equal(before.sources.find(x => x.book === 'poly').kind, 'top');
+  assert.equal(h.requests.length, 0);
+  assert.ok(before.sides.over.levels.every(x => x.book === 'poly'));
+  const pending = before.sources.filter(x => x.kind === 'pending').map(source => h.depth.load(f.row, f.payload, {discover: true, book: source.book}));
+  await flush(); assert.equal(h.requests.length, 3);
+  for (let n = 0; n < 3; n++) h.respond(n, forBook(f, h.requests[n].url.searchParams.get('book')));
+  await Promise.all(pending);
+  const result = h.aggregate.collect(f.row, f.payload.data, f.payload, {discover: true});
+  for (const book of ['nv', 'kal', 'px']) assert.equal(result.sources.find(x => x.book === book).kind, 'depth');
+  assert.equal(result.sources.find(x => x.book === 'poly').kind, 'top');
+  assert.equal(JSON.stringify(f.payload), original);
+  assert.equal((await h.depth.load(f.row, f.payload, {discover: true, book: 'poly'})).loadable, false);
+  assert.equal(h.requests.length, 3);
+});
+
+test('fresh sidecar outlives stale main marker only in explicit discovery', async () => {
+  const h = harness(), f = fixture();
+  f.payload.depthAvailable[f.row.game][f.row.player].kal = {updated: stamp(-400000), expires_at: stamp(-100000)};
+  const options = {book: 'kal', discover: true};
+  assert.equal(h.depth.inspect(f.row, f.payload, {book: 'kal'}).loadable, false);
+  const pending = h.depth.load(f.row, f.payload, options); await flush(); h.respond(0, forBook(f, 'kal')); await pending;
+  assert.equal(h.depth.inspect(f.row, f.payload, options).available, true);
+  assert.equal(h.depth.inspect(f.row, f.payload, {book: 'kal'}).available, false);
+  h.tick(239999); assert.equal(h.depth.inspect(f.row, f.payload, options).available, true);
+  h.tick(240000); assert.equal(h.depth.inspect(f.row, f.payload, options).available, false);
+  assert.equal(h.requests.length, 1);
+});
+
+test('healthy hover cache is reused while missing other books load independently', async () => {
+  const h = harness(), f = fixture();
+  const hover = h.depth.load(f.row, f.payload); await flush(); h.respond(0, f.result); await hover;
+  const pending = ['nv', 'kal', 'px'].map(book => h.depth.load(f.row, f.payload, {book, discover: true}));
+  await flush(); assert.equal(h.requests.length, 3);
+  assert.deepEqual(h.requests.map(request => request.url.searchParams.get('book')), ['nv', 'kal', 'px']);
+  h.respond(1, {}, 503); h.respond(2, forBook(f, 'px'));
+  await Promise.all(pending);
+  const got = h.aggregate.collect(f.row, f.payload.data, f.payload, {discover: true});
+  assert.equal(got.sources.find(x => x.book === 'nv').kind, 'depth');
+  assert.equal(got.sources.find(x => x.book === 'px').kind, 'depth');
+  assert.equal(got.sources.find(x => x.book === 'kal').status, 'error');
+  assert.ok(!got.sides.over.levels.some(x => x.book === 'kal'));
+  const retry = h.depth.load(f.row, f.payload, {book: 'kal', discover: true, retry: true});
+  await flush(); h.respond(3, forBook(f, 'kal')); assert.equal((await retry).available, true);
+});
+
+test('hover and discovery share an in-flight request even if its main marker expires', async () => {
+  const h = harness(), f = fixture();
+  f.payload.depthAvailable[f.row.game][f.row.player].nv.expires_at = stamp(1000);
+  const hover = h.depth.load(f.row, f.payload); await flush();
+  h.tick(1001);
+  const panel = h.depth.load(f.row, f.payload, {discover: true});
+  await flush(); assert.equal(h.requests.length, 1);
+  h.respond(0, f.result);
+  assert.equal((await hover).available, false);
+  assert.equal((await panel).available, true);
+});
+
+test('in-flight response cannot bypass a newer strict manifest after discovery caches it', async () => {
+  const h = harness(), f = fixture();
+  const old = h.depth.load(f.row, f.payload); await flush();
+  f.payload.depthAvailable[f.row.game][f.row.player].nv.updated = stamp(-30000);
+  const strict = h.depth.load(f.row, f.payload);
+  const panel = h.depth.load(f.row, f.payload, {discover: true});
+  h.respond(0, f.result);
+  assert.equal((await old).available, false);
+  assert.equal((await strict).available, false);
+  assert.equal((await panel).available, true);
+  assert.equal(h.depth.inspect(f.row, f.payload).status, 'idle');
+  assert.equal(h.requests.length, 1);
+});
+
+test('discovery preserves valid inline legacy books and refuses ineligible selections', async () => {
+  const h = harness(), f = fixture(); delete f.payload.depthAvailable;
+  f.payload.novigDepth = {[f.row.game]: {[f.row.player]: f.entry}};
+  assert.equal((await h.depth.load(f.row, f.payload, {discover: true})).available, true);
+  assert.equal(h.requests.length, 0);
+  for (const edit of [x => { x.row.blurred = true; }, x => { x.row.dt = '2026-10-29'; },
+    x => { x.payload.times[x.row.game] = stamp(0); }, x => { delete x.payload.times[x.row.game]; },
+    x => { x.row.prop = 'sog'; }, x => { x.row.handicap = '1.5'; }]) {
+    const bad = fixture(); edit(bad);
+    assert.equal((await h.depth.load(bad.row, bad.payload, {discover: true})).available, false);
+  }
+  assert.equal(h.requests.length, 0);
 });

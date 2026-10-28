@@ -96,11 +96,12 @@
     for (const book of BOOKS) {
       const entry = depthFields[book] ? payload?.[depthFields[book]]?.[selected.game]?.[selected.player] : undefined;
       const advertised = Object.prototype.hasOwnProperty.call(payload.depthAvailable?.[selected.game]?.[selected.player] || {}, book);
+      const discover = options.discover === true && Object.prototype.hasOwnProperty.call(depthFields, book);
       // These feeds provide the 0.5 ATGS book, never an alternate goal line.
-      if (selected.prop === 'atgs' && result.line === .5 && (entry !== undefined || advertised)) {
+      if (selected.prop === 'atgs' && result.line === .5 && (entry !== undefined || advertised || discover)) {
         const inspector = (book === 'px' && options.prophetxDepth) || (book === 'kal' && options.kalshiDepth) || options.novigDepth || root.NovigDepth;
         let depth;
-        try { depth = inspector?.inspect(current[0], payload, {now, updated, book}); } catch (_) { /* Invalid depth is unavailable. */ }
+        try { depth = inspector?.inspect(current[0], payload, {now, updated, book, discover}); } catch (_) { /* Invalid depth is unavailable. */ }
         if (!depth?.available) {
           result.sources.push({book, kind: depth?.loadable ? 'pending' : 'unavailable', status: depth?.status, reason: depth?.reason || 'Current depth is unavailable.'});
           continue; // Do not revive the same snapshot's expired best quote.
@@ -200,9 +201,9 @@
       const payload = (typeof options.getPayload === 'function' ? options.getPayload() : null) || {};
       const updated = typeof options.getUpdated === 'function' ? options.getUpdated() : payload.updated;
       const current = {...selected, handicap: line};
-      const result = collect(current, rows, payload, {updated});
+      const result = collect(current, rows, payload, {updated, discover: true});
       const requests = result.sources.filter(source => source.kind === 'pending').map(source =>
-        root.NovigDepth.load(current, payload, {book: source.book, retry}));
+        root.NovigDepth.load(current, payload, {book: source.book, retry, discover: true}));
       const requestGeneration = ++generation, token = accessToken();
       Promise.allSettled(requests).then(() => {
         if (!destroyed && requestGeneration === generation && token === accessToken()) refresh();
@@ -214,10 +215,10 @@
       const rows = typeof options.getRows === 'function' ? options.getRows() : [];
       const payload = (typeof options.getPayload === 'function' ? options.getPayload() : null) || {};
       const updated = typeof options.getUpdated === 'function' ? options.getUpdated() : payload.updated;
-      let result = collect({...selected, handicap: line}, rows, payload, {updated});
+      let result = collect({...selected, handicap: line}, rows, payload, {updated, discover: true});
       if (line === null && result.lines.length) {
         line = result.lines[0];
-        result = collect({...selected, handicap: line}, rows, payload, {updated});
+        result = collect({...selected, handicap: line}, rows, payload, {updated, discover: true});
       }
       const choices = result.lines.includes(line) ? result.lines : [line, ...result.lines].filter(value => value !== null);
       const optionsHtml = choices.map(value => `<option value="${value}">${value}${result.lines.includes(value) ? '' : ' · unavailable'}</option>`).join('');

@@ -644,6 +644,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<link rel="stylesheet" href="nba-prop-depth.css">
+	<script src="nba-prop-depth.js"></script>
 	<script src="nba-defense.js?v=20261022-per36"></script>
 	<script src="player-lines.js"></script>
 	<script src="price-history.js"></script>
@@ -842,13 +844,13 @@
 					{title: `BOL<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["bol"], short=true)}`, field: "bookOdds.bol", width: 70, sorter: "number", formatter: evOddsFormatter}
 				]},
 				{ key: 'bookOdds_kal', label: 'Kalshi', cols: [
-					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 70, sorter: "number", formatter: evOddsFormatter}
+					{title: `Kalshi<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["kal"], short=true)}`, field: "bookOdds.kal", width: 88, sorter: "number", formatter: NBAPropDepth.formatter(evOddsFormatter, "kal")}
 				]},
 				{ key: 'bookOdds_nv', label: 'NoVig', cols: [
-					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 70, sorter: "number", formatter: evOddsFormatter}
+					{title: `NoVig<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["nv"], short=true)}`, field: "bookOdds.nv", width: 88, sorter: "number", formatter: NBAPropDepth.formatter(evOddsFormatter, "nv")}
 				]},
 				{ key: 'bookOdds_px', label: 'ProphetX', cols: [
-					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 70, sorter: "number", formatter: evOddsFormatter}
+					{title: `ProphetX<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["px"], short=true)}`, field: "bookOdds.px", width: 88, sorter: "number", formatter: NBAPropDepth.formatter(evOddsFormatter, "px")}
 				]},
 				{ key: 'bookOdds_poly', label: 'Polymarket', cols: [
 					{title: `Polymarket<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["poly"], short=true)}`, field: "bookOdds.poly", width: 70, sorter: "number", formatter: evOddsFormatter, visible: false}

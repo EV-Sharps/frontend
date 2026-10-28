@@ -97,7 +97,7 @@ const FAQ = [
 	},
 	{
 		id: 'q-prediction-liquidity', topic: 'prediction-markets', q: 'Does more liquidity make the devig more reliable?',
-		answer: `<p>More size means more contracts can be matched at that quote while the orders remain available. It can help you assess the quote, but <strong>size alone does not prove that the price is accurate</strong>. A large order may belong to just one participant.</p>
+		answer: `<p><strong>Order-book depth</strong> shows the size available at each price. More size means more contracts can be matched at that quote while the orders remain available. It can help you assess the quote, but <strong>size alone does not prove that the price is accurate</strong>. A large order may belong to just one participant.</p>
 		<div class="faq-market-example faq-liquidity-demo" aria-label="Liquidity example">
 			<p class="faq-market-demo-title"><strong>Change the size, keep the same prices</strong><span>Yes +900 / No &minus;1011 &middot; Illustrative only</span></p>
 			<div class="faq-market-size-options" role="group" aria-label="Example available No stake"><button type="button" data-faq-liquidity="1" aria-pressed="true">$546 on No</button><button type="button" data-faq-liquidity="10" aria-pressed="false">$5,460 on No</button></div>

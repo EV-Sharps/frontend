@@ -52,9 +52,9 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 	const numeric = value => typeof value === 'number' && Number.isFinite(value);
 	const logsOf = value => Array.isArray(value) ? value.filter(numeric) : [];
 	const display = value => Number.isInteger(value) ? String(value) : Number(value.toFixed(1)).toString();
-	let dialog, selected, view, range = '20', opener, priceHistory;
+	let dialog, selected, view, range = '20', opener, priceHistory, orderBooks;
 	let historyGeneration = 0, historyState;
-	const longHistory = () => view !== 'logs' && view !== 'pricehistory' && view !== 'due';
+	const longHistory = () => !['logs', 'pricehistory', 'orderbooks', 'due'].includes(view);
 
 	function loadSelectedHistory() {
 		const row = selected, generation = historyGeneration;
@@ -89,6 +89,9 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		priceHistory?.destroy();
 		priceHistory = null;
 		dialog?.querySelector('.player-history-price-host')?.replaceChildren();
+		orderBooks?.destroy();
+		orderBooks = null;
+		dialog?.querySelector('.player-history-depth-host')?.replaceChildren();
 	}
 
 	function close() {
@@ -113,6 +116,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 				<div class="nhl-history-tabs" role="tablist" aria-label="Player history">
 					${Object.entries(views).map(([key, label]) => `<button type="button" id="${prefix}-tab-${key}" role="tab" aria-controls="${prefix}-panel" data-history-view="${key}">${label}</button>`).join('')}
 					<button type="button" id="${prefix}-tab-pricehistory" role="tab" aria-controls="${prefix}-panel" data-history-view="pricehistory" hidden>Price history</button>
+					<button type="button" id="${prefix}-tab-orderbooks" role="tab" aria-controls="${prefix}-panel" data-history-view="orderbooks" hidden>Order books</button>
 				</div>
 				<div class="nhl-history-ranges" role="group" aria-label="Games shown">
 					<button type="button" data-history-range="10">L10</button>
@@ -129,6 +133,7 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 					<div class="nhl-history-legend"></div>
 				</div>
 				<div id="${prefix}-price-history" class="player-history-price-host" hidden></div>
+				<div class="player-history-depth-host" hidden></div>
 			</section>
 			<footer class="nhl-history-footer">
 				<button type="button" data-history-action="prices">Compare prices</button>
@@ -348,9 +353,15 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 		dialog.querySelector('[data-history-view="pricehistory"]').hidden = !hasPriceHistory;
 		if (view === 'pricehistory' && !hasPriceHistory) view = dueOf(selected) ? 'due' : 'logs';
 		const showPrices = view === 'pricehistory';
-		dialog.querySelector('.player-history-game-content').hidden = showPrices;
+		const hasOrderBooks = !!root.PlayerLines?.mountDepth;
+		dialog.querySelector('[data-history-view="orderbooks"]').hidden = !hasOrderBooks;
+		if (view === 'orderbooks' && !hasOrderBooks) view = dueOf(selected) ? 'due' : 'logs';
+		const showBooks = view === 'orderbooks';
+		dialog.querySelector('.player-history-game-content').hidden = showPrices || showBooks;
 		const priceHost = dialog.querySelector('.player-history-price-host');
 		priceHost.hidden = !showPrices;
+		const depthHost = dialog.querySelector('.player-history-depth-host');
+		depthHost.hidden = !showBooks;
 		dialog.querySelector('.nhl-history-empty').hidden = true;
 		dialog.querySelector('.nhl-history-legend').replaceChildren();
 		dialog.querySelectorAll('[data-history-view]').forEach(button => {
@@ -358,9 +369,10 @@ function createPlayerHistory(root, { prefix, views, props, lineOf = row => row.h
 			button.tabIndex = button.dataset.historyView === view ? 0 : -1;
 		});
 		dialog.querySelector(`#${prefix}-panel`).setAttribute('aria-labelledby', `${prefix}-tab-${view}`);
-		dialog.querySelector('.nhl-history-ranges').hidden = view === 'due' || showPrices;
+		dialog.querySelector('.nhl-history-ranges').hidden = view === 'due' || showPrices || showBooks;
 		dialog.querySelectorAll('[data-history-range]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.historyRange === range)));
 		if (showPrices) priceHistory = root.PriceHistory.mount(priceHost, selected);
+		else if (showBooks) orderBooks = root.PlayerLines.mountDepth(depthHost, selected);
 		else if (view === 'due') renderDue(dueOf(selected));
 		else renderLogs();
 	}
@@ -398,9 +410,11 @@ window.NhlHistory = createPlayerHistory(window, {
 	views: { due: 'Due', logs: 'Logs', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
 	props: { atgs: 'Goals', fgs: 'First goal', lgs: 'Last goal', sog: 'Shots on goal', ast: 'Assists', pts: 'Points', sv: 'Saves', bs: 'Blocked shots', pp_pts: 'Power play points' }
 });
+// Cards and the history dialog share the same bounded, session-aware cache.
+const loadNbaPlayerHistory = createNbaHistoryLoader(window);
 window.NbaHistory = createPlayerHistory(window, {
 	prefix: 'nba-history',
-	loadHistory: createNbaHistoryLoader(window),
+	loadHistory: loadNbaPlayerHistory,
 	views: { logs: 'Game logs', career: 'Career', bvt: 'Logs vs Opp', away: 'Away', home: 'Home' },
 	// Match whole percentages from the NBA feed, including half-to-even ties.
 	roundPercent: value => value % 1 === 0.5 ? Math.round(value / 2) * 2 : Math.round(value),

@@ -18,6 +18,7 @@ const header = { set innerHTML(value) { cardHtml = value; } };
 const fakeCard = () => ({ dataset: { uniqueId: 'fixture' }, style: {}, classList: { toggle() {} },
   querySelector: selector => selector === '.card-header' ? header : collapsed });
 const context = vm.createContext({ PAGE: 'nba', SPORT: 'nba', PLAYER: '', MOBILE: false,
+  window: {},
   DEVIG: '', PREVIOUS_DATA: [], CURR_USER: null, TEAM: '',
   localStorage: { getItem: () => null }, setTimeout() {},
   title: value => String(value || '').replace(/\b[a-z]/g, x => x.toUpperCase()),
@@ -29,6 +30,7 @@ const context = vm.createContext({ PAGE: 'nba', SPORT: 'nba', PLAYER: '', MOBILE
   resolveOppRankValue: () => null, getTDsOppRankColor: () => '', addSuffix: () => '',
   renderTrends: () => '', cardHitRates: () => [], renderCardRecord: () => '',
   cardStateKey: () => 'fixture',
+  mountCardGameLogs: () => {},
 });
 vm.runInContext(slice(shared, 'function nbaLineupBadge(', 'function playerLinesName('), context);
 vm.runInContext(slice(shared, 'const oppFormatter =', 'const feedPitcherFormatter =')

@@ -222,7 +222,7 @@ def nfl_dialog_checks(browser, base, temporary):
         assert popup.locator('[data-history-view="pricehistory"]').is_hidden()
         assert popup.locator('.price-history').count() == 0
         popup.locator('[data-history-view="logs"]').press('End')
-        assert popup.locator('[data-history-view="home"]').get_attribute('aria-selected') == 'true'
+        assert popup.locator('[data-history-view="orderbooks"]').get_attribute('aria-selected') == 'true'
         page.keyboard.press('Escape')
         assert not popup.evaluate('element=>element.open')
         assert not errors, errors

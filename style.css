@@ -1539,6 +1539,19 @@ html.odds-app #app > main { min-height: 0; }
 
 .expanded-ranks {
 	font-size: 0.8rem;
+	align-items: flex-start;
+}
+
+.data-card .expanded-ranks > .metric-pill {
+	flex: 0 1 auto;
+	box-sizing: border-box;
+	min-width: 76px;
+	min-height: 54px;
+	max-width: 100%;
+	padding: 7px 10px;
+	gap: 4px;
+	justify-content: center;
+	text-align: center;
 }
 
 .expanded-trends-chart {
@@ -2939,6 +2952,14 @@ nav {
 #player-lines-prop:hover { border-color: #7ba6cb; }
 #player-lines-prop:focus-visible { outline: 2px solid #9bd0ff; outline-offset: 2px; }
 .player-lines-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.player-lines-lines { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.player-lines-lines[hidden], .player-lines-depth[hidden] { display: none; }
+.player-lines-depth { min-height: 0; overflow: auto; padding: 0 12px 12px; overscroll-behavior: contain; }
+.player-lines-tabs { display: flex; gap: 4px; padding: 0 12px 10px; flex: none; }
+.player-lines-tabs button { border: 1px solid #3a4c60; border-radius: 6px; padding: 7px 10px; background: #192638; color: #b7cadd; font: inherit; font-size: 12px; cursor: pointer; }
+.player-lines-tabs button[aria-selected="true"] { background: #24415b; border-color: #6996bd; color: #edf7ff; }
+.player-lines-tabs button:focus-visible { outline: 2px solid #9bd0ff; outline-offset: 2px; }
+.player-history-depth-host { padding-bottom: 12px; }
 .player-lines-header p { margin: 0; color: #9db2c7; font-size: 10px; line-height: 1.4; }
 #player-lines-dialog .player-lines-close { flex: none; width: 30px; height: 30px; border: 1px solid #3a4c60; border-radius: 5px; padding: 0; background: #192638; color: #dceaf7; font-size: 22px; line-height: 1; cursor: pointer; }
 .player-lines-scroll { overflow: auto; min-height: 0; overscroll-behavior: contain; }
@@ -2991,6 +3012,7 @@ nav {
 }
 .nhl-history-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; }
 .nhl-history-tabs, .nhl-history-ranges { display: flex; gap: 3px; background: #09121d; padding: 3px; border: 1px solid #29394b; border-radius: 7px; }
+.nhl-history-tabs { flex-wrap: wrap; min-width: 0; max-width: 100%; }
 .nhl-history-ranges[hidden] { display: none; }
 .nhl-history-tabs button, .nhl-history-ranges button {
 	border: 1px solid transparent; border-radius: 5px; background: transparent; color: #aabdd0;
@@ -3025,8 +3047,7 @@ nav {
 	.player-history-title { font-size: 18px; }
 	.nhl-history-toolbar { padding: 12px; gap: 8px; }
 	.nhl-history-tabs { flex: 1 1 100%; min-width: 0; }
-	.nhl-history-tabs button { flex: 1; padding: 8px 5px; }
-	#nba-history-dialog .nhl-history-tabs button { min-width: 0; white-space: normal; }
+	.nhl-history-tabs button { flex: 1 0 calc(25% - 3px); padding: 8px 5px; min-width: 0; white-space: normal; }
 	.player-history-panel { padding: 0 12px; }
 	.nhl-history-stats { gap: 5px; }
 	.nhl-history-stats > div { padding: 9px 7px; }
@@ -4627,6 +4648,27 @@ button#logout:hover {
 .game-log-value { fill: #dce2e8; font: 9px ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 .game-log-game.latest .game-log-value { fill: var(--accent, #77c3ff); font-weight: 700; }
 .game-log-game:hover .game-log-bar { filter: brightness(1.25); }
+
+/* Card plots stay local and lightweight; large histories load only on demand. */
+.card-game-logs { min-width: 0; width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border, #34424e); border-radius: 8px; background: rgba(0,0,0,.12); cursor: default; }
+.card-log-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; text-align: left; }
+.card-log-controls label { display: flex; flex: 1; min-width: 95px; flex-direction: column; gap: 4px; font-size: .7rem; color: var(--muted, #a4aebb); }
+.card-log-controls select { width: 100%; min-width: 0; min-height: 34px; border: 1px solid var(--border, #34424e); border-radius: 5px; padding: 5px 7px; background: var(--panel, #20282f); color: var(--text, #e8e6e3); font: inherit; font-size: .78rem; }
+.card-log-controls select:focus-visible, .card-log-scroll:focus-visible, .card-log-empty button:focus-visible { outline: 2px solid var(--accent, #77c3ff); outline-offset: 2px; }
+.card-log-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; text-align: left; }
+.card-log-summary:empty { display: none; }
+.card-log-summary > div { display: flex; flex-direction: column; gap: 2px; }
+.card-log-summary span { font-size: .65rem; color: var(--muted, #a4aebb); }
+.card-log-summary strong { font-size: .83rem; font-variant-numeric: tabular-nums; }
+.card-log-note, .card-log-empty { margin: 8px 0 0; font-size: .68rem; line-height: 1.5; text-align: left; color: var(--muted, #a4aebb); }
+.card-log-note:empty, .card-log-scroll:empty { display: none; }
+.card-log-empty[hidden] { display: none; }
+.card-log-empty button { cursor: pointer; border: 1px solid var(--border, #34424e); border-radius: 4px; padding: 4px 8px; background: var(--panel, #20282f); color: var(--accent, #77c3ff); }
+.card-log-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.card-log-chart { display: block; min-width: 100%; max-width: none; margin: 4px 0; }
+.card-log-chart .game-log-value { font-size: 10px; }
+.card-log-chart .game-log-line { stroke: #dbe7f3; stroke-opacity: .75; stroke-width: 1; stroke-dasharray: 4 3; }
+.card-log-axis { fill: #a4aebb; font: 9px ui-monospace, monospace; }
 
 .snap-share { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .snap-history { display: flex; align-items: flex-end; gap: 3px; width: 48px; height: 12px; }

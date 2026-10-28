@@ -29,6 +29,33 @@ test('maker/taker cent-contract units are derived from raw probability, not disp
   assert.equal(got.opposite_odds, -300);
 });
 
+test('hover preview shows only the three best executable levels and totals only those stakes', () => {
+  const {row, entry, payload} = fixture();
+  entry.sides[1].orders = [order('0.85', 20000), order('0.8', 50000), order('0.75', 40000), order('0.7', 100000)];
+  row.player = '<img src=x onerror=alert(1)>';
+  payload.novigDepth[row.game] = {[row.player]: entry};
+  const html = depth.renderPreview(depth.inspect(row, payload, {now: NOW}), row);
+  const yes = html.split('data-preview-side="over"')[1].split('</section>')[0];
+  assert.equal((yes.match(/class="nv-depth-preview-level"/g) || []).length, 3);
+  assert.match(yes, />\+567<.*>\+400<.*>\+300</s);
+  assert.doesNotMatch(yes, />\+233</);
+  assert.match(yes, /Shown <strong>\$230<\/strong>/);
+  assert.match(html, /Top 3 prices per side/);
+  assert.match(html, /Before fees/);
+  assert.doesNotMatch(html, /<img/);
+  assert.match(html, /&lt;img/);
+});
+
+test('hover preview keeps an empty side empty and omits unavailable data', () => {
+  const {row, entry, payload} = fixture();
+  entry.sides[1].orders = [];
+  const html = depth.renderPreview(depth.inspect(row, payload, {now: NOW}), row);
+  const yes = html.split('data-preview-side="over"')[1].split('</section>')[0];
+  assert.match(yes, /No liquidity/);
+  assert.doesNotMatch(yes, /nv-depth-preview-level|Shown/);
+  assert.equal(depth.renderPreview({available: false}, row), '');
+});
+
 test('fresh same-side conventional best price; maker probability weighted by contracts', () => {
   const {row, payload} = fixture();
   const got = depth.inspect(row, payload, {now: NOW});
@@ -154,12 +181,12 @@ test('shared saved Goal URLs must never be presented as No-goal selections', () 
   assert.equal(depth.quoteLink({link: 'javascript:alert(1)'}, 'over'), '');
 });
 
-test('ATGS integration changes only Novig formatter and loads the scoped assets', () => {
+test('ATGS integration preserves the Novig formatter and loads the scoped assets', () => {
   const html = fs.readFileSync(path.join(__dirname, '../atgs.html'), 'utf8');
   assert.match(html, /href="novig-depth\.css"/);
   assert.match(html, /src="novig-depth\.js"/);
   assert.equal((html.match(/NovigDepth\.formatter\(evOddsFormatter\)/g) || []).length, 1);
-  const line = html.split('\n').find(line => line.includes('NovigDepth.formatter'));
+  const line = html.split('\n').find(line => line.includes('NovigDepth.formatter(evOddsFormatter)'));
   assert.match(line, /bookOdds_nv/);
   assert.match(html, /bookOdds_fd[^\n]*formatter: evOddsFormatter/);
 });

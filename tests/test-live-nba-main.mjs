@@ -19,6 +19,7 @@ const header = { set innerHTML(value) { html = value; } };
 const fakeCard = () => ({ dataset: { uniqueId: 'fixture' }, style: {}, classList: { toggle() {} },
   querySelector(selector) { return selector === '.card-header' ? header : collapsed; } });
 const context = vm.createContext({ PAGE: 'live', SPORT: 'nba', PLAYER: '', MOBILE: false,
+  window: {}, mountCardGameLogs: () => {},
   DEVIG: '', PREVIOUS_DATA: previousRows, CURRENT_CARD_INDEX: 0, CARDS_PER_LOAD: 20,
   ALL_CARD_DATA: [], CURR_USER: null, MASTER_DATA: [], IS_LOADING_CARDS: false,
   localStorage: { getItem() { return null; } }, setTimeout() {},

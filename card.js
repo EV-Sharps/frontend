@@ -395,88 +395,166 @@ function renderDue(pa) {
 	`;
 }
 
-function renderCardPlot(uniqueId, under, logs, handicap, interval) {
-	if (!logs || logs.length === 0) {
-		const chartDiv = document.getElementById(`card-chart-${uniqueId}`);
-		if (chartDiv) {
-			chartDiv.innerHTML = '<div style="text-align:center; padding:10px; font-style:italic;">No recent game logs available.</div>';
-		}
-		return;
-	}
+// Store only control preferences here, never the large player history arrays.
+const cardLogPreferences = new Map();
+const cardLogViews = { logs: ['Game logs', 'logs'], home: ['Home', 'homeLogs'],
+	away: ['Away', 'awayLogs'], bvt: ['vs Opp', 'bvtLogs'], career: ['Career', 'careerLogs'] };
 
-	const colors = logs.map(value => {
-		let cond = parseFloat(value) > parseFloat(handicap);
-		if (under) {
-			cond = parseFloat(value) < parseFloat(handicap);
-		}
-		return cond ? "rgba(65, 131, 215, 0.9)" : "rgba(242, 120, 75, 0.9)";
-	});
-	const tableData = {
-		x: Array.from({ length: logs.length }, (_, i) => i + 1),
-		y: logs.map(v => v != "0" ? v : 0.25),
-		type: "bar",
-		text: logs,
-		textposition: "inside",
-		marker: {
-			color: colors
-		}
-	};
-	const layout = {
-		height: 120,
-		autosize: true,
-		showlegend: false,
-		responsive: true,
-		plot_bgcolor: '#181a1b',
-		paper_bgcolor: "#181a1b",
-		font: {
-			color: "#e8e6e3"
-		},
-		width: '100%',
-		height: "200px",
-		dragmode: 'pan',
-		margin: { l: 0, r: 0, t: 20, b: 20 },
-		xaxis: {
-			showgrid: false,
-			type: "category",
-			//tickmode: "array",
-			//tickvals: [dtSplits[0],dtSplits.at(-1)],
-			//ticktext: [dtSplits[0],dtSplits.at(-1)],
-			//range: [-0.5, parseFloat(dtSplits.length)+0.5],
-			rangeslider: {
-				visible: false
-			},
-			//range: [dtSplits.length-15.6,dtSplits.length-0.5]
-		},
-		yaxis: {
-			showgrid: false,
-			tickmode: "linear",
-			dtick: 1,
-			fixedrange: true,
-			showticklabels: false,
-			title: {
-				text: ""
-			}
-		},
-		shapes: [
-			/*
-			{
-				type: "line",
-				x0: -0.25, x1: logs.length,
-				y0: handicap,
-				line: {
-					color: "#5A5A5A",
-					dash: "dash"
-				}
-			}
-			*/
-		]
-	};
-
-	//Plotly.newPlot(`card-chart-${uniqueId}`, [tableData], layout, { responsive: true});
-	setTimeout(() => {
-		//Plotly.Plots.resize(`card-chart-${uniqueId}`)
-	}, 100);
+function cardLogValues(raw) {
+	const values = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : [];
+	return values.filter(value => (typeof value === 'number' || typeof value === 'string')
+		&& String(value).trim() !== '' && Number.isFinite(Number(value))).map(Number);
 }
+
+function cardLogLine(row) {
+	const raw = row.prop === '2+td' ? 1.5 : row.prop === '3+td' ? 2.5
+		: row.playerHandicap ?? row.handicap;
+	return raw == null || String(raw).trim() === '' || !Number.isFinite(Number(raw)) ? null : Number(raw);
+}
+
+function drawCardLogChart(values, line, under) {
+	const shown = values.slice(-100);
+	const width = Math.max(300, shown.length * 30), height = 150;
+	const top = 20, bottom = 128;
+	const low = Math.min(0, line ?? 0, ...shown), high = Math.max(1, line ?? 0, ...shown);
+	const y = value => top + (high - value) / (high - low) * (bottom - top);
+	const baseline = y(0), step = width / shown.length;
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svg.setAttribute('class', 'card-log-chart');
+	svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+	svg.setAttribute('width', width);
+	svg.setAttribute('height', height);
+	svg.setAttribute('role', 'img');
+	svg.setAttribute('aria-label', `Game logs, oldest to latest: ${shown.join(', ')}.${line == null ? '' : ` ${under ? 'Under' : 'Over'} ${line}. Green is a hit, red a miss, gold a push.`}`);
+	let content = `<rect class="game-log-latest" x="${width - step}" y="0" width="${step}" height="${bottom}" rx="3" />
+		<line class="game-log-baseline" x1="0" x2="${width}" y1="${baseline}" y2="${baseline}" />`;
+	if (line != null) content += `<line class="game-log-line" x1="0" x2="${width}" y1="${y(line)}" y2="${y(line)}" />`;
+	shown.forEach((value, index) => {
+		const center = step * (index + .5), barWidth = Math.min(22, step - 6);
+		const barHeight = Math.max(2, Math.abs(baseline - y(value)));
+		const barY = Math.min(Math.min(baseline, y(value)), bottom - barHeight);
+		const result = line == null ? 'neutral' : value === line ? 'push' : (under ? value < line : value > line) ? 'hit' : 'miss';
+		const latest = index === shown.length - 1;
+		const ago = latest ? 'Latest' : `${shown.length - index - 1} ago`;
+		content += `<g class="game-log-game${latest ? ' latest' : ''}"><title>${ago}: ${value} (${result})</title>
+			<rect class="game-log-bar ${result}" data-value="${value}" x="${center - barWidth / 2}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="2" />
+			<text class="game-log-value" x="${center}" y="${Math.max(10, barY - 4)}" text-anchor="middle">${value}</text>
+			${index % 5 === 0 || latest ? `<text class="card-log-axis" x="${center}" y="145" text-anchor="middle">${latest ? 'Latest' : `-${shown.length - index - 1}`}</text>` : ''}</g>`;
+	});
+	svg.innerHTML = content;
+	return svg;
+}
+
+function mountCardGameLogs(card) {
+	card.renderGameLogs = null;
+	const row = card.playerLinesData, expanded = card.querySelector('.card-expanded');
+	if (!expanded || !row?.player || row.blurred || PAGE === 'main' || liveNflMainMarket(row)
+		|| ['separator', 'fb', '1st pts'].includes(row.prop)) return;
+	const lazy = row.historyKey != null && typeof loadNbaPlayerHistory === 'function'
+		&& (row.sport === 'nba' || ['nba', 'pts', 'threes', 'outliers'].includes(PAGE));
+	const hasField = field => Array.isArray(row[field]) || typeof row[field] === 'string';
+	if (!lazy && !Object.values(cardLogViews).some(([, field]) => hasField(field))) return;
+	const key = JSON.stringify([row.sport || SPORT, row.game, row.playerId || row.player, row.prop]);
+	const saved = cardLogPreferences.get(key);
+	const settings = { view: saved?.view || 'logs', range: saved?.range || '20' };
+	const available = view => (lazy && view !== 'logs') || hasField(cardLogViews[view][1]);
+	if (!available(settings.view)) settings.view = Object.keys(cardLogViews).find(available) || 'logs';
+	const remember = () => {
+		cardLogPreferences.delete(key);
+		cardLogPreferences.set(key, { ...settings });
+		while (cardLogPreferences.size > 200) cardLogPreferences.delete(cardLogPreferences.keys().next().value);
+	};
+	const host = document.createElement('section');
+	host.className = 'card-game-logs';
+	host.setAttribute('aria-label', 'Player game logs');
+	host.innerHTML = `<div class="card-log-controls">
+		<label>Game logs <select class="card-log-view" aria-label="Game log split">${Object.entries(cardLogViews).map(([view, [label]]) =>
+			`<option value="${view}"${available(view) ? '' : ' disabled'}>${label}${available(view) ? '' : ' (unavailable)'}</option>`).join('')}</select></label>
+		<label>Games <select class="card-log-range" aria-label="Number of games"><option value="10">Last 10</option><option value="20">Last 20</option><option value="all">All available</option></select></label>
+		</div><div class="card-log-summary" aria-live="polite"></div>
+		<p class="card-log-note"></p><div class="card-log-scroll" tabindex="0" role="region" aria-label="Game log chart; scroll for earlier games"></div>
+		<p class="card-log-empty" role="status" hidden></p>`;
+	expanded.append(host);
+	// These controls sit inside the clickable card header.
+	host.addEventListener('click', event => event.stopPropagation());
+	host.addEventListener('keydown', event => event.stopPropagation());
+	const viewSelect = host.querySelector('.card-log-view'), rangeSelect = host.querySelector('.card-log-range');
+	viewSelect.value = settings.view;
+	rangeSelect.value = settings.range;
+	viewSelect.addEventListener('change', () => { settings.view = viewSelect.value; remember(); render(); });
+	rangeSelect.addEventListener('change', () => { settings.range = rangeSelect.value; remember(); render(); });
+	const summary = host.querySelector('.card-log-summary'), note = host.querySelector('.card-log-note');
+	const scroll = host.querySelector('.card-log-scroll'), empty = host.querySelector('.card-log-empty');
+	const tokenOf = () => typeof ACCESS_TOKEN === 'string' ? ACCESS_TOKEN : '';
+	let history, status, token = tokenOf(), generation = 0;
+	function requestHistory() {
+		status = 'loading';
+		const request = ++generation, requestToken = token;
+		loadNbaPlayerHistory(row.historyKey).then(data => {
+			if (request !== generation || requestToken !== tokenOf() || !host.isConnected
+				|| card.playerLinesData !== row || row.blurred) return;
+			history = data;
+			status = 'ready';
+			render();
+		}).catch(error => {
+			if (request !== generation || requestToken !== tokenOf() || !host.isConnected || card.playerLinesData !== row) return;
+			status = error?.code === 'history_not_found' ? 'expired' : 'error';
+			render();
+		});
+	}
+	function render() {
+		if (!card.classList.contains('expanded')) return;
+		if (row.blurred) { host.replaceChildren(); return; }
+		if (token !== tokenOf()) { token = tokenOf(); history = null; status = null; generation++; }
+		summary.replaceChildren(); scroll.replaceChildren(); empty.replaceChildren(); note.textContent = '';
+		empty.hidden = true;
+		if (lazy && settings.view !== 'logs' && status !== 'ready') {
+			if (!status) requestHistory();
+			empty.hidden = false;
+			empty.textContent = status === 'loading' ? 'Loading player history...'
+				: status === 'expired' ? 'History for this table is no longer available. Refresh the page and try again.'
+				: 'Unable to load player history. Try again.';
+			if (status !== 'loading') {
+				const retry = document.createElement('button');
+				retry.type = 'button'; retry.dataset.cardLogRetry = ''; retry.textContent = 'Retry';
+				retry.addEventListener('click', () => { status = null; render(); });
+				empty.append(' ', retry);
+			}
+			return;
+		}
+		const field = cardLogViews[settings.view][1];
+		const logs = cardLogValues((lazy && settings.view !== 'logs' ? history : row)?.[field]);
+		const values = settings.range === 'all' ? logs : logs.slice(-Number(settings.range));
+		if (!values.length) {
+			empty.hidden = false;
+			empty.textContent = `No ${settings.view === 'logs' ? 'recent' : cardLogViews[settings.view][0].toLowerCase()} game logs available.`;
+			return;
+		}
+		const line = cardLogLine(row), under = row.ouIdx == null ? !!row.under : row.ouIdx == 1;
+		const wins = values.filter(value => under ? value < line : value > line).length;
+		const pushes = values.filter(value => value === line).length;
+		const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+		const sorted = [...values].sort((a, b) => a - b), middle = Math.floor(sorted.length / 2);
+		const median = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+		const format = number => Number(number.toFixed(1)).toString();
+		const rawPct = 100 * wins / values.length;
+		const pct = row.sport === 'nba' || ['nba', 'pts', 'threes'].includes(PAGE)
+			? (rawPct % 1 === .5 ? Math.round(rawPct / 2) * 2 : Math.round(rawPct)) : Math.round(rawPct);
+		const stat = (label, value) => `<div><span>${label}</span><strong>${value}</strong></div>`;
+		summary.innerHTML = (line == null ? '' : stat(`${under ? 'Under' : 'Over'} ${line}`, `${pct}% (${wins}/${values.length})`))
+			+ stat('Average', format(mean)) + stat('Median', format(median))
+			+ (pushes ? stat('Pushes', pushes) : '');
+		const scope = settings.view === 'bvt' ? `vs ${String(row.opp || 'opponent').toUpperCase()}` : cardLogViews[settings.view][0];
+		note.textContent = `${scope}: ${values.length} of ${logs.length} available games. Oldest to latest.${values.length > 100 ? ` Graph: latest 100; summary: all ${values.length}.` : ''}${line == null ? '' : ' Green: hit. Red: miss. Gold: push.'}`;
+		scroll.append(drawCardLogChart(values, line, under));
+		// The newest games stay in view, including after a previously closed card opens.
+		scroll.scrollLeft = scroll.scrollWidth;
+		requestAnimationFrame(() => { if (host.isConnected) scroll.scrollLeft = scroll.scrollWidth; });
+	}
+	card.renderGameLogs = render;
+	render();
+}
+
 
 function showCardModal(rowData) {
 	const overlay = document.getElementById('card-modal-overlay');
@@ -491,10 +569,11 @@ function showCardModal(rowData) {
 	if (body) {
 		body.classList.add('visible');
 		card.classList.add('expanded');
-		renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap, 15);
+
 	}
 	inner.appendChild(card);
 	overlay.classList.add('open');
+	card.renderGameLogs?.();
 }
 
 function createNewCard(rowData, uniqueId) {
@@ -522,19 +601,9 @@ function createNewCard(rowData, uniqueId) {
 		const isVisible = collapsedBody.classList.toggle("visible");
 		card.classList.toggle("expanded", isVisible);
 
-		const uniqueId = card.dataset.uniqueId;
-
-		const logs = rowData.logs;
-		const handicap = rowData.handicap;
-
 		const key = cardStateKey(rowData);
-		localStorage.setItem(key, collapsedBody.classList.contains("visible") ? "1" : "0");
-
-		if (collapsedBody.classList.contains('visible')) {
-			const intervalSelect = document.getElementById(`log-interval-${uniqueId}`);
-			const interval = intervalSelect ? parseInt(intervalSelect.value) : 15;
-			renderCardPlot(uniqueId, rowData.under, logs, handicap, interval);
-		}
+		localStorage.setItem(key, isVisible ? "1" : "0");
+		if (isVisible) card.renderGameLogs?.();
 	});
 
 	// Run the update logic to populate the content
@@ -908,9 +977,7 @@ function updateExistingCard(card, rowData) {
 	collapsedBody.classList.toggle("visible", shouldOpen);
 	card.classList.toggle("expanded", shouldOpen);
 
-	if (collapsedBody.classList.contains('visible')) {
-		//renderCardPlot(uniqueId, rowData.under, rowData.logs, rowData.handicap);
-	}
+	mountCardGameLogs(card);
 
 	const liveMainId = liveNflMainIdentity(rowData);
 	const previousRow = PREVIOUS_DATA.find(d => liveMainId

@@ -259,8 +259,10 @@ try:
             first_tab = page.locator(f'[data-history-view="{first_view}"]')
             assert first_tab.get_attribute("aria-selected") == "true"
             first_tab.press("End")
-            assert home_tab.get_attribute("aria-selected") == "true"
-            assert page.locator('#nhl-history-panel').get_attribute('aria-labelledby') == home_tab.get_attribute('id')
+            order_books_tab = page.locator('[data-history-view="orderbooks"]')
+            assert order_books_tab.get_attribute("aria-selected") == "true"
+            assert page.locator('#nhl-history-panel').get_attribute('aria-labelledby') == order_books_tab.get_attribute('id')
+            home_tab.click()
             assert_logs(page, HOME_LOGS[-20:], line)
 
             bounds = page.locator("#nhl-history-dialog").bounding_box()
@@ -275,7 +277,7 @@ try:
                             return {left:rect.left, right:rect.right, top:rect.top, bottom:rect.bottom};
                         })};
                 }""")
-                assert len(tabs['buttons']) == 5
+                assert len(tabs['buttons']) == 6
                 assert tabs['scroll'] <= tabs['width'] + 1, tabs
                 assert all(bounds['x'] <= item['left'] and item['right'] <= bounds['x'] + bounds['width']
                            for item in tabs['buttons']), tabs

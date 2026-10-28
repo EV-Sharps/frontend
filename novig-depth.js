@@ -3,6 +3,15 @@
 
   const MAX_AGE_MS = 15 * 60 * 1000;
   const MIN_SIGNAL_STAKE_USD = 100;
+  const PROVIDERS = {
+    nv: {book: 'nv', name: 'Novig', field: 'novigDepth', maxAge: MAX_AGE_MS, maxLevels: 20, divisor: 100},
+    kal: {book: 'kal', name: 'Kalshi', field: 'kalshiDepth', maxAge: 5 * 60 * 1000, maxLevels: 100, divisor: 1},
+    px: {book: 'px', name: 'ProphetX', field: 'prophetxDepth', maxAge: 5 * 60 * 1000, maxLevels: 100}
+  };
+  const providerFor = (options = {}) => {
+    const book = options.book || options.exchange;
+    return ['px', 'prophetx'].includes(book) ? PROVIDERS.px : ['kal', 'kalshi'].includes(book) ? PROVIDERS.kal : PROVIDERS.nv;
+  };
   const EXCHANGES = new Set(['nv', 'novig', 'kal', 'kalshi', 'poly', 'polymarket', 'px', 'prophetx', 'matchbook', 'mb', 'bf', 'betfair']);
   const BOOK_NAMES = {fd: 'FanDuel', dk: 'DraftKings', b365: 'bet365', mgm: 'BetMGM', cz: 'Caesars', fn: 'Fanatics', pn: 'Pinnacle', circa: 'Circa', br: 'BetRivers', hr: 'Hard Rock', espn: 'ESPN BET', bol: 'BetOnline', bv: 'Bovada', fl: 'Fliff', re: 'Rebet'};
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -53,16 +62,36 @@
 
   const americanFromProbability = value => americanFromFraction(fraction(value));
 
-  // Exact decimal sums avoid rounding a real $90 down to $89 after a complement.
-  function stakeFraction(orders, other = false) {
+  function sumFractions(values) {
     let n = 0n, d = 1n;
-    for (const order of orders) {
-      const p = fraction(order.probability);
-      if (!p) continue;
-      if (p.d > d) { n *= p.d / d; d = p.d; }
-      n += (other ? p.d - p.n : p.n) * BigInt(order.contracts) * (d / p.d);
+    const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+    for (const value of values) {
+      const common = gcd(d, value.d);
+      n = n * (value.d / common) + value.n * (d / common);
+      d *= value.d / common;
+      const reduce = gcd(n < 0n ? -n : n, d);
+      n /= reduce; d /= reduce;
     }
-    return {n, d: d * 100n};
+    return {n, d};
+  }
+
+  function payoutFraction(order) {
+    if (order.money) return order.money.payout;
+    const contracts = fraction(order.contracts);
+    return contracts ? {n: contracts.n, d: contracts.d * BigInt(order.payout_divisor || 100)} : null;
+  }
+
+  // Decimal quantities preserve fractional Kalshi $1 contracts and Novig cents.
+  function stakeFraction(orders, other = false) {
+    const values = [];
+    for (const order of orders) {
+      if (order.money) { values.push(other ? order.money.opposite : order.money.stake); continue; }
+      const p = fraction(order.probability);
+      const payout = payoutFraction(order);
+      if (!p || !payout) continue;
+      values.push({n: (other ? p.d - p.n : p.n) * payout.n, d: p.d * payout.d});
+    }
+    return sumFractions(values);
   }
 
   function wholeStake(orders, other = false) {
@@ -72,15 +101,22 @@
     return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0}).format(Number(whole));
   }
 
-  function takingOrders(raw) {
-    return normalizeOrders(raw).map(order => {
+  function takingOrders(raw, options = {}) {
+    return normalizeOrders(raw, options).map(order => {
+      if (order.money) {
+        const implied = {n: order.money.implied.d - order.money.implied.n, d: order.money.implied.d};
+        return {...order, probability: String(Number(implied.n) / Number(implied.d)), p: Number(implied.n) / Number(implied.d),
+          odds: order.opposite_odds, opposite_odds: order.odds,
+          stake_usd: order.opposite_stake_usd, opposite_stake_usd: order.stake_usd,
+          money: {...order.money, implied, stake: order.money.opposite, opposite: order.money.stake}};
+      }
       const probability = complementProbability(order.probability);
       const p = fraction(probability);
       const value = Number(p.n) / Number(p.d);
-      return {probability, p: value, contracts: order.contracts, payout_usd: order.payout_usd,
+      return {probability, p: value, contracts: order.contracts, payout_divisor: order.payout_divisor, payout_usd: order.payout_usd,
         stake_usd: value * order.payout_usd, odds: americanFromFraction(p)};
     }).sort((a, b) => {
-      const x = fraction(a.probability), y = fraction(b.probability);
+      const x = a.money?.implied || fraction(a.probability), y = b.money?.implied || fraction(b.probability);
       const delta = x.n * y.d - y.n * x.d;
       return delta < 0n ? -1 : delta > 0n ? 1 : 0;
     });
@@ -106,18 +142,36 @@
     } catch (_) { return ''; }
   }
 
-  function normalizeOrders(raw) {
-    if (!Array.isArray(raw) || raw.length > 20) return [];
+  function normalizeOrders(raw, options = {}) {
+    const provider = providerFor(options);
+    if (!Array.isArray(raw) || raw.length > provider.maxLevels) return [];
     const orders = [];
     for (const order of raw) {
       if (!order || typeof order !== 'object') return [];
+      if (provider.book === 'px') {
+        // ProphetX reports USD available to take, not contracts or original maker stake.
+        const take = impliedFraction(order.opposite_odds), available = fraction(order.opposite_stake_usd);
+        if (!take || !available || available.n <= 0n || Number(available.n) / Number(available.d) > Number.MAX_SAFE_INTEGER) return [];
+        const implied = {n: take.d - take.n, d: take.d};
+        const stake = {n: available.n * (take.d - take.n), d: available.d * take.n};
+        const payout = {n: available.n * take.d, d: available.d * take.n};
+        const p = Number(implied.n) / Number(implied.d);
+        if (![p, Number(stake.n) / Number(stake.d), Number(payout.n) / Number(payout.d)].every(Number.isFinite)) return [];
+        const odds = Number(order.opposite_odds);
+        orders.push({probability: String(p), p, odds: Math.abs(odds) === 100 ? 100 : -odds,
+          opposite_odds: odds, stake_usd: Number(stake.n) / Number(stake.d),
+          opposite_stake_usd: Number(available.n) / Number(available.d), payout_usd: Number(payout.n) / Number(payout.d),
+          money: {implied, stake, opposite: available, payout}});
+        continue;
+      }
       const probability = fraction(order.probability);
       const contracts = typeof order.contracts === 'number' ? order.contracts : Number(order.contracts);
-      if (!probability || probability.n <= 0n || probability.n >= probability.d || !Number.isSafeInteger(contracts) || contracts <= 0 || typeof order.contracts === 'boolean') return [];
+      const quantity = fraction(order.contracts);
+      if (!probability || probability.n <= 0n || probability.n >= probability.d || !quantity || quantity.n <= 0n || !Number.isFinite(contracts) || contracts <= 0 || contracts > Number.MAX_SAFE_INTEGER || (provider.book === 'nv' && !Number.isSafeInteger(contracts))) return [];
       const p = Number(probability.n) / Number(probability.d);
       if (!Number.isFinite(p) || p <= 0 || p >= 1) return [];
-      const payout = contracts / 100;
-      orders.push({probability: String(order.probability), p, contracts, payout_usd: payout, stake_usd: p * payout, opposite_stake_usd: (1 - p) * payout, odds: americanFromFraction(probability), opposite_odds: americanFromProbability(complementProbability(order.probability))});
+      const payout = contracts / provider.divisor;
+      orders.push({probability: String(order.probability), p, contracts: provider.book === 'kal' ? String(order.contracts) : contracts, payout_divisor: provider.divisor, payout_usd: payout, stake_usd: p * payout, opposite_stake_usd: (1 - p) * payout, odds: americanFromFraction(probability), opposite_odds: americanFromProbability(complementProbability(order.probability))});
     }
     return orders.sort((a, b) => b.p - a.p);
   }
@@ -141,28 +195,31 @@
   function compareOrders(orders, quote, threshold = MIN_SIGNAL_STAKE_USD) {
     const implied = quote ? impliedFraction(quote.odds) : null;
     const matching = orders.filter(order => {
-      const p = fraction(order.probability);
+      const p = order.money?.implied || fraction(order.probability);
       return implied && p && p.n * implied.d > implied.n * p.d;
     });
-    const contracts = matching.reduce((sum, order) => sum + order.contracts, 0);
+    const contracts = matching.reduce((sum, order) => sum + Number(order.contracts || 0), 0);
     const makerStake = matching.reduce((sum, order) => sum + order.stake_usd, 0);
     const oppositeStake = matching.reduce((sum, order) => sum + order.opposite_stake_usd, 0);
-    const weightedProbability = contracts ? matching.reduce((sum, order) => sum + order.p * order.contracts, 0) / contracts : null;
+    const totalPayout = matching.reduce((sum, order) => sum + order.payout_usd, 0);
+    const weightedProbability = totalPayout ? makerStake / totalPayout : null;
     const exactStake = stakeFraction(matching), exactThreshold = fraction(threshold);
-    const weightedOdds = contracts ? americanFromFraction({n: exactStake.n * 100n, d: exactStake.d * BigInt(contracts)}) : null;
+    const payout = sumFractions(matching.map(payoutFraction));
+    const weightedOdds = payout.n ? americanFromFraction({n: exactStake.n * payout.d, d: exactStake.d * payout.n}) : null;
     const substantial = matching.length > 0 && exactThreshold && exactStake.n * exactThreshold.d >= exactThreshold.n * exactStake.d;
     return {matching, contracts, makerStake, oppositeStake, weightedProbability, weightedOdds, substantial: Boolean(substantial), threshold};
   }
 
   function inspect(row, payload, options = {}) {
+    const provider = providerFor(options);
     const now = options.now ?? Date.now();
     const side = options.side === 'under' || options.side === 'over' ? options.side : row?.under ? 'under' : 'over';
     const unavailable = reason => ({available: false, reason, side});
-    if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', .5].includes(row.handicap) || !row.game || !row.player) return unavailable('Depth is unavailable for this selection.');
-    const entry = payload?.novigDepth?.[row.game]?.[row.player];
-    if (!entry || entry.schema_version !== 1 || typeof entry.market_id !== 'string' || !entry.market_id || !Array.isArray(entry.sides)) return unavailable('No current Novig resting orders.');
+    if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap) || !row.game || !row.player) return unavailable('Depth is unavailable for this selection.');
+    const entry = payload?.[provider.field]?.[row.game]?.[row.player];
+    if (!entry || entry.schema_version !== 1 || typeof entry.market_id !== 'string' || !entry.market_id || !Array.isArray(entry.sides)) return unavailable(`No current ${provider.name} resting orders.`);
     const observed = timestamp(entry.updated), expires = timestamp(entry.expires_at), starts = timestamp(entry.starts_at);
-    if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts || expires <= observed || expires > starts || now - observed > MAX_AGE_MS || expires <= now || starts <= now) return unavailable('Novig depth expired or the game has started. Refresh for current data.');
+    if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts || expires <= observed || expires > starts || now - observed > provider.maxAge || expires <= now || starts <= now) return unavailable(`${provider.name} depth expired or the game has started. Refresh for current data.`);
     const date = row.dt || row.date;
     if (!date || date !== easternDate(starts) || (row.dt && row.date && row.dt !== row.date)) return unavailable('Depth does not match this game date.');
     const feedStart = payload?.times?.[row.game];
@@ -170,19 +227,19 @@
       const expected = timestamp(feedStart);
       if (!Number.isFinite(expected) || expected <= now || easternDate(expected) !== date || Math.abs(expected - starts) > 20 * 60 * 1000) return unavailable('Depth does not match this game start.');
     }
-    if (entry.sides.length !== 2 || new Set(entry.sides.map(item => item?.side)).size !== 2 || !entry.sides.every(item => ['over', 'under'].includes(item?.side))) return unavailable('No valid Novig depth for this market.');
+    if (entry.sides.length !== 2 || new Set(entry.sides.map(item => item?.side)).size !== 2 || !entry.sides.every(item => ['over', 'under'].includes(item?.side))) return unavailable(`No valid ${provider.name} depth for this market.`);
     const selected = entry.sides.find(item => item.side === side);
     const opposed = entry.sides.find(item => item.side === opposite(side));
-    const orders = normalizeOrders(selected?.orders);
-    const anyOrders = entry.sides.some(item => normalizeOrders(item.orders).length > 0);
-    if (!anyOrders) return unavailable('No current Novig resting orders.');
+    const orders = normalizeOrders(selected?.orders, options);
+    const anyOrders = entry.sides.some(item => normalizeOrders(item.orders, options).length > 0);
+    if (!anyOrders) return unavailable(`No current ${provider.name} resting orders.`);
     const quote = bestBook(row, options.updated || payload.updated, side, now);
     const availableBooks = ['over', 'under'].map(outcome => {
       const source = entry.sides.find(item => item.side === opposite(outcome));
-      return {side: outcome, orders: takingOrders(source.orders), truncated: source.truncated === true,
+      return {side: outcome, orders: takingOrders(source.orders, options), truncated: source.truncated === true,
         quote: bestBook(row, options.updated || payload.updated, outcome, now)};
     });
-    return {available: true, side, entry, orders, takingOrders: takingOrders(opposed.orders), takingTruncated: opposed.truncated === true,
+    return {available: true, side, entry, provider, maxLevels: provider.maxLevels, orders, takingOrders: takingOrders(opposed.orders, options), takingTruncated: opposed.truncated === true,
       availableBooks, truncated: selected.truncated === true, quote, comparison: compareOrders(orders, quote), now};
   }
 
@@ -194,31 +251,118 @@
     return typeof UPDATED !== 'undefined' && typeof PAGE !== 'undefined' && UPDATED?.[PAGE] ? UPDATED[PAGE] : payload.updated;
   }
 
-  const state = {dialog: null, row: null, opener: null, side: 'over', mode: 'available', timer: null, iconTimer: null, observer: null};
+  const state = {dialog: null, row: null, opener: null, book: 'nv', side: 'over', mode: 'available', timer: null, iconTimer: null, observer: null};
   const icon = '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M3 16V9m5 7V4m5 12V7m4 9H1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const preview = {element: null, trigger: null, row: null, showTimer: null, hideTimer: null, suppressFocus: false};
 
-  function createTrigger(getRow) {
+  function hidePreview() {
+    root.clearTimeout(preview.showTimer);
+    root.clearTimeout(preview.hideTimer);
+    preview.showTimer = preview.hideTimer = null;
+    const trigger = preview.trigger;
+    if (trigger) {
+      const ids = (trigger.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== 'orderbook-preview');
+      if (ids.length) trigger.setAttribute('aria-describedby', ids.join(' '));
+      else trigger.removeAttribute('aria-describedby');
+    }
+    if (preview.element) preview.element.hidden = true;
+    preview.trigger = preview.row = null;
+  }
+
+  function deferHidePreview() {
+    root.clearTimeout(preview.showTimer);
+    root.clearTimeout(preview.hideTimer);
+    preview.hideTimer = root.setTimeout(hidePreview, 160);
+  }
+
+  function positionPreview() {
+    const rect = preview.trigger.getBoundingClientRect();
+    const box = preview.element.getBoundingClientRect();
+    const margin = 8, gap = 6;
+    const left = Math.max(margin, Math.min(rect.left + rect.width / 2 - box.width / 2, root.innerWidth - box.width - margin));
+    const below = rect.bottom + gap;
+    const top = below + box.height <= root.innerHeight - margin ? below : Math.max(margin, rect.top - box.height - gap);
+    preview.element.style.left = `${left}px`;
+    preview.element.style.top = `${top}px`;
+  }
+
+  function refreshPreview() {
+    const trigger = preview.trigger;
+    if (!trigger || !preview.element || preview.element.hidden) return;
+    const rect = trigger.getBoundingClientRect();
+    if (!trigger.isConnected || trigger.disabled || !rect.width || !rect.height || rect.bottom <= 0 || rect.top >= root.innerHeight || state.dialog?.open) return hidePreview();
+    const payload = pagePayload();
+    const row = currentRow(payload, preview.row);
+    const current = trigger.novigDepthRow?.();
+    if (!current || currentRow({data: [current]}, preview.row) === null) return hidePreview();
+    const result = inspect(row, payload, {book: trigger.dataset.depthBook, updated: pageUpdated(payload)});
+    if (!result.available) return hidePreview();
+    const html = renderPreview(result, row);
+    if (preview.element.innerHTML !== html) preview.element.innerHTML = html;
+    positionPreview();
+  }
+
+  function showPreview(trigger) {
+    hidePreview();
+    if (!trigger.isConnected || trigger.disabled || state.dialog?.open) return;
+    if (!preview.element) {
+      preview.element = document.createElement('div');
+      preview.element.id = 'orderbook-preview';
+      preview.element.setAttribute('role', 'tooltip');
+      preview.element.addEventListener('pointerenter', () => root.clearTimeout(preview.hideTimer));
+      preview.element.addEventListener('pointerleave', () => {
+        if (!preview.trigger?.matches(':focus-visible')) deferHidePreview();
+      });
+      document.body.appendChild(preview.element);
+    }
+    preview.trigger = trigger;
+    preview.row = trigger.novigDepthRow?.() || null;
+    preview.element.hidden = false;
+    refreshPreview();
+    if (preview.trigger) {
+      const ids = new Set((trigger.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+      ids.add('orderbook-preview');
+      trigger.setAttribute('aria-describedby', [...ids].join(' '));
+    }
+  }
+
+  function queuePreview(trigger) {
+    hidePreview();
+    preview.showTimer = root.setTimeout(() => showPreview(trigger), 180);
+  }
+
+  function createTrigger(getRow, options = {}) {
+    const provider = providerFor(options);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'nv-depth-trigger';
-    button.title = 'Novig order book';
-    button.setAttribute('aria-label', `View Novig order book for ${getRow().player}`);
+    button.setAttribute('aria-label', `View ${provider.name} order book for ${getRow().player}`);
     button.setAttribute('aria-haspopup', 'dialog');
     button.innerHTML = icon;
     button.novigDepthRow = getRow;
-    button.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); open(getRow(), button); });
+    button.dataset.depthBook = provider.book;
+    button.addEventListener('pointerenter', event => {
+      if (event.pointerType !== 'touch' && root.matchMedia('(any-hover: hover)').matches) queuePreview(button);
+    });
+    button.addEventListener('pointerleave', () => { if (!button.matches(':focus-visible')) deferHidePreview(); });
+    button.addEventListener('focus', () => { if (!preview.suppressFocus && button.matches(':focus-visible')) queuePreview(button); });
+    button.addEventListener('blur', () => { if (!button.matches(':hover') && !preview.element?.matches(':hover')) deferHidePreview(); });
+    button.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); open(getRow(), button, {book: provider.book}); });
     if (!state.iconTimer) state.iconTimer = root.setInterval(() => {
       const payload = pagePayload();
       document.querySelectorAll('.nv-depth-trigger').forEach(trigger => {
-        const result = inspect(trigger.novigDepthRow?.(), payload);
+        const provider = providerFor({book: trigger.dataset.depthBook});
+        const result = inspect(currentRow(payload, trigger.novigDepthRow?.() || null), payload, {book: provider.book});
         trigger.disabled = !result.available;
-        trigger.title = result.available ? 'Novig order book' : result.reason;
+        if (result.available) trigger.removeAttribute('title');
+        else trigger.title = result.reason;
       });
+      refreshPreview();
     }, 1000);
     return button;
   }
 
-  // Cards do not use Tabulator formatters. Enhance only this page's NV book tile.
+  // Cards do not use Tabulator formatters. Add the same shortcut to each book tile.
   function enhanceCards() {
     if (typeof PAGE === 'undefined' || PAGE !== 'atgs') return;
     const container = document.getElementById('card-container');
@@ -230,24 +374,27 @@
     const payload = pagePayload();
     container.querySelectorAll('.data-card').forEach(card => {
       const row = card.playerLinesData;
-      const previous = card.querySelector('.nv-depth-trigger');
-      if (!inspect(row, payload).available) { previous?.remove(); return; }
-      if (previous) return;
-      const book = card.querySelector('.book-logo-small[alt="nv"]')?.closest('.book-odd-item');
-      const target = book || card.querySelector('.card-header');
-      if (!target) return;
-      const trigger = createTrigger(() => card.playerLinesData);
-      trigger.classList.add('nv-depth-card-trigger');
-      if (!book) trigger.insertAdjacentHTML('beforeend', '<span>NV depth</span>');
-      target.appendChild(trigger);
+      for (const provider of Object.values(PROVIDERS)) {
+        const options = {book: provider.book};
+        const previous = card.querySelector(`.nv-depth-trigger[data-depth-book="${provider.book}"]`);
+        if (!inspect(row, payload, options).available) { previous?.remove(); continue; }
+        if (previous) continue;
+        const book = card.querySelector(`.book-logo-small[alt="${provider.book}"]`)?.closest('.book-odd-item');
+        const target = book || card.querySelector('.card-header');
+        if (!target) continue;
+        const trigger = createTrigger(() => card.playerLinesData, options);
+        trigger.classList.add('nv-depth-card-trigger');
+        if (!book) trigger.insertAdjacentHTML('beforeend', `<span>${provider.book.toUpperCase()} depth</span>`);
+        target.appendChild(trigger);
+      }
     });
   }
 
-  function formatter(baseFormatter) {
+  function formatter(baseFormatter, options = {}) {
     return function (cell, params, onRendered) {
       const original = baseFormatter(cell, params, onRendered);
       const row = cell.getRow().getData();
-      const result = inspect(row, pagePayload());
+      const result = inspect(row, pagePayload(), options);
       if (!result.available || params?.blurOdds) return original;
       const wrapper = document.createElement('div');
       wrapper.className = 'nv-depth-cell';
@@ -255,7 +402,7 @@
       odds.className = 'nv-depth-existing-odds';
       if (original instanceof root.Node) odds.appendChild(original);
       else odds.innerHTML = original ?? '';
-      const button = createTrigger(() => cell.getRow().getData());
+      const button = createTrigger(() => cell.getRow().getData(), options);
       wrapper.append(odds, button);
       return wrapper;
     };
@@ -288,9 +435,13 @@
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     });
     dialog.addEventListener('close', () => {
+      // Native dialog focus restoration can queue a preview before this event fires.
+      hidePreview();
       root.clearInterval(state.timer); state.timer = null;
       const opener = state.opener; state.opener = null;
+      preview.suppressFocus = true;
       if (opener?.isConnected) opener.focus({preventScroll: true});
+      preview.suppressFocus = false;
     });
     document.body.appendChild(dialog);
     state.dialog = dialog;
@@ -298,10 +449,10 @@
     return dialog;
   }
 
-  function currentRow(payload) {
-    if (!Array.isArray(payload.data)) return null;
-    const previous = state.row;
-    return payload.data.find(row => row.game === previous.game && row.player === previous.player && row.prop === previous.prop && Boolean(row.under) === Boolean(previous.under) && String(row.handicap) === String(previous.handicap) && (row.dt || row.date) === (previous.dt || previous.date)) || null;
+  function currentRow(payload, previous = state.row) {
+    if (!previous || !Array.isArray(payload.data)) return null;
+    return payload.data.find(row => row && row.game === previous.game && row.player === previous.player && row.prop === previous.prop && Boolean(row.under) === Boolean(previous.under) && Number(row.handicap) === Number(previous.handicap) && (row.dt || row.date) === (previous.dt || previous.date)
+      && (!row.gameId || !previous.gameId || row.gameId === previous.gameId) && (!row.sport || !previous.sport || row.sport === previous.sport)) || null;
   }
 
   function quoteLink(quote, side) {
@@ -335,10 +486,10 @@
   }
 
   function availableAverage(orders) {
-    const contracts = orders.reduce((sum, order) => sum + BigInt(order.contracts), 0n);
-    if (!contracts) return null;
+    const payout = sumFractions(orders.map(payoutFraction));
+    if (!payout.n) return null;
     const amount = stakeFraction(orders);
-    return americanFromFraction({n: amount.n * 100n, d: amount.d * contracts});
+    return americanFromFraction({n: amount.n * payout.d, d: amount.d * payout.n});
   }
 
   function renderAvailable(result) {
@@ -352,9 +503,18 @@
         return `<li class="nv-depth-chart-row" aria-label="${label} ${american(order.odds)}, ${escape(value)} available"><span class="nv-depth-chart-odds">${american(order.odds)}</span><span class="nv-depth-chart-track"><span class="nv-depth-chart-fill" aria-hidden="true" style="--depth-width:${width.toFixed(4)}%"></span><span class="nv-depth-chart-amount" title="${escape(dollars(order.stake_usd))}">${escape(compactStake([order]))}</span></span></li>`;
       }).join('');
       const average = availableAverage(orders);
-      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${sideName(side)} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${sideName(side)}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? '<p class="nv-depth-note">Top 20 price levels shown.</p>' : ''}</section>`;
+      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${sideName(side)} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${sideName(side)}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? `<p class="nv-depth-note">Top ${result.maxLevels || 20} price levels shown.</p>` : ''}</section>`;
     }).join('');
     return `<div class="nv-depth-books" style="--depth-rows:${Math.max(1, ...books.map(book => book.orders.length))}">${panels}</div><p class="nv-depth-chart-key">Bars use the same dollar scale on both sides. Average odds cover the displayed liquidity.</p>${observedFooter(result.entry)}`;
+  }
+
+  function renderPreview(result, row) {
+    if (!result.available) return '';
+    const books = result.availableBooks.map(book => ({...book, orders: book.orders.slice(0, 3)}));
+    const maximum = Math.max(0, ...books.flatMap(book => book.orders.map(order => order.stake_usd)));
+    return `<header class="nv-depth-preview-header"><strong>${escape(row.player)}</strong><span>${escape(result.provider?.name || 'Novig')} · Available to take</span></header><div class="nv-depth-preview-books">${books.map(({side, orders}) =>
+      `<section class="nv-depth-preview-side" data-preview-side="${side}" aria-label="${outcomeName(side)} ${sideName(side)}"><h3>${outcomeName(side)} <small>${sideName(side)}</small></h3>${orders.length ? `<ol>${orders.map(order => `<li class="nv-depth-preview-level"><b class="nv-depth-preview-odds">${american(order.odds)}</b><span class="nv-depth-preview-size" style="--preview-fill:${(maximum ? order.stake_usd / maximum * 100 : 0).toFixed(3)}%">${escape(compactStake([order]))}</span></li>`).join('')}</ol><p class="nv-depth-preview-total">Shown <strong>${escape(wholeStake(orders))}</strong></p>` : '<p class="nv-depth-preview-empty">No liquidity</p>'}</section>`
+    ).join('')}</div><footer>Top 3 prices per side · Before fees<br>Click icon for full book</footer>`;
   }
 
   function renderResult(result, mode = 'available') {
@@ -375,15 +535,18 @@
       } else summary += '<p>No sportsbook price is better than these resting-order prices.</p>';
     }
     const rows = orders.map(order => `<tr${matching.has(order) ? ' class="nv-depth-matching"' : ''}><td>${american(order.odds)}<small>${escape(order.probability)} probability</small></td><td>${escape(wholeStake([order]))}</td><td><div class="nv-depth-bar" aria-hidden="true" style="--depth-width:${Math.max(1, order.opposite_stake_usd / maxStake * 100).toFixed(2)}%"></div><span>${american(order.opposite_odds)}</span><strong>${escape(wholeStake([order], true))}</strong></td></tr>`).join('');
-    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side)}</strong>. Taking them backs <strong>${sideName(other)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? 'Only the top 20 price levels are shown. ' : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Goal links open the saved sportsbook selection; No-goal links are unavailable. This view places no bets.</p></footer>`;
+    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side)}</strong>. Taking them backs <strong>${sideName(other)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Goal links open the saved sportsbook selection; No-goal links are unavailable. This view places no bets.</p></footer>`;
   }
 
   function refresh() {
     if (!state.dialog?.open || !state.row) return;
     const payload = pagePayload();
     const row = currentRow(payload);
-    const result = inspect(row, payload, {side: state.side, updated: pageUpdated(payload)});
+    const result = inspect(row, payload, {book: state.book, side: state.side, updated: pageUpdated(payload)});
     const dialog = state.dialog;
+    const provider = providerFor({book: state.book});
+    dialog.querySelector('.nv-depth-eyebrow').textContent = `${provider.name.toUpperCase()} · ORDER BOOK`;
+    dialog.querySelector('.nv-depth-close').setAttribute('aria-label', `Close ${provider.name} depth`);
     dialog.querySelector('#novig-depth-title').textContent = state.row.player;
     dialog.querySelector('#novig-depth-subtitle').textContent = `${state.row.game} · ${state.row.dt || state.row.date} · Anytime goalscorer`;
     dialog.querySelectorAll('[data-depth-side]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.depthSide === state.side)));
@@ -398,9 +561,11 @@
     }
   }
 
-  function open(row, opener) {
+  function open(row, opener, options = {}) {
+    hidePreview();
     const dialog = ensureDialog();
     state.row = row;
+    state.book = providerFor(options).book;
     state.side = row.under ? 'under' : 'over';
     state.mode = 'available';
     state.opener = opener || document.activeElement;
@@ -413,11 +578,21 @@
 
   if (typeof document !== 'undefined') {
     root.addEventListener('odds-rendered', enhanceCards);
+    root.addEventListener('odds-rendered', refreshPreview);
+    root.addEventListener('scroll', event => { if (event.target !== preview.element) hidePreview(); }, true);
+    root.addEventListener('resize', hidePreview);
+    document.addEventListener('pointerdown', hidePreview);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hidePreview(); });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && (preview.trigger || preview.showTimer)) {
+        hidePreview();
+      }
+    });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceCards, {once: true});
     else enhanceCards();
   }
   const api = {MAX_AGE_MS, MIN_SIGNAL_STAKE_USD, formatter, open, close, refresh, inspect, normalizeOrders, compareOrders, bestBook, safeLink, quoteLink, timestamp, easternDate, impliedFraction,
-    complementProbability, takingOrders, wholeStake, americanFromProbability, renderResult};
+    complementProbability, takingOrders, wholeStake, americanFromProbability, renderResult, renderPreview};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NovigDepth = api;
 })(typeof window !== 'undefined' ? window : globalThis);

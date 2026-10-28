@@ -148,14 +148,65 @@
 		return { html: table, width: Math.max(520, tableWidth + 2), count: books.length ? lines.length : 0 };
 	}
 
+	const depthScripts = new Map();
+	function loadDepthScript(src, globalName) {
+		if (root[globalName]) return Promise.resolve();
+		if (depthScripts.has(src)) return depthScripts.get(src);
+		const request = new Promise((resolve, reject) => {
+			const script = root.document.createElement('script');
+			script.src = src;
+			script.onload = () => root[globalName] ? resolve() : reject(new Error('Order books unavailable'));
+			script.onerror = () => { script.remove(); reject(new Error('Order books unavailable')); };
+			root.document.head.append(script);
+		}).catch(error => { depthScripts.delete(src); throw error; });
+		depthScripts.set(src, request);
+		return request;
+	}
+
+	// Read the live payload on every refresh, including when an old selection disappears.
+	function mountDepth(host, selected, options = {}) {
+		let destroyed = false, mounted;
+		const getPayload = options.getPayload || (() => typeof RES !== 'undefined' ? RES || {} : {});
+		const getRows = options.getRows || (() => typeof RES !== 'undefined' ? RES?.data || [] : options.rows || []);
+		const getUpdated = options.getUpdated || (() =>
+			(typeof UPDATED !== 'undefined' && typeof PAGE !== 'undefined' ? UPDATED?.[PAGE] : null) || getPayload().updated || {});
+		if (!root.document.querySelector('link[data-prediction-depth]')) {
+			const stylesheet = root.document.createElement('link');
+			stylesheet.rel = 'stylesheet';
+			stylesheet.href = 'prediction-depth.css';
+			stylesheet.dataset.predictionDepth = '';
+			root.document.head.append(stylesheet);
+		}
+		const start = () => {
+			host.innerHTML = '<p class="player-lines-empty" role="status">Loading order books…</p>';
+			Promise.all([loadDepthScript('novig-depth.js', 'NovigDepth'), loadDepthScript('prediction-depth.js', 'PredictionDepth')]).then(() => {
+				if (destroyed || !host.isConnected) return;
+				host.replaceChildren();
+				mounted = root.PredictionDepth.mount(host, selected, { getRows, getPayload, getUpdated });
+			}).catch(() => {
+				if (destroyed || !host.isConnected) return;
+				host.innerHTML = '<p class="player-lines-empty" role="status">Could not load order books. <button type="button">Try again</button></p>';
+				host.querySelector('button').onclick = start;
+			});
+		};
+		start();
+		return { destroy() { destroyed = true; mounted?.destroy(); host.replaceChildren(); } };
+	}
+
+	let activeDepth;
+	const destroyDepth = () => { activeDepth?.destroy(); activeDepth = null; };
+
 	function open(selected, rows, options) {
 		if (selected.blurred || (options.mode === "game" && !mainRow(selected))) return;
+		destroyDepth();
 		let dialog = root.document.getElementById("player-lines-dialog");
 		if (!dialog) {
 			dialog = root.document.createElement("dialog");
 			dialog.id = "player-lines-dialog";
 			dialog.setAttribute("aria-labelledby", "player-lines-title");
 			root.document.body.appendChild(dialog);
+			dialog.addEventListener('close', () => { if (!dialog.open) destroyDepth(); });
+			dialog.addEventListener('cancel', destroyDepth);
 			dialog.addEventListener("click", event => {
 				if (event.target !== dialog) return;
 				const rect = dialog.getBoundingClientRect();
@@ -167,23 +218,43 @@
 			: prop => prop === selected.prop && options.prop ? options.prop : prop.toUpperCase());
 		const props = availableProps(selected, rows, options).sort((a, b) => formatProp(a).localeCompare(formatProp(b), undefined, { numeric: true }));
 		const subtitle = game ? "" : `${escape(String(selected.game || selected.gameId || "").toUpperCase())} &middot; `;
-		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>+EV Sharps - Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="${game ? "Market" : "Prop"} for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${subtitle}<span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header><div class="player-lines-content"></div>`;
+		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>+EV Sharps - Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="${game ? "Market" : "Prop"} for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${subtitle}<span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${game ? '' : '<div class="player-lines-tabs" role="tablist" aria-label="Player prices"><button type="button" id="player-lines-tab-lines" role="tab" aria-controls="player-lines-panel-lines" data-lines-view="lines">Line comparison</button><button type="button" id="player-lines-tab-depth" role="tab" aria-controls="player-lines-panel-depth" data-lines-view="depth">Order books</button></div>'}<div class="player-lines-content"><div id="player-lines-panel-lines" class="player-lines-lines"${game ? '' : ' role="tabpanel" aria-labelledby="player-lines-tab-lines"'}></div><div id="player-lines-panel-depth" class="player-lines-depth" role="tabpanel" aria-labelledby="player-lines-tab-depth" hidden></div></div>`;
 		const select = dialog.querySelector('#player-lines-prop');
 		select.value = selected.prop;
+		let view = 'lines';
 		const renderProp = () => {
+			destroyDepth();
 			const current = { ...selected, prop: select.value, handicap: select.value === selected.prop ? selected.handicap : null };
 			const table = comparisonTable(current, rows, options);
-			dialog.querySelector('.player-lines-content').innerHTML = table.html;
+			const linesHost = dialog.querySelector('.player-lines-lines'), depthHost = dialog.querySelector('.player-lines-depth');
+			linesHost.innerHTML = table.html;
+			linesHost.hidden = view !== 'lines';
+			depthHost.hidden = view !== 'depth';
+			dialog.querySelectorAll('[data-lines-view]').forEach(button => {
+				button.setAttribute('aria-selected', String(button.dataset.linesView === view));
+				button.tabIndex = button.dataset.linesView === view ? 0 : -1;
+			});
 			dialog.querySelector('#player-lines-count').textContent = `${table.count} line${table.count === 1 ? '' : 's'}`;
-			dialog.style.setProperty('--player-lines-width', `${table.width}px`);
+			dialog.style.setProperty('--player-lines-width', `${view === 'depth' ? 960 : table.width}px`);
+			if (view === 'depth') activeDepth = mountDepth(depthHost, current, { ...options, rows });
 		};
+		dialog.querySelectorAll('[data-lines-view]').forEach(button => {
+			button.onclick = () => { view = button.dataset.linesView; renderProp(); };
+			button.onkeydown = event => {
+				if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+				event.preventDefault();
+				const tabs = [...dialog.querySelectorAll('[data-lines-view]')];
+				const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[1] : tabs.find(tab => tab !== button);
+				next.focus(); next.click();
+			};
+		});
 		select.addEventListener('change', renderProp);
 		renderProp();
 		dialog.querySelector(".player-lines-close").addEventListener("click", () => dialog.close());
 		if (!dialog.open) dialog.showModal();
 	}
 
-	const api = { canOpen, collect, availableProps, open, escape, mainMarketLabel };
+	const api = { canOpen, collect, availableProps, open, mountDepth, escape, mainMarketLabel };
 	root.PlayerLines = api;
 	if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis === "undefined" ? this : globalThis);

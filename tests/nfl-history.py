@@ -141,7 +141,7 @@ try:
             page.wait_for_function("document.getElementById('nfl-history-dialog')?.open")
             popup = page.locator("#nfl-history-dialog")
             assert popup.locator('[data-history-view="due"]').count() == 0
-            assert popup.locator('[data-history-view]:visible').all_text_contents() == ["Game logs", "Logs vs Opp", "Away", "Home"]
+            assert popup.locator('[data-history-view]:visible').all_text_contents() == ["Game logs", "Logs vs Opp", "Away", "Home", "Order books"]
             assert popup.locator('[data-history-view="logs"]').get_attribute("aria-selected") == "true"
 
             if name == "nfl" and width == 1440:
@@ -180,8 +180,9 @@ try:
             logs = popup.locator('[data-history-view="logs"]')
             assert logs.get_attribute("aria-selected") == "true"
             logs.press("End")
-            assert home.get_attribute("aria-selected") == "true"
-            assert page.locator('#nfl-history-panel').get_attribute('aria-labelledby') == home.get_attribute('id')
+            order_books = popup.locator('[data-history-view="orderbooks"]')
+            assert order_books.get_attribute("aria-selected") == "true"
+            assert page.locator('#nfl-history-panel').get_attribute('aria-labelledby') == order_books.get_attribute('id')
             bounds = popup.bounding_box()
             assert 0 <= bounds["x"] and bounds["x"] + bounds["width"] <= width + 1, bounds
             assert 0 <= bounds["y"] and bounds["y"] + bounds["height"] <= 901, bounds

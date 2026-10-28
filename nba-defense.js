@@ -152,9 +152,11 @@
 
   function renderCard(row, visibleKeys=defaultKeys) {
     if (row.blurred) return '';
+    const labels = {dvpAllowed36:'Allowed vs pos', dvpAllowed:'Allowed vs pos',
+      dvpGames:'Sample games', dvpMinutes:'Sample minutes'};
     return keys.filter(key => visibleKeys.includes(key)).map(key => key === 'dvpRank'
       ? `<div class="metric-pill nba-defense-card nba-defense-card-rank">${render(row,key)}<span>DvP per 36min</span></div>`
-      : `<div class="metric-pill nba-defense-card"><span>${escape(items().find(item => item.key === key).label)}</span>${render(row,key)}</div>`).join('');
+      : `<div class="metric-pill nba-defense-card" title="${escape(items().find(item => item.key === key).label)}">${render(row,key)}<span>${escape(labels[key])}</span></div>`).join('');
   }
 
   if (root.document) root.document.addEventListener('click', event => {

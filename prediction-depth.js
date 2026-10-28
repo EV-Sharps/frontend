@@ -95,13 +95,14 @@
     const depthFields = {nv: 'novigDepth', kal: 'kalshiDepth', px: 'prophetxDepth'};
     for (const book of BOOKS) {
       const entry = depthFields[book] ? payload?.[depthFields[book]]?.[selected.game]?.[selected.player] : undefined;
+      const advertised = Object.prototype.hasOwnProperty.call(payload.depthAvailable?.[selected.game]?.[selected.player] || {}, book);
       // These feeds provide the 0.5 ATGS book, never an alternate goal line.
-      if (selected.prop === 'atgs' && result.line === .5 && entry !== undefined) {
+      if (selected.prop === 'atgs' && result.line === .5 && (entry !== undefined || advertised)) {
         const inspector = (book === 'px' && options.prophetxDepth) || (book === 'kal' && options.kalshiDepth) || options.novigDepth || root.NovigDepth;
         let depth;
         try { depth = inspector?.inspect(current[0], payload, {now, updated, book}); } catch (_) { /* Invalid depth is unavailable. */ }
         if (!depth?.available) {
-          result.sources.push({book, kind: 'unavailable', reason: depth?.reason || 'Current depth is unavailable.'});
+          result.sources.push({book, kind: depth?.loadable ? 'pending' : 'unavailable', status: depth?.status, reason: depth?.reason || 'Current depth is unavailable.'});
           continue; // Do not revive the same snapshot's expired best quote.
         }
         for (const side of ['over', 'under']) {
@@ -113,7 +114,7 @@
           }
         }
         result.sources.push({book, kind: 'depth', truncated: Object.fromEntries(['over', 'under'].map(side =>
-          [side, depth.availableBooks?.find(item => item.side === side)?.truncated === true])), maxLevels: depth.maxLevels || (book === 'nv' ? 20 : 100), updated: entry.updated});
+          [side, depth.availableBooks?.find(item => item.side === side)?.truncated === true])), maxLevels: depth.maxLevels || (book === 'nv' ? 20 : 100), updated: depth.entry?.updated || entry?.updated});
         continue;
       }
       const quotes = [null, null];
@@ -146,7 +147,7 @@
     }
     result.sides = {over: summarize(levels.over), under: summarize(levels.under)};
     result.available = !!(levels.over.length || levels.under.length);
-    if (!result.available) result.reason = 'No current prediction-market prices with available or unreported size for this line.';
+    if (!result.available) result.reason = result.sources.some(source => source.kind === 'pending') ? 'Order book details are still loading or unavailable. See the status below.' : 'No current prediction-market prices with available or unreported size for this line.';
     return result;
   }
 
@@ -161,6 +162,7 @@
     const coverage = [full.map(source => `${NAMES[source.book]}: ${source.truncated?.[side] ? `top ${source.maxLevels} levels` : 'available depth'}`).join(' · '),
       tops.length ? `${tops.map(source => NAMES[source.book]).join(', ')}: best quote only` : ''].filter(Boolean).join(' · ');
     const unavailable = result.sources.filter(source => source.kind === 'unavailable');
+    const pending = result.sources.filter(source => source.kind === 'pending');
     const known = levels.length - unknownSizes;
     return `<p class="prediction-depth-coverage">${escape(coverage || 'No current exchange coverage.')}</p>
       ${groups.length ? `<div class="prediction-depth-head" aria-hidden="true"><span>Sources</span><span>Odds</span><span>Reported size</span></div><ol class="prediction-depth-levels" aria-label="${side === 'under' ? 'Under' : 'Over'} prices, highest odds first">${groups.map(group => {
@@ -178,6 +180,7 @@
       ${unknownSizes ? `<p class="prediction-depth-note">${unknownSizes} quote${unknownSizes === 1 ? ' has' : 's have'} unknown size and ${unknownSizes === 1 ? 'is' : 'are'} excluded from the total and average.</p>` : ''}
       ${levels.some(level => level.time === 'unverified') ? '<p class="prediction-depth-note">Time unverified: these best quotes have no usable update time.</p>' : ''}
       ${unavailable.length ? `<p class="prediction-depth-note">${unavailable.map(source => `${escape(NAMES[source.book])}: ${escape(source.reason)}`).join(' ')}</p>` : ''}
+      ${pending.length ? `<p class="prediction-depth-note" role="status">${pending.map(source => escape(source.reason)).join(' ')}</p>` : ''}
       ${options.footnote === false ? '' : `<p class="prediction-depth-note">${footnote}</p>`}`;
   }
 
@@ -189,7 +192,23 @@
     host.appendChild(panel);
     const select = panel.querySelector('select');
     const content = panel.querySelector('.prediction-depth-content');
-    let line = number(selected?.handicap), destroyed = false;
+    let line = number(selected?.handicap), destroyed = false, generation = 0;
+    const accessToken = () => typeof ACCESS_TOKEN === 'string' ? ACCESS_TOKEN : '';
+    function loadBooks(retry = false) {
+      if (destroyed || !root.NovigDepth?.load) return;
+      const rows = typeof options.getRows === 'function' ? options.getRows() : [];
+      const payload = (typeof options.getPayload === 'function' ? options.getPayload() : null) || {};
+      const updated = typeof options.getUpdated === 'function' ? options.getUpdated() : payload.updated;
+      const current = {...selected, handicap: line};
+      const result = collect(current, rows, payload, {updated});
+      const requests = result.sources.filter(source => source.kind === 'pending').map(source =>
+        root.NovigDepth.load(current, payload, {book: source.book, retry}));
+      const requestGeneration = ++generation, token = accessToken();
+      Promise.allSettled(requests).then(() => {
+        if (!destroyed && requestGeneration === generation && token === accessToken()) refresh();
+      });
+      refresh();
+    }
     function refresh() {
       if (destroyed) return;
       const rows = typeof options.getRows === 'function' ? options.getRows() : [];
@@ -209,7 +228,8 @@
       const maxStake = Math.max(0, ...['over', 'under'].flatMap(side => result.sides[side].groups.map(group => group.stake || 0)));
       const books = BOOKS.filter(book => ['over', 'under'].some(side => result.sides[side].levels.some(level => level.book === book)));
       const legend = books.length ? `<div class="prediction-depth-legend" aria-label="Liquidity colors">${books.map(book => `<span data-book="${book}"><i aria-hidden="true"></i>${NAMES[book]}</span>`).join('')}</div>` : '';
-      const html = `${legend}<div class="prediction-depth-books">${['over', 'under'].map(side => {
+      const retry = result.sources.some(source => source.kind === 'pending' && source.status !== 'loading') ? '<button type="button" data-prediction-depth-retry>Retry order books</button>' : '';
+      const html = `${retry}${legend}<div class="prediction-depth-books">${['over', 'under'].map(side => {
         const yes = side === 'over';
         const label = yes ? 'Yes' : 'No';
         const outcome = goals ? yes ? 'Goal' : 'No goal' : `${yes ? 'Over' : 'Under'}${line === null ? '' : ` ${line}`}`;
@@ -217,14 +237,17 @@
       }).join('')}</div><p class="prediction-depth-note">Matching displayed odds share a row. Colors show each market's liquidity; bars use the same dollar scale on both sides. ${footnote}</p>`;
       if (content.innerHTML !== html) content.innerHTML = html;
     }
-    const changeLine = () => { line = number(select.value); refresh(); };
+    const changeLine = () => { line = number(select.value); refresh(); loadBooks(); };
+    panel.addEventListener('click', event => { if (event.target.closest('[data-prediction-depth-retry]')) loadBooks(true); });
     select.addEventListener('change', changeLine);
     root.addEventListener('odds-rendered', refresh);
     const timer = root.setInterval(refresh, 1000);
     refresh();
+    loadBooks();
     return {destroy() {
       if (destroyed) return;
       destroyed = true;
+      generation++;
       root.clearInterval(timer);
       root.removeEventListener('odds-rendered', refresh);
       select.removeEventListener('change', changeLine);

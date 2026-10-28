@@ -210,13 +210,127 @@
     return {matching, contracts, makerStake, oppositeStake, weightedProbability, weightedOdds, substantial: Boolean(substantial), threshold};
   }
 
+  const lazy = {token: undefined, generation: 0, cache: new Map(), pending: new Map(), errors: new Map()};
+  const accessToken = () => typeof ACCESS_TOKEN === 'string' ? ACCESS_TOKEN : '';
+  function syncAccess() {
+    const token = accessToken();
+    if (token !== lazy.token) {
+      for (const request of lazy.pending.values()) request.controller.abort();
+      lazy.cache.clear(); lazy.pending.clear(); lazy.errors.clear();
+      lazy.token = token; lazy.generation++;
+    }
+    return token;
+  }
+  function remember(map, key, value) {
+    map.delete(key); map.set(key, value);
+    while (map.size > 48) map.delete(map.keys().next().value);
+  }
+  function freezeEntry(value) {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(freezeEntry);
+      Object.freeze(value);
+    }
+    return value;
+  }
+  function manifestContext(row, payload, options = {}) {
+    if (!Object.prototype.hasOwnProperty.call(payload || {}, 'depthAvailable')) return null;
+    const provider = providerFor(options), now = options.now ?? Date.now();
+    const denied = reason => ({loadable: false, reason, provider});
+    if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap)
+        || !row.game || !row.player) return denied('Depth is unavailable for this selection.');
+    const manifest = payload.depthAvailable?.[row.game]?.[row.player]?.[provider.book];
+    if (!manifest || typeof manifest !== 'object') return denied(`No current ${provider.name} order book.`);
+    const start = payload.times?.[row.game];
+    const observed = timestamp(manifest.updated), expires = timestamp(manifest.expires_at), starts = timestamp(start);
+    if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts
+        || expires <= observed || expires > starts || expires <= now || starts <= now || now - observed > provider.maxAge) {
+      return denied(`${provider.name} depth expired or the game has started. Refresh for current data.`);
+    }
+    const date = row.dt || row.date;
+    if (!date || date !== easternDate(starts) || (row.dt && row.date && row.dt !== row.date)) return denied('Depth does not match this game date.');
+    const token = syncAccess();
+    const key = JSON.stringify([provider.book, row.game, row.player, start, manifest.updated, token]);
+    return {loadable: true, provider, manifest, start, observed, expires, key, token, generation: lazy.generation};
+  }
+
   function inspect(row, payload, options = {}) {
+    syncAccess();
+    const context = manifestContext(row, payload, options);
+    if (context) {
+      const side = options.side || (row?.under ? 'under' : 'over');
+      if (!context.loadable) return {available: false, side, ...context};
+      const cached = lazy.cache.get(context.key);
+      if (cached && cached.expires > (options.now ?? Date.now())) {
+        const result = inspectEntry(row, payload, options, cached.entry);
+        if (result.available) return result;
+        lazy.cache.delete(context.key);
+      }
+      const error = lazy.errors.get(context.key);
+      const status = lazy.pending.has(context.key) ? 'loading' : error ? 'error' : 'idle';
+      return {available: false, loadable: true, provider: context.provider, side, status,
+        reason: error || (status === 'loading' ? `Loading ${context.provider.name} order book…` : `${context.provider.name} order book has not been loaded.`)};
+    }
+    return inspectEntry(row, payload, options, payload?.[providerFor(options).field]?.[row?.game]?.[row?.player]);
+  }
+
+  function load(row, payload, options = {}) {
+    const current = inspect(row, payload, options);
+    if (current.available || !current.loadable) return Promise.resolve(current);
+    const context = manifestContext(row, payload, options);
+    if (lazy.pending.has(context.key)) return lazy.pending.get(context.key).promise;
+    if (current.status === 'error' && !options.retry) return Promise.resolve(current);
+    if (lazy.pending.size >= 8) {
+      remember(lazy.errors, context.key, 'Other order books are loading. Try again.');
+      return Promise.resolve(inspect(row, payload, options));
+    }
+    lazy.errors.delete(context.key);
+    const controller = new AbortController();
+    const request = {controller, promise: null};
+    const timer = root.setTimeout(() => controller.abort(), 15000);
+    request.promise = Promise.resolve().then(async () => {
+      const base = typeof API_BASE === 'string' ? API_BASE : root.location?.origin;
+      const url = new URL('/api/atgs-depth', base);
+      for (const [key, value] of Object.entries({book: context.provider.book, game: row.game, player: row.player, start: context.start})) url.searchParams.set(key, value);
+      const response = await root.fetch(url.toString(), {headers: {Authorization: `Bearer ${context.token}`}, signal: controller.signal});
+      if (!response.ok) {
+        const error = new Error('Unable to load this order book. Try again.');
+        if (response.status === 404) error.message = 'This order book is no longer available. Refresh the table and try again.';
+        if (response.status === 401 || response.status === 403) error.message = 'Sign in again to load this order book.';
+        throw error;
+      }
+      const result = await response.json();
+      const entry = result?.entry;
+      if (result?.schemaVersion !== 1 || result.book !== context.provider.book || result.game !== row.game
+          || result.player !== row.player || timestamp(result.start) !== timestamp(context.start)
+          || !entry || timestamp(entry.updated) < context.observed || !inspectEntry(row, payload, options, entry).available) {
+        throw new Error('This order book does not match the current selection. Refresh the table and try again.');
+      }
+      syncAccess();
+      const fresh = manifestContext(row, payload, options);
+      if (lazy.generation === context.generation && fresh?.loadable && fresh.key === context.key) {
+        remember(lazy.cache, context.key, {entry: freezeEntry(entry), expires: Math.min(context.expires, timestamp(entry.expires_at))});
+      }
+    }).catch(error => {
+      syncAccess();
+      if (lazy.generation === context.generation) {
+        const reason = error?.name === 'AbortError' ? 'The order book request timed out. Try again.' :
+          /^This order book|^Sign in again/.test(error?.message || '') ? error.message : 'Unable to load this order book. Try again.';
+        remember(lazy.errors, context.key, reason);
+      }
+    }).finally(() => {
+      root.clearTimeout(timer);
+      if (lazy.pending.get(context.key) === request) lazy.pending.delete(context.key);
+    }).then(() => inspect(row, payload, options));
+    lazy.pending.set(context.key, request);
+    return request.promise;
+  }
+
+  function inspectEntry(row, payload, options, entry) {
     const provider = providerFor(options);
     const now = options.now ?? Date.now();
     const side = options.side === 'under' || options.side === 'over' ? options.side : row?.under ? 'under' : 'over';
     const unavailable = reason => ({available: false, reason, side});
     if (!row || row.blurred || row.prop !== 'atgs' || !['0.5', '.5', .5].includes(row.handicap) || !row.game || !row.player) return unavailable('Depth is unavailable for this selection.');
-    const entry = payload?.[provider.field]?.[row.game]?.[row.player];
     if (!entry || entry.schema_version !== 1 || typeof entry.market_id !== 'string' || !entry.market_id || !Array.isArray(entry.sides)) return unavailable(`No current ${provider.name} resting orders.`);
     const observed = timestamp(entry.updated), expires = timestamp(entry.expires_at), starts = timestamp(entry.starts_at);
     if (![now, observed, expires, starts].every(Number.isFinite) || observed > now || observed >= starts || expires <= observed || expires > starts || now - observed > provider.maxAge || expires <= now || starts <= now) return unavailable(`${provider.name} depth expired or the game has started. Refresh for current data.`);
@@ -251,11 +365,12 @@
     return typeof UPDATED !== 'undefined' && typeof PAGE !== 'undefined' && UPDATED?.[PAGE] ? UPDATED[PAGE] : payload.updated;
   }
 
-  const state = {dialog: null, row: null, opener: null, book: 'nv', side: 'over', mode: 'available', timer: null, iconTimer: null, observer: null};
+  const state = {dialog: null, row: null, opener: null, book: 'nv', side: 'over', mode: 'available', timer: null, iconTimer: null, observer: null, generation: 0};
   const icon = '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M3 16V9m5 7V4m5 12V7m4 9H1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-  const preview = {element: null, trigger: null, row: null, showTimer: null, hideTimer: null, suppressFocus: false};
+  const preview = {element: null, trigger: null, row: null, showTimer: null, hideTimer: null, suppressFocus: false, generation: 0};
 
   function hidePreview() {
+    preview.generation++;
     root.clearTimeout(preview.showTimer);
     root.clearTimeout(preview.hideTimer);
     preview.showTimer = preview.hideTimer = null;
@@ -296,8 +411,8 @@
     const current = trigger.novigDepthRow?.();
     if (!current || currentRow({data: [current]}, preview.row) === null) return hidePreview();
     const result = inspect(row, payload, {book: trigger.dataset.depthBook, updated: pageUpdated(payload)});
-    if (!result.available) return hidePreview();
-    const html = renderPreview(result, row);
+    if (!result.available && !result.loadable) return hidePreview();
+    const html = result.available ? renderPreview(result, row) : renderLoading(result, true);
     if (preview.element.innerHTML !== html) preview.element.innerHTML = html;
     positionPreview();
   }
@@ -318,6 +433,10 @@
     preview.trigger = trigger;
     preview.row = trigger.novigDepthRow?.() || null;
     preview.element.hidden = false;
+    const generation = ++preview.generation, token = accessToken();
+    load(currentRow(pagePayload(), preview.row), pagePayload(), {book: trigger.dataset.depthBook}).then(() => {
+      if (generation === preview.generation && token === accessToken()) refreshPreview();
+    });
     refreshPreview();
     if (preview.trigger) {
       const ids = new Set((trigger.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
@@ -353,8 +472,8 @@
       document.querySelectorAll('.nv-depth-trigger').forEach(trigger => {
         const provider = providerFor({book: trigger.dataset.depthBook});
         const result = inspect(currentRow(payload, trigger.novigDepthRow?.() || null), payload, {book: provider.book});
-        trigger.disabled = !result.available;
-        if (result.available) trigger.removeAttribute('title');
+        trigger.disabled = !result.available && !result.loadable;
+        if (!trigger.disabled) trigger.removeAttribute('title');
         else trigger.title = result.reason;
       });
       refreshPreview();
@@ -377,7 +496,8 @@
       for (const provider of Object.values(PROVIDERS)) {
         const options = {book: provider.book};
         const previous = card.querySelector(`.nv-depth-trigger[data-depth-book="${provider.book}"]`);
-        if (!inspect(row, payload, options).available) { previous?.remove(); continue; }
+        const result = inspect(row, payload, options);
+        if (!result.available && !result.loadable) { previous?.remove(); continue; }
         if (previous) continue;
         const book = card.querySelector(`.book-logo-small[alt="${provider.book}"]`)?.closest('.book-odd-item');
         const target = book || card.querySelector('.card-header');
@@ -395,7 +515,7 @@
       const original = baseFormatter(cell, params, onRendered);
       const row = cell.getRow().getData();
       const result = inspect(row, pagePayload(), options);
-      if (!result.available || params?.blurOdds) return original;
+      if ((!result.available && !result.loadable) || params?.blurOdds) return original;
       const wrapper = document.createElement('div');
       wrapper.className = 'nv-depth-cell';
       const odds = document.createElement('div');
@@ -419,6 +539,7 @@
     dialog.setAttribute('aria-labelledby', 'novig-depth-title');
     dialog.innerHTML = '<header class="nv-depth-header"><div><p class="nv-depth-eyebrow">NOVIG · ORDER BOOK</p><h2 id="novig-depth-title"></h2><p id="novig-depth-subtitle"></p></div><button type="button" class="nv-depth-close" aria-label="Close Novig depth">×</button></header><div class="nv-depth-modes" role="group" aria-label="Order book view"><button type="button" data-depth-mode="available">Available to take</button><button type="button" data-depth-mode="resting">Resting interest</button></div><div class="nv-depth-tabs" role="group" aria-label="Outcome"><button type="button" data-depth-side="over">Yes · Goal</button><button type="button" data-depth-side="under">No · No goal</button></div><div id="novig-depth-content" class="nv-depth-content" aria-live="polite"></div>';
     dialog.querySelector('.nv-depth-close').addEventListener('click', close);
+    dialog.addEventListener('click', event => { if (event.target.closest('[data-depth-retry]')) requestModal(true); });
     dialog.querySelectorAll('[data-depth-side]').forEach(button => button.addEventListener('click', () => { state.side = button.dataset.depthSide; refresh(); }));
     dialog.querySelectorAll('[data-depth-mode]').forEach(button => button.addEventListener('click', () => { state.mode = button.dataset.depthMode; refresh(); }));
     dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
@@ -435,6 +556,7 @@
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     });
     dialog.addEventListener('close', () => {
+      state.generation++;
       // Native dialog focus restoration can queue a preview before this event fires.
       hidePreview();
       root.clearInterval(state.timer); state.timer = null;
@@ -538,6 +660,21 @@
     return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side)}</strong>. Taking them backs <strong>${sideName(other)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Goal links open the saved sportsbook selection; No-goal links are unavailable. This view places no bets.</p></footer>`;
   }
 
+  function renderLoading(result, compact = false) {
+    const waiting = result.status === 'loading';
+    return `<div class="nv-depth-unavailable" role="status" aria-live="polite"><p>${escape(result.reason)}</p>${waiting ? '' :
+      compact ? '<p>Open the order book to try again.</p>' : '<button type="button" data-depth-retry>Retry</button>'}</div>`;
+  }
+
+  function requestModal(retry = false) {
+    const generation = ++state.generation, token = accessToken();
+    const payload = pagePayload();
+    load(currentRow(payload), payload, {book: state.book, retry}).then(() => {
+      if (state.dialog?.open && generation === state.generation && token === accessToken()) refresh();
+    });
+    refresh();
+  }
+
   function refresh() {
     if (!state.dialog?.open || !state.row) return;
     const payload = pagePayload();
@@ -553,7 +690,7 @@
     dialog.querySelectorAll('[data-depth-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.depthMode === state.mode)));
     dialog.querySelector('.nv-depth-tabs').hidden = state.mode === 'available';
     const content = dialog.querySelector('#novig-depth-content');
-    const html = renderResult(result, state.mode);
+    const html = result.loadable ? renderLoading(result) : renderResult(result, state.mode);
     if (content.innerHTML !== html) {
       const hadFocus = content.contains(document.activeElement);
       content.innerHTML = html;
@@ -570,7 +707,7 @@
     state.mode = 'available';
     state.opener = opener || document.activeElement;
     if (!dialog.open) dialog.showModal();
-    refresh();
+    requestModal(true);
     dialog.querySelector('.nv-depth-close').focus({preventScroll: true});
     root.clearInterval(state.timer);
     state.timer = root.setInterval(refresh, 1000);
@@ -591,7 +728,7 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceCards, {once: true});
     else enhanceCards();
   }
-  const api = {MAX_AGE_MS, MIN_SIGNAL_STAKE_USD, formatter, open, close, refresh, inspect, normalizeOrders, compareOrders, bestBook, safeLink, quoteLink, timestamp, easternDate, impliedFraction,
+  const api = {MAX_AGE_MS, MIN_SIGNAL_STAKE_USD, formatter, open, close, refresh, inspect, load, normalizeOrders, compareOrders, bestBook, safeLink, quoteLink, timestamp, easternDate, impliedFraction,
     complementProbability, takingOrders, wholeStake, americanFromProbability, renderResult, renderPreview};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NovigDepth = api;

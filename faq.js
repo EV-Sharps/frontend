@@ -1,6 +1,7 @@
 const FAQ_TOPICS = [
 	{ id: 'getting-started', label: 'Getting started' },
 	{ id: 'odds-ev', label: 'Odds & EV' },
+	{ id: 'prediction-markets', label: 'Prediction markets' },
 	{ id: 'using-tools', label: 'Using the tools' },
 	{ id: 'account', label: 'Your account' }
 ];
@@ -64,6 +65,47 @@ const FAQ = [
 	{
 		id: 'q-what-is-z-score', topic: 'odds-ev', q: 'What does a Z-score tell me? Is a player due?',
 		answer: `<p>A Z-score describes how far a value is from its historical average, measured in standard deviations. The meaning of a positive or negative score depends on the statistic being measured.</p><p>A long gap or unusual streak does not by itself make the next outcome more likely. Use the score as historical context alongside the market and player information, rather than as proof that a player is due.</p>`
+	},
+	{
+		id: 'q-prediction-order-books', topic: 'prediction-markets', q: 'How do I read the Yes and No order books?',
+		answer: `<p>Our order books show prices <strong>available for you to take</strong>. For a goal market, Yes means the player scores and No means they do not. Each available price is backed by resting orders on the opposite outcome.</p>
+		<figure class="faq-market-example">
+			<figcaption><strong>One goal market, two sides</strong><span>Illustration &middot; Before fees</span></figcaption>
+			<div class="faq-market-sides">
+				<div class="faq-market-side faq-market-yes"><span class="faq-market-label">You can take Yes &middot; Goal</span><strong class="faq-market-price">+900</strong><span>$687 available stake</span><div class="faq-market-counterparty"><span aria-hidden="true">&#8597;</span><p>Backed by orders buying <strong>No around &minus;900</strong>.</p></div></div>
+				<div class="faq-market-side faq-market-no"><span class="faq-market-label">You can take No &middot; No goal</span><strong class="faq-market-price">&minus;1011</strong><span>$546 available stake</span><div class="faq-market-counterparty"><span aria-hidden="true">&#8597;</span><p>Backed by orders buying <strong>Yes around +1011</strong>, with about <strong>$54</strong> at risk.</p></div></div>
+			</div>
+		</figure>
+		<p>The $546 on No &minus;1011 means you can stake that amount on <strong>No</strong> against waiting Yes buyers. Those buyers want +1011; you cannot instantly take Yes +1011 from their orders. You could place a similar Yes order and wait for a match. The available Yes price in this example is +900.</p>
+		<p>The two sides risk different amounts for the same contracts, which is why $546 of available No stake corresponds to about $54 on the opposing Yes orders. These are <strong>unfilled offers</strong>, not completed betting volume. See <a href="https://docs.kalshi.com/getting_started/orderbook_responses" target="_blank" rel="noopener noreferrer">Kalshi&rsquo;s explanation of the two sides</a>.</p>`
+	},
+	{
+		id: 'q-prediction-devig', topic: 'prediction-markets', q: 'How do exchange quotes become fair value and EV?',
+		answer: `<p>We convert the quoted Yes and No prices into implied probabilities, apply your selected devig method, and combine your selected reference books using their weights. On an exchange, the excess over 100% in a pair of available prices reflects the <strong>bid/ask spread</strong> before fees.</p>
+		<figure class="faq-market-example">
+			<figcaption><strong>Where does a +1000 offer fit?</strong><span>Cost of a Yes contract paying $1 if it wins</span></figcaption>
+			<div class="faq-market-spread" role="img" aria-label="Yes buyers bid about 9 cents, sellers ask 10 cents. A +1000 offer costs about 9.09 cents, inside the spread and close to the bid.">
+				<div class="faq-market-endpoints"><span><strong>9&cent;</strong>Buyers bid<br>Yes +1011</span><span><strong>10&cent;</strong>Sellers ask<br>Yes +900</span></div>
+				<div class="faq-market-track"><span></span></div>
+				<p class="faq-market-offer"><span aria-hidden="true">&#9679;</span> Your +1000 offer costs about <strong>9.09&cent;</strong></p>
+			</div>
+		</figure>
+		<p>Using only the rounded Kalshi quotes <strong>+900 / &minus;1011</strong> as the reference, the estimates differ:</p>
+		<table class="faq-market-table"><caption>Estimated EV at a fee-free +1000 offer</caption><thead><tr><th scope="col">Method</th><th scope="col">Fair odds</th><th scope="col">EV</th></tr></thead><tbody><tr><th scope="row">Multiplicative</th><td>+910</td><td>+8.9%</td></tr><tr><th scope="row">Additive</th><td>+953</td><td>+4.5%</td></tr><tr><th scope="row">Power / Worst-Case</th><td>+978</td><td>+2.1%</td></tr></tbody></table>
+		<p>At +1000, you need a <strong>9.09%</strong> win rate before fees. Power estimates about <strong>9.28%</strong> here. The gap produces the estimated edge, but the order book does not establish the true win probability. Fees on your offered bet reduce that edge and can turn it negative.</p>
+		<p><strong>Worst-Case</strong> takes the lowest probability from Power, Multiplicative, and Additive; it is not a guaranteed lower bound on the true probability. The order book&rsquo;s <strong>average payout odds</strong> summarize available liquidity and are separate from this devig estimate.</p>`
+	},
+	{
+		id: 'q-prediction-liquidity', topic: 'prediction-markets', q: 'Does more liquidity make the devig more reliable?',
+		answer: `<p>More size means more contracts can be matched at that quote while the orders remain available. It can help you assess the quote, but <strong>size alone does not prove that the price is accurate</strong>. A large order may belong to just one participant.</p>
+		<div class="faq-market-example faq-liquidity-demo" aria-label="Liquidity example">
+			<p class="faq-market-demo-title"><strong>Change the size, keep the same prices</strong><span>Yes +900 / No &minus;1011 &middot; Illustrative only</span></p>
+			<div class="faq-market-size-options" role="group" aria-label="Example available No stake"><button type="button" data-faq-liquidity="1" aria-pressed="true">$546 on No</button><button type="button" data-faq-liquidity="10" aria-pressed="false">$5,460 on No</button></div>
+			<div class="faq-market-metrics" role="status" aria-live="polite" aria-atomic="true"><div><span>Opposing Yes orders</span><strong id="faq-example-yes-stake">About $54</strong><span>Waiting for +1011</span></div><div><span>Power / Worst-Case EV</span><strong>+2.1%</strong><span>At a fee-free +1000</span></div></div>
+			<p class="faq-market-demo-note">More size at the same prices leaves the estimated fair odds at <strong>+978</strong>. Our devig calculation uses the quotes, method, and reference weights; it does not automatically weight by order-book size.</p>
+		</div>
+		<p>When assessing a reference, look for <strong>meaningful size on both sides near the best prices</strong>, a tight spread, fresh quotes that remain available across updates, and agreement with independent markets. These can support confidence in the reference without guaranteeing an edge.</p>
+		<p>More money at No &minus;1011 means more orders waiting to buy Yes around +1011. Those buyers are seeking a slightly better payout than your +1000, so their size alone does not establish that +1000 is profitable.</p>`
 	},
 	{
 		id: 'q-customize-views', topic: 'using-tools', q: 'How do I change the layout or visible columns?',
@@ -148,6 +190,17 @@ for (const topic of FAQ_TOPICS) {
 	}
 	faqGroups.set(topic.id, group);
 	faqResults.append(group);
+}
+
+// This illustration changes size only; the quotes and devig estimate stay fixed.
+for (const button of document.querySelectorAll('[data-faq-liquidity]')) {
+	button.addEventListener('click', () => {
+		const demo = button.closest('.faq-liquidity-demo');
+		for (const option of demo.querySelectorAll('[data-faq-liquidity]')) {
+			option.setAttribute('aria-pressed', String(option === button));
+		}
+		demo.querySelector('#faq-example-yes-stake').textContent = button.dataset.faqLiquidity === '10' ? 'About $540' : 'About $54';
+	});
 }
 
 function filterFaq() {

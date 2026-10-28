@@ -7,6 +7,7 @@ function route() {
 	const routes = {
 		'/': 'index.html',
 		'/daily-dingers': 'dingers.html',
+		'/sharp-money': 'sharp-money.html',
 	};
 
 	const path = window.location.pathname;

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharp Money | +EV Sharps</title>
+  <meta name="description" content="Compare sportsbook scorer prices with current resting interest across prediction markets.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="recommendations.css">
+  <link rel="stylesheet" href="sharp-money.css">
+  <link rel="stylesheet" href="novig-depth.css">
+  <link rel="icon" href="logos/icon2.png">
+</head>
+<body class="recommendations-page sharp-money-page">
+  <header class="rec-header">
+    <a class="rec-brand" href="/">+EV <span>Sharps</span></a>
+    <nav aria-label="Site navigation"><div class="select-wrapper"><label class="sr-only" for="page-select">Page</label><select id="page-select"><option>Sharp Money</option></select></div><a id="account-link" href="profile">Sign in</a></nav>
+  </header>
+  <main class="rec-main">
+    <div class="rec-intro">
+      <div><p class="rec-eyebrow">RESTING ORDER INTEREST <span>SHARP</span></p><h1>Sharp Money</h1>
+        <p class="rec-lede">Find sportsbook prices above the prices resting orders are willing to accept. Compare the money supporting each offer across Novig, Kalshi and ProphetX.</p></div>
+      <div class="rec-refresh"><span>Goals · Touchdowns · Home runs</span><small id="generated">Loading the latest snapshot...</small><button id="refresh" type="button">Refresh prices <span aria-hidden="true">↻</span></button></div>
+    </div>
+    <p class="sm-explainer"><strong>Price support, not verified EV.</strong> Supporting money is the stake behind qualifying resting orders on the same outcome. These are pending orders, not completed trades; a larger amount does not prove positive EV. All comparisons are before fees.</p>
+    <div id="request-status" class="rec-notice" role="status" hidden></div>
+    <div id="demo-status" class="rec-notice sm-demo" role="status" hidden>Local demo — synthetic prices, not betting offers.</div>
+    <div id="freshness-status" class="rec-notice" role="status" hidden></div>
+    <section id="access-panel" class="rec-empty" hidden><h2>Sharp Money is included with Sharp</h2><p>Sign in with a Sharp account to see price support across the slate.</p><a id="access-login" class="rec-button" href="profile">Sign in</a> <a id="access-pricing" href="pricing">View plans</a></section>
+    <div id="report-content" aria-busy="true" hidden>
+      <div class="rec-summary sm-summary"><div><strong id="row-count">0</strong><span>Matching selections</span></div><div><strong id="book-count">0</strong><span>Available books</span></div><div><strong id="venue-count">0</strong><span>Exchange sources</span></div></div>
+      <section aria-label="Supported sportsbook offers">
+        <div class="rec-filters sm-filters">
+          <label>Sport<select id="sport-filter"><option value="">All sports</option><option value="nhl">NHL goals</option><option value="nfl">NFL touchdowns</option><option value="mlb">MLB home runs</option></select></label>
+          <label>Betting book<select id="book-filter"><option value="">Best eligible book</option></select></label>
+          <label class="sm-search">Player or game<input id="search-filter" type="search" placeholder="Search players or matchups" autocomplete="off"></label>
+          <label>Minimum support<select id="support-preset"><option value="100">$100</option><option value="250">$250</option><option value="500">$500</option><option value="custom">Custom</option></select></label>
+          <label id="support-custom-label" hidden>Support ($)<input id="support-custom" type="number" min="0" step="1" value="100"></label>
+          <label>Minimum price advantage (%)<input id="advantage-filter" type="number" min="0" step="0.1" value="0"></label>
+          <label>Exchange<select id="exchange-filter"><option value="">All exchanges</option><option value="nv">Novig</option><option value="kal">Kalshi</option><option value="px">ProphetX</option></select></label>
+          <label>Updated within<select id="freshness-filter"><option value="300">5 minutes</option><option value="120">2 minutes</option><option value="60">1 minute</option></select></label>
+        </div>
+        <p id="list-caption" class="rec-caption" aria-live="polite"></p>
+        <div id="empty-state" class="rec-empty" hidden><h2>No offers match these filters</h2><p>Try another book or a lower support minimum. Expired offers stay hidden.</p></div>
+        <div id="picks-table-wrap" class="rec-table-wrap" role="region" aria-label="Price support selections" tabindex="0" hidden>
+          <table class="rec-table sm-table"><caption class="sr-only">One row per player, game and outcome. The best price satisfying every filter is shown.</caption>
+            <thead><tr><th scope="col">Player / outcome</th><th scope="col">Book / price</th><th scope="col">Supporting stake</th><th scope="col">Price advantage</th><th scope="col">Exchanges</th><th scope="col">Observed</th><th scope="col">Saved captures</th><th scope="col"><span class="sr-only">Details</span></th></tr></thead><tbody id="picks"></tbody>
+          </table>
+        </div>
+        <button id="show-more" type="button" hidden>Show more</button>
+      </section>
+      <aside class="rec-sidebar sm-sidebar"><details class="rec-method"><summary><strong>What the numbers mean</strong></summary><div class="rec-method-body">
+        <p><strong>Supporting stake</strong> is the money risked by resting orders that accept a shorter price on the same outcome than your sportsbook offers. It is distinct from the larger opposite-side stake someone could take.</p>
+        <p><strong>Price advantage</strong> compares the sportsbook payout with the payout implied by those qualifying orders, weighted by contract payout. It is a price comparison, not an estimated probability or EV. Fees and settlement rules can change the comparison.</p>
+        <p>The exchange filter recalculates support and price advantage from that exchange. Saved history shows all-exchange captures for the specific betting book; it is not continuous monitoring and does not prove orders stayed available between captures.</p>
+        <p>Circa and Pinnacle are reference books, never betting offers here. The best qualifying offer is selected after applying your filters.</p>
+      </div></details><details class="rec-coverage"><summary>Collection coverage</summary><div id="coverage"></div></details></aside>
+    </div>
+  </main>
+  <footer class="rec-footer">Check the current price and matching settlement rules before acting. Resting orders can change or disappear before a fill.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="novig-depth.js"></script><script src="sharp-money.js"></script>
+</body>
+</html>

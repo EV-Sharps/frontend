@@ -92,6 +92,53 @@ body.faq-page {
 .faq-page .faq-refresh-retry { margin: 10px 0 0; min-height: 32px; padding: 5px 10px; border: 1px solid #3b536d; border-radius: 5px; background: transparent; color: #b9dcfa; font: inherit; font-size: 11px; cursor: pointer; }
 .faq-page .faq-refresh-retry:hover { background: #1b334e; color: #fff; }
 .faq-page .faq-refresh-retry:disabled { opacity: .6; cursor: wait; }
+.faq-market-example { margin: 16px 0; padding: 16px; border: 1px solid #354b62; border-radius: 9px; background: #0b1826; }
+.faq-market-example figcaption, .faq-market-demo-title { display: grid; gap: 3px; margin-bottom: 14px; line-height: 1.6; }
+.faq-market-example figcaption > span, .faq-market-demo-title > span { color: #9db3c8; font-size: 11px; }
+.faq-market-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.faq-market-side { min-width: 0; padding: 14px; border: 1px solid #315f57; border-radius: 7px; background: #102b29; }
+.faq-market-no { border-color: #365b7c; background: #132b43; }
+.faq-market-side > span { display: block; font-size: 11px; }
+.faq-market-side .faq-market-label { color: #94e3c5; font-weight: 650; line-height: 1.5; }
+.faq-market-no .faq-market-label { color: #add5ff; }
+.faq-market-side .faq-market-price { display: block; margin: 6px 0 2px; color: #fff; font-size: 25px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.faq-market-counterparty { display: flex; align-items: baseline; gap: 9px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #ffffff20; font-size: 11px; line-height: 1.7; }
+.faq-market-counterparty > span { color: #a6bfd5; font-size: 18px; }
+.faq-market-spread { padding-top: 2px; }
+.faq-market-endpoints { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; line-height: 1.55; }
+.faq-market-endpoints > span:last-child { text-align: right; }
+.faq-market-endpoints strong { display: block; font-size: 20px; color: #c5def5; }
+.faq-market-track { position: relative; height: 8px; margin: 14px 0; border-radius: 5px; background: linear-gradient(90deg, #447b8c, #3b609b); }
+.faq-market-track > span { position: absolute; top: -4px; left: 9%; width: 4px; height: 16px; border-radius: 2px; background: #f4ca82; }
+.faq-page .faq-market-offer { color: #f4ca82; font-size: 12px; }
+.faq-market-offer > span { margin-right: 5px; }
+.faq-market-table { width: 100%; margin: 14px 0; border-collapse: collapse; font-family: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
+.faq-market-table caption { padding-bottom: 8px; color: #9db3c8; font-size: 11px; text-align: left; }
+.faq-market-table th, .faq-market-table td { padding: 9px 8px; border-bottom: 1px solid #30465b; text-align: right; }
+.faq-market-table th:first-child { padding-left: 0; text-align: left; }
+.faq-market-table thead th { color: #9db3c8; font-size: 11px; font-weight: 500; }
+.faq-market-table tbody th { color: #d9e8f5; font-weight: 500; }
+.faq-market-table td { white-space: nowrap; }
+.faq-market-table td:last-child { color: #94e3c5; }
+.faq-page .faq-market-demo-title { margin-bottom: 12px; }
+.faq-market-size-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.faq-page .faq-market-size-options button { min-height: 38px; padding: 7px 11px; border: 1px solid #3b536d; border-radius: 6px; background: #102235; color: #b9d2e8; font: inherit; font-size: 12px; cursor: pointer; }
+.faq-page .faq-market-size-options button[aria-pressed="true"] { border-color: #9bd0ff; background: #213c58; color: #edf7ff; }
+.faq-page .faq-market-size-options button:hover { background: #294760; }
+.faq-market-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 0; border-top: 1px solid #2e435a; border-bottom: 1px solid #2e435a; }
+.faq-market-metrics > div { display: grid; align-content: start; gap: 3px; font-size: 11px; line-height: 1.6; }
+.faq-market-metrics strong { font-size: 21px; color: #e5f1fb; }
+.faq-market-metrics > div:last-child strong { color: #94e3c5; }
+.faq-page .faq-market-demo-note { margin-top: 12px; font-size: 12px; }
+@media (max-width: 420px) {
+	.faq-market-example { padding: 12px; }
+	.faq-market-sides { grid-template-columns: 1fr; gap: 10px; }
+	.faq-market-side { padding: 12px; }
+	.faq-market-metrics { gap: 10px; }
+	.faq-market-metrics strong { font-size: 18px; }
+	.faq-market-table { font-size: 11px; }
+	.faq-market-table th, .faq-market-table td { padding-right: 4px; padding-left: 4px; }
+}
 .faq-share { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .faq-page .faq-copy-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 9px; border: 1px solid #3b536d; border-radius: 5px; background: transparent; color: #aecde9; font: inherit; font-size: 10px; cursor: pointer; }
 .faq-copy-link svg { width: 13px; height: 13px; }

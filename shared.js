@@ -177,6 +177,7 @@ const PAGE_SECTIONS = [
 		pages: [
 			{ label: "💣 Dingers", value: "dingers", tier: "analyst" },
 			{ label: "Homer Parlays", value: "parlays", tier: "analyst" },
+			{ label: "Sharp Money", value: "sharp-money?sport=mlb", tier: "sharp" },
 			{ label: "💨 Ks (FREE)", value: "strikeouts", tier: "free" },
 			{ label: "⚾ Props", value: "mlb", tier: "sharp" },
 			{ label: "🏆 MLB Main", value: "main?sport=mlb", tier: "sharp" },
@@ -228,6 +229,7 @@ const PAGE_SECTIONS = [
 			{ label: "First / Last TD", value: "ftd", tier: "analyst" },
 			{ label: "🏈🏈 2+TD", value: "tds2", tier: "analyst" },
 			{ label: "ATTD Parlays", value: "parlays?market=attd", tier: "analyst" },
+			{ label: "Sharp Money", value: "sharp-money?sport=nfl", tier: "sharp" },
 			{ label: "🏈 Live", value: "live?sport=nfl", tier: "sharp" },
 			{ label: "🏆 Main", value: "main?sport=nfl", tier: "sharp" },
 			{ label: "🏈 NFL Game Tracker", value: "nfl_tracker", tier: "free" },
@@ -256,6 +258,7 @@ const PAGE_SECTIONS = [
 			{ label: "ATGS Parlays", value: "parlays?market=atgs", tier: "analyst" },
 			{ label: "ATGS Grades", value: "atgs-grades", tier: "analyst" },
 			{ label: "Longshots", value: "longshots", tier: "sharp" },
+			{ label: "Sharp Money", value: "sharp-money?sport=nhl", tier: "sharp" },
 			{ label: "Devig Results", value: "devig-results", tier: "free" },
 			{ label: "Line Movement", value: "movement?sport=nhl", tier: "sharp" },
 			{ label: "📊 Results", value: "analysis?sport=nhl", tier: "free" },
@@ -265,6 +268,7 @@ const PAGE_SECTIONS = [
 		key: "other", label: "🌐 Other",
 		pages: [
 			{ label: "🎯 Recommendations", value: "recommendations", tier: "sharp" },
+			{ label: "Sharp Money", value: "sharp-money", tier: "sharp" },
 			{ label: "Bonus Bet Hedges", value: "hedge", tier: "analyst" },
 			{ label: "Arbs & Middles", value: "arb", tier: "sharp" },
 			{ label: "Calculators", value: "calculators", tier: "free" },
@@ -345,6 +349,7 @@ function pagePickerValue() {
 		return `${page}?sport=${SPORT || new URLSearchParams(window.location.search).get("sport") || "mlb"}`;
 	}
 	if (page === "nfl_tracker" && ["nhl", "ncaaf", "nba"].includes(SPORT)) return `${page}?sport=${SPORT}`;
+	if (page === "sharp-money") return SPORT ? `sharp-money?sport=${SPORT}` : "sharp-money";
 	if (page === "devig-results" && (SPORT || new URLSearchParams(window.location.search).get("sport")) === "nfl") return "devig-results?sport=nfl";
 	if (page === "parlays") return SPORT === "nfl" ? "parlays?market=attd" : SPORT === "nhl" ? "parlays?market=atgs" : SPORT === "nba" ? "parlays?market=nba" : "parlays";
 	return page;
@@ -431,7 +436,7 @@ function buildPagePicker() {
 		if (activeTab === "account") return "Your account";
 		if (["live", "nfl_tracker", "feed"].includes(route)) return "Live & tracking";
 		if (["recap", "main_recap", "analysis", "bets"].includes(route)) return "Results";
-		if (["bvp", "matchups", "stats", "barrels", "preview", "preview_k", "pitcher_mix", "top_pitches", "trends", "movement", "longshots", "kotc", "recommendations", "heatmap", "cheat", "outliers", "atgs-grades", "arb", "calculators"].includes(route)) return "Research & tools";
+		if (["bvp", "matchups", "stats", "barrels", "preview", "preview_k", "pitcher_mix", "top_pitches", "trends", "movement", "longshots", "sharp-money", "kotc", "recommendations", "heatmap", "cheat", "outliers", "atgs-grades", "arb", "calculators"].includes(route)) return "Research & tools";
 		return "Markets";
 	}
 	function renderGrid(key = activeTab) {

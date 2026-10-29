@@ -1,0 +1,32 @@
+{
+  "captured_at_utc": "2026-10-29T23:32:09.672640+00:00",
+  "source": "https://www.evsharps.com/threes.html?book=fd,dk,b365,mgm&view=stacked",
+  "mode": "Public production page in anonymous browser; live data; normal product filters only",
+  "images": [
+    {
+      "file": "threes-table.webp",
+      "width": 1440,
+      "height": 760,
+      "bytes": 176344,
+      "note": "Live 3PM comparison table with FanDuel, DraftKings, Bet365, and MGM selected.",
+      "url": "https://www.evsharps.com/threes.html?book=fd%2Cdk%2Cb365%2Cmgm&view=stacked&boost=0&devig=&required=&weight=1&game=&prop=&ou=ou&min=&max="
+    },
+    {
+      "file": "threes-player.webp",
+      "width": 1440,
+      "height": 760,
+      "bytes": 72056,
+      "note": "Actual selected player history dialog and recorded game logs.",
+      "url": "https://www.evsharps.com/threes.html?book=fd%2Cdk%2Cb365%2Cmgm&view=stacked&boost=0&devig=&required=&weight=1&game=&prop=&ou=ou&min=&max="
+    },
+    {
+      "file": "threes-devig.webp",
+      "width": 1440,
+      "height": 760,
+      "bytes": 54612,
+      "note": "Actual public devig selector; no custom weights or auth bypass used.",
+      "url": "https://www.evsharps.com/threes.html?book=fd%2Cdk%2Cb365%2Cmgm&view=stacked&boost=0&devig=&required=&weight=1&game=&prop=&ou=ou&min=&max="
+    }
+  ],
+  "browser_errors": []
+}

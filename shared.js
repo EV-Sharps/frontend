@@ -873,6 +873,45 @@ function oddsDisplay(val) {
 	return oddsAmericanToDecimal(val);
 }
 
+// Table density is a browser preference, like the selected odds view.
+const ODDS_TABLE_SCALES = [50, 60, 75, 80, 90, 100, 110, 125];
+let oddsTableScale = null;
+
+function getOddsTableScale() {
+	if (oddsTableScale === null) {
+		let saved;
+		try { saved = Number(localStorage.getItem('odds-table-scale')); } catch (e) {}
+		oddsTableScale = ODDS_TABLE_SCALES.includes(saved) ? saved : 100;
+	}
+	return oddsTableScale;
+}
+
+function applyOddsTableScale() {
+	const element = document.getElementById('table');
+	if (!element || !document.getElementById('overlay')) return false;
+	const scale = getOddsTableScale();
+	const zoom = scale === 100 ? '' : String(scale / 100);
+	const changed = element.style.zoom !== zoom;
+	// Zoom affects the table's layout as well as its text, so more rows and
+	// columns fit without scaling the navigation, dialogs, or mobile cards.
+	element.style.zoom = zoom;
+	const select = document.getElementById('custom-table-scale');
+	if (select) select.value = String(scale);
+	return changed;
+}
+
+function setOddsTableScale(value) {
+	const scale = Number(value);
+	if (!ODDS_TABLE_SCALES.includes(scale)) return;
+	oddsTableScale = scale;
+	try { localStorage.setItem('odds-table-scale', String(scale)); } catch (e) {}
+	if (applyOddsTableScale() && TABLE?.initialized) TABLE.redraw(true);
+}
+
+function initOddsTableScale() {
+	if (applyOddsTableScale() && TABLE?.initialized) TABLE.redraw(true);
+}
+
 // One browser preference shared by the odds screens. URL views override it.
 function supportsOddsViews() {
 	return !!document.getElementById('custom-view-select');
@@ -1145,6 +1184,7 @@ function syncOddsSummaryColumns(table = TABLE) {
 
 function applyOddsTableView(table = TABLE) {
 	if (!supportsOddsViews()) return;
+	applyOddsTableScale();
 	syncNbaLineupLegends(table);
 	const tableElement = document.getElementById('table');
 	tableElement?.classList.toggle('stacked-odds', CURRENT_VIEW === 'table');
@@ -4147,6 +4187,29 @@ function initCustomizeWindow() {
 		const live = ['custom-view-select', 'custom-ou-select'].includes(select.id);
 		(live ? toolbar : defaults).appendChild(wrap);
 	}
+	if (document.getElementById('table')) {
+		const scaleSetting = document.createElement('label');
+		scaleSetting.className = 'cx-setting cx-scale-setting';
+		scaleSetting.htmlFor = 'custom-table-scale';
+		scaleSetting.title = 'Scales Compact and Stacked tables. Saved automatically in this browser.';
+		scaleSetting.innerHTML = '<span>Table scale</span><select id="custom-table-scale" aria-describedby="cx-scale-help"></select>';
+		const scaleSelect = scaleSetting.querySelector('select');
+		for (const value of ODDS_TABLE_SCALES) {
+			const option = document.createElement('option');
+			option.value = String(value);
+			option.textContent = `${value}%`;
+			scaleSelect.appendChild(option);
+		}
+		scaleSelect.value = String(getOddsTableScale());
+		scaleSelect.addEventListener('change', event => setOddsTableScale(event.target.value));
+		const viewSetting = toolbar.querySelector('#custom-view-select')?.closest('.cx-setting');
+		if (viewSetting) viewSetting.after(scaleSetting); else toolbar.prepend(scaleSetting);
+		const help = document.createElement('p');
+		help.id = 'cx-scale-help';
+		help.className = 'cx-scale-help';
+		help.textContent = 'Table scale is saved automatically in this browser. Mobile cards stay at 100%.';
+		toolbar.after(help);
+	}
 	if (reorder) { reorder.classList.add('cx-reorder'); toolbar.appendChild(reorder); }
 	if (!toolbar.children.length) toolbar.hidden = true;
 	const tabs = shell.querySelector('.cx-tabs');
@@ -4331,6 +4394,7 @@ function openOverlay() {
 	});
 	syncOddsSummaryColumns();
 	initCustomizeWindow();
+	applyOddsTableScale();
 	const select = document.getElementById('custom-devig-select');
 	if (select) {
 		const favorites = typeof getFavoriteDevigs === 'function' ? getFavoriteDevigs() : [];
@@ -6386,6 +6450,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 	initTopFilterLayout();
 	initOddsAppViewport();
+	initOddsTableScale();
 });
 
 // Devig keys are "+"-joined book lists (e.g. "circa+pn+kal"); the same set of

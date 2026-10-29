@@ -1,24 +1,10 @@
-/* Illustrative homepage demo; only partner-code visits load referral capture. */
+/* Product screenshots and partner attribution. No example odds or live feed. */
 (() => {
   'use strict';
-  const examples = {
-    nhl: { player: 'Auston Matthews', market: 'Anytime goalscorer · Over 0.5 goals', icon: 'hockey', probability: 0.4, odds: [180, 165, 150, 140], route: 'atgs.html', link: 'Open NHL goals' },
-    nba: { player: 'Jayson Tatum', market: 'Points · Over 25.5', icon: 'basketball', probability: 0.52, odds: [110, 105, -105, -115], route: 'nba.html', link: 'Open NBA props' },
-    nfl: { player: 'Justin Jefferson', market: 'Anytime touchdown · Over 0.5 TDs', icon: 'football', probability: 0.36, odds: [210, 200, 180, 160], route: 'tds.html', link: 'Open NFL touchdowns' },
-    mlb: { player: 'Aaron Judge', market: 'Home runs · Over 0.5', icon: 'baseball', probability: 0.25, odds: [350, 330, 300, 280], route: 'dingers.html', link: 'Open MLB home runs' },
-  };
-  const books = [
-    { name: 'FanDuel', logo: 'fd' },
-    { name: 'DraftKings', logo: 'dk' },
-    { name: 'bet365', logo: 'b365' },
-    { name: 'BetMGM', logo: 'mgm' },
-  ];
-  // Forward partner codes as a fallback, and reuse the existing capture so
-  // attribution also survives intermediate pages such as the FAQ.
   const ref = new URLSearchParams(location.search).get('ref')?.trim().toUpperCase();
   const validRef = /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(ref || '');
   function preserveReferral(link) {
-    if (!validRef) return;
+    if (!validRef || link.classList.contains('screenshot-link')) return;
     const href = link.getAttribute('href');
     if (!href || href.startsWith('#')) return;
     const url = new URL(href, location.href);
@@ -36,58 +22,68 @@
     document.head.append(script);
   }
 
-  function american(odds) {
-    const value = Math.round(odds);
-    return value > 0 ? `+${value}` : `−${Math.abs(value)}`;
-  }
-  function showExample(sport) {
-    const sample = examples[sport];
-    if (!sample) return;
-    document.getElementById('demo-player').textContent = sample.player;
-    document.getElementById('demo-market').textContent = sample.market;
-    document.getElementById('demo-sport-icon').src = `logos/${sample.icon}.png`;
-    const fragment = document.createDocumentFragment();
-    // Demo odds are deliberately fixed and best-to-worst, never real offers.
-    books.forEach((book, index) => {
-      const odds = sample.odds[index];
-      const decimal = odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds);
-      const ev = (sample.probability * decimal - 1) * 100;
-      const row = document.createElement('div');
-      row.className = 'demo-quote' + (index === 0 ? ' demo-quote-best' : '');
-      const label = document.createElement('span');
-      label.className = 'quote-book';
-      const image = document.createElement('img');
-      image.src = `logos/${book.logo}.png`;
-      image.alt = '';
-      image.width = image.height = 24;
-      label.append(image, document.createTextNode(book.name));
-      if (index === 0) {
-        const best = document.createElement('span');
-        best.className = 'best-tag';
-        best.textContent = 'Best';
-        label.append(best);
-      }
-      const price = document.createElement('strong');
-      price.textContent = american(odds);
-      const edge = document.createElement('span');
-      const rounded = Number(ev.toFixed(1));
-      edge.className = rounded > 0 ? 'positive' : rounded < 0 ? 'negative' : '';
-      edge.textContent = `${rounded > 0 ? '+' : rounded < 0 ? '−' : ''}${Math.abs(rounded).toFixed(1)}%`;
-      row.append(label, price, edge);
-      fragment.append(row);
+  const tabs = [...document.querySelectorAll('[data-preview]')];
+  function showPreview(selected) {
+    tabs.forEach(tab => {
+      const active = tab === selected;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      document.getElementById(tab.dataset.preview).hidden = !active;
     });
-    document.getElementById('demo-quotes').replaceChildren(fragment);
-    const fair = sample.probability <= 0.5 ? 100 * (1 - sample.probability) / sample.probability : -100 * sample.probability / (1 - sample.probability);
-    document.getElementById('demo-fair').textContent = american(fair);
-    document.getElementById('demo-probability').textContent = `${(sample.probability * 100).toFixed(1)}%`;
-    const link = document.getElementById('demo-open');
-    link.href = sample.route;
-    link.textContent = sample.link + ' ↗';
-    preserveReferral(link);
-    document.querySelectorAll('[data-sport]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sport === sport)));
-    document.getElementById('demo-explanation').textContent = `${sport.toUpperCase()} example: same player, same prop. A different price changes the edge.`;
   }
-  document.querySelectorAll('[data-sport]').forEach(button => button.addEventListener('click', () => showExample(button.dataset.sport)));
-  document.querySelector('.sport-switch').hidden = false;
+  tabs.forEach((tab, index) => {
+    const panel = document.getElementById(tab.dataset.preview);
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', panel.id);
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', tab.id);
+    tab.addEventListener('click', () => showPreview(tab));
+    tab.addEventListener('keydown', event => {
+      let next;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = tabs.length - 1;
+      if (next === undefined) return;
+      event.preventDefault();
+      showPreview(tabs[next]);
+      tabs[next].focus();
+    });
+  });
+  if (tabs.length) {
+    showPreview(tabs[0]);
+    const tabList = document.querySelector('.preview-tabs');
+    tabList.setAttribute('role', 'tablist');
+    tabList.hidden = false;
+  }
+
+  const dialog = document.getElementById('screenshot-dialog');
+  let opener = null;
+  if (typeof dialog?.showModal === 'function') {
+    document.querySelectorAll('.screenshot-link').forEach(link => {
+      link.addEventListener('click', event => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        event.preventDefault();
+        opener = link;
+        const image = document.getElementById('enlarged-screenshot');
+        image.src = link.href;
+        image.alt = link.querySelector('img').alt;
+        document.getElementById('screenshot-dialog-title').textContent = link.dataset.caption;
+        dialog.showModal();
+        document.body.classList.add('preview-open');
+        dialog.querySelector('.enlarged-scroll').scrollTo(0, 0);
+      });
+    });
+    dialog.querySelector('.close-preview').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    });
+    dialog.addEventListener('close', () => {
+      document.body.classList.remove('preview-open');
+      opener?.focus({ preventScroll: true });
+    });
+  }
   document.getElementById('copyright-year').textContent = String(new Date().getFullYear());
 })();

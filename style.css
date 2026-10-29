@@ -654,6 +654,21 @@ html.odds-app #app > main { min-height: 0; }
 #devig-modal.devig-window .dv-footer > button:hover,
 #devig-modal.devig-window .devig-edit-wrap button:hover { border-color: #6396c8; background: #25435f; }
 #devig-modal.devig-window .dv-empty { margin: 0; padding: 26px 12px; color: #9eb1c7; font-size: 12px; line-height: 1.7; text-align: center; overflow-wrap: anywhere; }
+@media (min-width: 900px) {
+	#devig-modal.devig-window { padding: 24px; }
+	#devig-modal.devig-window .devig-panel {
+		width: 1600px;
+		max-height: min(1000px, calc(100dvh - 48px));
+	}
+	#devig-modal.devig-window .devig-group-container {
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		gap: 8px;
+		align-items: start;
+	}
+	#devig-modal.devig-window .dv-single-books {
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	}
+}
 @media (max-width: 500px) {
 	#devig-modal.devig-window { padding: 8px; }
 	#devig-modal.devig-window .devig-panel { max-height: min(640px, calc(100dvh - 16px)); border-radius: 8px; }

@@ -6,7 +6,7 @@
   <title>Line movement | +EV Sharps</title>
   <meta name="description" content="Browse recent sportsbook price moves, compare captured prices and explore each play's fair probability history.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="movement.css?v=20261028-recent1">
+  <link rel="stylesheet" href="movement.css?v=20261029-slate-snapshot">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="movement-page">
@@ -46,7 +46,7 @@
       </section>
       <div class="movement-workspace">
       <section class="panel slate-panel" aria-labelledby="slate-title">
-        <div class="section-heading"><div><p class="eyebrow">BROWSE THE SLATE</p><h2 id="slate-title">Recent movers</h2></div><span id="catalog-count" role="status"></span></div>
+        <div class="section-heading"><div><p class="eyebrow">BROWSE THE SLATE</p><h2 id="slate-title">Recent movers</h2></div><div class="slate-heading-actions"><span id="catalog-count" role="status"></span><button id="open-slate-snapshot" type="button" aria-haspopup="dialog" aria-controls="slate-snapshot-dialog" disabled><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 2H2v3m9-3h3v3M2 11v3h3m9-3v3h-3M5 5h6v6H5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Screenshot view</button></div></div>
         <p class="muted slate-help">Largest fair-probability changes in your window. Choose a play to explore its price history.</p>
         <p id="empty-slate" class="empty-state" role="status" hidden></p>
         <div id="catalog-wrap" class="play-feed" role="region" aria-label="Line movement plays" tabindex="0"><div id="catalog-rows"></div></div>
@@ -83,8 +83,32 @@
       </details>
     </div>
   </main>
+  <dialog id="slate-snapshot-dialog" aria-labelledby="slate-snapshot-title">
+    <div class="slate-snapshot-toolbar">
+      <strong>Screenshot view</strong>
+      <div class="slate-snapshot-controls">
+        <label for="slate-snapshot-limit">Rows<select id="slate-snapshot-limit"><option value="10" selected>10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option><option value="all">All loaded</option></select></label>
+        <div class="slate-snapshot-pagination" role="group" aria-label="Screenshot pages"><button id="slate-snapshot-prev" type="button" aria-label="Previous screenshot page">&larr;</button><span id="slate-snapshot-page" role="status">1 / 1</span><button id="slate-snapshot-next" type="button" aria-label="Next screenshot page">&rarr;</button></div>
+      </div>
+      <button id="slate-snapshot-close" type="button" aria-label="Close screenshot view">&times;</button>
+    </div>
+    <div class="slate-snapshot-scroll" tabindex="0" role="region" aria-label="Compact movement table">
+      <article id="slate-snapshot-card">
+        <header class="slate-snapshot-card-header">
+          <div class="slate-snapshot-identity"><span class="slate-snapshot-brand">+EV <span>Sharps</span></span><h2 id="slate-snapshot-title">Fair price movement</h2><p id="slate-snapshot-context"></p><p id="slate-snapshot-filter-context"></p></div>
+          <span id="slate-snapshot-updated"></span>
+        </header>
+        <table class="slate-snapshot-table">
+          <thead><tr><th scope="col" class="snapshot-rank">#</th><th scope="col">Selection</th><th scope="col">Game</th><th scope="col">Best captured</th><th scope="col">Fair baseline</th><th scope="col">Current fair</th><th scope="col">Move</th></tr></thead>
+          <tbody id="slate-snapshot-rows"></tbody>
+        </table>
+        <footer class="slate-snapshot-card-footer"><p id="slate-snapshot-note"></p><div><span id="slate-snapshot-range"></span><span class="slate-snapshot-site">evsharps.com</span></div></footer>
+      </article>
+    </div>
+    <p class="slate-snapshot-help">Capture the card below the controls. Choose fewer rows to fit everything in one screenshot.</p>
+  </dialog>
   <script src="plotly-3.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261028-recent1"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261029-slate-snapshot"></script>
 </body>
 </html>

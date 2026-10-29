@@ -49,6 +49,7 @@
   let catalog = null, detail = null, selectedId = '', offset = 0, day = dayOf(), ready = false;
   let summaryController = null, detailController = null, summaryVersion = 0, detailVersion = 0, debounceTimer, midnightTimer;
   let plottedKey = '', focusedBook = '', chartPoints = [], zoomedX = false, zoomedY = false;
+  let snapshotPage = 0, snapshotBackdropPressed = false;
   const limit = 100;
   $('sport-select').value = SPORT;
   $('player-search').value = url.searchParams.get('query') || '';
@@ -139,6 +140,8 @@
   }
   function clearRows(message = 'Loading today’s selections...') {
     catalog = null;
+    $('open-slate-snapshot').disabled = true;
+    closeSlateSnapshot();
     $('catalog-rows').replaceChildren();
     $('catalog-wrap').hidden = true;
     $('pagination').hidden = true;
@@ -224,9 +227,54 @@
     const logo = best.book === 'kambi' ? 'parx' : best.book.startsWith('hr_') ? 'hr' : best.book;
     return `<strong>${odds(best.price)}</strong><small class="captured-book"><img src="logos/${encodeURIComponent(logo)}.png" alt="" width="14" height="14">${esc(bookName(best.book))}</small>`;
   }
+  function slateRows() {
+    return (catalog?.rows || []).filter(row => visibleMarket(row) && ($('direction-select').value === 'all' || finite(usableMove(row))));
+  }
+  function closeSlateSnapshot() {
+    snapshotBackdropPressed = false;
+    if ($('slate-snapshot-dialog').open) $('slate-snapshot-dialog').close();
+    $('slate-snapshot-rows').replaceChildren();
+    for (const id of ['slate-snapshot-context', 'slate-snapshot-filter-context', 'slate-snapshot-updated', 'slate-snapshot-note', 'slate-snapshot-range', 'slate-snapshot-page']) $(id).textContent = '';
+    $('slate-snapshot-prev').disabled = $('slate-snapshot-next').disabled = true;
+  }
+  function snapshotFair(row, endpoint) {
+    const value = row[`${endpoint}_fair`], probability = row[`${endpoint}_probability`];
+    const captured = finite(value) ? time(fairTime(row, endpoint)) : '-';
+    const carried = endpoint === 'first' && row.first_fair_carried;
+    return `<td class="snapshot-fair" data-fair="${endpoint}" title="${esc(fairCoverage(row, endpoint))}"><strong>${odds(value)}</strong><small>${finite(value) ? percent(probability) : '-'}</small><small class="snapshot-capture">${esc(captured)}${captured !== '-' ? ' ET' : ''}${carried && finite(value) ? ' · carried' : ''}</small></td>`;
+  }
+  function renderSlateSnapshot() {
+    if (!catalog) { closeSlateSnapshot(); return; }
+    const rows = slateRows(), requested = $('slate-snapshot-limit').value;
+    const pageSize = requested === 'all' ? Math.max(1, rows.length) : [10, 15, 25, 50].includes(Number(requested)) ? Number(requested) : 10;
+    const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+    snapshotPage = Math.max(0, Math.min(snapshotPage, pages - 1));
+    const start = snapshotPage * pageSize, shown = rows.slice(start, start + pageSize);
+    const captureDay = new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
+    const bounds = catalog.window_start && catalog.window_end ? ` · ${time(catalog.window_start)}–${time(catalog.window_end)} ET` : '';
+    $('slate-snapshot-context').textContent = `${SPORT.toUpperCase()} · ${captureDay} · ${windowName()}${bounds} · ${referenceName()}`;
+    const description = [selectedProps.size ? [...selectedProps].map(propName).join(', ') : 'All props', $('side-select').selectedOptions[0]?.textContent, $('direction-select').selectedOptions[0]?.textContent];
+    const search = $('player-search').value.trim();
+    if (search) description.push(`Search: ${search}`);
+    $('slate-snapshot-filter-context').textContent = description.filter(Boolean).join(' · ');
+    $('slate-snapshot-updated').textContent = catalog.updated ? `Latest capture ${gameTime(catalog.updated)}` : 'Capture time unavailable';
+    $('slate-snapshot-page').textContent = `Page ${snapshotPage + 1} of ${pages}`;
+    $('slate-snapshot-prev').disabled = snapshotPage === 0;
+    $('slate-snapshot-next').disabled = snapshotPage >= pages - 1;
+    const batchOffset = Math.max(0, Number(catalog.offset) || 0), total = Number(catalog.total) || rows.length;
+    const batch = batchOffset || total > rows.length ? ` · Slate batch starts at ${batchOffset + 1} of ${total.toLocaleString('en-US')} matching selections` : '';
+    $('slate-snapshot-range').textContent = `Rows ${shown.length ? start + 1 : 0}–${start + shown.length} of ${rows.length.toLocaleString('en-US')} loaded${batch}`;
+    $('slate-snapshot-note').textContent = 'Fair prices exclude margin. Move = fair probability change in percentage points (pp); + shortens, − drifts. Captured prices, not live odds. “Carried” marks an earlier quote used at the window start.';
+    $('slate-snapshot-rows').innerHTML = shown.map((row, index) => {
+      const movement = finite(row.first_fair) && finite(row.current_fair) ? usableMove(row) : null;
+      const color = finite(movement) ? moveClass(row) : 'unchanged';
+      return `<tr data-id="${esc(row.id)}"><td class="snapshot-rank">${start + index + 1}</td><td class="snapshot-selection"><strong>${esc(selectionName(row))}</strong><small>${esc(marketName(row))}</small></td><td class="snapshot-game"><strong>${esc(String(row.game || '').toUpperCase())}</strong><small>${esc(gameTime(row.start))}</small></td><td class="snapshot-best">${bestMarkup(bestCaptured(row))}</td>${snapshotFair(row, 'first')}${snapshotFair(row, 'current')}<td class="snapshot-move ${color}"><strong>${move(movement)}</strong><small>${esc(statusLabel(row))}</small></td></tr>`;
+    }).join('') || '<tr><td colspan="7" class="snapshot-empty">No captured selections match this view.</td></tr>';
+  }
   function renderRows() {
     if (!catalog) return;
-    const rows = (catalog.rows || []).filter(row => visibleMarket(row) && ($('direction-select').value === 'all' || finite(usableMove(row))));
+    const rows = slateRows();
+    $('open-slate-snapshot').disabled = rows.length === 0;
     const scrollTop = $('catalog-wrap').scrollTop;
     const focused = $('catalog-rows').contains(document.activeElement) ? document.activeElement.dataset.id : null;
     $('catalog-rows').innerHTML = rows.map(row => `<button type="button" data-id="${esc(row.id)}" class="movement-play${row.id === selectedId ? ' is-selected' : ''}" aria-pressed="${row.id === selectedId}" aria-label="Chart ${esc(selectionName(row))}, ${esc(marketName(row))}">
@@ -246,6 +294,7 @@
     $('previous-page').disabled = offset === 0;
     $('next-page').disabled = offset + limit >= catalog.total;
     $('page-range').textContent = `${rows.length ? offset + 1 : 0}–${offset + rows.length} of ${catalog.total}`;
+    if ($('slate-snapshot-dialog').open) renderSlateSnapshot();
   }
   function renderMetrics(row) {
     $('selection-metrics').hidden = false;
@@ -483,6 +532,39 @@
     syncURL(); renderWindow(null);
     debounceTimer = setTimeout(refresh, delay);
   }
+  $('open-slate-snapshot').addEventListener('click', () => {
+    if (resetDay() || !catalog || !slateRows().length) return;
+    snapshotPage = 0;
+    renderSlateSnapshot();
+    $('slate-snapshot-dialog').showModal();
+    $('slate-snapshot-dialog').querySelector('.slate-snapshot-scroll').scrollTop = 0;
+    $('slate-snapshot-close').focus();
+  });
+  const changeSnapshotPage = delta => {
+    snapshotPage += delta;
+    renderSlateSnapshot();
+    $('slate-snapshot-dialog').querySelector('.slate-snapshot-scroll').scrollTop = 0;
+  };
+  $('slate-snapshot-limit').addEventListener('change', () => { snapshotPage = 0; changeSnapshotPage(0); });
+  $('slate-snapshot-prev').addEventListener('click', () => changeSnapshotPage(-1));
+  $('slate-snapshot-next').addEventListener('click', () => changeSnapshotPage(1));
+  $('slate-snapshot-close').addEventListener('click', closeSlateSnapshot);
+  $('slate-snapshot-dialog').addEventListener('cancel', event => { event.preventDefault(); closeSlateSnapshot(); });
+  $('slate-snapshot-dialog').addEventListener('close', () => {
+    closeSlateSnapshot();
+    if (!$('open-slate-snapshot').disabled && !$('movement-content').hidden) $('open-slate-snapshot').focus({preventScroll: true});
+  });
+  const outsideSnapshot = event => {
+    const bounds = $('slate-snapshot-dialog').getBoundingClientRect();
+    return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
+  };
+  $('slate-snapshot-dialog').addEventListener('pointerdown', event => { snapshotBackdropPressed = event.button === 0 && event.target === $('slate-snapshot-dialog') && outsideSnapshot(event); });
+  $('slate-snapshot-dialog').addEventListener('pointercancel', () => { snapshotBackdropPressed = false; });
+  $('slate-snapshot-dialog').addEventListener('click', event => {
+    if (snapshotBackdropPressed && event.target === $('slate-snapshot-dialog') && outsideSnapshot(event)) closeSlateSnapshot();
+    snapshotBackdropPressed = false;
+  });
+  $('slate-snapshot-rows').addEventListener('error', event => { if (event.target.matches('img')) event.target.hidden = true; }, true);
   $('sport-select').addEventListener('change', () => {
     SPORT = $('sport-select').value; selectedId = ''; selectedProps.clear();
     $('side-select').value = '0'; $('reference-select').value = 'consensus';

@@ -7,7 +7,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 from threading import Thread
 from urllib.parse import urlparse
 
@@ -17,8 +17,7 @@ STAGED = Path(__file__).resolve().parents[1]
 ROOT = next((parent for parent in STAGED.parents if (parent / 'devig_results.py').is_file()),
             STAGED.parent / 'odds')
 SITE = ROOT.parent / 'frontend'
-ARTIFACTS = TemporaryDirectory(prefix='devig-results-browser-')
-OUTPUT = Path(ARTIFACTS.name)
+OUTPUT = Path(mkdtemp(prefix='devig-results-browser-'))
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -108,6 +107,97 @@ try:
         expect(page.locator('#summary-unresolved')).to_have_text('3 / 6')
         expect(page.locator('#reference-filter')).to_have_value('pn;1')
         expect(page.locator('#coverage-badge')).to_have_text('2 / 7 days')
+        expect(page.locator('#coverage-badge')).to_be_hidden()
+        assert not page.locator('.dv-details').evaluate('el => el.open'), 'Archive details start collapsed'
+        expect(page.locator('#summary-stake')).to_have_text(re.compile(r'36(?:\.00)?u'))
+        expect(page.locator('#summary-win-rate')).to_have_text(re.compile(r'60(?:\.0+)?%'))
+        expect(page.locator('#summary-ev-note')).to_contain_text('2.67%')
+        assert page.locator('table:has(#strategy-rows) thead th').count() == 10
+        assert page.locator('#strategy-rows tr').first.locator('td').count() == 10
+        for table in ('#odds-rows', '#book-rows', '#market-rows'):
+            assert page.locator(f'table:has({table}) thead th').count() == 7
+            row_selector = 'tr' if table == '#market-rows' else 'tr[data-segment]'
+            assert page.locator(f'{table} {row_selector}').first.locator('td').count() == 7
+
+        # This controls rankings only; changing it must not silently change the analyzed strategy.
+        expect(page.locator('#strategy-method-filter')).to_have_value('')
+        before_breakdowns = [page.locator(table).text_content() for table in ('#book-rows', '#odds-rows', '#market-rows')]
+        page.select_option('#strategy-method-filter', 'power')
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(1)
+        expect(page.locator('#strategy-rows')).to_contain_text('Power')
+        expect(page.locator('#method-filter')).to_have_value('worst')
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        assert before_breakdowns == [page.locator(table).text_content() for table in ('#book-rows', '#odds-rows', '#market-rows')]
+        page.locator('#strategy-rows .dv-strategy-button').first.click()
+        expect(page.locator('#reference-filter')).to_have_value('pn;1')
+        expect(page.locator('#method-filter')).to_have_value('power')
+        expect(page.locator('#summary-profit')).to_have_text('+50.00u')
+        page.select_option('#strategy-method-filter', 'worst')
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(2)
+        expect(page.locator('#method-filter')).to_have_value('power')
+        expect(page.locator('#summary-profit')).to_have_text('+50.00u')
+        page.locator('#strategy-rows .dv-strategy-button').first.click()
+        expect(page.locator('#reference-filter')).to_have_value('fd;1')
+        expect(page.locator('#method-filter')).to_have_value('worst')
+        expect(page.locator('#summary-profit')).to_have_text('+100.00u')
+        page.locator('#refresh').click()
+        page.wait_for_function("!document.querySelector('#refresh').disabled")
+        expect(page.locator('#strategy-method-filter')).to_have_value('worst')
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(2)
+        expect(page.locator('#summary-profit')).to_have_text('+100.00u')
+        page.locator('#reset-filters').click()
+        expect(page.locator('#strategy-method-filter')).to_have_value('')
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(3)
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        expect(page.locator('#selected-strategy img.dv-book-logo')).to_have_attribute('src', 'logos/pn.png')
+        expect(page.locator('#book-rows [data-segment="dk"] img.dv-book-logo').first).to_have_attribute('src', 'logos/dk.png')
+
+        page.select_option('#strategy-method-filter', 'power')
+        no_power = fixture()
+        no_power['methods'] = [method for method in no_power['methods'] if method['id'] != 'power']
+        for rows in ('cells', 'best_cells'):
+            no_power[rows] = [row for row in no_power[rows] if row['method'] != 'power']
+        state['payload'] = no_power
+        page.locator('#refresh').click()
+        page.wait_for_function("!document.querySelector('#refresh').disabled")
+        expect(page.locator('#strategy-method-filter')).to_have_value('power')
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(0)
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        state['payload'] = fixture()
+        page.locator('#refresh').click()
+        expect(page.locator('#strategy-rows .dv-strategy-button')).to_have_count(1)
+        expect(page.locator('#strategy-method-filter')).to_have_value('power')
+        page.locator('#reset-filters').click()
+        expect(page.locator('#strategy-method-filter')).to_have_value('')
+
+        # Render multiple reference books while unknown IDs remain escaped, readable text.
+        logos_fixture = fixture()
+        unknown_book = 'unknown<img src=x onerror=window.logoInjection=true>'
+        logos_fixture['references'].extend([
+            dict(id='pn+fd;1', name='Pinnacle + FanDuel', books=['pn', 'fd']),
+            dict(id='unknown;1', name='Unknown reference', books=[unknown_book]),
+        ])
+        logos_fixture['cells'].extend([cell(reference='pn+fd;1', profit_units=20),
+                                       cell(reference='unknown;1', book=unknown_book, profit_units=2)])
+        state['payload'] = logos_fixture
+        page.locator('#refresh').click()
+        expect(page.locator('#strategy-rows tr[data-reference="pn+fd;1"] img.dv-book-logo')).to_have_count(2)
+        expect(page.locator('#strategy-rows tr[data-reference="pn+fd;1"] img.dv-book-logo').nth(0)).to_have_attribute('src', 'logos/pn.png')
+        expect(page.locator('#strategy-rows tr[data-reference="pn+fd;1"] img.dv-book-logo').nth(1)).to_have_attribute('src', 'logos/fd.png')
+        unknown_row = page.locator('#strategy-rows tr[data-reference="unknown;1"]')
+        expect(unknown_row).to_contain_text(unknown_book.upper())
+        expect(unknown_row.locator('img')).to_have_count(0)
+        unknown_row.locator('.dv-strategy-button').click()
+        expect(page.locator('#summary-profit')).to_have_text('+2.00u')
+        expect(page.locator('#book-rows')).to_contain_text(unknown_book.upper())
+        expect(page.locator('#book-rows img')).to_have_count(0)
+        assert not page.evaluate('Boolean(window.logoInjection)')
+        state['payload'] = fixture()
+        page.locator('#refresh').click()
+        page.wait_for_function("!document.querySelector('#refresh').disabled")
+        page.locator('#reset-filters').click()
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        assert page.locator('img.dv-book-logo').evaluate_all('images => images.every(img => img.complete && img.naturalWidth > 0)'), 'Known logos must resolve to existing assets'
         assert page.locator('#daily-chart .is-missing').count() == 5
         assert page.locator('#report-notes img').count() == 0
         assert 'missing or unverified stat: 5' in page.locator('#coverage-reasons').text_content()
@@ -187,9 +277,11 @@ try:
         assert page.locator('.dv-prop-group').count() == 0
         page.locator('#reset-filters').click()
 
-        for width in (390, 320):
-            page.set_viewport_size(dict(width=width, height=844))
+        for width in (1440, 390, 320):
+            page.set_viewport_size(dict(width=width, height=1100 if width == 1440 else 844))
             assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), f'Page overflow at {width}px'
+            page.evaluate('window.scrollTo(0, 0)')
+            page.screenshot(path=str(OUTPUT / f'fixture-{width}.png'), full_page=True)
         page.set_viewport_size(dict(width=1440, height=1100))
 
         state['payload']['cells'] = [cell(), cell(prop='atgs', reference='fd;1')]
@@ -412,7 +504,7 @@ try:
             page.locator('#strategy-rows .dv-strategy-button').first.scroll_into_view_if_needed()
             assert page.locator('#strategy-rows .dv-strategy-button').first.evaluate('''el => {
               const r = el.getBoundingClientRect();
-              return document.elementFromPoint(r.left + 5, r.top + 5) === el;
+              return el.contains(document.elementFromPoint(r.left + 5, r.top + 5));
             }'''), 'Strategy rows must actually paint in the viewport'
             page.locator('#book-rows tr').first.scroll_into_view_if_needed()
             assert page.locator('#book-rows tr').first.evaluate('''el => {
@@ -452,7 +544,7 @@ try:
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: NHL regressions; NFL all-market defaults, explicit ATTD/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390px mobile; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
+        print('PASS: Dense summaries and table columns; independent reference-method filtering, row selection, refresh persistence and reset; NHL regressions; NFL all-market defaults, explicit ATTD/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390/1440px layouts; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
+        print('Screenshots:', OUTPUT)
 finally:
     server.shutdown()
-    ARTIFACTS.cleanup()

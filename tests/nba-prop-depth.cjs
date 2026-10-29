@@ -157,10 +157,12 @@ test('fractional Kalshi contracts preserve fractional liquidity until display ro
   await loaded(h,f,'kal');const result=h.depth.collect(f.row,f.payload,{book:'kal'});
   assert.equal(result.sides[1].total,7.5);assert.ok(h.depth.render(result).includes('$7'));
 });
-test('all NBA pages opt in to depth without changing the shared scorer/main modules',()=>{
+test('all NBA pages use the shared depth UI with the NBA data adapter',()=>{
   for(const page of ['nba','pts','threes']) {
     const html=fs.readFileSync(path.join(__dirname,'..',page+'.html'),'utf8');
-    assert.ok(html.includes('src="nba-prop-depth.js"'));assert.ok(html.includes('href="nba-prop-depth.css"'));
-    for(const book of ['nv','kal','px'])assert.ok(html.includes(`NBAPropDepth.formatter(evOddsFormatter, "${book}")`));
+    assert.ok(html.includes('src="nba-prop-depth.js"'));assert.ok(html.includes('src="novig-depth.js"'));
+    assert.ok(html.includes('href="novig-depth.css"'));
+    assert.ok(!html.includes('href="nba-prop-depth.css"'));
+    for(const book of ['nv','kal','px'])assert.ok(html.includes(`NovigDepth.formatter(evOddsFormatter, {book: "${book}"})`));
   }
 });

@@ -33,8 +33,72 @@
       && (!row.sport || String(row.sport).toLowerCase() === market.sport) ? market : null;
   }
   const sideName = (side, market = SCORERS.atgs) => side === 'under' ? market.no : market.yes;
-  const outcomeName = side => side === 'under' ? 'No' : 'Yes';
+  const outcomeName = (side, market) => market?.outcomes?.[side === 'under' ? 1 : 0] || (side === 'under' ? 'No' : 'Yes');
   const opposite = side => side === 'under' ? 'over' : 'under';
+
+  // Keep market-specific validation and lazy request caches in their adapters.
+  // All pages share the same preview, chart and maker/taker presentation here.
+  function adapterFor(row) {
+    if (['ml', 'spread', 'total', 'away_total', 'home_total'].includes(row?.prop)) return root.MainDepth;
+    if (['pts', 'reb', 'ast', '3ptm'].includes(row?.prop)) return root.NBAPropDepth;
+    return null;
+  }
+
+  function displayMarket(row, payload, options = {}) {
+    const adapter = adapterFor(row);
+    if (!adapter) return scorerMarket(row);
+    const identity = adapter.identity(row, payload, options);
+    return identity ? {...identity, yes: identity.labels[0], no: identity.labels[1],
+      outcomes: identity.sides[0] === 'away' ? ['Away', 'Home'] : ['Over', 'Under']} : null;
+  }
+
+  function numberFraction(value) {
+    const [mantissa, exponent = '0'] = String(value).split('e');
+    const amount = fraction(mantissa), power = Number(exponent);
+    if (!amount || !Number.isInteger(power) || Math.abs(power) > 324) return null;
+    return power >= 0 ? {n: amount.n * 10n ** BigInt(power), d: amount.d}
+      : {n: amount.n, d: amount.d * 10n ** BigInt(-power)};
+  }
+
+  function adapterOrders(orders) {
+    return orders.map(order => {
+      const implied = numberFraction(order.probability), stake = numberFraction(order.stake);
+      const other = numberFraction(order.oppositeStake), payout = numberFraction(order.payout);
+      return {probability: String(order.probability), p: order.probability,
+        odds: americanFromFraction(implied), opposite_odds: americanFromFraction({n: implied.d - implied.n, d: implied.d}),
+        stake_usd: order.stake, opposite_stake_usd: order.oppositeStake, payout_usd: order.payout,
+        money: {implied, stake, opposite: other, payout}};
+    }).sort((a, b) => b.p - a.p);
+  }
+
+  function inspectAdapter(row, payload, options, adapter) {
+    const provider = providerFor(options), result = adapter.inspect(row, payload, provider.book, options);
+    const side = options.side === 'under' || options.side === 'over' ? options.side : row?.under ? 'under' : 'over';
+    const market = displayMarket(row, payload, options);
+    if (!result.available) return {...result, provider, market, side,
+      reason: result.reason || (result.status === 'loading' ? `Loading ${provider.name} order book…` : `${provider.name} order book has not been loaded.`)};
+    const now = options.now ?? Date.now(), updated = options.updated || payload.updated;
+    // The adapters return canonical away/home or over/under order, independent of
+    // the clicked row. Map those to the two common chart slots, never to Yes/No.
+    const entry = {...result.entry, sides: result.entry.sides.map((item, index) => ({...item,
+      side: index ? 'under' : 'over', orders: adapterOrders(item.orders)}))};
+    const selected = entry.sides.find(item => item.side === side);
+    const opposed = entry.sides.find(item => item.side === opposite(side));
+    const quoteFor = outcome => {
+      const quote = bestBook(row, updated, outcome, now);
+      // Main/prop feeds may share one link across both sides. Compare prices
+      // without claiming that URL selects either outcome.
+      return quote ? {...quote, link: ''} : null;
+    };
+    const quote = quoteFor(side);
+    return {available: true, loadable: false, side, entry, provider, market, maxLevels: provider.maxLevels,
+      orders: selected.orders, truncated: selected.truncated, quote, comparison: compareOrders(selected.orders, quote), now,
+      takingOrders: takeNormalizedOrders(opposed.orders), takingTruncated: opposed.truncated,
+      availableBooks: entry.sides.map(item => {
+        const source = entry.sides.find(other => other.side === opposite(item.side));
+        return {side: item.side, orders: takeNormalizedOrders(source.orders), truncated: source.truncated, quote: quoteFor(item.side)};
+      })};
+  }
 
   // Decimal fractions keep the price comparison exact; never compare rounded odds.
   function fraction(value) {
@@ -112,7 +176,11 @@
   }
 
   function takingOrders(raw, options = {}) {
-    return normalizeOrders(raw, options).map(order => {
+    return takeNormalizedOrders(normalizeOrders(raw, options));
+  }
+
+  function takeNormalizedOrders(orders) {
+    return orders.map(order => {
       if (order.money) {
         const implied = {n: order.money.implied.d - order.money.implied.n, d: order.money.implied.d};
         return {...order, probability: String(Number(implied.n) / Number(implied.d)), p: Number(implied.n) / Number(implied.d),
@@ -222,12 +290,19 @@
 
   const lazy = {token: undefined, generation: 0, cache: new Map(), pending: new Map(), errors: new Map()};
   const accessToken = () => typeof ACCESS_TOKEN === 'string' ? ACCESS_TOKEN : '';
+  const accessIdentity = () => JSON.stringify([accessToken(), typeof CURR_USER === 'object' ? CURR_USER?.id : null,
+    typeof CURR_USER === 'object' ? CURR_USER?.tier : null]);
   function syncAccess() {
-    const token = accessToken();
-    if (token !== lazy.token) {
+    const token = accessToken(), access = accessIdentity();
+    if (access !== lazy.access) {
       for (const request of lazy.pending.values()) request.controller.abort();
       lazy.cache.clear(); lazy.pending.clear(); lazy.errors.clear();
-      lazy.token = token; lazy.generation++;
+      lazy.token = token; lazy.access = access; lazy.generation++;
+      hidePreview();
+      if (state.dialog) {
+        close();
+        state.dialog.querySelector('#novig-depth-content').replaceChildren();
+      }
     }
     return token;
   }
@@ -269,6 +344,8 @@
 
   function inspect(row, payload, options = {}) {
     syncAccess();
+    const adapter = adapterFor(row);
+    if (adapter) return inspectAdapter(row, payload, options, adapter);
     const context = manifestContext(row, payload, options);
     if (context) {
       const side = options.side || (row?.under ? 'under' : 'over');
@@ -292,6 +369,9 @@
   }
 
   function load(row, payload, options = {}) {
+    syncAccess();
+    const adapter = adapterFor(row);
+    if (adapter) return adapter.load(row, payload, providerFor(options).book, options).then(() => inspect(row, payload, options));
     const current = inspect(row, payload, options);
     if (current.available || !current.loadable) return Promise.resolve(current);
     const context = manifestContext(row, payload, options);
@@ -430,6 +510,7 @@
     const current = trigger.novigDepthRow?.();
     if (!current || currentRow({data: [current]}, preview.row) === null) return hidePreview();
     const result = inspect(row, payload, {book: trigger.dataset.depthBook, updated: pageUpdated(payload)});
+    if (preview.trigger !== trigger) return;
     if (!result.available && !result.loadable) return hidePreview();
     const html = result.available ? renderPreview(result, row) : renderLoading(result, true);
     if (preview.element.innerHTML !== html) preview.element.innerHTML = html;
@@ -474,7 +555,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'nv-depth-trigger';
-    button.setAttribute('aria-label', `View ${provider.name} order book for ${getRow().player}`);
+    button.setAttribute('aria-label', `View ${provider.name} order book for ${getRow().player || getRow().game}`);
     button.setAttribute('aria-haspopup', 'dialog');
     button.innerHTML = icon;
     button.novigDepthRow = getRow;
@@ -502,15 +583,12 @@
 
   // Cards do not use Tabulator formatters. Add the same shortcut to each book tile.
   function enhanceCards() {
-    if (typeof PAGE === 'undefined' || !['atgs', 'dingers', 'tds'].includes(PAGE)) return;
-    const container = document.getElementById('card-container');
-    if (!container) return;
-    if (!state.observer) {
-      state.observer = new MutationObserver(enhanceCards);
-      state.observer.observe(container, {childList: true, subtree: true});
-    }
+    const containers = ['card-container', 'card-modal-inner'].map(id => document.getElementById(id)).filter(Boolean);
+    if (!containers.length) return;
+    if (!state.observer) state.observer = new MutationObserver(enhanceCards);
+    for (const container of containers) state.observer.observe(container, {childList: true, subtree: true});
     const payload = pagePayload();
-    container.querySelectorAll('.data-card').forEach(card => {
+    containers.flatMap(container => [...container.querySelectorAll('.data-card')]).forEach(card => {
       const row = card.playerLinesData;
       for (const provider of Object.values(PROVIDERS)) {
         const options = {book: provider.book};
@@ -637,14 +715,14 @@
     const books = result.availableBooks;
     const maximum = Math.max(0, ...books.flatMap(book => book.orders.map(order => order.stake_usd)));
     const panels = books.map(({side, orders, quote, truncated}) => {
-      const label = outcomeName(side);
+      const label = outcomeName(side, result.market);
       const rows = orders.map(order => {
         const width = maximum ? order.stake_usd / maximum * 100 : 0;
         const value = wholeStake([order]);
         return `<li class="nv-depth-chart-row" aria-label="${label} ${american(order.odds)}, ${escape(value)} available"><span class="nv-depth-chart-odds">${american(order.odds)}</span><span class="nv-depth-chart-track"><span class="nv-depth-chart-fill" aria-hidden="true" style="--depth-width:${width.toFixed(4)}%"></span><span class="nv-depth-chart-amount" title="${escape(dollars(order.stake_usd))}">${escape(compactStake([order]))}</span></span></li>`;
       }).join('');
       const average = availableAverage(orders);
-      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${sideName(side, result.market)} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${sideName(side, result.market)}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? `<p class="nv-depth-note">Top ${result.maxLevels || 20} price levels shown.</p>` : ''}</section>`;
+      return `<section class="nv-depth-book" data-book-side="${side}" aria-label="${label} ${escape(sideName(side, result.market))} order book"><header class="nv-depth-book-header"><h3>${label}</h3><span>${escape(sideName(side, result.market))}</span></header><p class="nv-depth-book-caption">Available to take</p>${orders.length ? `<ol class="nv-depth-chart" aria-label="${label} prices and available stakes">${rows}</ol>` : `<p class="nv-depth-chart-empty">No ${label} liquidity available</p>`}<div class="nv-depth-book-total"><span>Total available</span><strong>${escape(wholeStake(orders))}</strong>${average !== null ? `<span class="nv-depth-book-average">at <b>${label} ${american(average)}</b> avg</span>` : ''}</div><p class="nv-depth-book-quote nv-depth-best">${quote ? `<span>Best sportsbook</span>${bookPrice(quote, side)}` : 'No fresh sportsbook price'}</p>${truncated ? `<p class="nv-depth-note">Top ${result.maxLevels || 20} price levels shown.</p>` : ''}</section>`;
     }).join('');
     return `<div class="nv-depth-books" style="--depth-rows:${Math.max(1, ...books.map(book => book.orders.length))}">${panels}</div><p class="nv-depth-chart-key">Bars use the same dollar scale on both sides. Average odds cover the displayed liquidity.</p>${observedFooter(result.entry)}`;
   }
@@ -653,8 +731,8 @@
     if (!result.available) return '';
     const books = result.availableBooks.map(book => ({...book, orders: book.orders.slice(0, 3)}));
     const maximum = Math.max(0, ...books.flatMap(book => book.orders.map(order => order.stake_usd)));
-    return `<header class="nv-depth-preview-header"><strong>${escape(row.player)}</strong><span>${escape(result.provider?.name || 'Novig')} · Available to take</span></header><div class="nv-depth-preview-books">${books.map(({side, orders}) =>
-      `<section class="nv-depth-preview-side" data-preview-side="${side}" aria-label="${outcomeName(side)} ${sideName(side, result.market)}"><h3>${outcomeName(side)} <small>${sideName(side, result.market)}</small></h3>${orders.length ? `<ol>${orders.map(order => `<li class="nv-depth-preview-level"><b class="nv-depth-preview-odds">${american(order.odds)}</b><span class="nv-depth-preview-size" style="--preview-fill:${(maximum ? order.stake_usd / maximum * 100 : 0).toFixed(3)}%">${escape(compactStake([order]))}</span></li>`).join('')}</ol><p class="nv-depth-preview-total">Shown <strong>${escape(wholeStake(orders))}</strong></p>` : '<p class="nv-depth-preview-empty">No liquidity</p>'}</section>`
+    return `<header class="nv-depth-preview-header"><strong>${escape(row.player || row.game)}</strong><span>${escape(result.provider?.name || 'Novig')} · ${escape(result.market?.title || '')} · Available to take</span></header><div class="nv-depth-preview-books">${books.map(({side, orders}) =>
+      `<section class="nv-depth-preview-side" data-preview-side="${side}" aria-label="${outcomeName(side, result.market)} ${escape(sideName(side, result.market))}"><h3>${outcomeName(side, result.market)} <small>${escape(sideName(side, result.market))}</small></h3>${orders.length ? `<ol>${orders.map(order => `<li class="nv-depth-preview-level"><b class="nv-depth-preview-odds">${american(order.odds)}</b><span class="nv-depth-preview-size" style="--preview-fill:${(maximum ? order.stake_usd / maximum * 100 : 0).toFixed(3)}%">${escape(compactStake([order]))}</span></li>`).join('')}</ol><p class="nv-depth-preview-total">Shown <strong>${escape(wholeStake(orders))}</strong></p>` : '<p class="nv-depth-preview-empty">No liquidity</p>'}</section>`
     ).join('')}</div><footer>Top 3 prices per side · Before fees<br>Click icon for full book</footer>`;
   }
 
@@ -670,13 +748,13 @@
       const link = quoteLink(quote, side);
       const quoteText = `${escape(quote.name)} ${american(quote.odds)}`;
       const book = link ? `<a href="${escape(link)}" target="_blank" rel="noopener noreferrer">${quoteText} ↗</a>` : `<strong>${quoteText}</strong>`;
-      summary = `<p class="nv-depth-best">Best fresh ${sideName(side, result.market).toLowerCase()} price: ${book} <span>(${percent(quote.probability)} implied)</span></p>`;
+      summary = `<p class="nv-depth-best">Best fresh ${escape(sideName(side, result.market).toLowerCase())} price: ${book} <span>(${percent(quote.probability)} implied)</span></p>`;
       if (comparison.matching.length) {
-        summary += `<p class="nv-depth-comparison ${comparison.substantial ? 'nv-depth-comparison-strong' : ''}">Better price than resting orders · ${escape(wholeStake(comparison.matching))} maker stake${comparison.substantial ? '' : ` · below ${dollars(comparison.threshold)} highlight threshold`}</p><div class="nv-depth-metrics"><div><span>Matching maker stake · ${sideName(side, result.market)}</span><strong>${escape(wholeStake(comparison.matching))}</strong></div><div><span>Opposite taker stake · ${sideName(other, result.market)}</span><strong>${escape(wholeStake(comparison.matching, true))}</strong></div><div><span>Average requested odds</span><strong>${american(comparison.weightedOdds)} <small>${percent(comparison.weightedProbability)}</small></strong></div></div>`;
+        summary += `<p class="nv-depth-comparison ${comparison.substantial ? 'nv-depth-comparison-strong' : ''}">Better price than resting orders · ${escape(wholeStake(comparison.matching))} maker stake${comparison.substantial ? '' : ` · below ${dollars(comparison.threshold)} highlight threshold`}</p><div class="nv-depth-metrics"><div><span>Matching maker stake · ${escape(sideName(side, result.market))}</span><strong>${escape(wholeStake(comparison.matching))}</strong></div><div><span>Opposite taker stake · ${escape(sideName(other, result.market))}</span><strong>${escape(wholeStake(comparison.matching, true))}</strong></div><div><span>Average requested odds</span><strong>${american(comparison.weightedOdds)} <small>${percent(comparison.weightedProbability)}</small></strong></div></div>`;
       } else summary += '<p>No sportsbook price is better than these resting-order prices.</p>';
     }
     const rows = orders.map(order => `<tr${matching.has(order) ? ' class="nv-depth-matching"' : ''}><td>${american(order.odds)}<small>${escape(order.probability)} probability</small></td><td>${escape(wholeStake([order]))}</td><td><div class="nv-depth-bar" aria-hidden="true" style="--depth-width:${Math.max(1, order.opposite_stake_usd / maxStake * 100).toFixed(2)}%"></div><span>${american(order.opposite_odds)}</span><strong>${escape(wholeStake([order], true))}</strong></td></tr>`).join('');
-    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${sideName(side, result.market)}</strong>. Taking them backs <strong>${sideName(other, result.market)}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${sideName(side, result.market)} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${sideName(other, result.market)}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${sideName(side, result.market).toLowerCase()} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. Yes links open the saved sportsbook selection; No links are unavailable. This view places no bets.</p></footer>`;
+    return `<section class="nv-depth-summary">${summary}</section><p class="nv-depth-explainer">These resting bids want <strong>${escape(sideName(side, result.market))}</strong>. Taking them backs <strong>${escape(sideName(other, result.market))}</strong>. Maker stake and opposite taker stake are different amounts.</p><div class="nv-depth-totals"><span>Displayed maker stake <strong>${escape(wholeStake(orders))}</strong></span><span>Opposite taker stake <strong>${escape(wholeStake(orders, true))}</strong></span></div>${orders.length ? `<div class="nv-depth-table-wrap"><table class="nv-depth-table"><thead><tr><th scope="col">Maker wants<br>${escape(sideName(side, result.market))} odds</th><th scope="col">Maker<br>stake</th><th scope="col">Available to take · ${escape(sideName(other, result.market))}<br>Odds / taker stake</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="nv-depth-empty">No resting orders want ${escape(sideName(side, result.market).toLowerCase())} in this snapshot.</p>`}<p class="nv-depth-note">Bars show opposite taker stake. Amounts are shown in whole dollars, rounded down; calculations use full precision. ${result.truncated ? `Only the top ${result.maxLevels || 20} price levels are shown. ` : ''}Amounts and prices are before fees. Orders may change before a fill.</p><footer class="nv-depth-footer"><span>Observed ${escape(new Date(timestamp(entry.updated)).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}))}</span><p>Pending orders are not completed bets or fair value. ${result.market?.outcomes ? "Links open only the saved row selection." : "Yes links open the saved sportsbook selection; No links are unavailable."} This view places no bets.</p></footer>`;
   }
 
   function renderLoading(result, compact = false) {
@@ -700,14 +778,16 @@
     const row = currentRow(payload);
     const result = inspect(row, payload, {book: state.book, side: state.side, updated: pageUpdated(payload)});
     const dialog = state.dialog;
+    if (!dialog.open) return;
     const provider = providerFor({book: state.book});
+    const market = result.market || displayMarket(state.row, payload) || {};
     dialog.querySelector('.nv-depth-eyebrow').textContent = `${provider.name.toUpperCase()} · ORDER BOOK`;
     dialog.querySelector('.nv-depth-close').setAttribute('aria-label', `Close ${provider.name} depth`);
-    dialog.querySelector('#novig-depth-title').textContent = state.row.player;
-    dialog.querySelector('#novig-depth-subtitle').textContent = `${state.row.game} · ${state.row.dt || state.row.date} · ${scorerMarket(state.row)?.title || 'Scorer'}`;
+    dialog.querySelector('#novig-depth-title').textContent = state.row.player || state.row.game;
+    dialog.querySelector('#novig-depth-subtitle').textContent = [state.row.game, state.row.dt || state.row.date, market.title].filter(Boolean).join(' · ');
     dialog.querySelectorAll('[data-depth-side]').forEach(button => {
       const side = button.dataset.depthSide;
-      button.textContent = `${outcomeName(side)} · ${sideName(side, scorerMarket(state.row) || SCORERS.atgs)}`;
+      button.textContent = market.outcomes ? sideName(side, market) : `${outcomeName(side)} · ${sideName(side, market)}`;
       button.setAttribute('aria-pressed', String(side === state.side));
     });
     dialog.querySelectorAll('[data-depth-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.depthMode === state.mode)));
@@ -722,6 +802,7 @@
   }
 
   function open(row, opener, options = {}) {
+    syncAccess();
     hidePreview();
     const dialog = ensureDialog();
     state.row = row;

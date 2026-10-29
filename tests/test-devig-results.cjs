@@ -26,6 +26,42 @@ test('one reference and method drive ROI; pushes count, unresolved offers do not
   assert.equal(view.strategies[0].reference, 'fd;1');
   assert.equal(view.days.reduce((sum, row) => sum + row.profit_units, 0), 9);
 });
+test('win rate excludes pushes and unresolved offers; average EV includes every qualifying offer', () => {
+  const total = buildView(report(), filters).total;
+  assert.equal(total.win_rate, 60);
+  assert.equal(total.average_ev, 120 / 45);
+  const onlyPushes = aggregate([cell({ selected: 5, wins: 0, losses: 0, pushes: 2, pending: 1, ungraded: 2, profit_units: 0, ev_sum: 25 })]);
+  assert.equal(onlyPushes.win_rate, null);
+  assert.equal(onlyPushes.average_ev, 5);
+  assert.equal(onlyPushes.roi, 0);
+  const empty = aggregate([]);
+  assert.equal(empty.win_rate, null);
+  assert.equal(empty.average_ev, null);
+});
+test('ranking method filters references independently of the selected summary and all breakdowns', () => {
+  const original = buildView(report(), filters);
+  for (const method of ['power', 'worst', 'missing']) {
+    const filtered = buildView(report(), { ...filters, strategyMethod: method });
+    assert.deepEqual(filtered.strategies, original.strategies.filter(row => row.method === method));
+    assert.deepEqual({ ...filtered, strategies: [] }, { ...original, strategies: [] });
+  }
+  assert.deepEqual(buildView(report(), { ...filters, strategyMethod: '' }), original);
+});
+test('CSV retains selected-strategy metrics while exporting only the filtered reference rankings', () => {
+  const f = { ...filters, strategyMethod: 'power' };
+  const rows = csvRows(exportCSV(buildView(report(), f), f));
+  const summary = rows.find(row => row.section === 'summary');
+  assert.equal(summary.method, 'worst');
+  assert.equal(summary.net_units, '9');
+  assert.equal(summary.win_rate_percent, '60');
+  assert.equal(Number(summary.average_ev_percent), 120 / 45);
+  assert.ok(rows.every(row => row.strategy_method_filter === 'power'));
+  const rankings = rows.filter(row => row.section === 'strategies');
+  assert.equal(rankings.length, 1);
+  assert.equal(rankings[0].method, 'power');
+  assert.equal(rankings[0].net_units, '50');
+  assert.ok(rows.filter(row => ['books', 'odds_ranges', 'markets'].includes(row.section)).every(row => row.method === 'worst'));
+});
 test('all books excludes synthetic best offers in summaries, strategies, prop ranks and CSV', () => {
   const data = report();
   const before = buildView(data, filters);

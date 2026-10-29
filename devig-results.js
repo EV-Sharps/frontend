@@ -162,6 +162,8 @@
       total.profit_units = cells.reduce((sum, cell) => sum + cell.kelly_profit_units, 0);
     }
     total.roi = total.stake_units ? 100 * total.profit_units / total.stake_units : null;
+    total.win_rate = total.wins + total.losses ? 100 * total.wins / (total.wins + total.losses) : null;
+    total.average_ev = total.selected ? total.ev_sum / total.selected : null;
     return total;
   }
   function matches(cell, filters) {
@@ -197,7 +199,7 @@
     return {
       byProp,
       total: aggregate(chosen, staking),
-      strategies: rank(group(scope, ['reference', 'method'], staking)),
+      strategies: rank(group(scope.filter(cell => !filters.strategyMethod || cell.method === filters.strategyMethod), ['reference', 'method'], staking)),
       books: rank(group(chosen, ['book'], staking)),
       bands: rank(group(chosen, ['odds_band'], staking)),
       markets: rank(group(chosen, ['prop'], staking)),
@@ -377,10 +379,10 @@
     return '"' + text.replaceAll('"', '""') + '"';
   }
   function exportCSV(view, filters) {
-    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop', 'staking', 'settled_stake_units', 'price_source'];
+    const headings = ['section', 'segment', 'reference', 'method', 'start', 'end', 'book_filter', 'market_filter', 'selected', 'settled', 'wins', 'losses', 'pushes', 'pending', 'ungraded', 'net_units', 'roi_percent', 'prop', 'staking', 'settled_stake_units', 'price_source', 'win_rate_percent', 'average_ev_percent', 'strategy_method_filter'];
     const line = (section, segment, row) => [section, segment, row.reference ?? filters.reference, row.method ?? filters.method,
       filters.start, filters.end, filters.book || 'all', filters.prop || 'all', row.selected, row.settled, row.wins, row.losses,
-      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || '', filters.staking || 'flat', row.stake_units, filters.priceSource || 'archive'];
+      row.pushes, row.pending, row.ungraded, row.profit_units, row.roi, row.prop || '', filters.staking || 'flat', row.stake_units, filters.priceSource || 'archive', row.win_rate, row.average_ev, filters.strategyMethod || 'all'];
     const rows = [headings, line('summary', 'selected strategy', view.total)];
     for (const [section, key, data] of [['strategies', 'reference', view.strategies],
       ['markets', 'prop', view.markets], ['days', 'date', view.days]]) {
@@ -406,11 +408,20 @@
   const count = value => number(value).toLocaleString('en-US');
   const signed = (value, suffix = '') => value === null ? '-' : `${value > 0 ? '+' : ''}${number(value).toFixed(2)}${suffix}`;
   const percent = value => value === null ? '-' : signed(value, '%');
+  const rate = value => value === null ? '-' : `${number(value).toFixed(1)}%`;
+  const record = row => `${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}`;
   const tone = value => value > 0 ? 'dv-positive' : value < 0 ? 'dv-negative' : '';
   const bookNames = { best: 'Best available', pn: 'Pinnacle', circa: 'Circa', dk: 'DraftKings', fd: 'FanDuel', nv: 'Novig', px: 'ProphetX', kal: 'Kalshi',
     poly: 'Polymarket', hr: 'Hard Rock', br: 'BetRivers', kambi: 'Kambi', b365: 'bet365', espn: 'theScore Bet', cz: 'Caesars',
     mgm: 'BetMGM', fn: 'Fanatics', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
   const bookName = book => bookNames[book] || String(book).toUpperCase();
+  const logoBooks = new Set(Object.keys(bookNames).filter(book => book !== 'best'));
+  function bookLogo(book) {
+    const key = { kambi: 'parx', hr_az: 'hr', hr_oh: 'hr' }[book] || book;
+    if (!logoBooks.has(book) && !['hr_az', 'hr_oh'].includes(book)) return '';
+    return `<img class="dv-book-logo" src="logos/${key}.png" width="16" height="16" alt="" title="${esc(bookName(book))}">`;
+  }
+  const bookIdentity = (book, label = bookName(book)) => `<span class="dv-identity">${bookLogo(book)}<span>${esc(label)}</span></span>`;
   const shareBookNames = { best: 'Best available', fd: 'FD', dk: 'DK', b365: 'bet365', mgm: 'MGM', cz: 'Caesars', hr: 'HR',
     fn: 'Fanatics', br: 'BetRivers', espn: 'theScore', pn: 'Pinnacle', circa: 'Circa', nv: 'Novig', px: 'ProphetX',
     kal: 'Kalshi', poly: 'Polymarket', bv: 'Bovada', bol: 'BetOnline', re: 'ReBet', fl: 'Fliff', mb: 'Matchbook' };
@@ -438,6 +449,12 @@
   let staking = 'flat', stakingPreference = 'flat';
   try { if (localStorage.getItem('devig_results_staking') === 'quarter-kelly') stakingPreference = 'quarter-kelly'; } catch (_) {}
   const referenceName = id => { const reference = report?.references.find(item => item.id === id); return reference?.books?.length === 1 ? bookName(reference.books[0]) : reference?.name || id; };
+  function referenceLogos(id) {
+    const reference = report?.references.find(item => item.id === id);
+    const books = reference?.books?.length ? reference.books : String(id).split(';')[0].split('+');
+    return `<span class="dv-book-logos">${[...new Set(books)].map(bookLogo).join('')}</span>`;
+  }
+  const referenceIdentity = (id, label = referenceName(id)) => `<span class="dv-identity">${referenceLogos(id)}<span>${esc(label)}</span></span>`;
   const methodName = id => report?.methods.find(item => item.id === id)?.name || id;
   let performersModel = null, performersRevision = 0, performersPage = 0, performersDevigPage = 0, performersFilterKey = '';
   let performersBackdropPressed = false;
@@ -534,8 +551,8 @@
     $('performers-prev').disabled = performersPage === 0;
     $('performers-next').disabled = performersPage >= pageCount - 1;
     $('performers-card').style.setProperty('--dv-share-min-width', `${Math.max(760, 142 + columns.length * 132)}px`);
-    $('performers-head').innerHTML = '<th scope="col">Betting book</th>' + performersModel.columns.map(column => `<th scope="col" data-reference="${esc(column.id)}">${esc(column.label)}</th>`).join('');
-    $('performers-rows').innerHTML = performersModel.rows.map(group => `<tr data-book="${esc(group.book)}"><th scope="row"><strong>${esc(group.bookLabel)}</strong>${group.bookName !== group.bookLabel ? `<small>${esc(group.bookName)}</small>` : ''}</th>${group.cells.map(cell => {
+    $('performers-head').innerHTML = '<th scope="col">Betting book</th>' + performersModel.columns.map(column => `<th scope="col" data-reference="${esc(column.id)}">${referenceIdentity(column.id, column.label)}</th>`).join('');
+    $('performers-rows').innerHTML = performersModel.rows.map(group => `<tr data-book="${esc(group.book)}"><th scope="row"><strong>${bookIdentity(group.book, group.bookLabel)}</strong>${group.bookName !== group.bookLabel ? `<small>${esc(group.bookName)}</small>` : ''}</th>${group.cells.map(cell => {
       const row = cell.entry;
       return `<td data-reference="${esc(cell.reference)}">${row ? `<div class="dv-share-leader" data-reference="${esc(row.reference)}" data-method="${esc(row.method)}"><div class="dv-share-financials"><b class="${tone(row.profit)}">${esc(row.profitLabel)}</b><span class="${tone(row.roi)}">${esc(row.roiLabel)} ROI</span></div><small>${esc(row.recordLabel)} · ${count(row.settled)} settled</small><div class="dv-share-hit" title="${esc(row.hitDetail)}">Best hit: ${esc(row.hitLabel)}</div></div>`
         : `<p class="dv-share-missing" title="${esc(cell.emptyDetail)}">${esc(cell.emptyLabel)}</p>`}</td>`;
@@ -583,7 +600,7 @@
   function notice(id, text) { $(id).textContent = text; $(id).hidden = !text; }
   function filters() {
     return { start: $('date-start').value, end: $('date-end').value, book: $('book-filter').value, prop: $('market-filter').value,
-      reference: $('reference-filter').value, method: $('method-filter').value, staking, priceSource,
+      reference: $('reference-filter').value, method: $('method-filter').value, strategyMethod: $('strategy-method-filter').value, staking, priceSource,
       minimum: Math.max(1, Math.floor(number($('min-settled').value))), profitableOnly: $('profitable-only').checked };
   }
   function renderStaking() {
@@ -627,6 +644,7 @@
     $('market-filter').value = '';
     $('reference-filter').value = strategy.reference;
     $('method-filter').value = strategy.method;
+    $('strategy-method-filter').value = '';
     $('min-settled').value = '10';
     $('profitable-only').checked = false;
     $('strategy-note').textContent = strategy.fallback ? 'Pinnacle / Worst-case unavailable; using the first available strategy.' : 'Default: Pinnacle / Worst-case';
@@ -645,24 +663,30 @@
     return '';
   }
   function tableEmpty(id, columns) {
-    $(id).innerHTML = `<tr><td colspan="${columns}" class="dv-table-empty">No groups meet these filters. Lower the minimum sample or turn off “Profitable only” to explore more results.</td></tr>`;
+    const message = id === 'strategy-rows'
+      ? 'No strategies meet these filters. Try another method, lower the minimum sample, or turn off “Profitable only”.'
+      : 'No groups meet these filters. Lower the minimum sample or turn off “Profitable only” to explore more results.';
+    $(id).innerHTML = `<tr><td colspan="${columns}" class="dv-table-empty">${message}</td></tr>`;
   }
   function renderRanks(id, rows, dimension, label) {
-    if (!rows.length) return tableEmpty(id, 5);
-    $(id).innerHTML = rows.map(row => `<tr><td>${esc(label(row[dimension]))}</td><td>${count(row.settled)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`).join('');
+    if (!rows.length) return tableEmpty(id, 7);
+    $(id).innerHTML = rows.map(row => `<tr><td>${esc(label(row[dimension]))}</td>${rankMetrics(row)}</tr>`).join('');
+  }
+  function rankMetrics(row) {
+    return `<td>${count(row.settled)}</td><td>${record(row)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${percent(row.average_ev)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td>`;
   }
   function renderPropRanks(id, dimension, label, f) {
-    if (!view.byProp.length) return tableEmpty(id, 5);
+    if (!view.byProp.length) return tableEmpty(id, 7);
     const isBook = dimension === 'book', kind = isBook ? 'books' : 'odds ranges';
     $(id).innerHTML = view.byProp.map(group => {
       const rows = isBook ? group.books : group.bands;
       const samples = isBook ? group.bookSamples : group.bandSamples;
       const smaller = ranked(samples, 1, f.profitableOnly).filter(row => row.settled < f.minimum);
       const total = group.total;
-      const heading = `<tr class="dv-prop-group" data-prop="${esc(group.prop)}"><th colspan="5" scope="rowgroup"><button type="button" data-prop-filter="${esc(group.prop)}" title="Filter all results to ${esc(propName(group.prop))}">${esc(propName(group.prop))}</button><small>${count(total.settled)} settled offers · ${count(total.pending)} pending / ${count(total.ungraded)} ungraded</small></th></tr>`;
-      const rankedRows = rows.map(row => `<tr data-prop="${esc(group.prop)}" data-segment="${esc(row[dimension])}"><td>${esc(label(row[dimension]))}</td><td>${count(row.settled)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`).join('');
-      const empty = rows.length ? '' : `<tr><td colspan="5" class="dv-table-empty">${!total.selected ? 'No qualifying offers for this reference and method.' : !total.settled ? 'No settled offers yet.' : `No ${f.profitableOnly ? 'profitable ' : ''}${kind} reach ${count(f.minimum)} settled offers for this prop.`}</td></tr>`;
-      const more = smaller.length ? `<tr class="dv-small-samples"><td colspan="5">${count(smaller.length)} ${kind} have fewer than ${count(f.minimum)} settled offers. <button type="button" data-small-samples="${esc(group.prop)}">View smaller samples</button></td></tr>` : '';
+      const heading = `<tr class="dv-prop-group" data-prop="${esc(group.prop)}"><th colspan="7" scope="rowgroup"><button type="button" data-prop-filter="${esc(group.prop)}" title="Filter all results to ${esc(propName(group.prop))}">${esc(propName(group.prop))}</button><small>${count(total.settled)} settled offers · ${count(total.pending)} pending / ${count(total.ungraded)} ungraded</small></th></tr>`;
+      const rankedRows = rows.map(row => `<tr data-prop="${esc(group.prop)}" data-segment="${esc(row[dimension])}"><td>${isBook ? bookIdentity(row.book) : esc(label(row[dimension]))}</td>${rankMetrics(row)}</tr>`).join('');
+      const empty = rows.length ? '' : `<tr><td colspan="7" class="dv-table-empty">${!total.selected ? 'No qualifying offers for this reference and method.' : !total.settled ? 'No settled offers yet.' : `No ${f.profitableOnly ? 'profitable ' : ''}${kind} reach ${count(f.minimum)} settled offers for this prop.`}</td></tr>`;
+      const more = smaller.length ? `<tr class="dv-small-samples"><td colspan="7">${count(smaller.length)} ${kind} have fewer than ${count(f.minimum)} settled offers. <button type="button" data-small-samples="${esc(group.prop)}">View smaller samples</button></td></tr>` : '';
       return heading + rankedRows + empty + more;
     }).join('');
   }
@@ -708,7 +732,9 @@
     }
     view = buildView(report, f);
     const total = view.total;
-    $('selected-strategy').textContent = `${referenceName(f.reference)} / ${methodName(f.method)}`;
+    $('selected-strategy').innerHTML = `${referenceIdentity(f.reference)} / ${esc(methodName(f.method))}`;
+    $('reference-filter-logos').innerHTML = referenceLogos(f.reference);
+    $('book-filter-logos').innerHTML = f.book ? bookLogo(f.book) : '';
     $('selection-caption').textContent = `${dayLabel(f.start)}–${dayLabel(f.end)} · ${f.book ? bookName(f.book) : 'All books'} · ${f.prop ? propName(f.prop) : 'All markets'} · ${priceSourceLabel(f.priceSource)}`;
     $('summary-roi').textContent = percent(total.roi);
     $('summary-roi').className = tone(total.roi);
@@ -718,6 +744,9 @@
     $('summary-settled').textContent = count(total.settled);
     $('summary-record').textContent = `${count(total.wins)} W · ${count(total.losses)} L · ${count(total.pushes)} P`;
     $('summary-unresolved').textContent = `${count(total.pending)} / ${count(total.ungraded)}`;
+    $('summary-stake').textContent = `${total.stake_units.toFixed(2)}u`;
+    $('summary-win-rate').textContent = rate(total.win_rate);
+    $('summary-ev-note').textContent = `Avg. EV ${percent(total.average_ev)} · all qualifying offers`;
     $('offer-note').textContent = f.book === 'best' ? `${count(total.selected)} qualifying saved lines/sides, each counted once at the best payout after fees. Match reference, method, dates and book when comparing with Analysis.`
       : f.book ? `${count(total.selected)} qualifying offers at ${bookName(f.book)} for this strategy. Match reference, method, dates and book when comparing with Analysis.`
       : `${count(total.selected)} qualifying offers. The same bet at different books is an alternative offer, not a unique-bet portfolio. Books can qualify different selections.`;
@@ -733,10 +762,10 @@
     renderDaily(f);
     renderCoverage(f);
     $('strategy-count').textContent = `${count(view.strategies.length)} strategies`;
-    if (!view.strategies.length) tableEmpty('strategy-rows', 6);
+    if (!view.strategies.length) tableEmpty('strategy-rows', 10);
     else $('strategy-rows').innerHTML = view.strategies.map((row, index) => {
       const selected = row.reference === f.reference && row.method === f.method;
-      return `<tr class="${selected ? 'is-selected' : ''}"><td><button type="button" class="dv-strategy-button" data-index="${index}" aria-pressed="${selected}">${esc(referenceName(row.reference))}<span>${esc(methodName(row.method))}${selected ? ' · Selected' : ''}</span></button></td><td>${count(row.settled)}</td><td>${count(row.wins)}–${count(row.losses)}–${count(row.pushes)}</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`;
+      return `<tr class="${selected ? 'is-selected' : ''}" data-reference="${esc(row.reference)}" data-method="${esc(row.method)}"><td><button type="button" class="dv-strategy-button" data-index="${index}" aria-pressed="${selected}" aria-label="Analyze ${esc(referenceName(row.reference))} / ${esc(methodName(row.method))}">${referenceIdentity(row.reference)}</button></td><td><span class="dv-method-tag">${esc(methodName(row.method))}</span></td><td>${count(row.settled)}</td><td>${record(row)}</td><td>${rate(row.win_rate)}</td><td>${row.stake_units.toFixed(2)}u</td><td class="${tone(row.profit_units)}">${signed(row.profit_units)}u</td><td class="${tone(row.roi)}">${percent(row.roi)}</td><td>${percent(row.average_ev)}</td><td>${count(row.pending)} / ${count(row.ungraded)}</td></tr>`;
     }).join('');
     renderPropRanks('odds-rows', 'odds_band', value => value, f);
     renderPropRanks('book-rows', 'book', bookName, f);
@@ -786,6 +815,7 @@
     options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets', previous?.prop, previous?.prop ? propName(previous.prop) : null);
     options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]), null, previous?.reference, previous?.reference ? referenceName(previous.reference) : null);
     options('method-filter', report.methods.map(item => [item.id, item.name]), null, previous?.method, previous?.method ? methodName(previous.method) : null);
+    options('strategy-method-filter', report.methods.map(item => [item.id, item.name]), 'All methods', previous?.strategyMethod || '', previous?.strategyMethod ? methodName(previous.strategyMethod) : null);
     const shareMethod = previous ? $('performers-method').value || 'probit' : 'probit';
     const shareMethods = report.methods.map(item => [item.id, item.name]);
     for (const id of new Set(['probit', shareMethod])) {
@@ -806,9 +836,9 @@
     view = null;
     closePerformers();
     $('best-performers').disabled = true;
-    for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved']) { $(id).textContent = '-'; $(id).className = ''; }
+    for (const id of ['summary-roi', 'summary-profit', 'summary-settled', 'summary-unresolved', 'summary-stake', 'summary-win-rate']) { $(id).textContent = '-'; $(id).className = ''; }
     for (const id of ['strategy-rows', 'odds-rows', 'book-rows', 'market-rows', 'daily-chart', 'coverage-days']) $(id).replaceChildren();
-    for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record']) $(id).textContent = '';
+    for (const id of ['selected-strategy', 'selection-caption', 'strategy-count', 'coverage-badge', 'coverage-summary', 'coverage-caution', 'coverage-latest', 'offer-note', 'summary-record', 'summary-ev-note', 'reference-filter-logos', 'book-filter-logos']) $(id).textContent = '';
     $('daily-caption').textContent = '';
     $('daily-caption').hidden = true;
     $('summary-roi-note').textContent = 'Net profit / settled stake';
@@ -967,7 +997,7 @@
   });
   $('date-preset').addEventListener('change', applyDatePreset);
   for (const id of ['date-start', 'date-end']) $(id).addEventListener('change', () => { $('date-preset').value = 'custom'; render(); });
-  for (const id of ['book-filter', 'market-filter', 'reference-filter', 'method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
+  for (const id of ['book-filter', 'market-filter', 'reference-filter', 'method-filter', 'strategy-method-filter', 'min-settled', 'profitable-only']) $(id).addEventListener('change', render);
   for (const id of ['odds-rows', 'book-rows']) $(id).addEventListener('click', event => {
     const prop = event.target.closest('[data-prop-filter]');
     if (prop) { $('market-filter').value = prop.dataset.propFilter; render(); return; }

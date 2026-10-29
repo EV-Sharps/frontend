@@ -110,46 +110,64 @@ def main():
                 window.nbaPropDepthBefore = JSON.stringify(RES);
             }""", fixture())
             assert not requests
-            icons = page.locator('#table .nba-prop-depth-trigger')
+            icons = page.locator('#table .nv-depth-trigger[data-depth-book="nv"]')
             expect(icons).to_have_count(2)
-            icons.last.click()
-            dialog = page.locator('#nba-prop-depth-dialog')
-            expect(dialog).to_be_visible()
-            expect(dialog.locator('.nba-prop-depth-side h3').first).to_have_text('Over 24.5')
-            expect(dialog.locator('.nba-prop-depth-side h3').last).to_have_text('Under 24.5')
-            expect(dialog.locator('.nba-prop-depth-size').first).to_have_text('$40')
+            expect(icons.first.locator('svg')).to_have_count(1)
+            icons.first.hover()
+            preview = page.locator('#orderbook-preview')
+            expect(preview).to_be_visible()
+            expect(preview.locator('.nv-depth-preview-side')).to_have_count(2)
             assert requests == ['nv']
-            dialog.locator('.nba-prop-depth-book').select_option('all')
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(6)
-            assert sorted(requests) == ['kal', 'nv', 'px']
-            dialog.locator('[data-prop-mode="resting"]').click()
-            expect(dialog.locator('.nba-prop-depth-size').first).to_have_text('$30')
+            assert 'Over 24.5' in preview.inner_text()
+            assert 'Under 24.5' in preview.inner_text()
+            icons.last.click()
+            dialog = page.locator('#novig-depth-dialog')
+            expect(dialog).to_be_visible()
+            expect(preview).not_to_be_visible()
+            expect(dialog.locator('.nv-depth-book')).to_have_count(2)
+            assert 'Over 24.5' in dialog.locator('.nv-depth-book').first.inner_text()
+            assert 'Under 24.5' in dialog.locator('.nv-depth-book').last.inner_text()
+            expect(dialog.locator('.nv-depth-chart-amount').first).to_have_text('$40')
+            assert requests == ['nv']
+            assert not dialog.locator('select').count()
+            dialog.locator('[data-depth-mode="resting"]').click()
+            expect(dialog.locator('[data-depth-side="under"]')).to_have_attribute('aria-pressed', 'true')
+            expect(dialog.locator('.nv-depth-table tbody tr').first.locator('td').nth(1)).to_have_text('$60')
+            dialog.locator('[data-depth-side="over"]').click()
+            expect(dialog.locator('.nv-depth-table tbody tr').first.locator('td').nth(1)).to_have_text('$30')
             assert 'not completed bets' in dialog.inner_text()
+            dialog.locator('[data-depth-mode="available"]').click()
             for width in [1280, 390, 320]:
                 page.set_viewport_size({'width': width, 'height': 900})
-                for selector in ['#nba-prop-depth-dialog', '.nba-prop-depth-panels', '.nba-prop-depth-side']:
+                for selector in ['#novig-depth-dialog', '.nv-depth-books', '.nv-depth-book']:
                     for element in page.locator(selector).all():
                         assert element.evaluate('el => el.scrollWidth <= el.clientWidth + 1'), (selector, width)
                 page.screenshot(path=str(artifacts/f'nba-prop-depth-{width}.png'))
-            dialog.locator('.nba-prop-depth-close').click()
+            dialog.locator('.nv-depth-close').click()
             page.evaluate('TABLE.setColumns(window.nbaDepthColumns); showCardModal(RES.data[0])')
-            card_button = page.locator('#card-modal-inner .nba-prop-depth-trigger')
-            expect(card_button).to_be_visible()
-            card_button.click()
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(6)
+            card_buttons = page.locator('#card-modal-inner .nv-depth-trigger')
+            expect(card_buttons).to_have_count(3)
+            for book, name in [('nv', 'NOVIG'), ('kal', 'KALSHI'), ('px', 'PROPHETX')]:
+                page.locator(f'#card-modal-inner .nv-depth-trigger[data-depth-book="{book}"]').click()
+                expect(dialog.locator('.nv-depth-chart-row')).to_have_count(2)
+                expect(dialog.locator('.nv-depth-eyebrow')).to_contain_text(name)
+                expect(dialog.locator('.nv-depth-chart-amount').first).to_have_text('$40')
+                if book != 'px':
+                    dialog.locator('.nv-depth-close').click()
+            assert sorted(requests) == ['kal', 'nv', 'px']
             assert len(requests) == 3
             assert page.evaluate('JSON.stringify(RES) === nbaPropDepthBefore')
             page.evaluate("RES.data.forEach(row => row.blurred = true); window.dispatchEvent(new Event('odds-rendered'))")
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(0)
+            expect(dialog.locator('.nv-depth-chart-row')).to_have_count(0)
             page.evaluate("RES.data.forEach(row => row.blurred = false); window.dispatchEvent(new Event('odds-rendered'))")
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(6)
+            expect(dialog.locator('.nv-depth-chart-row')).to_have_count(2)
             page.clock.set_fixed_time(NOW + timedelta(minutes=6))
             page.evaluate("window.dispatchEvent(new Event('odds-rendered'))")
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(0)
+            expect(dialog.locator('.nv-depth-chart-row')).to_have_count(0)
             assert len(requests) == 3
             page.clock.set_fixed_time(NOW)
             page.evaluate("window.dispatchEvent(new Event('odds-rendered'))")
-            expect(dialog.locator('.nba-prop-depth-side li')).to_have_count(6)
+            expect(dialog.locator('.nv-depth-chart-row')).to_have_count(2)
             page.evaluate("ACCESS_TOKEN='new-account'; window.dispatchEvent(new Event('odds-rendered'))")
             expect(dialog).not_to_be_visible()
             assert not errors, errors
@@ -157,7 +175,7 @@ def main():
     finally:
         server.shutdown()
         server.server_close()
-    print('NBA page: lazy table/card triggers, player identity, combined and resting books, privacy, expiry and 320px layout passed')
+    print('NBA page: shared hover/table/card UI, all venues, exact player identity, available/resting stakes, privacy, expiry and 320px layout passed')
     print(f'Screenshots: {artifacts}')
 
 

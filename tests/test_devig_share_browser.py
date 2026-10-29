@@ -307,7 +307,12 @@ try:
                         continue
                     assert any((hit.get('player') or hit['game']).casefold() in hit_text.casefold() and
                                (f"+{hit['odds']:g}" if hit['odds'] > 0 else f"{hit['odds']:g}") in hit_text for hit in value['hits']), (hit_text, value['hits'])
-            assert page.locator('#performers-card img, #performers-card svg').count() == 0
+            assert page.locator('#performers-card svg, #performers-card img:not(.dv-book-logo)').count() == 0
+            logo_sources = page.locator('#performers-card img.dv-book-logo').evaluate_all('images => images.map(img => img.getAttribute("src"))')
+            assert logo_sources, 'The preview identifies reference and betting books with logos'
+            for source in logo_sources:
+                assert re.fullmatch(r'logos/[a-z0-9_]+\.png', source), source
+                assert (STAGED / source).is_file(), source
             assert page.evaluate('window.shareInjected || 0') == 0
             assert 'Fewer than' not in page.locator('#performers-card').inner_text()
             expect(page.locator('#performers-books-pagination')).to_be_hidden() if len(groups) <= limit else expect(page.locator('#performers-books-pagination')).to_be_visible()
@@ -592,6 +597,7 @@ try:
         next(row for row in state['payload']['cells'] if row['book'] == 'fd' and row['reference'] == 'pn;1' and row['method'] == 'probit')['best_hit'] = None
         page.goto(url)
         expect(page.locator('#best-performers')).to_be_enabled()
+        page.select_option('#market-filter', 'attd')
         open_card()
         assert_rows()
         leader = page.locator('tr[data-book="fd"] td[data-reference="pn;1"] .dv-share-leader')

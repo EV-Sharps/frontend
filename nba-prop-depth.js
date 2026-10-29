@@ -224,6 +224,7 @@
   }
 
   function open(row, opener, options = {}) {
+    if (root.NovigDepth) return root.NovigDepth.open(row, opener, options);
     resetAccess();
     const market = identity(row, payloadOf());
     if (!market) return;
@@ -237,13 +238,14 @@
   function trigger(getRow, book) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'nba-prop-depth-trigger';
     button.nbaPropDepthRow = getRow;
-    button.textContent = book ? '≋' : 'Order books'; button.dataset.propBook = book || 'all';
+    button.textContent = book ? 'Depth' : 'Order books'; button.dataset.propBook = book || 'all';
     button.setAttribute('aria-label', book ? `${NAMES[book]} order book` : 'Prediction market order books');
     button.addEventListener('click', event => {event.preventDefault(); event.stopPropagation(); open(getRow(), button, {book:book || 'all'});});
     return button;
   }
 
   function formatter(base, book) {
+    if (root.NovigDepth) return root.NovigDepth.formatter(base, {book});
     return (cell, params, onRendered) => {
       const original = base(cell, params, onRendered), row = cell.getRow().getData();
       if (params?.blurOdds || !context(row, payloadOf(), book)) return original;
@@ -255,6 +257,7 @@
   }
 
   function enhanceCards() {
+    if (root.NovigDepth) return;
     resetAccess();
     document.querySelectorAll('#card-container .data-card, #card-modal-inner .data-card').forEach(card => {
       const present = card.querySelector('.nba-prop-depth-trigger'), row = card.playerLinesData;
@@ -263,14 +266,16 @@
     });
   }
 
-  if (root.document) {
+  if (root.document && !root.NovigDepth) {
     const boot = () => {
+      if (root.NovigDepth) return;
       for (const id of ['card-container','card-modal-inner']) {
         const host = document.getElementById(id);
         if (host) new MutationObserver(enhanceCards).observe(host, {subtree:true,childList:true});
       }
       enhanceCards();
       root.setInterval(() => {
+        if (root.NovigDepth) return;
         resetAccess(); enhanceCards();
         document.querySelectorAll('#table .nba-prop-depth-trigger').forEach(button => {
           const row = button.nbaPropDepthRow?.();

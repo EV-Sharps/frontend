@@ -23,7 +23,9 @@
 .nv-depth-preview-total strong { color: #e1edf5; font-size: 11px; }
 .nv-depth-preview-empty { margin: 0; padding: 8px 0; color: #a0b7ca; font-size: 11px; }
 #orderbook-preview > footer { position: static; width: auto; height: auto; padding: 0; margin-top: 10px; background: none; color: #91aabd; font-size: 10px; text-align: left; }
-.nv-depth-card-trigger { width: auto; min-width: 30px; min-height: 28px; padding: 4px 6px; gap: 4px; }
+.book-odd-heading > .nv-depth-card-trigger { box-sizing: border-box; width: 24px; height: 24px; min-width: 0; min-height: 0; padding: 4px; border-radius: 4px; }
+.book-odd-heading > .nv-depth-card-trigger svg { width: 14px; height: 14px; }
+.nv-depth-card-fallback { width: auto; min-height: 26px; padding: 3px 6px; gap: 4px; }
 .nv-depth-trigger:hover { background: #284361; }
 .nv-depth-trigger:focus-visible, #novig-depth-dialog button:focus-visible, #novig-depth-dialog a:focus-visible { outline: 2px solid var(--accent, #77c3ff); outline-offset: 3px; }
 /* Keep the original stacked spacing with a small corner shortcut. */

@@ -230,6 +230,8 @@
 			root.document.body.appendChild(dialog);
 			dialog.addEventListener('close', () => { if (!dialog.open) destroyDepth(); });
 			dialog.addEventListener('cancel', destroyDepth);
+			// Escape closes this dialog without closing the card underneath it.
+			dialog.addEventListener('keydown', event => { if (event.key === 'Escape') event.stopPropagation(); });
 			dialog.addEventListener("click", event => {
 				if (event.target !== dialog) return;
 				const rect = dialog.getBoundingClientRect();
@@ -244,7 +246,7 @@
 		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>+EV Sharps - Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="${game ? "Market" : "Prop"} for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${subtitle}<span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${game ? '' : '<div class="player-lines-tabs" role="tablist" aria-label="Player prices"><button type="button" id="player-lines-tab-lines" role="tab" aria-controls="player-lines-panel-lines" data-lines-view="lines">Line comparison</button><button type="button" id="player-lines-tab-movement" role="tab" aria-controls="player-lines-panel-movement" data-lines-view="movement">Movement</button><button type="button" id="player-lines-tab-depth" role="tab" aria-controls="player-lines-panel-depth" data-lines-view="depth">Order books</button></div>'}<div class="player-lines-content"><div id="player-lines-panel-lines" class="player-lines-lines"${game ? '' : ' role="tabpanel" aria-labelledby="player-lines-tab-lines"'}></div><div id="player-lines-panel-movement" class="player-lines-movement" role="tabpanel" aria-labelledby="player-lines-tab-movement" hidden></div><div id="player-lines-panel-depth" class="player-lines-depth" role="tabpanel" aria-labelledby="player-lines-tab-depth" hidden></div></div>`;
 		const select = dialog.querySelector('#player-lines-prop');
 		select.value = selected.prop;
-		let view = 'lines';
+		let view = !game && ['movement', 'depth'].includes(options.initialView) ? options.initialView : 'lines';
 		const renderProp = () => {
 			destroyDepth();
 			const current = { ...selected, prop: select.value, handicap: select.value === selected.prop ? selected.handicap : null };

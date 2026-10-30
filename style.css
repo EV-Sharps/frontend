@@ -1714,6 +1714,16 @@ html.odds-app #app > main { min-height: 0; }
 	flex-shrink: 0; /* Important: prevents items from shrinking */
 }
 
+.book-odd-heading { display: flex; align-items: center; justify-content: center; gap: 3px; min-height: 24px; }
+.card-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 5px 8px; background: #1b222b; border-top: 1px solid #323e4d; }
+.card-detail-actions button { display: inline-flex; justify-content: center; align-items: center; gap: 5px; min-height: 28px; padding: 4px 9px; border: 1px solid #40536a; border-radius: 5px; background: #203044; color: #d9e9f9; font: 11px/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
+.card-detail-actions button:hover { background: #2c435d; }
+.card-detail-actions button:focus-visible { outline: 2px solid #89c6ff; outline-offset: 2px; }
+.card-detail-actions button:disabled { opacity: .6; cursor: wait; }
+.card-detail-actions svg { flex: none; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.card-detail-status { margin: 0; padding: 5px 8px; color: #cfdfef; font-size: 11px; }
+.card-detail-status[hidden] { display: none; }
+
 .book-logo-small {
 	height: 18px;
 }

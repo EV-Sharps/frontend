@@ -597,11 +597,14 @@
         if (!result.available && !result.loadable) { previous?.remove(); continue; }
         if (previous) continue;
         const book = card.querySelector(`.book-logo-small[alt="${provider.book}"]`)?.closest('.book-odd-item');
-        const target = book || card.querySelector('.card-header');
+        const target = book?.querySelector('.book-odd-heading') || book || card.querySelector('.card-detail-actions');
         if (!target) continue;
         const trigger = createTrigger(() => card.playerLinesData, options);
         trigger.classList.add('nv-depth-card-trigger');
-        if (!book) trigger.insertAdjacentHTML('beforeend', `<span>${provider.book.toUpperCase()} depth</span>`);
+        if (!book) {
+          trigger.classList.add('nv-depth-card-fallback');
+          trigger.insertAdjacentHTML('beforeend', `<span>${provider.book.toUpperCase()}</span>`);
+        }
         target.appendChild(trigger);
       }
     });
@@ -640,6 +643,7 @@
     dialog.querySelectorAll('[data-depth-side]').forEach(button => button.addEventListener('click', () => { state.side = button.dataset.depthSide; refresh(); }));
     dialog.querySelectorAll('[data-depth-mode]').forEach(button => button.addEventListener('click', () => { state.mode = button.dataset.depthMode; refresh(); }));
     dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+    dialog.addEventListener('keydown', event => { if (event.key === 'Escape') event.stopPropagation(); });
     dialog.addEventListener('click', event => {
       if (event.target !== dialog) return;
       const rect = dialog.getBoundingClientRect();

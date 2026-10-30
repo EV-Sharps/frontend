@@ -576,6 +576,43 @@ function showCardModal(rowData) {
 	card.renderGameLogs?.();
 }
 
+let cardDetailsScript;
+function loadCardDetails() {
+	if (window.PlayerLines) return Promise.resolve(window.PlayerLines);
+	if (!cardDetailsScript) cardDetailsScript = new Promise((resolve, reject) => {
+		const script = document.createElement('script');
+		script.src = 'player-lines.js';
+		script.onload = () => window.PlayerLines ? resolve(window.PlayerLines) : reject(new Error('Player details unavailable'));
+		script.onerror = () => { script.remove(); reject(new Error('Player details unavailable')); };
+		document.head.append(script);
+	}).catch(error => { cardDetailsScript = null; throw error; });
+	return cardDetailsScript;
+}
+
+async function openCardDetails(card, view, button) {
+	if (!['movement', 'depth'].includes(view) || button.disabled) return;
+	button.disabled = true;
+	button.setAttribute('aria-busy', 'true');
+	const status = card.querySelector('.card-detail-status');
+	status.hidden = true;
+	try {
+		const details = await loadCardDetails();
+		if (!button.isConnected) return;
+		const selected = card.playerLinesData;
+		if (!selected?.player || selected.blurred) return;
+		const getPayload = () => typeof RES !== 'undefined' && RES || {data: ALL_CARD_DATA};
+		const getRows = () => Array.isArray(getPayload().data) ? getPayload().data : ALL_CARD_DATA;
+		const rows = typeof goalComparisonInputRows === 'function' ? goalComparisonInputRows(selected, getPayload()) : getRows();
+		details.open(selected, rows, {player: title(selected.player), formatProp: convertProp, formatOdds: oddsDisplay,
+			initialView: view, getPayload, getRows});
+	} catch (_) {
+		if (button.isConnected) { status.textContent = 'Could not load player details. Try again.'; status.hidden = false; }
+	} finally {
+		button.disabled = false;
+		button.removeAttribute('aria-busy');
+	}
+}
+
 function createNewCard(rowData, uniqueId) {
 	const card = document.createElement('div');
 	card.className = 'data-card';
@@ -588,6 +625,12 @@ function createNewCard(rowData, uniqueId) {
 	header.addEventListener('click', (e) => {
 		const rowData = card.playerLinesData;
 		if (e.target.closest('.watchlist-star')) return;
+		const detailButton = e.target.closest('[data-card-detail]');
+		if (detailButton) {
+			e.preventDefault(); e.stopPropagation();
+			openCardDetails(card, detailButton.dataset.cardDetail, detailButton);
+			return;
+		}
 		if (e.target.closest('.player-lines-trigger')) {
 			e.stopPropagation();
 			openPlayerLines(card.playerLinesData);
@@ -694,7 +737,7 @@ function renderAllBooks(bookOdds, bestBook, links, liquidity) {
 				: '';
 			html += `
 				<div class="book-odd-item ${isBest} ${isDevig}">
-					<img class="book-logo-small" src='logos/${['hr_oh', 'hr_az'].includes(bookKey) ? 'hr' : bookKey}.png' alt='${bookKey}' title='${bookKey}' />
+					<div class="book-odd-heading"><img class="book-logo-small" src='logos/${['hr_oh', 'hr_az'].includes(bookKey) ? 'hr' : bookKey}.png' alt='${bookKey}' title='${bookKey}' /></div>
 					<span style="display:flex;align-items:center;gap:2px;"><span class='book-odd-value ${isBest}'>${plusFormatter(odds)}</span>${betslipLink}</span>
 					${liqHtml}
 				</div>
@@ -873,6 +916,14 @@ function updateExistingCard(card, rowData) {
 		</div>` : "";
 	}
 
+	const nhlTeamTotal = sport === 'nhl' ? `<div class="metric-pill nhl-team-total" title="Estimated full-game team goals from devigged team-total prices fitted to a Poisson model; median across books.">
+		<strong style="font-size:0.85rem;">${rowData.teamTotal == null || rowData.teamTotal === "" || !Number.isFinite(Number(rowData.teamTotal)) ? "-" : Number(rowData.teamTotal).toFixed(2)}</strong>
+		<span style="opacity:0.85; font-size:0.72rem; white-space:nowrap;">Est. Team Goals</span>
+	</div>` : '';
+	const detailActions = rowData.player && !rowData.blurred ? `<div class="card-detail-actions" role="group" aria-label="Player price tools">
+		<button type="button" data-card-detail="movement" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 3v14h16M4 12l4-4 4 3 5-6"/></svg>Movement</button>
+		<button type="button" data-card-detail="depth" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 8h9M3 12h12M3 16h6"/></svg>Order books</button>
+	</div><p class="card-detail-status" role="status" hidden></p>` : '';
 	const teamPoints = rowData.teamTotal;
 	const nbaTeamTotal = ["nba", "pts", "threes", "fb"].includes(PAGE)
 		? `<div class="metric-pill nba-team-total" title="Estimated full-game team points from the game total and spread; median across books.">
@@ -901,6 +952,7 @@ function updateExistingCard(card, rowData) {
 					<button type="button" class="kelly-fraction-button" onclick="openKellySettings(event)" title="Change Kelly fraction for this page">${kellyFractionLabel()} Kelly</button>
 				</div>
 			</div>
+		${detailActions}
 		<div class="card-body-collapsed"></div>
 		<div class="card-arrow-container">
 			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
@@ -946,6 +998,7 @@ function updateExistingCard(card, rowData) {
 			<!-- Matchup ranks -->
 			<div class="expanded-ranks" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
 				${gamePill}
+				${nhlTeamTotal}
 				${nbaTeamTotal}
 				<div class="metric-pill" style="color:${getTDsOppRankColor(oppRankValue)}; font-weight:600; font-size:0.85rem;">
 					${addSuffix(oppRankValue)} <span style="opacity:0.85; font-weight:500;">Opp Rank</span>

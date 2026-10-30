@@ -155,10 +155,13 @@
   }
   function parlayPrices(data) {
     const highestFirst = (a, b) => b.decimal - a.decimal || a.name.localeCompare(b.name);
-    if (Array.isArray(data.prices)) return [...data.prices].sort(highestFirst);
-    // Older API responses still include every book's leg quotes, including over-only markets.
-    return (data.references || []).flatMap(ref => {
-      if (nonBettingBooks.has(ref.book) || ref.legs?.length !== data.legs.length) return [];
+    const prices = Array.isArray(data.prices) ? [...data.prices] : [];
+    const included = new Set(prices.map(price => price.book));
+    // The API omits Circa/Pinnacle from betting destinations but includes their actual leg quotes.
+    // Older responses supply all book prices through references instead of a prices array.
+    const referencePrices = (data.references || []).flatMap(ref => {
+      if (included.has(ref.book) || (Array.isArray(data.prices) && !nonBettingBooks.has(ref.book))
+        || ref.legs?.length !== data.legs.length) return [];
       const legs = data.legs.map(leg => ref.legs.find(quote => quote.id === leg.id));
       const offers = legs.map((leg, index) => currentPrice(leg, legSide(data.legs[index]), data.max_age_minutes));
       if (offers.some(price => price === null)) return [];
@@ -166,7 +169,8 @@
       return [{ book: ref.book, name: ref.name, decimal: combined,
         odds: combined >= 2 ? (combined - 1) * 100 : -100 / (combined - 1),
         legs: legs.map((leg, index) => ({ id: leg.id, player: leg.player, price: offers[index], updated_at: leg.updated_at })) }];
-    }).sort(highestFirst);
+    });
+    return [...prices, ...referencePrices].sort(highestFirst);
   }
   function averagePrice(leg, books) {
     const prices = books.map(book => currentPrice(leg.quotes?.[book], legSide(leg))).filter(price => price !== null);
@@ -487,7 +491,7 @@
         const label = `${catalog.books[book]}: ${status === 'available' ? `Updated ${time(quote.updated_at)}` : status}`;
         const primary = legSide(leg), other = primary === 'under' ? 'over' : 'under';
         return `<td class="catalog-price${highest ? ' best-price' : ''}" title="${esc(label)}">${fresh
-          ? `<strong>${validPrice(quote[primary]) ? esc(odds(quote[primary])) : '-'}</strong><small>${market === 'nba' ? `${other === 'over' ? 'O' : 'U'} ` : ''}${validPrice(quote[other]) ? esc(odds(quote[other])) : '-'}</small>`
+          ? `<strong>${validPrice(quote[primary]) ? esc(odds(quote[primary])) : '-'}</strong><small>${validPrice(quote[other]) ? esc(odds(quote[other])) : '-'}</small>`
           : `<span class="price-unavailable">${status === 'Stale prices' ? 'Stale' : validPrice(quote?.[primary]) ? 'Unavailable' : '-'}</span>`}</td>`;
       }).join('');
       return `<tr data-leg-row="${esc(leg.id)}" class="${selected >= 0 ? 'is-selected' : reason ? 'is-blocked' : ''}">

@@ -224,7 +224,8 @@ class NbaParlayTests(unittest.TestCase):
         expect(self.row(6).locator('.ev-offer')).to_contain_text('+105')
         expect(self.row(6).locator('.catalog-ev strong')).to_have_text('+18.9%')
         expect(self.row(6).locator('.catalog-price').nth(3).locator('strong')).to_have_text('+105')
-        expect(self.row(6).locator('.catalog-price').nth(3).locator('small')).to_have_text('O -125')
+        expect(self.row(6).locator('.catalog-price').nth(3).locator('small')).to_have_text('-125')
+        expect(self.row(1).locator('.catalog-price').nth(3).locator('small')).to_have_text('-150')
         self.pick(1)
         self.pick(6)
         self.calculated(1, 6)
@@ -236,6 +237,8 @@ class NbaParlayTests(unittest.TestCase):
         expect(self.page.locator('#result-selections')).to_have_text(
             'Alpha Guard Over 24.5 points + Bravo Forward Under 24.5 points')
         expect(self.page.locator('[data-price-tile="dk"] .parlay-book-odds')).to_have_text('+361')
+        expect(self.page.locator('[data-price-tile="circa"] .parlay-book-odds')).to_have_text('+274')
+        expect(self.page.locator('[data-price-tile="pn"] .parlay-book-odds')).to_have_text('+272')
         self.page.locator('#parlay-breakdown > summary').click()
         cells = self.page.locator('[data-price-book="dk"] td')
         expect(cells.nth(cells.count() - 2)).to_have_text('+125')

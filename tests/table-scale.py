@@ -179,15 +179,20 @@ def check_populated(browser, origin):
     assert standard["visibleRows"] > 5
     screenshot(page, "atgs-100")
     button = page.locator("#customize").bounding_box()
+    preset_height = page.locator("#dev-window-select").bounding_box()["height"]
+    column_width = page.locator(".tabulator-col").first.bounding_box()["width"]
     scale(page, 80)
     small = metrics(page)
     assert abs(small["width"] - standard["width"]) <= 2, (standard, small)
-    assert abs(small["height"] - standard["height"]) <= 2, (standard, small)
+    assert small["height"] > standard["height"], (standard, small)
+    assert abs(small["top"] + small["height"] - standard["top"] - standard["height"]) <= 2
     assert small["logicalWidth"] > standard["logicalWidth"] * 1.2
     assert small["visibleRows"] > standard["visibleRows"], (standard, small)
     assert small["visibleColumns"] > standard["visibleColumns"], (standard, small)
     assert abs(small["rowHeight"] / standard["rowHeight"] - .8) < .03
-    assert page.locator("#customize").bounding_box() == button
+    assert abs(page.locator("#customize").bounding_box()["height"] / button["height"] - .8) < .03
+    assert abs(page.locator("#dev-window-select").bounding_box()["height"] / preset_height - .8) < .03
+    assert abs(page.locator(".tabulator-col").first.bounding_box()["width"] / column_width - .8) < .03
     assert page.evaluate("localStorage.getItem('odds-table-scale')") is None
     screenshot(page, "atgs-80")
     check_click_and_scroll(page)
@@ -195,7 +200,7 @@ def check_populated(browser, origin):
         scale(page, value)
         current = metrics(page)
         assert abs(current["width"] - standard["width"]) <= 2, current
-        assert abs(current["height"] - standard["height"]) <= 2, current
+        assert abs(current["top"] + current["height"] - standard["top"] - standard["height"]) <= 2, current
         assert_alignment(page)
         check_click_and_scroll(page)
     scale(page, 80)
@@ -219,7 +224,8 @@ def check_populated(browser, origin):
     before = cards.locator(":scope > *").first.bounding_box()
     assert cards.evaluate("el => getComputedStyle(el).zoom") == "1"
     scale(page, 125)
-    assert cards.locator(":scope > *").first.bounding_box() == before
+    after = cards.locator(":scope > *").first.bounding_box()
+    assert after["width"] == before["width"] and after["height"] == before["height"]
     scale(page, 80)
     open_customize(page)
     page.locator("#custom-view-select").select_option("compact")

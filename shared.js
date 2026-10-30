@@ -927,8 +927,8 @@ function syncOddsTableScaleControl() {
 	if (help) {
 		const feedback = oddsTableScaleFeedback.get(oddsTableScaleKey());
 		help.textContent = feedback?.message || (CURR_USER
-			? 'Zoom saves to your profile for this table. Choose Profile default to use your global setting.'
-			: 'Zoom is saved for this table in this browser. Sign in to save it to your profile.');
+			? 'Zoom includes the table, header, filters and presets. Saves to your profile for this page.'
+			: 'Zoom includes the table, header, filters and presets. Saved in this browser; sign in to save to your profile.');
 		help.dataset.tone = feedback?.tone || '';
 	}
 }
@@ -938,6 +938,10 @@ function applyOddsTableScale() {
 	const profileZoom = String(getProfileTableScale() / 100);
 	let changed = root.style.getPropertyValue('--profile-table-zoom') !== profileZoom;
 	root.style.setProperty('--profile-table-zoom', profileZoom);
+	const pageZoom = String(getOddsTableScale() / 100);
+	changed ||= root.style.getPropertyValue('--odds-page-zoom') !== pageZoom;
+	root.style.setProperty('--odds-page-zoom', pageZoom);
+	root.classList.toggle('table-zoom-page', !!document.getElementById('table'));
 	syncOddsTableScaleControl();
 	const element = document.getElementById('table');
 	if (element) {
@@ -4295,7 +4299,7 @@ function initCustomizeWindow() {
 		const scaleSetting = document.createElement('label');
 		scaleSetting.className = 'cx-setting cx-scale-setting';
 		scaleSetting.htmlFor = 'custom-table-scale';
-		scaleSetting.title = 'Scale this table or follow your profile default.';
+		scaleSetting.title = 'Scale the table, header, filters and presets, or follow your profile default.';
 		scaleSetting.innerHTML = '<span>Table zoom</span><select id="custom-table-scale" aria-describedby="cx-scale-help"><option value="default">Profile default</option></select>';
 		const scaleSelect = scaleSetting.querySelector('select');
 		for (const value of ODDS_TABLE_SCALES) {
@@ -6426,10 +6430,12 @@ function revealHorizontalControl(container, control) {
 	if (!container || !control || !container.contains(control)) return;
 	const bounds = container.getBoundingClientRect();
 	const rect = control.getBoundingClientRect();
-	const left = bounds.left + container.clientLeft;
-	const right = left + container.clientWidth;
-	if (rect.left < left) container.scrollLeft += rect.left - left;
-	else if (rect.right > right) container.scrollLeft += Math.min(rect.left - left, rect.right - right);
+	// Bounding rects include CSS zoom; scrollLeft and clientWidth are layout pixels.
+	const zoom = container.offsetWidth ? bounds.width / container.offsetWidth : 1;
+	const left = bounds.left + container.clientLeft * zoom;
+	const right = left + container.clientWidth * zoom;
+	if (rect.left < left) container.scrollLeft += (rect.left - left) / zoom;
+	else if (rect.right > right) container.scrollLeft += Math.min(rect.left - left, rect.right - right) / zoom;
 }
 
 function initOddsAppViewport() {

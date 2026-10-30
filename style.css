@@ -2,6 +2,11 @@
 :where(.tabulator, table) { zoom: var(--profile-table-zoom, 1); }
 :where(#table, .tabulator, table, #card-container, #player-cards, .data-card) :where(.tabulator, table) { zoom: 1; }
 
+/* Scale each control surface once; portaled menus keep viewport coordinates. */
+html.table-zoom-page :where(#header, #mobile-header, #app > main > :has(#dev-picker):not(:has(#table)), #app > main > #dev-picker, #table-container > .filter-wrapper) {
+	zoom: var(--odds-page-zoom, 1);
+}
+
 /*
 * {
 		outline: 1px solid red; 

@@ -221,7 +221,6 @@
       return probability !== null && (!best || probability < best.probability) ? {book, price, probability} : best;
     }, null);
   }
-  const initials = value => title(value).split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0]).join('');
   function bestMarkup(best) {
     if (!best) return '<strong>—</strong><small>No current quote</small>';
     const logo = best.book === 'kambi' ? 'parx' : best.book.startsWith('hr_') ? 'hr' : best.book;
@@ -278,9 +277,8 @@
     const scrollTop = $('catalog-wrap').scrollTop;
     const focused = $('catalog-rows').contains(document.activeElement) ? document.activeElement.dataset.id : null;
     $('catalog-rows').innerHTML = rows.map(row => `<button type="button" data-id="${esc(row.id)}" class="movement-play${row.id === selectedId ? ' is-selected' : ''}" aria-pressed="${row.id === selectedId}" aria-label="Chart ${esc(selectionName(row))}, ${esc(marketName(row))}">
-      <span class="play-context"><span class="sport-tag">${esc(SPORT.toUpperCase())}</span><span>${esc(String(row.game || '').toUpperCase())}</span><span class="play-chevron" aria-hidden="true">${row.id === selectedId ? '✓' : '↗'}</span></span>
-      <span class="play-heading"><span class="player-monogram" aria-hidden="true">${esc(initials(selectionName(row)))}</span><span class="play-identity"><strong class="play-name">${esc(selectionName(row))}</strong><span class="play-market">${esc(marketName(row))}</span></span></span>
-      <span class="play-start">${esc(gameTime(row.start))}</span>
+      <span class="play-heading"><span class="play-identity"><strong class="play-name">${esc(selectionName(row))}</strong><span class="play-market">${esc(marketName(row))}</span></span><span class="play-chevron" aria-hidden="true">${row.id === selectedId ? "&#10003;" : "&#8599;"}</span></span>
+      <span class="play-context"><span>${esc(String(row.game || "").toUpperCase())}</span><span class="play-start">${esc(gameTime(row.start))}</span></span>
       <span class="play-metrics"><span class="play-price"><span>Best captured</span>${bestMarkup(bestCaptured(row))}</span><span title="${esc(fairCoverage(row, 'current'))}"><span>Current fair</span><strong>${odds(row.current_fair)}</strong><small>${percent(row.current_probability)}</small></span><span class="${moveClass(row)}"><span>${esc(movementWindow === 'today' ? 'Today' : movementWindow.toUpperCase())} move</span><strong>${move(usableMove(row))}</strong><small>${esc(statusLabel(row))}</small></span></span>
       <span class="play-baseline"><span>${row.fair_comparable === false ? 'No matched comparison' : `Baseline ${odds(row.first_fair)} → ${odds(row.current_fair)}`}</span><span>${esc(time(fairTime(row, 'first')))}–${esc(time(fairTime(row, 'current')))} ET</span></span>
     </button>`).join('');

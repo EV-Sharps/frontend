@@ -705,6 +705,25 @@ html.odds-app #app > main { min-height: 0; }
 	#devig-modal.devig-window .dv-search-wrap { flex-basis: auto; }
 	#devig-modal.devig-window .dv-footer > button { flex: 0 0 auto; padding-right: 7px; padding-left: 7px; }
 }
+/* The size preference changes the window, keeping controls readable. */
+#devig-modal.devig-window { --dv-window-gap: 32px; --dv-medium-width: 560px; --dv-medium-height: 600px; --dv-small-width: 480px; }
+#devig-modal.devig-window .modal-header { gap: 8px; }
+#devig-modal.devig-window .dv-heading { flex: 1 1 auto; }
+#devig-modal.devig-window .dv-window-size { display: grid; flex: 0 0 86px; gap: 3px; margin: 0; color: #96abc1; font-size: 10px; line-height: 1.3; }
+#devig-modal.devig-window #devig-window-size { width: 100%; min-width: 0; min-height: 28px; margin: 0; padding: 4px 6px; border: 1px solid #35475c; border-radius: 5px; background: #0b1420; color: #d5e1ef; font: inherit; font-size: 11px; }
+#devig-modal.devig-window #devig-window-size:disabled { opacity: .6; }
+#devig-window-size-status { flex: 0 0 auto; margin: 0; padding: 0 16px 10px; color: #96abc1; font-size: 10px; line-height: 1.4; }
+#devig-window-size-status[data-tone="success"] { color: #86efac; }
+#devig-window-size-status[data-tone="error"] { color: #fca5a5; }
+#devig-modal.devig-window[data-window-size="medium"] .devig-panel { width: var(--dv-medium-width); max-height: min(var(--dv-medium-height), calc(100dvh - var(--dv-window-gap))); }
+#devig-modal.devig-window[data-window-size="small"] .devig-panel { width: var(--dv-small-width); max-height: min(520px, calc(100dvh - var(--dv-window-gap))); }
+@media (min-width: 900px) {
+	#devig-modal.devig-window { --dv-window-gap: 48px; --dv-medium-width: 960px; --dv-medium-height: 640px; --dv-small-width: 600px; }
+}
+@media (max-width: 500px) {
+	#devig-modal.devig-window { --dv-window-gap: 16px; }
+	#devig-window-size-status { padding: 0 12px 8px; }
+}
 #toggle-bookodds-btn {
 	padding: 3px 6px;
 	cursor: pointer;

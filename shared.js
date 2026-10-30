@@ -1020,6 +1020,85 @@ function initOddsTableScale() {
 	for (const table of tables) if (table.initialized) table.redraw(true);
 }
 
+// One devig window size follows the account across every sport.
+const DEVIG_WINDOW_SIZES = ['large', 'medium', 'small'];
+let devigWindowSizeDraft = null;
+let devigWindowSizeFeedback = null;
+let guestDevigWindowSize = null;
+
+function getDevigWindowSize() {
+	const userId = CURR_USER?.id || 'guest';
+	if (devigWindowSizeDraft?.userId === userId) return devigWindowSizeDraft.value;
+	let saved = CURR_USER?.metadata?.devig_window_size;
+	if (!CURR_USER) {
+		saved = guestDevigWindowSize;
+		if (!saved) try { saved = localStorage.getItem('devig-window-size'); } catch (e) {}
+	}
+	return DEVIG_WINDOW_SIZES.includes(saved) ? saved : 'large';
+}
+
+function applyDevigWindowSize() {
+	const modal = document.getElementById('devig-modal');
+	if (!modal) return;
+	const size = getDevigWindowSize();
+	modal.dataset.windowSize = size;
+	const select = document.getElementById('devig-window-size');
+	if (select) {
+		select.value = size;
+		select.disabled = !!devigWindowSizeDraft;
+	}
+	const status = document.getElementById('devig-window-size-status');
+	if (status) {
+		const feedback = devigWindowSizeFeedback?.userId === (CURR_USER?.id || 'guest') ? devigWindowSizeFeedback : null;
+		status.textContent = feedback?.message || '';
+		status.dataset.tone = feedback?.tone || '';
+		status.hidden = !feedback?.message;
+	}
+}
+
+async function setDevigWindowSize(value) {
+	if (!DEVIG_WINDOW_SIZES.includes(value) || devigWindowSizeDraft) return false;
+	const userId = CURR_USER?.id || 'guest';
+	const feedback = (message, tone = '') => { devigWindowSizeFeedback = { userId, message, tone }; };
+	if (!CURR_USER) {
+		guestDevigWindowSize = value;
+		try {
+			localStorage.setItem('devig-window-size', value);
+			feedback('Size saved in this browser across all sports. Sign in to save to your profile.', 'success');
+		} catch (e) { feedback('Size applied for this visit. Browser storage is unavailable.'); }
+		applyDevigWindowSize();
+		return true;
+	}
+	if (CURR_SESSION?.user?.id !== userId) {
+		feedback('Your profile is still loading. Try changing the size again in a moment.', 'error');
+		applyDevigWindowSize();
+		return false;
+	}
+	devigWindowSizeDraft = { userId, value };
+	feedback('Saving window size...');
+	applyDevigWindowSize();
+	const sameAccount = () => CURR_USER?.id === userId && CURR_SESSION?.user?.id === userId;
+	try {
+		// A preceding table-zoom save must finish before copying the profile metadata.
+		await oddsTableScaleSave;
+		if (!sameAccount()) return false;
+		const metadata = { ...CURR_USER.metadata, devig_window_size: value };
+		const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
+		if (error) throw error;
+		if (!sameAccount()) return false;
+		CURR_USER.metadata = { ...CURR_USER.metadata, devig_window_size: value };
+		cacheProfile(CURR_USER);
+		feedback('Window size saved to your profile across all sports.', 'success');
+		return true;
+	} catch (error) {
+		if (sameAccount()) feedback('Could not save. Your previous window size was restored; choose a size to retry.', 'error');
+		return false;
+	} finally {
+		devigWindowSizeDraft = null;
+		applyDevigWindowSize();
+	}
+}
+
 // One browser preference shared by the odds screens. URL views override it.
 function supportsOddsViews() {
 	return !!document.getElementById('custom-view-select');

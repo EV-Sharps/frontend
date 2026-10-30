@@ -1059,6 +1059,7 @@ function initDevigWindow() {
 	devigModal.setAttribute("aria-labelledby", "devig-window-title");
 	const title = header.querySelector("h3");
 	const heading = document.createElement("div");
+	heading.className = "dv-heading";
 	if (title) { title.id = "devig-window-title"; title.textContent = "Devig reference"; heading.appendChild(title); }
 	const subtitle = document.createElement("p");
 	subtitle.className = "dv-subtitle";
@@ -1068,6 +1069,19 @@ function initDevigWindow() {
 	const close = document.getElementById("close-devig-modal");
 	close?.setAttribute("aria-label", "Close devig window");
 	if (close) close.type = "button";
+	const sizeControl = document.createElement('label');
+	sizeControl.className = 'dv-window-size';
+	sizeControl.htmlFor = 'devig-window-size';
+	sizeControl.title = 'Window size is saved to your profile across all sports.';
+	sizeControl.innerHTML = '<span>Window size</span><select id="devig-window-size" aria-describedby="devig-window-size-status"><option value="large">Large</option><option value="medium">Medium</option><option value="small">Small</option></select>';
+	header.insertBefore(sizeControl, close);
+	sizeControl.querySelector('select').addEventListener('change', event => setDevigWindowSize(event.target.value));
+	const sizeStatus = document.createElement('p');
+	sizeStatus.id = 'devig-window-size-status';
+	sizeStatus.setAttribute('role', 'status');
+	sizeStatus.setAttribute('aria-live', 'polite');
+	sizeStatus.hidden = true;
+	header.after(sizeStatus);
 	const oldControls = search.parentElement;
 	const toolbar = document.createElement("div");
 	toolbar.className = "dv-toolbar";
@@ -1128,6 +1142,7 @@ function devigBookWeights(value) {
 function renderDevigOptions(searchTerm = "") {
 	if (!devigOptionsContainer) return;
 	initDevigWindow();
+	applyDevigWindowSize();
 	const customKeys = new Set(getCustomDevigs());
 	const favoriteKeys = getFavoriteDevigs();
 	const favorites = new Set(favoriteKeys);

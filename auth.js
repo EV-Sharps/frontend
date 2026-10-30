@@ -545,6 +545,7 @@ async function handleSession() {
 	}
 
 	if (typeof initOddsTableScale === 'function') initOddsTableScale();
+	if (typeof applyDevigWindowSize === 'function') applyDevigWindowSize();
 	initPageData();
 
 	if (ENABLE_AUTH && session) {
@@ -558,6 +559,7 @@ async function handleSession() {
 // resolves. Safe/idempotent to call again after initPageData() already rendered defaults.
 function hydrateAfterProfileLoad() {
 	if (typeof initOddsTableScale === 'function') initOddsTableScale();
+	if (typeof applyDevigWindowSize === 'function') applyDevigWindowSize();
 	if ((typeof renderCards === "function" || PAGE === "bets") && CURR_USER?.metadata) {
 		const today = new Date().toISOString().slice(0, 10);
 		const allWL = CURR_USER.metadata.watchlist || [];

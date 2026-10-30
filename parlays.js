@@ -29,7 +29,9 @@
     return value && Number.isFinite(date.getTime()) ? gameDateFormat.format(date) : '';
   };
   const matchup = game => game.split(' @ ').map(t => t.replace(/-gm\d+$/, '')).sort().join('|');
-  const selections = ['', '', '', ''];
+  const selections = Array(8).fill('');
+  const maxLegs = () => Math.min(8, Math.max(2, Number(catalog?.max_leg_count) || 8));
+  let generatorBooks = null, generated = [], generationController = null, generatedTicket = null;
   const sort = { key: 'ev', direction: 'desc' };
   const pageSize = 100;
   let catalogPage = 0;
@@ -78,6 +80,7 @@
     cancelCalculation();
     result = null;
     $('results').hidden = true;
+    $('slip-empty').hidden = false;
     $('reference-rows').replaceChildren();
     $('price-rows').replaceChildren();
     $('parlay-book-prices').replaceChildren();
@@ -92,7 +95,7 @@
   function validate() {
     const error = selectionError();
     const count = selectedLegs().length;
-    const ready = Boolean(catalog) && [2, 3, 4].includes(count) && count === selections.filter(Boolean).length && !error;
+    const ready = Boolean(catalog) && count >= 2 && count <= maxLegs() && count === selections.filter(Boolean).length && !error;
     notice('selection-status', error);
     $('calculate').disabled = quoteBusy || !ready;
     if (!quoteBusy && !result) $('calculation-status').textContent = count < 2 ? `Choose ${2 - count} more player${count === 1 ? '' : 's'} to calculate automatically.` : 'Prices calculate automatically.';
@@ -117,7 +120,7 @@
   }
   function rememberScroll() {
     const x = window.scrollX, y = window.scrollY;
-    const tables = [...document.querySelectorAll('.catalog-wrap, .table-wrap')].map(element => ({ element, left: element.scrollLeft, top: element.scrollTop }));
+    const tables = [...document.querySelectorAll('.catalog-wrap, .table-wrap, .parlay-slip, .generated-parlays')].map(element => ({ element, left: element.scrollLeft, top: element.scrollTop }));
     return () => {
       tables.forEach(({ element, left, top }) => { element.scrollLeft = left; element.scrollTop = top; });
       if (window.scrollX !== x || window.scrollY !== y) window.scrollTo({ left: x, top: y, behavior: 'instant' });
@@ -204,6 +207,7 @@
     if (focused) $('fair-books-options').querySelector(`[data-reference-book="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
   }
   function referencesChanged() {
+    invalidateGeneration();
     try { localStorage.setItem(referenceStorageKey, JSON.stringify([...fairValueBooks])); } catch (_) { /* The selection still works for this visit. */ }
     renderReferenceSummary();
     sort.key = 'ev'; sort.direction = 'desc';
@@ -218,6 +222,145 @@
     const price = currentPrice(leg.quotes?.[book], legSide(leg));
     return nonBettingBooks.has(book) || price === null ? null : { book, price };
   }
+  function invalidateGeneration() {
+    generationController?.abort();
+    generationController = null;
+    generated = [];
+    $('generate').disabled = false;
+    $('generate').textContent = 'Generate parlays';
+    $('generated-parlays').replaceChildren();
+    $('generated-parlays').hidden = true;
+    notice('generator-status', '');
+  }
+  function generatorBookKeys() {
+    return catalogBooks().filter(book => !nonBettingBooks.has(book)
+      && catalog.legs.some(leg => Date.parse(leg.start) > Date.now() && currentPrice(leg.quotes?.[book], legSide(leg)) !== null));
+  }
+  function renderGeneratorBooks() {
+    const keys = [...new Set([...generatorBookKeys(), ...(generatorBooks || [])])];
+    const selected = generatorBooks ? [...generatorBooks] : [];
+    $('generate-books-summary').textContent = generatorBooks === null ? 'All books' : selected.length === 1
+      ? referenceName(selected[0]) : selected.length ? `${selected.length} books` : 'Choose books';
+    $('generate-books-summary').title = generatorBooks === null ? 'Compare whichever books cover every leg' : selected.map(referenceName).join(', ');
+    $('generate-books-all').setAttribute('aria-pressed', String(generatorBooks === null));
+    $('generate-books-options').innerHTML = keys.map(book => `<label class="fair-book-option"><input type="checkbox" data-generate-book="${esc(book)}"${generatorBooks?.has(book) ? ' checked' : ''}>${bookLogo(book)}<span>${esc(referenceName(book))}</span></label>`).join('');
+  }
+  function generatorLegs() {
+    const refs = selectedReferences(), books = generatorBooks === null ? generatorBookKeys() : [...generatorBooks];
+    return filteredLegs().filter(leg => Number.isFinite(Date.parse(leg.start)) && Date.parse(leg.start) > Date.now()).map(leg => ({
+      id: leg.id, player: leg.player, game: matchup(leg.game),
+      prices: Object.fromEntries(books.flatMap(book => {
+        const price = currentPrice(leg.quotes?.[book], legSide(leg));
+        return price === null ? [] : [[book, decimal(price)]];
+      })),
+      probabilities: Object.fromEntries(refs.flatMap(book => {
+        const ref = legReference(leg, book);
+        return ref ? [[book, ref.probability]] : [];
+      })),
+    }));
+  }
+  function renderGenerated() {
+    $('generated-parlays').hidden = !generated.length;
+    $('generated-parlays').innerHTML = generated.map((suggestion, index) => {
+      const active = suggestion.ids.length === selectedLegs().length && suggestion.ids.every(id => selections.includes(id));
+      const names = suggestion.ids.map(id => catalog.legs.find(leg => leg.id === id)).filter(Boolean)
+        .map(leg => `${title(leg.player)} ${legLabel(leg)}`);
+      return `<article class="generated-parlay${active ? ' is-active' : ''}">
+        <div class="generated-copy"><strong>${bookLogo(suggestion.best.book)} ${esc(referenceName(suggestion.best.book))} <span>${esc(odds(suggestion.best.odds))}</span></strong><p title="${esc(names.join(' + '))}">${names.map(esc).join(' + ')}</p></div>
+        <div class="generated-metrics"><span class="${suggestion.ev >= 0 ? 'positive' : 'negative'}">${suggestion.ev > 0 ? '+' : ''}${suggestion.ev.toFixed(1)}% EV</span>
+        <small title="${esc(suggestion.gap === null ? 'Only one complete book' : `${referenceName(suggestion.worst.book)} ${odds(suggestion.worst.odds)} to ${referenceName(suggestion.best.book)} ${odds(suggestion.best.odds)} / increase in total payout`)}">${suggestion.gap === null ? 'Gap unavailable' : `+${suggestion.gap.toFixed(1)}% gap`} / ${suggestion.prices.length} book${suggestion.prices.length === 1 ? '' : 's'}</small></div>
+        <button type="button" data-use-generated="${index}" aria-pressed="${active}" aria-label="Use suggested parlay ${index + 1}">${active ? 'Selected' : 'Use'}</button>
+      </article>`;
+    }).join('');
+  }
+  function useGenerated(index) {
+    const suggestion = generated[index];
+    if (!suggestion) return;
+    // Recheck quote age and coverage at the point of use, including time spent reading suggestions.
+    const byId = new Map(generatorLegs().map(leg => [leg.id, leg]));
+    const legs = suggestion.ids.map(id => byId.get(id));
+    const requiredBooks = generatorBooks === null ? [] : [...generatorBooks];
+    const checked = legs.every(Boolean) && ParlayGenerator.evaluate(legs, {
+      books: generatorBooks === null ? generatorBookKeys() : requiredBooks, requiredBooks, referenceBooks: selectedReferences(),
+    });
+    if (!checked || ($('generate-rank').value === 'gap' && checked.gap === null)) {
+      invalidateGeneration();
+      notice('generator-status', 'Prices or coverage changed. Refresh prices and generate again.');
+      return;
+    }
+    const restoreScroll = rememberScroll();
+    selections.fill('');
+    suggestion.ids.forEach((id, i) => { selections[i] = id; });
+    generatedTicket = { ids: [...suggestion.ids], requiredBooks };
+    $('betting-book').value = checked.best.book;
+    $('picker-book').value = checked.best.book;
+    $('offered-odds').value = '';
+    renderSelections();
+    renderGenerated();
+    scheduleCalculation();
+    restoreScroll();
+  }
+  async function generateParlays() {
+    invalidateGeneration();
+    if (!catalog) return;
+    const books = generatorBooks === null ? generatorBookKeys() : [...generatorBooks];
+    const count = Number($('generate-count').value), refs = selectedReferences(), rank = $('generate-rank').value;
+    if (!books.length) return notice('generator-status', 'Choose comparison books or All books.');
+    if (rank === 'gap' && books.length < 2) return notice('generator-status', 'Price gaps need at least two books. Select another book or rank by Highest EV.');
+    if (!refs.length) return notice('generator-status', 'Choose fair value books below so each generated parlay has an EV estimate.');
+    const legs = generatorLegs();
+    if (new Set(legs.map(leg => leg.game)).size < count) return notice('generator-status', `Need ${count} different matchups. Lower the leg count or broaden the table filters.`);
+    const controller = new AbortController();
+    generationController = controller;
+    $('generate').disabled = true;
+    $('generate').textContent = 'Finding parlays...';
+    notice('generator-status', 'Comparing complete book prices and fair references...');
+    try {
+      const suggestions = await ParlayGenerator.generate({ legs, books, requiredBooks: generatorBooks === null ? [] : books,
+        referenceBooks: refs, count, rank, signal: controller.signal });
+      if (generationController !== controller) return;
+      generated = suggestions;
+      if (!generated.length) {
+        notice('generator-status', 'No complete combinations found in this search. Try fewer legs, fewer comparison books, broader filters, or another fair value reference. Every reference needs fresh over/under pairs for all legs.');
+        return;
+      }
+      notice('generator-status', `${generated.length} suggestions / ${count} legs / ${rank === 'ev' ? 'highest estimated EV' : 'largest payout gap'} first. First suggestion loaded. Gaps compare complete-book totals; they do not guarantee positive EV.`);
+      useGenerated(0);
+    } catch (error) {
+      if (generationController === controller && error.name !== 'AbortError') notice('generator-status', 'Could not generate parlays. Refresh prices and try again.');
+    } finally {
+      if (generationController === controller) {
+        generationController = null;
+        $('generate').disabled = false;
+        $('generate').textContent = 'Generate parlays';
+      }
+    }
+  }
+  $('generate').addEventListener('click', generateParlays);
+  $('generated-parlays').addEventListener('click', event => {
+    const button = event.target.closest('[data-use-generated]');
+    if (button) useGenerated(Number(button.dataset.useGenerated));
+  });
+  ['generate-count', 'generate-rank'].forEach(id => $(id).addEventListener('change', invalidateGeneration));
+  $('generate-books-options').addEventListener('change', event => {
+    const input = event.target.closest('[data-generate-book]');
+    if (!input) return;
+    if (generatorBooks === null) generatorBooks = new Set();
+    if (input.checked) generatorBooks.add(input.dataset.generateBook);
+    else generatorBooks.delete(input.dataset.generateBook);
+    invalidateGeneration(); renderGeneratorBooks();
+    $('generate-books-options').querySelector(`[data-generate-book="${CSS.escape(input.dataset.generateBook)}"]`)?.focus({ preventScroll: true });
+  });
+  for (const [id, selection] of [['generate-books-all', null], ['generate-books-clear', []]]) $(id).addEventListener('click', () => {
+    generatorBooks = selection === null ? null : new Set();
+    invalidateGeneration(); renderGeneratorBooks();
+  });
+  document.addEventListener('click', event => {
+    if (!$('generate-books-picker').contains(event.target)) $('generate-books-picker').open = false;
+  });
+  $('generate-books-picker').addEventListener('keydown', event => {
+    if (event.key === 'Escape') { $('generate-books-picker').open = false; $('generate-books-summary').focus({ preventScroll: true }); }
+  });
   function pickerEstimate(leg) {
     const offer = pickerOffer(leg);
     const references = selectedReferences().map(book => legReference(leg, book)).filter(Boolean);
@@ -239,7 +382,7 @@
     const book = $('picker-book').value, name = book ? catalog?.books[book] || book : 'the best available book';
     const refs = selectedReferences();
     const names = refs.length > 3 ? `${refs.length} selected books` : refs.map(referenceName).join(' + ');
-    $('catalog-help').textContent = `${market === 'nba' ? 'Choose two to four props from different games. Each row shows its exact line and side; the bold book price is for that selection.' : `Choose two to four players for ${currentMarket().label}.`} EV uses ${$('method').selectedOptions[0].textContent} at ${name}. ${refs.length ? `Fair value uses the lowest available probability from ${names}. Only fresh over/under pairs count.` : 'Choose fair value books to calculate EV.'} All book columns stay visible. Click EV, Avg or a book to sort.`;
+    $('catalog-help').textContent = `Pick 2-${maxLegs()} ${market === 'nba' ? 'props' : currentMarket().label + ' players'} from different games. ${$('method').selectedOptions[0].textContent} EV at ${name}. ${refs.length ? `Fair: lowest available probability from ${names}, using fresh O/U pairs.` : 'Choose fair value books for EV.'} Click EV, Avg or a book to sort.`;
   }
   function renderPropFilter() {
     const selected = $('prop-filter').value;
@@ -257,18 +400,22 @@
     const others = selectedLegs().filter(Boolean);
     if (others.some(other => other.player === leg.player)) return 'Player already selected';
     if (others.some(other => matchup(other.game) === matchup(leg.game))) return 'Matchup already selected';
-    return selections.every(Boolean) ? 'Four legs selected; remove one to change it' : '';
+    return selectedLegs().length >= maxLegs() ? `${maxLegs()} legs selected; remove one to change it` : '';
   }
   function renderLegs() {
-    $('selection-count').textContent = `${selections.filter(Boolean).length} / 4 selected`;
-    $('leg-inputs').innerHTML = legSlots().map((leg, index) => {
+    $('selection-count').textContent = `${selections.filter(Boolean).length} / ${maxLegs()} selected`;
+    const slots = legSlots();
+    const filled = slots.filter(Boolean).length;
+    const emptySlots = slots.map((leg, index) => leg ? -1 : index).filter(index => index >= 0).slice(0, Math.max(2 - filled, filled < maxLegs() ? 1 : 0));
+    $('leg-inputs').innerHTML = slots.map((leg, index) => {
+      if (!leg && !emptySlots.includes(index)) return '';
       const book = $('betting-book').value;
       const price = leg && book ? currentPrice(leg.quotes?.[book], legSide(leg)) : null;
       const offer = leg ? (book ? (price === null ? null : { book, price }) : bestOffer(leg)) : null;
       return `<div class="leg-card${leg ? ' is-filled' : ''}"><span class="leg-number" aria-hidden="true">${index + 1}</span>
-        <div class="leg-copy"><strong>${leg ? esc(title(leg.player)) : `Leg ${index + 1}${index >= 2 ? ' (optional)' : ''}`}</strong>
+        <div class="leg-copy"><strong>${leg ? esc(title(leg.player)) : filled >= 2 ? 'Add another leg' : `Leg ${index + 1}`}</strong>
         ${leg && market === 'nba' ? `<span class="leg-market">${esc(legLabel(leg))}</span>` : ''}
-        <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(gameTime(leg.start))}` : index >= 2 ? `Add a ${index === 2 ? 'third' : 'fourth'} player anytime` : 'Add a player from the table'}</small>
+        <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(gameTime(leg.start))}` : filled >= 2 ? `Optional / up to ${maxLegs()} legs` : 'Add a player from the table'}</small>
         ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>${market === 'nba' ? esc(bookLabel(offer.book)) : currentMarket().label}${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
         ${leg ? `<button type="button" class="remove-leg" data-remove="${index}" aria-label="Remove ${esc(title(leg.player))}">&times;</button>` : ''}</div>`;
     }).join('');
@@ -276,6 +423,14 @@
   function renderCatalogHead(books) {
     const heading = (key, label, name) => `<th scope="col" data-key="${esc(key)}"${key.startsWith('book:') && fairValueBooks.has(key.slice(5)) ? ' class="fair-reference"' : ''} aria-sort="${sort.key === key ? sort.direction === 'asc' ? 'ascending' : 'descending' : 'none'}"><button type="button" data-sort="${esc(key)}" title="Sort by ${esc(name)}${key.startsWith('book:') && fairValueBooks.has(key.slice(5)) ? ' / Used for fair value' : ''}">${label}<span class="sort-arrow" aria-hidden="true">${sort.key === key ? sort.direction === 'asc' ? '&#9650;' : '&#9660;' : '&#8597;'}</span></button></th>`;
     $('catalog-head').innerHTML = `<tr><th scope="col" class="catalog-pick">Pick</th>${heading('player', 'Player / Game', 'player')}${heading('ev', 'EV / Price', 'estimated EV at the selected book')}${heading('average', 'Avg', `average current ${currentMarket().name} odds (lowest = most likely)`)}${books.map(book => heading(`book:${book}`, `${bookLogo(book)}${esc(bookLabel(book))}`, `${catalog.books[book]} ${currentMarket().name} price`)).join('')}</tr>`;
+  }
+  function filteredLegs() {
+    const search = $('player-search').value.trim().toLowerCase(), game = $('game-filter').value;
+    const prop = market === 'nba' ? $('prop-filter').value : '', side = market === 'nba' ? $('side-filter').value : '';
+    const today = game === 'today' ? gameDay(Date.now()) : '';
+    return (catalog?.legs || []).filter(leg => (!game || (game === 'today' ? gameDay(leg.start) === today : leg.game === game))
+      && (!prop || leg.prop === prop) && (!side || legSide(leg) === side)
+      && `${leg.player} ${leg.game} ${leg.team || ''} ${market === 'nba' ? leg.market : ''}`.toLowerCase().includes(search));
   }
   function renderCatalog() {
     const restoreScroll = rememberScroll();
@@ -286,13 +441,8 @@
     if (sort.key.startsWith('book:') && !books.includes(sort.key.slice(5))) { sort.key = 'ev'; sort.direction = 'desc'; }
     renderCatalogHead(books);
     renderPickerHelp();
-    const search = $('player-search').value.trim().toLowerCase(), game = $('game-filter').value;
-    const prop = market === 'nba' ? $('prop-filter').value : '', side = market === 'nba' ? $('side-filter').value : '';
-    const today = game === 'today' ? gameDay(Date.now()) : '';
     const estimates = new Map((catalog?.legs || []).map(leg => [leg.id, pickerEstimate(leg)]));
-    const legs = (catalog?.legs || []).filter(leg => (!game || (game === 'today' ? gameDay(leg.start) === today : leg.game === game)) && (!prop || leg.prop === prop) && (!side || legSide(leg) === side)
-      && `${leg.player} ${leg.game} ${leg.team || ''} ${market === 'nba' ? leg.market : ''}`.toLowerCase().includes(search)
-      && estimates.get(leg.id)?.offer);
+    const legs = filteredLegs().filter(leg => estimates.get(leg.id)?.offer);
     const averages = new Map(legs.map(leg => [leg.id, averagePrice(leg, allBooks)]));
     legs.sort((a, b) => {
       let order;
@@ -341,14 +491,16 @@
           : `<span class="price-unavailable">${status === 'Stale prices' ? 'Stale' : validPrice(quote?.[primary]) ? 'Unavailable' : '-'}</span>`}</td>`;
       }).join('');
       return `<tr data-leg-row="${esc(leg.id)}" class="${selected >= 0 ? 'is-selected' : reason ? 'is-blocked' : ''}">
-        <td class="catalog-pick"><button type="button" data-leg="${esc(leg.id)}" aria-label="${action} ${esc(title(leg.player))}${market === 'nba' ? ` ${esc(legLabel(leg))}` : ''}${reason ? `: ${esc(reason)}` : ''}" aria-pressed="${selected >= 0}" ${reason ? 'disabled' : ''} title="${esc(reason || `${action} this selection`)}">${selected >= 0 ? `&#10003; ${selected + 1}` : reason ? selections.every(Boolean) ? 'Full' : 'N/A' : '+ Add'}</button></td>
+        <td class="catalog-pick"><button type="button" data-leg="${esc(leg.id)}" aria-label="${action} ${esc(title(leg.player))}${market === 'nba' ? ` ${esc(legLabel(leg))}` : ''}${reason ? `: ${esc(reason)}` : ''}" aria-pressed="${selected >= 0}" ${reason ? 'disabled' : ''} title="${esc(reason || `${action} this selection`)}">${selected >= 0 ? `&#10003; ${selected + 1}` : reason ? selectedLegs().length >= maxLegs() ? 'Full' : 'N/A' : '+ Add'}</button></td>
         <th scope="row" class="catalog-player"><strong>${esc(title(leg.player))}</strong>${market === 'nba' ? `<span class="leg-market">${esc(legLabel(leg))}</span>` : ''}<small>${esc(leg.game.toUpperCase())} <span>${esc(gameTime(leg.start))}</span></small></th>${evCell}<td class="catalog-average" title="Average current ${esc(legLabel(leg))} price across books">${esc(averagePrice)}</td>${prices}</tr>`;
     }).join('') || `<tr><td class="catalog-empty" colspan="${books.length + 4}">${catalog?.legs.length ? `No ${market === 'nba' ? 'selections' : 'players'} match. Try another filter or book with current prices.` : 'No upcoming players available.'}</td></tr>`;
     if (focusKey) $('catalog-wrap').querySelector(`[data-${focusKey}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll: true });
     restoreScroll();
   }
-  function renderSelections() { renderLegs(); renderCatalog(); validate(); }
+  function renderSelections() { renderLegs(); renderCatalog(); if (generated.length) renderGenerated(); validate(); }
   function toggleLeg(id) {
+    if (generationController) invalidateGeneration();
+    generatedTicket = null;
     const index = selections.indexOf(id), leg = catalog?.legs.find(item => item.id === id);
     if (!leg || (index < 0 && disabledReason(leg))) return;
     selections[index >= 0 ? index : selections.indexOf('')] = index >= 0 ? '' : id;
@@ -380,7 +532,7 @@
     renderCatalog();
     $('catalog-head').querySelector(`[data-sort="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
   });
-  const filterCatalog = () => { catalogPage = 0; renderCatalog(); $('catalog-wrap').scrollTop = 0; };
+  const filterCatalog = () => { invalidateGeneration(); catalogPage = 0; renderCatalog(); $('catalog-wrap').scrollTop = 0; };
   $('player-search').addEventListener('input', filterCatalog);
   ['game-filter', 'prop-filter', 'side-filter'].forEach(id => $(id).addEventListener('change', filterCatalog));
   for (const [id, step] of [['catalog-prev', -1], ['catalog-next', 1]]) $(id).addEventListener('click', () => {
@@ -414,6 +566,7 @@
     }
   });
   $('picker-book').addEventListener('change', () => {
+    if (generationController) invalidateGeneration();
     $('betting-book').value = $('picker-book').value;
     sort.key = 'ev'; sort.direction = 'desc';
     catalogPage = 0;
@@ -451,14 +604,27 @@
     $('book-prices-help').textContent = `Estimated from each book's prices for all selected legs. ${probability === null ? benchmarks.length ? 'EV needs fresh over/under prices for every leg at a selected fair value book.' : 'Choose fair value books to calculate EV.' : `EV uses ${method} and ${availableReferences.length > 1 ? `the lowest complete parlay probability from ${availableReferences.map(ref => ref.name).join(' + ')}` : `${availableReferences[0].name}'s complete parlay probability`}.`} Final betslip odds may differ.`;
     $('best-parlay-price').innerHTML = best ? `${esc(odds(best.odds))} <span>${prices.filter(isBestPrice).map(price => `${bookLogo(price.book)} ${esc(price.name)}`).join(' / ')}</span>` : 'No complete book prices';
     $('price-count').textContent = `${count} legs / ${prices.length} book${prices.length === 1 ? '' : 's'}`;
+    const worst = prices[prices.length - 1];
+    const gap = prices.length > 1 ? 100 * (best.decimal / worst.decimal - 1) : null;
+    $('parlay-price-summary').innerHTML = `<div><span>Fair parlay</span><strong>${probability === null ? '-' : esc(odds(ParlayGenerator.american(1 / probability)))}</strong><small>${probability === null ? 'Needs a complete reference' : `${pct(probability)} hit chance`}</small></div>
+      <div><span>Book price gap</span><strong>${gap === null ? '-' : `+${gap.toFixed(1)}%`}</strong><small>${gap === null ? 'Needs two complete books' : `${esc(odds(worst.odds))} to ${esc(odds(best.odds))}`}</small></div>`;
+    if (generatedTicket && generatedTicket.ids.join('|') === selections.filter(Boolean).join('|')) {
+      const missing = generatedTicket.requiredBooks.filter(book => !prices.some(price => price.book === book));
+      if (missing.length) {
+        invalidateGeneration();
+        generatedTicket = null;
+        notice('generator-status', `Coverage changed at ${missing.map(referenceName).join(', ')}. Generate again to require every chosen book.`);
+      }
+    }
     $('parlay-book-prices').innerHTML = prices.map(price => {
       const isBest = isBestPrice(price);
+      const shortfall = best ? 100 * (price.decimal / best.decimal - 1) : 0;
       const ev = price.ev === null ? null : Number(price.ev.toFixed(1));
       return `<li class="parlay-book-card${isBest ? ' is-best' : ''}" data-price-tile="${esc(price.book)}">
         <span class="parlay-book-name">${bookLogo(price.book)}<span>${esc(price.name)}</span></span>
         <strong class="parlay-book-odds">${esc(odds(price.odds))}</strong>
         <span class="parlay-book-ev${ev > 0 ? ' positive' : ev < 0 ? ' negative' : ''}">${ev === null ? 'EV -' : `${ev > 0 ? '+' : ''}${ev.toFixed(1)}% EV`}</span>
-        ${isBest ? `<span class="book-price-best">${hasEV ? 'Best EV' : 'Best price'}</span>` : '<span class="book-price-note">Est. parlay</span>'}
+        ${isBest ? `<span class="book-price-best">${hasEV ? 'Best EV' : 'Best price'}</span>` : `<span class="book-price-note" title="Total payout difference versus the best complete book">${shortfall.toFixed(1)}% vs best</span>`}
       </li>`;
     }).join('');
     notice('book-prices-empty', prices.length ? '' : `No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.`);
@@ -479,7 +645,7 @@
     $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} ${legLabel(leg)}`).join(' + ');
     const evLabel = data.offered_odds === null ? 'EV at your price' : `EV at ${odds(data.offered_odds)}`;
     $('reference-head').innerHTML = `<tr><th scope="col">Reference book</th>${data.legs.map((leg, index) => `<th scope="col" title="${esc(title(leg.player))} ${esc(legLabel(leg))}">Leg ${index + 1} fair</th>`).join('')}<th scope="col">Fair parlay odds</th><th scope="col">Estimated hit chance</th><th scope="col">${esc(evLabel)}</th></tr>`;
-    $('reference-rows').classList.toggle('four-legs', count === 4);
+    $('reference-rows').classList.toggle('four-legs', count >= 4);
     $('reference-rows').classList.toggle('two-legs', count === 2);
     $('reference-rows').innerHTML = data.references.map(ref => {
       const isAnchor = fairValueBooks.has(ref.book);
@@ -494,10 +660,12 @@
     $('result-status').textContent = `${complete} selected reference book${complete === 1 ? '' : 's'} can devig all ${count} legs.${complete ? '' : ' Choose fair value books with current over and under prices for every leg.'}`;
     $('calculation-status').textContent = `${count}-leg parlay updated automatically.`;
     $('results').hidden = false;
+    $('slip-empty').hidden = true;
     $('results').removeAttribute('aria-busy');
     restoreScroll();
   }
   function accessDenied() {
+    invalidateGeneration();
     catalog = null;
     selections.fill('');
     clearResult();
@@ -575,6 +743,10 @@
         if (!matchesMarket(data, requestedMarket) || !Array.isArray(data.legs) || !data.books) throw new Error(`${markets[requestedMarket].name} prices are unavailable. Try refreshing.`);
         cancelCalculation();
         catalog = data;
+        invalidateGeneration();
+        renderGeneratorBooks();
+        [...$('generate-count').options].forEach(option => { option.disabled = Number(option.value) > maxLegs(); });
+        if (Number($('generate-count').value) > maxLegs()) $('generate-count').value = String(maxLegs());
         let removed = false;
         selections.forEach((id, i) => { if (id && !data.legs.some(leg => leg.id === id)) { selections[i] = ''; removed = true; } });
         const book = $('betting-book').value;
@@ -617,6 +789,7 @@
   $('parlay-market').addEventListener('change', () => {
     const next = $('parlay-market').value;
     if (!Object.hasOwn(markets, next) || next === market) return;
+    invalidateGeneration();
     marketVersion++;
     market = next;
     refreshController?.abort();
@@ -656,13 +829,16 @@
   });
   $('refresh').addEventListener('click', refresh);
   $('clear').addEventListener('click', () => {
+    if (generationController) invalidateGeneration();
+    generatedTicket = null;
     selections.fill('');
     clearResult();
     renderSelections();
   });
   ['method', 'betting-book', 'offered-odds'].forEach(id => $(id).addEventListener(id === 'offered-odds' ? 'input' : 'change', () => {
+    if (generationController) invalidateGeneration();
     if (id !== 'offered-odds') {
-      if (id === 'method') renderReferenceBooks();
+      if (id === 'method') { invalidateGeneration(); renderReferenceBooks(); }
       if (id === 'betting-book') {
         const book = $('betting-book').value;
         if (book && ![...$('picker-book').options].some(option => option.value === book)) $('picker-book').add(new Option(`${catalog.books[book]} (no current prices)`, book));
@@ -681,6 +857,7 @@
     if (token === ACCESS_TOKEN) return;
     ACCESS_TOKEN = token;
     sessionReady = true;
+    invalidateGeneration();
     authVersion++;
     catalog = null;
     selections.fill('');

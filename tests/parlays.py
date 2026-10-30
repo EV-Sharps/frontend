@@ -114,7 +114,7 @@ try:
             payload = route.request.post_data_json
             posts.append(payload)
             assert payload['market'] in ('hr', 'attd', 'atgs')
-            assert len(payload['legs']) in (2, 3, 4)
+            assert 2 <= len(payload['legs']) <= 8
             assert all(payload['legs'])
             if state['fail_next']:
                 state['fail_next'] = False
@@ -185,7 +185,7 @@ try:
             return row(index).locator('button[data-leg]')
 
         def count(expected):
-            assert page.locator('#selection-count').inner_text() == f'{expected} / 4 selected'
+            assert page.locator('#selection-count').inner_text() == f'{expected} / 8 selected'
 
         def calculated(ids):
             expect(page.locator('#results')).to_be_visible()
@@ -257,9 +257,9 @@ try:
         assert row(4).locator('.catalog-average').inner_text() == '+550'  # Includes a fresh over with no under.
         assert row(5).locator('.catalog-average').inner_text() == '+683'  # Excludes the stale +900 price.
         assert page.locator('#leg-inputs input, #leg-inputs select').count() == 0
-        assert page.locator('#leg-inputs .leg-card').count() == 4
-        assert 'Leg 3 (optional)' in page.locator('#leg-inputs').inner_text()
-        assert 'Leg 4 (optional)' in page.locator('#leg-inputs').inner_text()
+        assert page.locator('#leg-inputs .leg-card').count() == 2
+        assert 'Leg 1' in page.locator('#leg-inputs').inner_text()
+        assert 'Leg 2' in page.locator('#leg-inputs').inner_text()
         assert page.locator('#calculate').is_disabled()
         assert page.locator('#catalog-head img').count() == len(BOOKS)
         assert page.locator('[data-sort="book:br"]').count() == 1
@@ -579,11 +579,14 @@ try:
         page.wait_for_timeout(50)
         calculated([1, 3, 4, 5])
 
-        # Four slots really cap selection, even when another independent game is available.
+        # A fifth independent leg is now selectable and recalculates normally.
         state['catalog']['legs'].append(leg(8, 'extra player', 'sea @ hou', 500))
         page.evaluate('window.refreshParlays()')
-        assert pick(8).is_disabled()
-        assert pick(8).inner_text() == 'Full'
+        assert pick(8).is_enabled()
+        pick(8).click()
+        calculated([1, 3, 4, 5, 8])
+        pick(8).click()
+        calculated([1, 3, 4, 5])
 
         # A book must carry every leg; an unavailable best book never becomes a partial parlay.
         state['catalog']['legs'][4]['quotes']['fd'] = quote(None, None, 'Missing over price')
@@ -839,7 +842,7 @@ try:
         assert page.locator('#calculator').is_hidden()
         assert page.locator('#access-panel').is_visible()
         assert not errors, errors
-        print('Ranked book cards, shuffled/full-precision/tied prices, empty/updating/cleared cards, 320/390/1440 layouts, expanded breakdown scroll, Homer/ATTD/ATGS markets, navigation, switching/reset, dates, legacy/current totals, automatic 2-4 legs, response races/mismatches and access checks passed.')
+        print('Ranked book cards, shuffled/full-precision/tied prices, empty/updating/cleared cards, 320/390/1440 layouts, expanded breakdown scroll, Homer/ATTD/ATGS markets, navigation, switching/reset, dates, legacy/current totals, automatic 2-5 legs, response races/mismatches and access checks passed.')
         browser.close()
 finally:
     server.shutdown()

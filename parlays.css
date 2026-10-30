@@ -8,7 +8,7 @@ body.parlays-page::before { display: none; }
 .parlay-header .brand { font-size: 22px; font-weight: 750; color: #f0f4f5; text-decoration: none; }
 .brand span { color: #76dcac; }
 .parlay-header nav { display: flex; align-items: center; gap: 20px; }
-main.parlay-main { display: block; flex: none; width: 100%; max-width: none; height: auto; overflow: visible; padding: 24px 18px; margin: auto; }
+main.parlay-main { display: block; flex: none; width: 100%; max-width: none; height: auto; overflow: visible; padding: 20px 18px; margin: auto; }
 .parlays-page h1 { font-size: clamp(25px, 3vw, 34px); margin: 7px 0 12px; text-align: left; letter-spacing: -.6px; }
 .parlays-page h2 { font-size: 18px; margin: 0; text-align: left; }
 .parlays-page p { line-height: 1.65; }
@@ -19,15 +19,15 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 .refresh small { color: #a5b5bd; }
 .market-toolbar { margin: 0 0 20px; }
 .market-toolbar label { max-width: 290px; }
-.panel { border: 1px solid #354047; background: #1b2226; border-radius: 8px; margin-bottom: 22px; padding: 24px; }
+.panel { border: 1px solid #354047; background: #1b2226; border-radius: 8px; margin-bottom: 16px; padding: 16px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .section-heading > span { font-size: 12px; color: #a4b3bd; }
-.leg-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.leg-card { display: flex; align-items: center; gap: 10px; border: 1px dashed #3b4850; background: #141b1f; border-radius: 6px; padding: 12px; min-width: 0; }
+.leg-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.leg-card { display: flex; align-items: center; gap: 10px; border: 1px dashed #3b4850; background: #141b1f; border-radius: 6px; padding: 8px; min-width: 0; }
 .leg-card.is-filled { border-style: solid; border-color: #4a765f; }
-.leg-card .leg-number { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; background: #294237; color: #9be8be; width: 25px; height: 25px; border-radius: 50%; font-size: 12px; }
+.leg-card .leg-number { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; background: #294237; color: #9be8be; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; }
 .leg-copy { flex: 1; min-width: 0; }
-.leg-copy > strong { display: block; font-size: 13px; }
+.leg-copy > strong { display: block; font-size: 12px; }
 .leg-market { display: block; margin: 4px 0; color: #a7d7f5; font-size: 11px; line-height: 1.4; font-weight: 500; }
 .leg-copy > small { display: block; color: #9fb1bd; font-size: 10px; line-height: 1.6; }
 .leg-price { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -62,7 +62,7 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 #fair-books-menu p { margin: 9px 3px 0; font-size: 10px; color: #a9bcc9; }
 #catalog-count { margin-left: auto; padding-bottom: 9px; color: #a0b1bc; font-size: 11px; }
 #catalog-help { margin: 10px 0; font-size: 11px; }
-.catalog-wrap { max-height: 420px; overflow: auto; border: 1px solid #3c4950; border-radius: 5px; scrollbar-color: #52616b #181a1b; }
+.catalog-wrap { max-height: 64vh; overflow: auto; border: 1px solid #3c4950; border-radius: 5px; scrollbar-color: #52616b #181a1b; }
 .catalog-table { --player-width: 160px; border-spacing: 0; width: max-content; min-width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
 .catalog-table th, .catalog-table td { min-width: 58px; border-right: 1px solid #343b40; border-bottom: 1px solid #343b40; padding: 5px; vertical-align: middle; text-align: center; }
 .catalog-table th:last-child, .catalog-table td:last-child { border-right: 0; }
@@ -114,17 +114,17 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 .book-prices-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin: 22px 0 12px; }
 .book-prices-heading h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .book-prices-heading > span { color: #9cadb9; font-size: 11px; }
-.parlay-book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-.parlay-book-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; padding: 13px; border: 1px solid #3b4b56; border-radius: 7px; background: #18242c; font-variant-numeric: tabular-nums; }
-.parlay-book-name { display: flex; align-items: center; gap: 7px; min-height: 24px; font-size: 11px; font-weight: 600; color: #c3d1db; overflow-wrap: anywhere; }
+.parlay-book-grid { display: grid; grid-template-columns: 1fr; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.parlay-book-card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(88px, auto); align-items: center; gap: 2px 8px; min-width: 0; padding: 8px; border: 1px solid #3b4b56; border-radius: 7px; background: #18242c; font-variant-numeric: tabular-nums; }
+.parlay-book-name { display: flex; align-items: center; gap: 7px; min-height: 24px; font-size: 11px; grid-row: span 2; font-weight: 600; color: #c3d1db; overflow-wrap: anywhere; }
 .parlay-book-name .parlay-book-logo { width: 22px; height: 22px; }
-.parlay-book-odds { margin-top: auto; font-size: 21px; line-height: 1.25; color: #edf5fb; overflow-wrap: anywhere; max-width: 100%; }
-.parlay-book-ev { font-size: 12px; font-weight: 650; color: #9cadb9; }
+.parlay-book-odds { grid-row: span 2; text-align: right; font-size: 15px; line-height: 1.25; color: #edf5fb; overflow-wrap: anywhere; max-width: 100%; }
+.parlay-book-ev { text-align: right; font-size: 11px; font-weight: 650; color: #9cadb9; }
 .parlay-book-ev.positive { color: #98e8b7; }
 .parlay-book-ev.negative { color: #f4a7a7; }
 .parlay-book-card.is-best { border-color: #73cc99; background: #203d30; box-shadow: inset 0 0 0 1px #73cc991a; }
 .parlay-book-card.is-best .parlay-book-odds { color: #9cebbd; }
-.book-price-best, .book-price-note { font-size: 10px; line-height: 1.4; }
+.book-price-best, .book-price-note { grid-column: 3; justify-self: end; font-size: 9px; line-height: 1.4; }
 .book-price-best { padding: 2px 6px; border-radius: 3px; background: #91e7b4; color: #123322; font-weight: 650; }
 .book-price-note { padding: 2px 0; color: #95aab9; }
 .book-prices-help { margin: 13px 0 0; font-size: 11px; }
@@ -164,6 +164,90 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
 .methodology summary { cursor: pointer; color: #d3e1ea; font-size: 13px; }
 .methodology p:last-child { margin-bottom: 0; }
 .parlays-page .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* Keep the chooser wide and the complete-book comparison within reach. */
+.parlay-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 16px; align-items: start; }
+.parlay-workspace > * { min-width: 0; }
+.parlay-slip { position: sticky; top: 12px; max-height: calc(100dvh - 24px); overflow: auto; scrollbar-width: thin; scrollbar-color: #52616b #181a1b; scroll-margin-top: 12px; }
+.slip-jump { font-size: 12px; text-decoration: none; }
+.parlay-slip > .section-heading { margin-bottom: 12px; }
+.parlay-slip .section-heading { gap: 8px; }
+.parlay-slip .section-heading > span { font-size: 10px; text-align: right; }
+.parlay-slip .form-actions { gap: 8px; margin: 12px 0; }
+.parlay-slip .form-actions button { padding: 6px 10px; font-size: 11px; }
+.parlay-slip #calculation-status { flex-basis: 100%; font-size: 10px; }
+.parlay-slip .settings { gap: 8px; margin-top: 16px; border-top: 1px solid #354047; padding-top: 14px; }
+.parlay-slip .settings label { font-size: 11px; }
+.parlay-slip .settings select, .parlay-slip .settings input { padding: 7px; font-size: 11px; }
+.parlay-slip #price-help { font-size: 10px; margin-bottom: 0; }
+.slip-empty { text-align: center; padding: 24px 8px; color: #98adb9; font-size: 12px; border-top: 1px solid #354047; }
+.parlay-slip #results { border-top: 1px solid #354047; padding-top: 14px; }
+.parlay-slip #results > .section-heading { margin-bottom: 10px; }
+.parlay-slip #results > .section-heading > div { min-width: 0; }
+.parlay-slip #best-parlay-price { font-size: 26px; overflow-wrap: anywhere; }
+.parlay-slip #best-parlay-price span { display: block; margin: 2px 0 0; font-size: 12px; }
+.parlay-slip #result-selections { display: none; }
+.parlay-price-summary { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #35474e; border-radius: 6px; margin: 12px 0; }
+.parlay-price-summary > div { padding: 8px; min-width: 0; }
+.parlay-price-summary > div + div { border-left: 1px solid #35474e; }
+.parlay-price-summary span, .parlay-price-summary strong, .parlay-price-summary small { display: block; }
+.parlay-price-summary span { font-size: 10px; color: #aabac5; }
+.parlay-price-summary strong { margin: 4px 0; font-size: 15px; }
+.parlay-price-summary small { font-size: 10px; color: #aabac5; overflow-wrap: anywhere; }
+.parlay-slip .book-prices-heading { margin: 12px 0 8px; gap: 5px; }
+.parlay-slip #book-price-sort { font-size: 10px; }
+.book-list-columns { display: grid; grid-template-columns: 1fr auto 96px; gap: 8px; padding: 4px 8px 8px; font-size: 9px; color: #9cadb9; }
+.book-list-columns span:not(:first-child) { text-align: right; }
+.parlay-slip .book-prices-help { font-size: 10px; }
+.parlay-slip .parlay-breakdown { margin-top: 12px; padding-top: 12px; }
+.parlay-slip .notice { font-size: 11px; padding: 8px; }
+.generator { border: 1px solid #3b5d53; border-radius: 7px; padding: 12px; background: #1b2c28; }
+.generator-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.generator-heading h3 { font-size: 13px; margin: 0; }
+.generator-heading > span { font-size: 10px; color: #94baa9; }
+.generator-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.generator-controls label, .generator-book-control { font-size: 11px; gap: 6px; }
+.generator-controls select, .generator-controls button { font-size: 12px; padding: 8px; }
+.generator-controls > label:first-child { flex: 0 0 76px; }
+.generator-controls > label { flex: 1 1 130px; }
+.generator-book-control { display: grid; flex: 1 1 140px; min-width: 0; color: #bdc9d0; }
+#generate-books-picker { position: relative; }
+#generate-books-summary { cursor: pointer; padding: 8px; background: #202b32; color: #edf3f6; border: 1px solid #4a5b67; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#generate-books-menu { position: absolute; z-index: 22; top: calc(100% + 6px); left: 0; width: 310px; max-width: calc(100vw - 70px); max-height: min(380px, 60vh); overflow: auto; padding: 10px; border: 1px solid #56748a; border-radius: 6px; background: #1b2832; box-shadow: 0 8px 24px #0008; }
+#generate-books-options { display: grid; grid-template-columns: 1fr 1fr; }
+#generate-books-options input { width: 14px; height: 14px; margin: 0; padding: 0; accent-color: #80dfae; }
+#generate-books-all[aria-pressed="true"] { background: #345b48; }
+.generator-help, #generate-books-menu p { font-size: 10px; color: #a9c0b8; margin: 8px 0 0; }
+#generator-status { font-size: 11px; margin: 10px 0 0; }
+#generator-status:empty { display: none; }
+.generated-parlays { max-height: 220px; overflow: auto; margin-top: 10px; display: grid; gap: 5px; scrollbar-width: thin; }
+.generated-parlay { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; background: #17201f; border: 1px solid #3c4d48; border-radius: 5px; padding: 8px; }
+.generated-parlay.is-active { border-color: #82d3ac; }
+.generated-copy { min-width: 0; }
+.generated-copy strong { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+.generated-copy strong > span { margin-left: auto; font-variant-numeric: tabular-nums; }
+.generated-copy p { font-size: 10px; color: #a4b7b0; margin: 4px 0 0; line-height: 1.45; }
+.generated-metrics { text-align: right; font-variant-numeric: tabular-nums; }
+.generated-metrics > span { font-size: 12px; font-weight: 650; }
+.generated-metrics small { display: block; color: #a4b7b0; font-size: 9px; margin-top: 4px; }
+.generated-metrics .positive { color: #98e8b7; }
+.generated-metrics .negative { color: #f4a7a7; }
+.generated-parlay button { font-size: 11px; padding: 7px; }
+@media (max-width: 1150px) {
+  .parlay-workspace { grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; }
+  .generated-parlay { grid-template-columns: minmax(0, 1fr) auto; }
+  .generated-metrics { grid-column: 1; text-align: left; }
+  .generated-parlay button { grid-column: 2; grid-row: 1 / 3; }
+}
+@media (max-width: 900px) {
+  .parlay-workspace { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .parlay-slip { position: static; max-height: none; overflow: visible; }
+  .catalog-wrap { max-height: 55vh; }
+  .generator-controls { display: grid; grid-template-columns: 1fr 1fr; }
+  .generator-controls > * { min-width: 0; }
+  #generate-books-menu { left: auto; right: 0; }
+}
+
 @media (max-width: 800px) {
   main.parlay-main { padding: 20px 14px; }
   .parlay-header { padding: 16px; }
@@ -171,10 +255,10 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
   .refresh { justify-items: start; grid-template-columns: 1fr auto; align-items: center; margin-top: 20px; }
   .refresh small { grid-column: 1; grid-row: 2; }
   .refresh button { grid-column: 2; grid-row: 1 / 3; }
-  .leg-grid { grid-template-columns: 1fr; gap: 12px; }
+
   .settings { grid-template-columns: 1fr; }
-  .panel { padding: 18px; }
-  .parlay-book-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .panel { padding: 12px; }
+
   .section-heading { align-items: start; }
   .section-heading > span { max-width: 140px; text-align: right; }
   .leg-card { padding: 9px 10px; }
@@ -204,11 +288,6 @@ main.parlay-main { display: block; flex: none; width: 100%; max-width: none; hei
   .parlay-prices .best-parlay th:first-child { background: #223c30; }
   .parlay-prices thead th:first-child { background: #28333a; }
   #best-parlay-price span { display: block; margin: 6px 0 0; }
-}
-@media (max-width: 500px) {
-  .parlay-book-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .parlay-book-card { padding: 12px 10px; }
-  .parlay-book-odds { font-size: 20px; }
 }
 @media (max-width: 360px) {
   .catalog-table.ev-picker { --player-width: 96px; }

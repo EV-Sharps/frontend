@@ -268,7 +268,7 @@ class NbaParlayTests(unittest.TestCase):
         expect(self.page.locator('#prop-filter')).to_be_visible()
         expect(self.page.locator('#prop-filter')).to_have_value('')
         expect(self.page.locator('#side-filter')).to_have_value('')
-        expect(self.page.locator('#selection-count')).to_have_text('0 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('0 / 8 selected')
         self.assertEqual(self.ids(), set(range(1, 12)) - {9})
         self.assertEqual(self.gets, ['nba', 'atgs', 'nba'])
 
@@ -320,7 +320,7 @@ class NbaParlayTests(unittest.TestCase):
         self.references('fd')
         expect(self.page.locator('[data-price-tile="dk"] .parlay-book-ev')).to_have_text('+43.2% EV')
         self.calculated(6, 7)
-        expect(self.page.locator('#selection-count')).to_have_text('2 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('2 / 8 selected')
         self.assertEqual(self.page.locator('#price-head [data-ev-reference]').evaluate_all(
             'heads => heads.map(head => head.dataset.evReference)'), ['fd'])
         expect(self.page.locator('#leg-inputs .leg-card.is-filled').first).to_contain_text('Under 24.5 points')

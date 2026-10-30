@@ -244,7 +244,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.pick(3)
         expect(self.page.locator('#calculation-status')).to_have_text('2-leg parlay updated automatically.')
         self.page.locator('#picker-book').select_option('dk')
-        expect(self.page.locator('#selection-count')).to_have_text('2 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('2 / 8 selected')
         expect(self.page.locator('#leg-inputs .is-filled')).to_have_count(2)
         self.assertIn('Gamma Scorer', self.page.locator('#leg-inputs').inner_text())
         self.assertEqual(self.row(3).count(), 0)
@@ -253,7 +253,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertEqual(self.order(), [2])
         self.page.locator('#game-filter').select_option('bos @ nyr')
         self.assertEqual(self.order(), [])
-        expect(self.page.locator('#selection-count')).to_have_text('2 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('2 / 8 selected')
         self.page.locator('#player-search').fill('')
         self.page.locator('#game-filter').select_option('')
         self.page.locator('#picker-book').select_option('')
@@ -271,7 +271,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.page.wait_for_timeout(100)
         self.assertEqual(self.gets, ['atgs'])
         self.assertEqual(self.posts, [])
-        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
 
     def test_refresh_retains_filters_and_recomputes_ev_from_updated_prices(self):
         self.open()
@@ -307,7 +307,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertEqual(self.order()[0], 1)
         expect(selected_button).to_be_focused()
         expect(selected_button).to_have_attribute('aria-pressed', 'true')
-        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
         self.assertEqual(self.posts, [])
 
     def test_refresh_keeps_unavailable_selected_book_until_it_leaves_catalog(self):
@@ -324,7 +324,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertEqual(self.order(), [])
         self.assertRegex(self.page.locator('#picker-book option:checked').inner_text().lower(),
                          r'unavailable|no current prices')
-        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
         del self.catalog['books']['fd']
         for leg in self.catalog['legs']:
             leg['quotes'].pop('fd', None)
@@ -332,7 +332,7 @@ class AtgsPickerTests(unittest.TestCase):
         expect(self.page.locator('#picker-book')).to_have_value('')
         expect(self.page.locator('#betting-book')).to_have_value('')
         self.assertTrue(self.order())
-        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
 
     def test_other_markets_default_to_ev_and_use_selected_method_and_book(self):
         self.open()
@@ -364,12 +364,12 @@ class AtgsPickerTests(unittest.TestCase):
                 self.page.locator('#method').select_option('conservative')
                 self.assertEqual(self.order(), [5, 3, 4, 2, 1, 7, 6])
                 expect(self.row(1).locator('button')).to_have_attribute('aria-pressed', 'true')
-                expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+                expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
                 self.assertEqual(self.posts, [])
         self.page.locator('#parlay-market').select_option('atgs')
         expect(self.page.locator('#picker-book')).to_be_visible()
         expect(self.page.locator('#catalog-head [data-key="ev"]')).to_have_attribute('aria-sort', 'descending')
-        expect(self.page.locator('#selection-count')).to_have_text('0 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('0 / 8 selected')
 
     def test_missing_method_probabilities_stay_unknown_in_all_markets(self):
         self.catalog['legs'][0].pop('fair_probabilities')
@@ -402,7 +402,7 @@ class AtgsPickerTests(unittest.TestCase):
         self.assertEqual(self.ev(1), -25.0)
         self.assertEqual(self.ev(2), 60.0)
         expect(self.row(1).locator('button')).to_have_attribute('aria-pressed', 'true')
-        expect(self.page.locator('#selection-count')).to_have_text('1 / 4 selected')
+        expect(self.page.locator('#selection-count')).to_have_text('1 / 8 selected')
         self.assertEqual(self.posts, [])
         self.assertEqual(self.gets, ['atgs'])
 
@@ -461,17 +461,23 @@ class AtgsPickerTests(unittest.TestCase):
         self.page.locator('#picker-book').select_option('fd')
         geometry = self.page.locator('#catalog-wrap').evaluate('''container => {
             const viewport = container.getBoundingClientRect();
-            return {width: viewport.width, screen: innerWidth,
+            return {width: viewport.width, available: container.closest(".builder").clientWidth,
                 books: [...container.querySelectorAll('th[data-key^="book:"]')].map(cell => {
                     const rect = cell.getBoundingClientRect();
                     return {width: rect.width, left: rect.left, right: rect.right};
                 }), left: viewport.left, right: viewport.right};
         }''')
-        self.assertGreater(geometry['width'], geometry['screen'] * .85)
+        self.assertGreater(geometry['width'], geometry['available'] * .9)
         self.assertEqual(len(geometry['books']), len(self.catalog['books']))
         self.assertTrue(all(book['width'] <= 110 for book in geometry['books']), geometry)
-        self.assertTrue(all(geometry['left'] <= book['left'] < book['right'] <= geometry['right'] + 1
-                            for book in geometry['books']), geometry)
+        # The book table scrolls within its share of the workspace beside the new slip.
+        right = self.page.locator('#catalog-wrap').evaluate('''container => {
+            container.scrollLeft = container.scrollWidth;
+            return {last: container.querySelector('th[data-key="book:nv"]').getBoundingClientRect().right,
+                viewport: container.getBoundingClientRect().right};
+        }''')
+        self.assertLessEqual(right['last'], right['viewport'] + 1)
+        self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
 
     def test_picker_toolbar_fits_mobile_without_document_overflow(self):
         self.open()

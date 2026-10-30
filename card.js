@@ -952,7 +952,6 @@ function updateExistingCard(card, rowData) {
 					<button type="button" class="kelly-fraction-button" onclick="openKellySettings(event)" title="Change Kelly fraction for this page">${kellyFractionLabel()} Kelly</button>
 				</div>
 			</div>
-		${detailActions}
 		<div class="card-body-collapsed"></div>
 		<div class="card-arrow-container">
 			<svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18">
@@ -1031,6 +1030,7 @@ function updateExistingCard(card, rowData) {
 	card.classList.toggle("expanded", shouldOpen);
 
 	mountCardGameLogs(card);
+	collapsedBody.querySelector('.card-expanded')?.insertAdjacentHTML('beforeend', detailActions);
 
 	const liveMainId = liveNflMainIdentity(rowData);
 	const previousRow = PREVIOUS_DATA.find(d => liveMainId

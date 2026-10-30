@@ -879,6 +879,7 @@
 							<option value="pa">PA Btwn</option>
 							<option value="bbe">BBE Btwn</option>
 							<option value="odds" hidden disabled>Price history</option>
+							<option value="movement">Movement</option>
 							<option value="feed">Feed</option>
 							<option value="mix">Mix</option>
 						</select>
@@ -929,6 +930,7 @@
 	<script src="page-performance.js"></script>
 	<link href="price-history.css" rel="stylesheet">
 	<script src="price-history.js"></script>
+	<script src="player-lines.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
 	<script src="novig-depth.js"></script>
 	<script src="auth.js"></script>
@@ -964,6 +966,8 @@
 					plotHRGap(false, "bbe");
 				} else if (event.target.value == "feed") {
 					renderFeed();
+				} else if (event.target.value == "movement") {
+					plotMovementChart();
 				} else if (event.target.value == "odds") {
 					plotOddsChart();
 				} else {
@@ -1020,6 +1024,16 @@
 			option.hidden = option.disabled = !available;
 			if (!available && select.value === 'odds') select.value = 'pa';
 			return available;
+		}
+
+		function plotMovementChart() {
+			resetSidebarView();
+			const data = TABLE.getSelectedData()[0];
+			if (!data || data.blurred) return;
+			const host = document.getElementById('price-history-panel');
+			document.getElementById('chart').style.display = 'none';
+			host.hidden = false;
+			priceHistoryView = PlayerLines.mountMovement(host, data);
 		}
 
 		function plotOddsChart() {
@@ -1631,7 +1645,10 @@
 				right.style.display = "flex";
 				document.getElementById("dev-picker-wrapper").style.display = "none";
 				const curSel = document.querySelector("#btwn-select").value;
-				if (curSel === "mix") {
+				if (curSel === "movement") {
+					_mixShowChart();
+					plotMovementChart();
+				} else if (curSel === "mix") {
 					fetchAndShowMix(data);
 				} else {
 					_mixShowChart();
@@ -1679,6 +1696,8 @@
 			} else if (curSel === "feed") {
 				document.getElementById("chart").classList.add("feed-height");
 				renderFeed(false);
+			} else if (curSel === "movement") {
+				plotMovementChart();
 			} else if (curSel === "odds") {
 				plotOddsChart();
 			} else {

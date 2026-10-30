@@ -193,8 +193,31 @@
 		return { destroy() { destroyed = true; mounted?.destroy(); host.replaceChildren(); } };
 	}
 
-	let activeDepth;
-	const destroyDepth = () => { activeDepth?.destroy(); activeDepth = null; };
+	// Load the daily chart only when its tab is opened.
+	function mountMovement(host, selected) {
+		let destroyed = false, mounted;
+		if (!root.document.querySelector('link[data-player-movement]')) {
+			const stylesheet = root.document.createElement('link');
+			stylesheet.rel = 'stylesheet'; stylesheet.href = 'player-movement.css';
+			stylesheet.dataset.playerMovement = ''; root.document.head.append(stylesheet);
+		}
+		const start = () => {
+			host.innerHTML = '<p class="player-lines-empty" role="status">Loading movement...</p>';
+			loadDepthScript('player-movement.js', 'PlayerMovement').then(() => {
+				if (destroyed || !host.isConnected) return;
+				host.replaceChildren(); mounted = root.PlayerMovement.mount(host, selected);
+			}).catch(() => {
+				if (destroyed || !host.isConnected) return;
+				host.innerHTML = '<p class="player-lines-empty" role="status">Could not load movement. <button type="button">Try again</button></p>';
+				host.querySelector('button').onclick = start;
+			});
+		};
+		start();
+		return { destroy() { destroyed = true; mounted?.destroy(); host.replaceChildren(); } };
+	}
+
+	let activeDepth, activeMovement;
+	const destroyDepth = () => { activeDepth?.destroy(); activeDepth = null; activeMovement?.destroy(); activeMovement = null; };
 
 	function open(selected, rows, options) {
 		if (selected.blurred || (options.mode === "game" && !mainRow(selected))) return;
@@ -218,7 +241,7 @@
 			: prop => prop === selected.prop && options.prop ? options.prop : prop.toUpperCase());
 		const props = availableProps(selected, rows, options).sort((a, b) => formatProp(a).localeCompare(formatProp(b), undefined, { numeric: true }));
 		const subtitle = game ? "" : `${escape(String(selected.game || selected.gameId || "").toUpperCase())} &middot; `;
-		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>+EV Sharps - Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="${game ? "Market" : "Prop"} for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${subtitle}<span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${game ? '' : '<div class="player-lines-tabs" role="tablist" aria-label="Player prices"><button type="button" id="player-lines-tab-lines" role="tab" aria-controls="player-lines-panel-lines" data-lines-view="lines">Line comparison</button><button type="button" id="player-lines-tab-depth" role="tab" aria-controls="player-lines-panel-depth" data-lines-view="depth">Order books</button></div>'}<div class="player-lines-content"><div id="player-lines-panel-lines" class="player-lines-lines"${game ? '' : ' role="tabpanel" aria-labelledby="player-lines-tab-lines"'}></div><div id="player-lines-panel-depth" class="player-lines-depth" role="tabpanel" aria-labelledby="player-lines-tab-depth" hidden></div></div>`;
+		dialog.innerHTML = `<header class="player-lines-header"><div class="player-lines-heading"><p>+EV Sharps - Line comparison</p><div class="player-lines-title-row"><h2 id="player-lines-title">${escape(options.player)}</h2><span aria-hidden="true">&middot;</span><select id="player-lines-prop" aria-label="${game ? "Market" : "Prop"} for ${escape(options.player)}">${props.map(prop => `<option value="${escape(prop)}">${escape(formatProp(prop))}</option>`).join('')}</select></div><p>${subtitle}<span id="player-lines-count" role="status"></span></p></div><button type="button" class="player-lines-close" aria-label="Close line comparison" autofocus>&times;</button></header>${game ? '' : '<div class="player-lines-tabs" role="tablist" aria-label="Player prices"><button type="button" id="player-lines-tab-lines" role="tab" aria-controls="player-lines-panel-lines" data-lines-view="lines">Line comparison</button><button type="button" id="player-lines-tab-movement" role="tab" aria-controls="player-lines-panel-movement" data-lines-view="movement">Movement</button><button type="button" id="player-lines-tab-depth" role="tab" aria-controls="player-lines-panel-depth" data-lines-view="depth">Order books</button></div>'}<div class="player-lines-content"><div id="player-lines-panel-lines" class="player-lines-lines"${game ? '' : ' role="tabpanel" aria-labelledby="player-lines-tab-lines"'}></div><div id="player-lines-panel-movement" class="player-lines-movement" role="tabpanel" aria-labelledby="player-lines-tab-movement" hidden></div><div id="player-lines-panel-depth" class="player-lines-depth" role="tabpanel" aria-labelledby="player-lines-tab-depth" hidden></div></div>`;
 		const select = dialog.querySelector('#player-lines-prop');
 		select.value = selected.prop;
 		let view = 'lines';
@@ -230,13 +253,16 @@
 			linesHost.innerHTML = table.html;
 			linesHost.hidden = view !== 'lines';
 			depthHost.hidden = view !== 'depth';
+			const movementHost = dialog.querySelector('.player-lines-movement');
+			movementHost.hidden = view !== 'movement';
 			dialog.querySelectorAll('[data-lines-view]').forEach(button => {
 				button.setAttribute('aria-selected', String(button.dataset.linesView === view));
 				button.tabIndex = button.dataset.linesView === view ? 0 : -1;
 			});
 			dialog.querySelector('#player-lines-count').textContent = `${table.count} line${table.count === 1 ? '' : 's'}`;
-			dialog.style.setProperty('--player-lines-width', `${view === 'depth' ? 960 : table.width}px`);
+			dialog.style.setProperty('--player-lines-width', `${view !== 'lines' ? 960 : table.width}px`);
 			if (view === 'depth') activeDepth = mountDepth(depthHost, current, { ...options, rows });
+			if (view === 'movement') activeMovement = mountMovement(movementHost, current);
 		};
 		dialog.querySelectorAll('[data-lines-view]').forEach(button => {
 			button.onclick = () => { view = button.dataset.linesView; renderProp(); };
@@ -244,7 +270,8 @@
 				if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
 				event.preventDefault();
 				const tabs = [...dialog.querySelectorAll('[data-lines-view]')];
-				const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[1] : tabs.find(tab => tab !== button);
+				const index = tabs.indexOf(button);
+				const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs.at(-1) : tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
 				next.focus(); next.click();
 			};
 		});
@@ -254,7 +281,7 @@
 		if (!dialog.open) dialog.showModal();
 	}
 
-	const api = { canOpen, collect, availableProps, open, mountDepth, escape, mainMarketLabel };
+	const api = { canOpen, collect, availableProps, open, mountDepth, mountMovement, escape, mainMarketLabel };
 	root.PlayerLines = api;
 	if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis === "undefined" ? this : globalThis);

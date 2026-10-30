@@ -145,7 +145,7 @@ try:
                 click_row(page, "history alpha")
                 page.wait_for_function("document.getElementById('nba-history-dialog')?.open")
                 popup = page.locator("#nba-history-dialog")
-                assert popup.locator('[data-history-view]:visible').all_text_contents() == ["Game logs", "Career", "Logs vs Opp", "Away", "Home", "Order books"]
+                assert popup.locator('[data-history-view]:visible').all_text_contents() == ["Game logs", "Career", "Logs vs Opp", "Away", "Home", "Movement", "Order books"]
                 assert popup.locator('[data-history-view="logs"]').get_attribute("aria-selected") == "true"
                 assert popup.locator('[data-history-view="due"]').count() == 0
 

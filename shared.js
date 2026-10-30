@@ -873,43 +873,147 @@ function oddsDisplay(val) {
 	return oddsAmericanToDecimal(val);
 }
 
-// Table density is a browser preference, like the selected odds view.
+// Profile default with a separate override for each table page.
 const ODDS_TABLE_SCALES = [50, 60, 75, 80, 90, 100, 110, 125];
-let oddsTableScale = null;
+const oddsTableScaleDrafts = new Map();
+const oddsTableScaleFeedback = new Map();
+let oddsTableScaleSave = Promise.resolve();
+
+function validOddsTableScale(value) {
+	return ODDS_TABLE_SCALES.includes(Number(value));
+}
+
+function getProfileTableScale() {
+	if (CURR_USER) return validOddsTableScale(CURR_USER.metadata?.table_scale) ? Number(CURR_USER.metadata.table_scale) : 100;
+	try {
+		const saved = localStorage.getItem('odds-table-scale');
+		if (validOddsTableScale(saved)) return Number(saved);
+	} catch (e) {}
+	return 100;
+}
+
+function oddsTableScalePage() {
+	const page = location.pathname.split('/').filter(Boolean).pop()?.replace(/\.html$/i, '') || PAGE;
+	return page === 'nba' && new URLSearchParams(location.search).get('market') === 'fb' ? 'fb' : page;
+}
+
+function oddsTableScaleKey() {
+	return `${CURR_USER?.id || 'guest'}:${oddsTableScalePage()}`;
+}
+
+function getOddsTableScaleOverride() {
+	const key = oddsTableScaleKey();
+	if (oddsTableScaleDrafts.has(key)) return oddsTableScaleDrafts.get(key).value;
+	let value;
+	if (CURR_USER) value = CURR_USER.metadata?.table_scales?.[oddsTableScalePage()];
+	else {
+		try { value = localStorage.getItem(`odds-table-scale:${key}`); } catch (e) {}
+	}
+	return validOddsTableScale(value) ? Number(value) : null;
+}
 
 function getOddsTableScale() {
-	if (oddsTableScale === null) {
-		let saved;
-		try { saved = Number(localStorage.getItem('odds-table-scale')); } catch (e) {}
-		oddsTableScale = ODDS_TABLE_SCALES.includes(saved) ? saved : 100;
+	return getOddsTableScaleOverride() ?? getProfileTableScale();
+}
+
+function syncOddsTableScaleControl() {
+	const select = document.getElementById('custom-table-scale');
+	if (select) {
+		const option = select.querySelector('option[value="default"]');
+		if (option) option.textContent = `${CURR_USER ? 'Profile' : 'Browser'} default (${getProfileTableScale()}%)`;
+		select.value = String(getOddsTableScaleOverride() ?? 'default');
 	}
-	return oddsTableScale;
+	const help = document.getElementById('cx-scale-help');
+	if (help) {
+		const feedback = oddsTableScaleFeedback.get(oddsTableScaleKey());
+		help.textContent = feedback?.message || (CURR_USER
+			? 'Zoom saves to your profile for this table. Choose Profile default to use your global setting.'
+			: 'Zoom is saved for this table in this browser. Sign in to save it to your profile.');
+		help.dataset.tone = feedback?.tone || '';
+	}
 }
 
 function applyOddsTableScale() {
+	const root = document.documentElement;
+	const profileZoom = String(getProfileTableScale() / 100);
+	let changed = root.style.getPropertyValue('--profile-table-zoom') !== profileZoom;
+	root.style.setProperty('--profile-table-zoom', profileZoom);
+	syncOddsTableScaleControl();
 	const element = document.getElementById('table');
-	if (!element || !document.getElementById('overlay')) return false;
-	const scale = getOddsTableScale();
-	const zoom = scale === 100 ? '' : String(scale / 100);
-	const changed = element.style.zoom !== zoom;
-	// Zoom affects the table's layout as well as its text, so more rows and
-	// columns fit without scaling the navigation, dialogs, or mobile cards.
-	element.style.zoom = zoom;
-	const select = document.getElementById('custom-table-scale');
-	if (select) select.value = String(scale);
+	if (element) {
+		// Always set an explicit value, including 100%, to override the global CSS default.
+		const zoom = String(getOddsTableScale() / 100);
+		changed ||= element.style.zoom !== zoom;
+		element.style.zoom = zoom;
+	}
 	return changed;
 }
 
-function setOddsTableScale(value) {
-	const scale = Number(value);
-	if (!ODDS_TABLE_SCALES.includes(scale)) return;
-	oddsTableScale = scale;
-	try { localStorage.setItem('odds-table-scale', String(scale)); } catch (e) {}
-	if (applyOddsTableScale() && TABLE?.initialized) TABLE.redraw(true);
+async function setOddsTableScale(value) {
+	const scale = value === 'default' ? null : Number(value);
+	if (scale !== null && !validOddsTableScale(scale)) return false;
+	const key = oddsTableScaleKey();
+	const page = oddsTableScalePage();
+	const userId = CURR_USER?.id;
+	const draft = { value: scale };
+	if (!CURR_USER) {
+		oddsTableScaleDrafts.set(key, draft);
+		try {
+			if (scale === null) localStorage.removeItem(`odds-table-scale:${key}`);
+			else localStorage.setItem(`odds-table-scale:${key}`, String(scale));
+			oddsTableScaleFeedback.delete(key);
+		} catch (e) {
+			oddsTableScaleFeedback.set(key, { message: 'Zoom applied for this visit. Browser storage is unavailable.' });
+		}
+		initOddsTableScale();
+		return true;
+	}
+	if (!userId || CURR_SESSION?.user?.id !== userId) {
+		oddsTableScaleFeedback.set(key, { message: 'Your profile is still loading. Try changing zoom again in a moment.', tone: 'error' });
+		initOddsTableScale();
+		return false;
+	}
+	oddsTableScaleDrafts.set(key, draft);
+	oddsTableScaleFeedback.set(key, { message: 'Saving table zoom to your profile...' });
+	initOddsTableScale();
+	const sameAccount = () => CURR_USER?.id === userId && CURR_SESSION?.user?.id === userId;
+	// Serialize rapid selections so the final choice is also the final stored value.
+	oddsTableScaleSave = oddsTableScaleSave.catch(() => {}).then(async () => {
+		let saved = false;
+		try {
+			if (!sameAccount()) return false;
+			const tableScales = { ...CURR_USER.metadata?.table_scales };
+			if (scale === null) delete tableScales[page]; else tableScales[page] = scale;
+			const metadata = { ...CURR_USER.metadata, table_scales: tableScales };
+			const { error } = await SB.from('profiles').update({ metadata }).eq('id', userId);
+			if (error) throw error;
+			if (!sameAccount()) return false;
+			const currentScales = { ...CURR_USER.metadata?.table_scales };
+			if (scale === null) delete currentScales[page]; else currentScales[page] = scale;
+			CURR_USER.metadata = { ...CURR_USER.metadata, table_scales: currentScales };
+			cacheProfile(CURR_USER);
+			saved = true;
+			if (oddsTableScaleDrafts.get(key) === draft) {
+				oddsTableScaleFeedback.set(key, { message: scale === null ? 'Saved. This table follows your profile default.' : 'Table zoom saved to your profile.', tone: 'success' });
+			}
+		} catch (error) {
+			if (sameAccount() && oddsTableScaleDrafts.get(key) === draft) {
+				oddsTableScaleFeedback.set(key, { message: 'Could not save table zoom. Your saved zoom was restored; choose a value to retry.', tone: 'error' });
+			}
+		} finally {
+			if (oddsTableScaleDrafts.get(key) === draft) oddsTableScaleDrafts.delete(key);
+			initOddsTableScale();
+		}
+		return saved;
+	});
+	return oddsTableScaleSave;
 }
 
 function initOddsTableScale() {
-	if (applyOddsTableScale() && TABLE?.initialized) TABLE.redraw(true);
+	if (!applyOddsTableScale()) return;
+	const tables = new Set(typeof Tabulator !== 'undefined' && Tabulator.findTable ? Tabulator.findTable('.tabulator') || [] : []);
+	if (TABLE) tables.add(TABLE);
+	for (const table of tables) if (table.initialized) table.redraw(true);
 }
 
 // One browser preference shared by the odds screens. URL views override it.
@@ -4191,8 +4295,8 @@ function initCustomizeWindow() {
 		const scaleSetting = document.createElement('label');
 		scaleSetting.className = 'cx-setting cx-scale-setting';
 		scaleSetting.htmlFor = 'custom-table-scale';
-		scaleSetting.title = 'Scales Compact and Stacked tables. Saved automatically in this browser.';
-		scaleSetting.innerHTML = '<span>Table scale</span><select id="custom-table-scale" aria-describedby="cx-scale-help"></select>';
+		scaleSetting.title = 'Scale this table or follow your profile default.';
+		scaleSetting.innerHTML = '<span>Table zoom</span><select id="custom-table-scale" aria-describedby="cx-scale-help"><option value="default">Profile default</option></select>';
 		const scaleSelect = scaleSetting.querySelector('select');
 		for (const value of ODDS_TABLE_SCALES) {
 			const option = document.createElement('option');
@@ -4200,14 +4304,15 @@ function initCustomizeWindow() {
 			option.textContent = `${value}%`;
 			scaleSelect.appendChild(option);
 		}
-		scaleSelect.value = String(getOddsTableScale());
+		scaleSelect.value = String(getOddsTableScaleOverride() ?? 'default');
 		scaleSelect.addEventListener('change', event => setOddsTableScale(event.target.value));
 		const viewSetting = toolbar.querySelector('#custom-view-select')?.closest('.cx-setting');
 		if (viewSetting) viewSetting.after(scaleSetting); else toolbar.prepend(scaleSetting);
 		const help = document.createElement('p');
 		help.id = 'cx-scale-help';
 		help.className = 'cx-scale-help';
-		help.textContent = 'Table scale is saved automatically in this browser. Mobile cards stay at 100%.';
+		help.setAttribute('role', 'status');
+		help.setAttribute('aria-live', 'polite');
 		toolbar.after(help);
 	}
 	if (reorder) { reorder.classList.add('cx-reorder'); toolbar.appendChild(reorder); }

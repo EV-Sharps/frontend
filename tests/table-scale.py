@@ -174,7 +174,7 @@ def check_populated(browser, origin):
     mock_page(page)
     load(page, origin)
     assert page.evaluate("getOddsTableScale()") == 100
-    assert page.locator("#table").evaluate("el => el.style.zoom") == ""
+    assert page.locator("#table").evaluate("el => el.style.zoom") == "1"
     standard = metrics(page)
     assert standard["visibleRows"] > 5
     screenshot(page, "atgs-100")
@@ -188,7 +188,7 @@ def check_populated(browser, origin):
     assert small["visibleColumns"] > standard["visibleColumns"], (standard, small)
     assert abs(small["rowHeight"] / standard["rowHeight"] - .8) < .03
     assert page.locator("#customize").bounding_box() == button
-    assert page.evaluate("localStorage.getItem('odds-table-scale')") == "80"
+    assert page.evaluate("localStorage.getItem('odds-table-scale')") is None
     screenshot(page, "atgs-80")
     check_click_and_scroll(page)
     for value in [75, 125]:
@@ -234,14 +234,14 @@ def check_populated(browser, origin):
     assert page.locator("#custom-table-scale").input_value() == "80"
     page.keyboard.press("Escape")
     load(page, origin, "nba")
-    assert page.locator("#table").evaluate("el => el.style.zoom") == "0.8"
+    assert page.locator("#table").evaluate("el => el.style.zoom") == "1"
     open_customize(page)
-    assert page.locator("#custom-table-scale").input_value() == "80"
-    assert page.locator("#custom-table-scale option").evaluate_all("nodes => nodes.map(n => n.value)") == ["75", "80", "90", "100", "110", "125"]
+    assert page.locator("#custom-table-scale").input_value() == "default"
+    assert page.locator("#custom-table-scale option").evaluate_all("nodes => nodes.map(n => n.value)") == ["default"] + page.evaluate("ODDS_TABLE_SCALES.map(String)")
     assert not errors, errors
     print(f"PASS: populated ATGS 100/80/75/125, rows {standard['visibleRows']} -> {small['visibleRows']}, "
           f"columns {standard['visibleColumns']} -> {small['visibleColumns']}; frozen/header scroll, row clicks, "
-          "views/cards/rebuild/reload and NBA preference", flush=True)
+          "views/cards/rebuild/reload and independent NBA preference", flush=True)
     page.close()
 
 
@@ -279,23 +279,207 @@ def check_storage(browser, origin, blocked=False):
     if blocked:
         page.add_init_script("""const get = Storage.prototype.getItem, set = Storage.prototype.setItem;
             Storage.prototype.getItem = function(key) {
-                if (key === 'odds-table-scale') throw new DOMException('Blocked', 'SecurityError');
+                if (key.startsWith('odds-table-scale')) throw new DOMException('Blocked', 'SecurityError');
                 return get.call(this, key);
             };
             Storage.prototype.setItem = function(key, value) {
-                if (key === 'odds-table-scale') throw new DOMException('Blocked', 'SecurityError');
+                if (key.startsWith('odds-table-scale')) throw new DOMException('Blocked', 'SecurityError');
                 return set.call(this, key, value);
             };""")
     else:
         page.add_init_script("localStorage.setItem('odds-table-scale', 'invalid');")
     load(page, origin)
     assert page.evaluate("getOddsTableScale()") == 100
-    assert page.locator("#table").evaluate("el => el.style.zoom") == ""
+    assert page.locator("#table").evaluate("el => el.style.zoom") == "1"
     scale(page, 80)
     assert_alignment(page)
     assert not errors, errors
     page.close()
     print("PASS: " + ("blocked" if blocked else "invalid") + " scale storage falls back and remains usable", flush=True)
+
+
+def profile(page, metadata, user="zoom-user", deferred=False):
+    page.evaluate("""({metadata, user, deferred}) => {
+        CURR_USER = {id: user, tier: 'sharp', metadata};
+        CURR_SESSION = {user: {id: user}};
+        window.scaleWrites = [];
+        window.scalePending = [];
+        window.scaleDeferred = deferred;
+        SB = {from(table) { return {update(value) { return {eq(key, id) {
+            window.scaleWrites.push({table, key, id, value: structuredClone(value)});
+            return window.scaleDeferred
+                ? new Promise(resolve => window.scalePending.push(resolve))
+                : Promise.resolve({error: null});
+        }}; }}; }};
+        cacheProfile(CURR_USER);
+        hydrateAfterProfileLoad();
+    }""", {"metadata": metadata, "user": user, "deferred": deferred})
+    settle(page)
+
+
+def expect_scale(page, value, selection=None):
+    page.wait_for_function("value => getOddsTableScale() === value", arg=value)
+    assert page.locator("#table").evaluate("el => getComputedStyle(el).zoom") == str(value / 100).removesuffix(".0")
+    if selection is not None:
+        open_customize(page)
+        assert page.locator("#custom-table-scale").input_value() == selection
+        page.keyboard.press("Escape")
+
+
+def choose_default(page, value):
+    open_customize(page)
+    page.locator("#custom-table-scale").select_option("default")
+    page.keyboard.press("Escape")
+    expect_scale(page, value)
+
+
+def check_profile_preferences(browser, origin):
+    page = browser.new_page(viewport={"width": 1280, "height": 800})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    mock_page(page)
+    load(page, origin)
+    # A guest's old browser-wide setting remains its fallback, never a user's.
+    page.evaluate("localStorage.setItem('odds-table-scale', '60')")
+    page.reload()
+    page.wait_for_function("TABLE?.initialized && TABLE.getData('active').length === 120")
+    expect_scale(page, 60, "default")
+    profile(page, {"table_scale": 80, "table_scales": {"nba": 90}, "sentinel": {"preserve": True}})
+    expect_scale(page, 80, "default")
+    open_customize(page)
+    assert "80%" in page.locator('#custom-table-scale option[value="default"]').inner_text()
+    page.keyboard.press("Escape")
+    scale(page, 75)
+    page.wait_for_function("CURR_USER.metadata.table_scales.atgs === 75")
+    metadata = page.evaluate("CURR_USER.metadata")
+    assert metadata["table_scale"] == 80 and metadata["table_scales"] == {"nba": 90, "atgs": 75}
+    assert metadata["sentinel"] == {"preserve": True}
+    writes = page.evaluate("scaleWrites")
+    assert len(writes) == 1 and writes[0]["table"] == "profiles" and writes[0]["id"] == "zoom-user"
+    assert page.evaluate("JSON.parse(localStorage.getItem('cached_profile')).metadata.table_scales.atgs") == 75
+    assert page.evaluate("localStorage.getItem('odds-table-scale')") == "60"
+    page.reload()
+    page.wait_for_function("TABLE?.initialized && TABLE.getData('active').length === 120")
+    expect_scale(page, 75, "75")
+    # The same backend metadata works with an empty browser store on another device.
+    other = browser.new_page(viewport={"width": 1280, "height": 800})
+    mock_page(other)
+    load(other, origin)
+    expect_scale(other, 100, "default")
+    profile(other, metadata)
+    expect_scale(other, 75, "75")
+    other.close()
+    # Even a legacy/shared PAGE value must not merge preferences for distinct routes.
+    load(page, origin, "atgs2")
+    page.evaluate("PAGE = 'atgs'")
+    expect_scale(page, 80, "default")
+    profile(page, metadata)
+    scale(page, 110)
+    page.wait_for_function("CURR_USER.metadata.table_scales.atgs2 === 110")
+    metadata = page.evaluate("CURR_USER.metadata")
+    assert metadata["table_scales"] == {"nba": 90, "atgs": 75, "atgs2": 110}
+    load(page, origin, "nba")
+    expect_scale(page, 90, "90")
+    profile(page, metadata)
+    choose_default(page, 80)
+    page.wait_for_function("!Object.hasOwn(CURR_USER.metadata.table_scales, 'nba')")
+    page.evaluate("CURR_USER.metadata.table_scale = 60; hydrateAfterProfileLoad()")
+    expect_scale(page, 60, "default")
+    metadata = page.evaluate("CURR_USER.metadata")
+    load(page, origin)
+    profile(page, metadata)
+    expect_scale(page, 75, "75")
+    # Another signed-in user does not inherit the first user's or guest's scale.
+    profile(page, {}, user="another-user")
+    expect_scale(page, 100, "default")
+    profile(page, {"table_scale": 999, "table_scales": {"atgs": "invalid"}})
+    expect_scale(page, 100, "default")
+    # A main-table override must not affect independent tables or compound nested ones.
+    profile(page, {"table_scale": 80, "table_scales": {"atgs": 100}})
+    expect_scale(page, 100, "100")
+    page.evaluate("""() => {
+        const host = document.createElement('div');
+        host.id = 'scale-fixture-tables';
+        host.innerHTML = '<table id="scale-native"><tbody><tr><td>Outer<table id="scale-nested"><tbody><tr><td>Nested</td></tr></tbody></table></td></tr></tbody></table><div class="tabulator" id="scale-secondary"></div><div class="data-card"><table id="scale-card"><tbody><tr><td>Card</td></tr></tbody></table></div>';
+        document.body.appendChild(host);
+    }""")
+    assert page.locator('#scale-native').evaluate('el => getComputedStyle(el).zoom') == '0.8'
+    assert page.locator('#scale-secondary').evaluate('el => getComputedStyle(el).zoom') == '0.8'
+    assert page.locator('#scale-nested').evaluate('el => getComputedStyle(el).zoom') == '1'
+    assert page.locator('#scale-card').evaluate('el => getComputedStyle(el).zoom') == '1'
+    page.evaluate("document.getElementById('scale-fixture-tables').remove(); delete CURR_USER.metadata.table_scales.atgs")
+    # Default scale also reaches a table that has no Customize overlay.
+    page.evaluate("document.getElementById('overlay').remove(); CURR_USER.metadata.table_scale = 80; hydrateAfterProfileLoad()")
+    expect_scale(page, 80)
+    assert not errors, errors
+    page.close()
+    print("PASS: profile default/overrides, saved metadata/cache, reload/new device, ATGS aliases, reset, live hydration and user isolation", flush=True)
+
+
+def check_save_errors_and_races(browser, origin):
+    page = browser.new_page(viewport={"width": 1280, "height": 800})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    mock_page(page)
+    load(page, origin)
+    profile(page, {"table_scale": 80, "table_scales": {"nba": 90}, "sentinel": "preserved"}, deferred=True)
+    open_customize(page)
+    page.locator("#custom-table-scale").select_option("75")
+    page.wait_for_function("scaleWrites.length === 1")
+    assert page.evaluate("CURR_USER.metadata.table_scales.atgs") is None
+    assert page.evaluate("JSON.parse(localStorage.getItem('cached_profile')).metadata.table_scales.atgs") is None
+    page.evaluate("scalePending.shift()({error: {message: 'Fixture save failed'}})")
+    page.wait_for_function("document.getElementById('cx-scale-help').dataset.tone === 'error'")
+    expect_scale(page, 80)
+    settle(page)
+    assert page.evaluate("CURR_USER.metadata.table_scales.atgs") is None
+    assert page.evaluate("JSON.parse(localStorage.getItem('cached_profile')).metadata.table_scales.atgs") is None
+    # Retry then change while the request is in flight; persist the final choice.
+    page.locator("#custom-table-scale").select_option("90")
+    page.wait_for_function("scaleWrites.length === 2")
+    page.locator("#custom-table-scale").select_option("60")
+    page.evaluate("CURR_USER.metadata.unrelated_change = true")
+    page.evaluate("scalePending.shift()({error: null})")
+    page.wait_for_function("scaleWrites.length === 3")
+    assert page.evaluate("scaleWrites[2].value.metadata.table_scales.atgs") == 60
+    assert page.evaluate("scaleWrites[2].value.metadata.unrelated_change") is True
+    page.evaluate("scalePending.shift()({error: null})")
+    page.wait_for_function("CURR_USER.metadata.table_scales.atgs === 60")
+    assert page.evaluate("CURR_USER.metadata.table_scales.nba") == 90
+    assert page.evaluate("CURR_USER.metadata.sentinel") == "preserved"
+    assert page.evaluate("CURR_USER.metadata.unrelated_change") is True
+    assert page.evaluate("JSON.parse(localStorage.getItem('cached_profile')).metadata.table_scales.atgs") == 60
+    assert page.locator("#custom-table-scale").input_value() == "60"
+    page.keyboard.press("Escape")
+    expect_scale(page, 60)
+    assert not errors, errors
+    page.close()
+    print("PASS: failed save leaves profile/cache unchanged; rapid changes serialize and preserve latest choice and metadata", flush=True)
+
+
+def check_guest_overrides(browser, origin):
+    page = browser.new_page(viewport={"width": 1280, "height": 800})
+    mock_page(page)
+    load(page, origin)
+    page.evaluate("localStorage.setItem('odds-table-scale', '80')")
+    page.reload()
+    page.wait_for_function("TABLE?.initialized && TABLE.getData('active').length === 120")
+    expect_scale(page, 80, "default")
+    scale(page, 60)
+    load(page, origin, "nba")
+    expect_scale(page, 80, "default")
+    scale(page, 90)
+    load(page, origin)
+    expect_scale(page, 60, "60")
+    choose_default(page, 80)
+    load(page, origin, "nba")
+    expect_scale(page, 90, "90")
+    profile(page, {"table_scale": 100})
+    expect_scale(page, 100, "default")
+    page.evaluate("CURR_USER = null; CURR_SESSION = null; hydrateAfterProfileLoad()")
+    expect_scale(page, 90, "90")
+    page.close()
+    print("PASS: guest page overrides, legacy fallback, per-page reset, sign-in/sign-out isolation", flush=True)
 
 
 def main():
@@ -310,6 +494,9 @@ def main():
                 check_small_layout(browser, origin, width, height)
             check_storage(browser, origin)
             check_storage(browser, origin, blocked=True)
+            check_profile_preferences(browser, origin)
+            check_save_errors_and_races(browser, origin)
+            check_guest_overrides(browser, origin)
             browser.close()
     finally:
         server.shutdown()

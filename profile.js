@@ -25,7 +25,7 @@ function showProfileState(state) {
 }
 
 function preferenceValues() {
-	return JSON.stringify(['state-select', 'odds-format-select', 'mobile-dropdown-alignment-select', 'unit-size-input', 'profile-kelly-fraction', 'profile-kelly-custom'].map(id => document.getElementById(id).value));
+	return JSON.stringify(['state-select', 'odds-format-select', 'profile-table-scale', 'mobile-dropdown-alignment-select', 'unit-size-input', 'profile-kelly-fraction', 'profile-kelly-custom'].map(id => document.getElementById(id).value));
 }
 
 function updatePreferenceState() {
@@ -42,6 +42,14 @@ function loadProfilePreferences() {
 	document.getElementById('state-select').value = (metadata.state || '').toUpperCase();
 	document.getElementById('unit-size-input').value = metadata.unit_size || 100;
 	document.getElementById('odds-format-select').value = metadata.odds_format === 'decimal' ? 'decimal' : 'american';
+	const tableScale = document.getElementById('profile-table-scale');
+	tableScale.replaceChildren(...ODDS_TABLE_SCALES.map(value => {
+		const option = document.createElement('option');
+		option.value = String(value);
+		option.textContent = `${value}%`;
+		return option;
+	}));
+	tableScale.value = String(getProfileTableScale());
 	document.getElementById('mobile-dropdown-alignment-select').value = getMobileDropdownAlignment();
 	const select = document.getElementById('profile-kelly-fraction');
 	select.innerHTML = kellyFractionOptions();
@@ -116,10 +124,13 @@ profileForm.addEventListener('submit', async event => {
 		const unitSize = Number(document.getElementById('unit-size-input').value);
 		if (!Number.isSafeInteger(unitSize) || unitSize < 1) throw new Error('Enter a whole-dollar unit size of at least $1.');
 		const fraction = readKellyFractionFields(document.getElementById('profile-kelly-fraction'), document.getElementById('profile-kelly-custom'));
+		const tableScale = document.getElementById('profile-table-scale').value;
+		if (!validOddsTableScale(tableScale)) throw new Error('Choose a valid default table scale.');
 		const metadata = {
 			...CURR_USER.metadata,
 			state: document.getElementById('state-select').value,
 			odds_format: document.getElementById('odds-format-select').value,
+			table_scale: Number(tableScale),
 			mobile_dropdown_alignment: document.getElementById('mobile-dropdown-alignment-select').value === 'left' ? 'left' : 'right',
 			unit_size: unitSize, kelly_fraction: fraction
 		};

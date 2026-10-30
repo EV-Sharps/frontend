@@ -1,3 +1,7 @@
+/* Profile zoom covers tables created later, including secondary tables. */
+:where(.tabulator, table) { zoom: var(--profile-table-zoom, 1); }
+:where(#table, .tabulator, table, #card-container, #player-cards, .data-card) :where(.tabulator, table) { zoom: 1; }
+
 /*
 * {
 		outline: 1px solid red; 
@@ -1888,10 +1892,13 @@ a.book-betslip-link:hover .book-odd-value {
 #overlay.customize-window .cx-toolbar .cx-setting { flex: 0 1 150px; }
 #overlay.customize-window .cx-setting select { width: 100%; min-width: 0; min-height: 34px; margin: 0; padding: 6px 8px; border: 1px solid #35475c; border-radius: 5px; background: #0b1420; color: #d5e1ef; font: inherit; font-size: 12px; line-height: 1.4; box-shadow: none; }
 #overlay.customize-window .cx-toolbar { flex-wrap: wrap; }
-#overlay.customize-window .cx-toolbar .cx-scale-setting { flex-basis: 100px; }
+#overlay.customize-window .cx-toolbar .cx-scale-setting { flex-basis: 170px; }
 #overlay.customize-window .cx-scale-help { flex: 0 0 auto; margin: -4px 16px 10px; color: #96abc1; font-size: 10px; line-height: 1.4; }
+#overlay.customize-window .cx-scale-help[data-tone="error"] { color: #fca5a5; }
+#overlay.customize-window .cx-scale-help[data-tone="success"] { color: #86efac; }
 @media (max-width: 500px) {
 	#overlay.customize-window .cx-toolbar .cx-setting { flex: 1 1 90px; }
+	#overlay.customize-window .cx-toolbar .cx-scale-setting { flex-basis: 140px; }
 	#overlay.customize-window .cx-scale-help { margin: -2px 12px 8px; }
 }
 #overlay.customize-window .cx-reorder { flex: 0 0 auto; margin-left: auto; white-space: nowrap; }

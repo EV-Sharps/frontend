@@ -69,6 +69,7 @@
           <span id="catalog-count" role="status"></span>
         </div>
         <p id="catalog-help" class="muted">Choose two to eight players, ranked by highest EV using your selected devig method. Click EV, Avg or a book to sort.</p>
+        <p class="prediction-help">Prediction-market quotes show liquidity beside each price. EV and estimated totals include Kalshi and ProphetX fee estimates.</p>
         <p id="empty-slate" class="notice" hidden>No upcoming homer markets are available for today. Refresh when the next slate is posted.</p>
         <div id="catalog-wrap" class="catalog-wrap" role="region" aria-label="Choose homer parlay players and compare prices" aria-describedby="catalog-help" tabindex="0">
           <table class="catalog-table ev-picker"><caption id="catalog-caption" class="sr-only">Homer players and sportsbook over/under prices</caption><thead id="catalog-head"></thead><tbody id="catalog-rows"></tbody></table>
@@ -90,6 +91,7 @@
         <ol id="parlay-book-prices" class="parlay-book-grid" aria-label="Estimated parlay odds and EV by book, highest EV first"></ol>
         <p id="book-prices-empty" class="muted" hidden></p>
         <p id="book-prices-help" class="muted book-prices-help">Estimated from each book's prices for all selected legs. EV uses your selected devig method. Final betslip odds may differ.</p>
+        <p class="prediction-help">Prediction-market totals multiply individual leg prices for comparison; combo availability must be confirmed. Liquidity is listed per leg in selection order.</p>
         <details id="parlay-breakdown" class="parlay-breakdown">
           <summary>Leg prices &amp; fair odds</summary>
           <div class="table-wrap parlay-prices" role="region" aria-label="Estimated parlay prices, highest EV first when available" tabindex="0">
@@ -103,7 +105,7 @@
             </div>
             <button type="button" id="show-unavailable" aria-expanded="false" aria-controls="reference-rows" hidden>Show unavailable books</button>
             <p id="result-status" class="muted"></p>
-            <p class="muted">Each reference row uses only that book's prices for every leg. The book list above shows estimated prices before devig; this breakdown shows fair odds after devig.</p>
+            <p class="muted">Each reference row devigs that book's raw prices for every leg. Estimated totals include Kalshi and ProphetX fees on each leg; reference fair odds use raw quotes.</p>
           </div>
         </details>
       </section>

@@ -127,6 +127,7 @@
     };
   }
   const nonBettingBooks = new Set(['circa', 'pn']);
+  const predictionBooks = new Set(['kal', 'nv', 'px', 'poly']);
   const referenceStorageKey = 'ev_parlay_reference_books_v1';
   const defaultReferenceBooks = ['circa', 'pn'];
   let fairValueBooks = new Set(defaultReferenceBooks);
@@ -151,7 +152,38 @@
   }
   function currentPrice(quote, side = 'over', maxAge) {
     const missingOther = side === 'under' ? 'Missing over price' : 'Missing under price';
-    return validPrice(quote?.[side]) && ['available', missingOther].includes(priceStatus(quote, maxAge)) ? Number(quote[side]) : null;
+    return validPrice(quote?.[side]) && liquidityAmount(quote, side) !== 0
+      && ['available', missingOther].includes(priceStatus(quote, maxAge)) ? Number(quote[side]) : null;
+  }
+  function currentOfferPrice(quote, book, side = 'over', maxAge) {
+    const raw = currentPrice(quote, side, maxAge);
+    if (raw === null) return null;
+    if (validPrice(quote[`bet_${side}`])) return Number(quote[`bet_${side}`]);
+    const fee = typeof BOOK_FEE_FUNCTIONS !== 'undefined' ? BOOK_FEE_FUNCTIONS[book] : null;
+    const adjusted = fee ? Number(fee(String(raw), {}, market === 'hr' ? 'dingers' : 'parlays')) : raw;
+    return validPrice(adjusted) ? adjusted : null;
+  }
+  function liquidityAmount(quote, side) {
+    const value = quote?.liquidity?.[side === 'under' ? 1 : 0];
+    if (!['string', 'number'].includes(typeof value)) return null;
+    const text = String(value).replace(/[$,]/g, '').trim(), amount = text === '' ? NaN : Number(text);
+    return Number.isFinite(amount) && amount >= 0 ? amount : null;
+  }
+  const money = value => `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  function liquidityMarkup(quote, side, book) {
+    if (!predictionBooks.has(book) || !validPrice(quote?.[side])) return '';
+    const amount = liquidityAmount(quote, side);
+    return ` <span class="parlay-liquidity" title="${side === 'under' ? 'Under' : 'Over'} liquidity at this quoted price${amount === null ? ' unavailable' : ''}">${amount === null ? '(liq ?)' : `(${money(amount)})`}</span>`;
+  }
+  function priceLiquidity(price, selected) {
+    if (!predictionBooks.has(price.book)) return '';
+    const amounts = selected.map(leg => {
+      const quote = price.legs.find(item => item.id === leg.id);
+      const amount = liquidityAmount(quote, legSide(leg));
+      return { player: title(leg.player), amount };
+    });
+    const details = amounts.map(item => `${item.player}: ${item.amount === null ? 'unknown' : money(item.amount)}`).join(' / ');
+    return `<small class="parlay-book-liquidity" title="${esc(details)}">Leg liquidity: ${amounts.map(item => item.amount === null ? '?' : money(item.amount)).join(' / ')}</small>`;
   }
   function parlayPrices(data) {
     const highestFirst = (a, b) => b.decimal - a.decimal || a.name.localeCompare(b.name);
@@ -163,12 +195,12 @@
       if (included.has(ref.book) || (Array.isArray(data.prices) && !nonBettingBooks.has(ref.book))
         || ref.legs?.length !== data.legs.length) return [];
       const legs = data.legs.map(leg => ref.legs.find(quote => quote.id === leg.id));
-      const offers = legs.map((leg, index) => currentPrice(leg, legSide(data.legs[index]), data.max_age_minutes));
+      const offers = legs.map((leg, index) => currentOfferPrice(leg, ref.book, legSide(data.legs[index]), data.max_age_minutes));
       if (offers.some(price => price === null)) return [];
       const combined = offers.reduce((product, price) => product * decimal(price), 1);
       return [{ book: ref.book, name: ref.name, decimal: combined,
         odds: combined >= 2 ? (combined - 1) * 100 : -100 / (combined - 1),
-        legs: legs.map((leg, index) => ({ id: leg.id, player: leg.player, price: offers[index], updated_at: leg.updated_at })) }];
+        legs: legs.map((leg, index) => ({ ...leg, price: offers[index] })) }];
     });
     return [...prices, ...referencePrices].sort(highestFirst);
   }
@@ -178,12 +210,12 @@
   }
   function bestOffer(leg) {
     return Object.entries(leg.quotes || {}).reduce((best, [book, quote]) => {
-      const price = currentPrice(quote, legSide(leg));
+      const price = currentOfferPrice(quote, book, legSide(leg));
       return !nonBettingBooks.has(book) && price !== null && (!best || decimal(price) > decimal(best.price)) ? { book, price } : best;
     }, null);
   }
   function catalogBooks() {
-    const keys = ['circa', 'pn', 'fd', 'dk', 'b365', ...Object.keys(catalog?.books || {})];
+    const keys = ['circa', 'pn', 'kal', 'nv', 'px', 'poly', 'fd', 'dk', 'b365', ...Object.keys(catalog?.books || {})];
     return [...new Set(keys)].filter(book => Object.hasOwn(catalog?.books || {}, book));
   }
   const referenceName = book => catalog?.books[book] || bookLabel(book);
@@ -223,7 +255,7 @@
     if (!Number.isFinite(Date.parse(leg.start)) || Date.parse(leg.start) <= Date.now()) return null;
     const book = $('picker-book').value;
     if (!book) return bestOffer(leg);
-    const price = currentPrice(leg.quotes?.[book], legSide(leg));
+    const price = currentOfferPrice(leg.quotes?.[book], book, legSide(leg));
     return nonBettingBooks.has(book) || price === null ? null : { book, price };
   }
   function invalidateGeneration() {
@@ -254,7 +286,7 @@
     return filteredLegs().filter(leg => Number.isFinite(Date.parse(leg.start)) && Date.parse(leg.start) > Date.now()).map(leg => ({
       id: leg.id, player: leg.player, game: matchup(leg.game),
       prices: Object.fromEntries(books.flatMap(book => {
-        const price = currentPrice(leg.quotes?.[book], legSide(leg));
+        const price = currentOfferPrice(leg.quotes?.[book], book, legSide(leg));
         return price === null ? [] : [[book, decimal(price)]];
       })),
       probabilities: Object.fromEntries(refs.flatMap(book => {
@@ -414,13 +446,13 @@
     $('leg-inputs').innerHTML = slots.map((leg, index) => {
       if (!leg && !emptySlots.includes(index)) return '';
       const book = $('betting-book').value;
-      const price = leg && book ? currentPrice(leg.quotes?.[book], legSide(leg)) : null;
+      const price = leg && book ? currentOfferPrice(leg.quotes?.[book], book, legSide(leg)) : null;
       const offer = leg ? (book ? (price === null ? null : { book, price }) : bestOffer(leg)) : null;
       return `<div class="leg-card${leg ? ' is-filled' : ''}"><span class="leg-number" aria-hidden="true">${index + 1}</span>
         <div class="leg-copy"><strong>${leg ? esc(title(leg.player)) : filled >= 2 ? 'Add another leg' : `Leg ${index + 1}`}</strong>
         ${leg && market === 'nba' ? `<span class="leg-market">${esc(legLabel(leg))}</span>` : ''}
         <small>${leg ? `${esc(leg.game.toUpperCase())} / ${esc(gameTime(leg.start))}` : filled >= 2 ? `Optional / up to ${maxLegs()} legs` : 'Add a player from the table'}</small>
-        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))} <small>${market === 'nba' ? esc(bookLabel(offer.book)) : currentMarket().label}${book ? '' : ' / best price'}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
+        ${leg ? `<span class="leg-price">${offer ? `${bookLogo(offer.book)}<span>${esc(odds(offer.price))}${liquidityMarkup(leg.quotes?.[offer.book], legSide(leg), offer.book)} <small>${market === 'nba' ? esc(bookLabel(offer.book)) : currentMarket().label}${book ? '' : ' / best price'}${['kal', 'px'].includes(offer.book) ? ' / after fees' : ''}</small></span>` : `No current ${esc(book ? catalog.books[book] : 'book')} price`}</span>` : ''}</div>
         ${leg ? `<button type="button" class="remove-leg" data-remove="${index}" aria-label="Remove ${esc(title(leg.player))}">&times;</button>` : ''}</div>`;
     }).join('');
   }
@@ -481,17 +513,17 @@
       const refLabel = estimate?.references.map(ref => bookLabel(ref.book)).join(' + ');
       const evCell = `<td class="catalog-ev${displayEV > 0 ? ' positive' : displayEV < 0 ? ' negative' : ''}" title="${esc(refLabel ? `Reference: ${refLabel}${estimate.references.length > 1 ? ' (lower fair probability)' : ''}${estimate.references.some(ref => ref.book === estimate.offer.book) ? ' / Includes the betting book' : ''}` : 'Needs a fresh over/under pair at a selected fair value book')}">
         <strong>${displayEV === null ? '-' : `${displayEV > 0 ? '+' : ''}${displayEV.toFixed(1)}%`}</strong>
-        <small class="ev-offer">${bookLogo(estimate.offer.book)} ${esc(bookLabel(estimate.offer.book))} ${esc(odds(estimate.offer.price))}</small>
+        <small class="ev-offer" title="${['kal', 'px'].includes(estimate.offer.book) ? 'Estimated price after fees' : 'Current selected-side price'}">${bookLogo(estimate.offer.book)} ${esc(bookLabel(estimate.offer.book))} ${esc(odds(estimate.offer.price))}${liquidityMarkup(leg.quotes?.[estimate.offer.book], legSide(leg), estimate.offer.book)}</small>
         <small class="ev-reference">${refLabel ? `vs ${esc(refLabel)}` : 'No fair estimate'}</small></td>`;
       const action = selected >= 0 ? 'Remove' : 'Add';
       const prices = books.map(book => {
-        const quote = leg.quotes?.[book], status = priceStatus(quote), price = currentPrice(quote, legSide(leg));
+        const quote = leg.quotes?.[book], status = priceStatus(quote), price = currentOfferPrice(quote, book, legSide(leg));
         const fresh = ['available', 'Missing under price', 'Missing over price'].includes(status);
         const highest = price !== null && best && !nonBettingBooks.has(book) && decimal(price) === decimal(best.price);
-        const label = `${catalog.books[book]}: ${status === 'available' ? `Updated ${time(quote.updated_at)}` : status}`;
+        const label = `${catalog.books[book]}: ${status === 'available' ? `Updated ${time(quote.updated_at)}` : status}${price !== null && ['kal', 'px'].includes(book) ? ` / ${odds(price)} after fees for the selected side` : ''}`;
         const primary = legSide(leg), other = primary === 'under' ? 'over' : 'under';
-        return `<td class="catalog-price${highest ? ' best-price' : ''}" title="${esc(label)}">${fresh
-          ? `<strong>${validPrice(quote[primary]) ? esc(odds(quote[primary])) : '-'}</strong><small>${validPrice(quote[other]) ? esc(odds(quote[other])) : '-'}</small>`
+        return `<td data-price-column="${esc(book)}" class="catalog-price${predictionBooks.has(book) ? ' prediction-price' : ''}${highest ? ' best-price' : ''}" title="${esc(label)}">${fresh
+          ? `<strong>${validPrice(quote[primary]) ? esc(odds(quote[primary])) : '-'}${liquidityMarkup(quote, primary, book)}</strong><small>${validPrice(quote[other]) ? esc(odds(quote[other])) : '-'}${liquidityMarkup(quote, other, book)}</small>`
           : `<span class="price-unavailable">${status === 'Stale prices' ? 'Stale' : validPrice(quote?.[primary]) ? 'Unavailable' : '-'}</span>`}</td>`;
       }).join('');
       return `<tr data-leg-row="${esc(leg.id)}" class="${selected >= 0 ? 'is-selected' : reason ? 'is-blocked' : ''}">
@@ -629,6 +661,7 @@
         <strong class="parlay-book-odds">${esc(odds(price.odds))}</strong>
         <span class="parlay-book-ev${ev > 0 ? ' positive' : ev < 0 ? ' negative' : ''}">${ev === null ? 'EV -' : `${ev > 0 ? '+' : ''}${ev.toFixed(1)}% EV`}</span>
         ${isBest ? `<span class="book-price-best">${hasEV ? 'Best EV' : 'Best price'}</span>` : `<span class="book-price-note" title="Total payout difference versus the best complete book">${shortfall.toFixed(1)}% vs best</span>`}
+        ${priceLiquidity(price, data.legs)}
       </li>`;
     }).join('');
     notice('book-prices-empty', prices.length ? '' : `No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.`);
@@ -643,7 +676,7 @@
       }).join('')}
       ${data.legs.map((selection, index) => {
         const quote = price.legs.find(leg => leg.id === selection.id) || price.legs[index];
-        return `<td title="${esc(legLabel(selection))} / Updated ${esc(time(quote?.updated_at))}">${esc(odds(quote?.price ?? quote?.[legSide(selection)] ?? null))}</td>`;
+        return `<td title="${esc(legLabel(selection))} / Updated ${esc(time(quote?.updated_at))}">${esc(odds(quote?.price ?? quote?.[legSide(selection)] ?? null))}${liquidityMarkup(quote, legSide(selection), price.book)}</td>`;
       }).join('')}</tr>`).join('') || `<tr><td colspan="${count + 2 + benchmarks.length}">No book has current ${currentMarket().name} prices for every selected leg. Try another player or refresh prices.</td></tr>`;
     $('result-method').textContent = $('method').selectedOptions[0].textContent;
     $('result-selections').textContent = data.legs.map(leg => `${title(leg.player)} ${legLabel(leg)}`).join(' + ');

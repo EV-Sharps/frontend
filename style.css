@@ -675,7 +675,7 @@ html.odds-app #app > main { min-height: 0; }
 		align-items: start;
 	}
 	#devig-modal.devig-window .dv-single-books {
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
 	}
 }
 @media (max-width: 500px) {

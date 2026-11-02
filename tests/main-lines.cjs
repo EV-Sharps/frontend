@@ -21,6 +21,17 @@ test('main triggers accept game markets, partial markets and empty players only'
 	assert.equal(canOpen('main', null), false);
 });
 
+test('NCAAB accepts both player props and game markets without exposing blurred rows', () => {
+	for (const selection of [row({ player: '', prop: 'spread' }), row({ player: '', prop: 'ml' }),
+		row({ player: 'test guard', prop: 'pts' })]) {
+		assert.equal(canOpen('ncaab', selection), true);
+		assert.equal(canOpen('ncaab', { ...selection, blurred: true }), false);
+	}
+	assert.equal(canOpen('ncaab', row({ player: '', prop: 'pts' })), false);
+	assert.equal(canOpen('ncaab', row({ player: 'test guard', prop: 'separator' })), false);
+	assert.equal(canOpen('ncaab', null), false);
+});
+
 test('opposite spread rows merge by away handicap without reversing prices or liquidity', () => {
 	const home = row({ bookOdds: { fd: '-115/-111', px: '/+105' }, liquidity: { px: [999, 250] } });
 	const away = row({ team: 'atl', opp: 'no', handicap: '1.5', under: false,
@@ -95,13 +106,14 @@ function withDialog(callback) {
 	const original = global.document;
 	const nodes = new Map();
 	const node = selector => {
+		if (selector === '.player-lines-content') selector = '.player-lines-lines';
 		if (!nodes.has(selector)) nodes.set(selector, {
 			value: '', innerHTML: '', textContent: '', listeners: {},
 			addEventListener(type, listener) { this.listeners[type] = listener; },
 		});
 		return nodes.get(selector);
 	};
-	const dialog = { innerHTML: '', open: false, querySelector: node,
+	const dialog = { innerHTML: '', open: false, querySelector: node, querySelectorAll: () => [],
 		style: { setProperty() {} }, showModal() { this.open = true; }, close() { this.open = false; } };
 	global.document = { getElementById: () => dialog };
 	try { callback(dialog, node); } finally { global.document = original; }

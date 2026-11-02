@@ -3131,7 +3131,7 @@ function playerLinesName(data, label) {
 
 function openPlayerLines(data) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
-	if (PAGE === 'main') {
+	if (PAGE === 'main' || (PAGE === 'ncaab' && !data.player)) {
 		PlayerLines.open(data, Array.isArray(RES?.data) ? RES.data : [], {
 			mode: 'game', player: String(data.game || data.gameId || '').toUpperCase(), formatOdds: oddsDisplay
 		});
@@ -4230,10 +4230,15 @@ function showHideUserTable(loaded) {
 			// Already-hidden Stacked columns do not emit another hide event.
 			for (const field of ['fairVal', 'book', 'roiRecord']) viewState.visibility[field] = allowed.has(field);
 		}
-		const customColumns = ["ncaaf", "main"].includes(PAGE);
+		const customColumns = ["ncaaf", "ncaab", "main"].includes(PAGE);
 		if (customColumns && !CURR_USER.metadata[`${PAGE}-columns-version`]) {
 			// These columns could not be customized in older saved layouts.
-			["handicap", "prop", "opp"].forEach(field => allowed.add(field));
+			const newControls = PAGE === "ncaab" && CURR_USER.metadata['ncaab-line-column-version']
+				? ["prop", "opp"] : ["handicap", "prop", "opp"];
+			newControls.forEach(field => allowed.add(field));
+			if (PAGE === "ncaab") {
+				["b365", "kal", "nv", "px", "poly"].forEach(book => allowed.add(`bookOdds_${book}`));
+			}
 		}
 		if (!customColumns && !CURR_USER.metadata[`${PAGE}-line-column-version`]) {
 			// Line was always visible before these pages offered its toggle.

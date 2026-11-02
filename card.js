@@ -841,7 +841,8 @@ function updateExistingCard(card, rowData) {
 	} else if (PAGE.includes("ncaa")) {
 		teamImg = gameImg;
 	}
-	if (PAGE === 'main' && typeof PlayerLines !== 'undefined') {
+	const gameMarket = PAGE === 'main' || (PAGE === 'ncaab' && !rowData.player);
+	if (gameMarket && typeof PlayerLines !== 'undefined') {
 		player = PlayerLines.mainMarketLabel(rowData.prop, rowData);
 		if (/(?:^|_)(?:ml|spread)$/.test(rowData.prop)) player = `${String(team || '').toUpperCase()} ${player}`;
 	}
@@ -854,8 +855,8 @@ function updateExistingCard(card, rowData) {
 		}
 	}
 	const lineDisplay = firstBasket ? "First Basket" : liveMain ? liveMain.line
-		: PAGE === 'main' && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
-		: PAGE === 'main' && /(?:^|_)spread$/.test(rowData.prop) ? addPlus(rowData.handicap)
+		: gameMarket && /(?:^|_)ml$/.test(rowData.prop) ? 'ML'
+		: gameMarket && /(?:^|_)spread$/.test(rowData.prop) ? addPlus(rowData.handicap)
 		: `${pre}${rowData.handicap}`;
 	const _starSpan = createWatchlistStar({ ...rowData, under: pre === "u" },
 		{ quotePage: "", applyFees: false })?.outerHTML || "";

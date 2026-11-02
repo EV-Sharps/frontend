@@ -155,6 +155,10 @@
 					  <label><input type="checkbox" value="re"> RE</label>
 				      <label><input type="checkbox" value="kambi"> Kambi</label>
 				      <label><input type="checkbox" value="bol"> BetOnline (BOL)</label>
+				      <label><input type="checkbox" value="kal"> Kalshi</label>
+				      <label><input type="checkbox" value="nv"> Novig</label>
+				      <label><input type="checkbox" value="px"> ProphetX</label>
+				      <label><input type="checkbox" value="poly"> Polymarket</label>
 				      <div class="chkdd-actions">
 				      	<button id="save-exclude" onclick="saveExcludeBooks()">Save choices</button>
 				        <button type="button" data-act="all">All</button>
@@ -274,6 +278,62 @@
 				  <label for="max-odds" class="select-label">Max</label>
 				  <input id="max-odds" type="number" placeholder="" style="width:70px;">
 				</div>
+				<div class="chkdd" id="filterbuilder-dd">
+					<label for="filterbuilder-dd-button" class="select-label">Filter</label>
+					<button id="filterbuilder-dd-button" class="chkdd-btn" type="button" onclick="toggleDropdown('filterbuilder-dd', event)">None</button>
+					<div class="chkdd-menu" id="filterbuilder-options" style="max-height:70vh;overflow-y:auto;width:320px;">
+						<div class="fb-toprow" onclick="event.stopPropagation()">
+							<select id="fb-saved-select">
+								<option value="">Load saved filter...</option>
+							</select>
+							<button type="button" onclick="deleteSavedFilterBuilder()">Delete</button>
+						</div>
+						<div class="fb-toprow" onclick="event.stopPropagation()">
+							<input id="fb-name-input" type="text" placeholder="Filter name">
+							<button type="button" onclick="saveFilterBuilder()">Save As</button>
+						</div>
+						<hr>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-over-enabled"> Liquidity (Prediction Mkts over $)</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-liquidity-over-amount" type="number" value="200" step="50">
+							<select id="fb-liquidity-over-book">
+								<option value="nv">NoVig</option>
+								<option value="px">ProphetX</option>
+								<option value="kal">Kalshi</option>
+								<option value="poly">Polymarket</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-liquidity-enabled"> Liquidity (Prediction Mkts under $)</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-liquidity-amount" type="number" value="200" step="50">
+							<select id="fb-liquidity-book">
+								<option value="nv">NoVig</option>
+								<option value="px">ProphetX</option>
+								<option value="kal">Kalshi</option>
+								<option value="poly">Polymarket</option>
+								<option value="either">Any (NV, PX, or KAL)</option>
+								<option value="both">All (NV, PX, and KAL)</option>
+							</select></div>
+
+						<label onclick="event.stopPropagation()"><input type="checkbox" id="fb-line-enabled"> Line Range</label>
+						<div class="fb-subrow" onclick="event.stopPropagation()">
+							<input id="fb-line-min" type="number" placeholder="Min">
+							<input id="fb-line-max" type="number" placeholder="Max">
+						</div>
+
+						<hr>
+						<div class="chkdd-actions" style="flex-direction:column;gap:6px;align-items:stretch;" onclick="event.stopPropagation()">
+							<div style="display:flex;gap:6px;justify-content:center;">
+								<button type="button" onclick="clearFilterBuilder()">Clear</button>
+								<button type="button" onclick="applyFilterBuilder()">Apply</button>
+							</div>
+							<div style="text-align:center;"><span id="fb-save-status"></span></div>
+						</div>
+					</div>
+				</div>
 				<button id="customize" onclick="openOverlay()">⚙️ Customize</button>
 			</div>
 			<div id="auth-buttons">
@@ -307,8 +367,6 @@
 		</header>
 		<main>
 			<div>
-				<select id="devig-select" aria-hidden="true" style="display:none;"></select>
-
 				<div id="dev-picker" class="book-picker" role="tablist" aria-label="Select devig"></div>
 			</div>
 			<div id="table-container">
@@ -394,6 +452,38 @@
 								<label for="custom_book">EV Book</label>
 							</div>
 							<div>
+								<input id="custom_handicap" type="checkbox" checked>
+								<label for="custom_handicap">Line</label>
+							</div>
+							<div>
+								<input id="custom_prop" type="checkbox" checked>
+								<label for="custom_prop">Prop</label>
+							</div>
+							<div>
+								<input id="custom_opp" type="checkbox" checked>
+								<label for="custom_opp">Opponent</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_b365" type="checkbox" checked>
+								<label for="custom_bookOdds_b365">bet365</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_kal" type="checkbox" checked>
+								<label for="custom_bookOdds_kal">Kalshi</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_nv" type="checkbox" checked>
+								<label for="custom_bookOdds_nv">Novig</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_px" type="checkbox" checked>
+								<label for="custom_bookOdds_px">ProphetX</label>
+							</div>
+							<div>
+								<input id="custom_bookOdds_poly" type="checkbox" checked>
+								<label for="custom_bookOdds_poly">Polymarket</label>
+							</div>
+							<div>
 								<input id="custom_bookOdds_fd" type="checkbox" checked>
 								<label for="custom_bookOdds_fd">Fanduel</label>
 							</div>
@@ -458,14 +548,6 @@
 							<div>
 								<h3>Other</h3>
 								<div>
-									<input id="custom_oppRank" type="checkbox">
-									<label for="custom_oppRank">Opp Rank</label>
-								</div>
-								<div>
-									<input id="custom_oppPosRank" type="checkbox">
-									<label for="custom_oppPosRank">Opp Pos Rank</label>
-								</div>
-								<div>
 									<input id="custom_hitRate" type="checkbox">
 									<label for="custom_hitRate">Hit Rate</label>
 								</div>
@@ -494,7 +576,7 @@
 			</div>
 		</main>
 		<footer class="site-footer">
-			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with NBA. <a href="/disclaimer">Read Full Terms</a></p>
+			<p>All content is for entertainment purposes only. +EV Sharps is not affiliated with the NCAA. <a href="/disclaimer">Read Full Terms</a></p>
 		</footer>
 	</div>
 	<div id="card-modal-overlay">
@@ -509,6 +591,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="page-performance.js"></script>
 	<script type="text/javascript" src="shared.js"></script>
+	<script src="player-lines.js"></script>
 	<script src="auth.js"></script>
 	<script type="text/javascript">
 		PAGE = "ncaab";
@@ -709,8 +792,13 @@
 					},
 					{title: "Opp", field: "opp", formatter: oppFormatter, formatterParams: {is_pitcher: false}, hozAlign: "left", width: 80},
 					{title: `Circa<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["circa"], short=true)}`, field: "bookOdds.circa",  width: 70, sorter: "number", formatter: evOddsFormatter},
+					{title: "Kalshi", field: "bookOdds.kal", width: 88, sorter: "number", formatter: evOddsFormatter},
+					{title: "Novig", field: "bookOdds.nv", width: 88, sorter: "number", formatter: evOddsFormatter},
+					{title: "ProphetX", field: "bookOdds.px", width: 88, sorter: "number", formatter: evOddsFormatter},
+					{title: "Polymarket", field: "bookOdds.poly", width: 88, sorter: "number", formatter: evOddsFormatter},
 					{title: `FD<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["fd"], short=true)}`, field: "bookOdds.fd",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `DK<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["dk"], short=true)}`, field: "bookOdds.dk",  width: 70, sorter: "number", responsive: 6, formatter: evOddsFormatter},
+					{title: "B365", field: "bookOdds.b365", width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `MGM<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["mgm"], short=true)}`, field: "bookOdds.mgm",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `ESPN*<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["espn"], short=true)}`, field: "bookOdds.espn",  width: 70, sorter: "number", formatter: evOddsFormatter},
 					{title: `CZ<br>${timeAgo(UPDATED ? 0 : UPDATED[PAGE]["cz"], short=true)}`, field: "bookOdds.cz",  width: 70, sorter: "number", formatter: evOddsFormatter},

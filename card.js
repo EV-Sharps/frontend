@@ -326,7 +326,14 @@ function cardHitRates(rowData) {
 	return rates;
 }
 
-function renderTrends(trends, prop, { handicap, under = false, history = false, blurred = false } = {}) {
+function cardFairHitRate(fairVal) {
+	if (!['number', 'string'].includes(typeof fairVal) || String(fairVal).trim() === '') return null;
+	const odds = Number(fairVal);
+	if (!Number.isFinite(odds) || Math.abs(odds) < 100) return null;
+	return 100 * (odds > 0 ? 100 / (odds + 100) : -odds / (100 - odds));
+}
+
+function renderTrends(trends, prop, { fairVal, history = false, blurred = false } = {}) {
 	const LABELS = {
 		lyr: "Last Yr",
 		szn: "Year",
@@ -334,8 +341,8 @@ function renderTrends(trends, prop, { handicap, under = false, history = false, 
 		bvt: "vs Opp"
 	};
 	const ORDER = ["lyr", "szn", "L5", "L10", "L20", ...(history ? ["career", "bvt"] : [])];
-	const isAnytimeGoal = prop === 'atgs' && Number(handicap) === 0.5 && !under;
-	const useScoringScale = prop === 'hr' || isAnytimeGoal;
+	// Both fairVal and hitRates already describe the row's selected Over/Under side.
+	const fairRate = blurred ? null : cardFairHitRate(fairVal);
 	const pills = ORDER
 		.filter(k => trends?.[k]?.p != null && trends[k].p !== "" && Number.isFinite(Number(trends[k].p))
 			&& (trends[k].t == null || Number(trends[k].t) > 0))
@@ -346,14 +353,15 @@ function renderTrends(trends, prop, { handicap, under = false, history = false, 
 			const counts = Number.isFinite(Number(w)) && Number(t) > 0 && w != null
 				? `<div class="trend-frac">${Number(w)}/${Number(t)}</div>` : "";
 
-			const tone = useScoringScale
-				? (p >= 30 ? "good" : p >= 15 ? "mid" : "bad")
-				: (p >= 60 ? "good" : p >= 45 ? "mid" : "bad");
+			const gap = fairRate == null ? null : p - fairRate;
+			const tone = gap == null ? '' : Math.abs(gap) < 1e-9 ? 'mid' : gap > 0 ? 'good' : 'bad';
+			const comparison = fairRate == null ? 'Fair value unavailable'
+				: `${p}% hit rate vs ${Number(fairRate.toFixed(2))}% implied by fair value (${Number(fairVal) > 0 ? '+' : ''}${Number(fairVal)}): ${tone === 'mid' ? 'equal' : `${Number(Math.abs(gap).toFixed(2))} percentage points ${gap > 0 ? 'above' : 'below'}`}`;
 
 			return `
 				<div class="trend-pill">
 				  <div class="trend-label">${label}</div>
-				  <div class="trend-box ${tone}${blurred ? ' blurred' : ''}">
+				  <div class="trend-box ${tone}${blurred ? ' blurred' : ''}"${blurred ? '' : ` title="${comparison}" aria-label="${comparison}"`}>
 					${counts}
 					<div class="trend-pct">${p}%</div>
 				  </div>
@@ -1016,7 +1024,7 @@ function updateExistingCard(card, rowData) {
 					<div style="display:flex; justify-content:center; align-items:center;">
 						<div style="opacity:0.9; font-size:0.78rem; font-weight:600;">Trends</div>
 					</div>
-					${renderTrends(cardHitRates(rowData), rowData.prop, { handicap: rowData.handicap, under: pre === 'u', history: ["nba", "pts", "threes", "outliers"].includes(PAGE), blurred: rowData.blurred })}
+					${renderTrends(cardHitRates(rowData), rowData.prop, { fairVal: rowData.fairVal, history: ["nba", "pts", "threes", "outliers"].includes(PAGE), blurred: rowData.blurred })}
 				</div>
 				${renderCardRecord(rowData)}
 				${PAGE === "dingers" ? renderDue(rowData.homerLogs?.pa) : ""}

@@ -355,13 +355,16 @@ function renderTrends(trends, prop, { fairVal, history = false, blurred = false 
 
 			const gap = fairRate == null ? null : p - fairRate;
 			const tone = gap == null ? '' : Math.abs(gap) < 1e-9 ? 'mid' : gap > 0 ? 'good' : 'bad';
+			// Fade from a light tint near fair value to full color at a 20-point gap.
+			const tint = tone === 'good' || tone === 'bad'
+				? ` style="--trend-tint:${(0.12 + 0.63 * Math.min(Math.abs(gap) / 20, 1)).toFixed(3)}"` : '';
 			const comparison = fairRate == null ? 'Fair value unavailable'
 				: `${p}% hit rate vs ${Number(fairRate.toFixed(2))}% implied by fair value (${Number(fairVal) > 0 ? '+' : ''}${Number(fairVal)}): ${tone === 'mid' ? 'equal' : `${Number(Math.abs(gap).toFixed(2))} percentage points ${gap > 0 ? 'above' : 'below'}`}`;
 
 			return `
 				<div class="trend-pill">
 				  <div class="trend-label">${label}</div>
-				  <div class="trend-box ${tone}${blurred ? ' blurred' : ''}"${blurred ? '' : ` title="${comparison}" aria-label="${comparison}"`}>
+				  <div class="trend-box ${tone}${blurred ? ' blurred' : ''}"${tint}${blurred ? '' : ` title="${comparison}" aria-label="${comparison}"`}>
 					${counts}
 					<div class="trend-pct">${p}%</div>
 				  </div>

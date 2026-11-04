@@ -1604,9 +1604,9 @@ html.odds-app #app > main { min-height: 0; }
 }
 
 /* tones */
-.trend-box.good{ background: rgba(0, 160, 70, 0.55); }
+.trend-box.good{ background: rgba(0, 160, 70, var(--trend-tint, 0.55)); }
 .trend-box.mid { background: rgba(0, 110, 200, 0.45); }
-.trend-box.bad { background: rgba(160, 40, 40, 0.55); }
+.trend-box.bad { background: rgba(160, 40, 40, var(--trend-tint, 0.55)); }
 
 .player-prop-row {
 	display: flex;

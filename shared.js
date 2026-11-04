@@ -6876,6 +6876,11 @@ function marketQuoteProbability(value, under) {
 	return odds > 0 ? 100 / (odds + 100) : -odds / (100 - odds);
 }
 
+function hasUnderMarketQuote(row) {
+	return Object.entries(row?.bookOdds || {}).some(([book, value]) =>
+		!(book === 'circa' && row.circa_blurred) && marketQuoteProbability(value, true) !== null);
+}
+
 function marketMedian(values) {
 	const sorted = [...values].sort((a, b) => a - b);
 	const mid = Math.floor(sorted.length / 2);
@@ -7022,6 +7027,7 @@ function passesLiquidityRule(row, config, side, inclusive = false) {
 // DOM element ids for each criterion's fields, keyed by role within that criterion's config object.
 const FB_FIELDS = {
 	marketDisagreements: { enabled: "fb-market-disagreements-enabled" },
+	hideOneWay: { enabled: "fb-hide-one-way-enabled" },
 	liquidity:     { enabled: "fb-liquidity-enabled", book: "fb-liquidity-book", amount: "fb-liquidity-amount" },
 	liquidityOver: { enabled: "fb-liquidity-over-enabled", book: "fb-liquidity-over-book", amount: "fb-liquidity-over-amount" },
 	liquidityEV:   { enabled: "fb-liquidity-ev-enabled", book: "fb-liquidity-ev-book", amount: "fb-liquidity-ev-amount" },
@@ -7180,6 +7186,8 @@ function initFilterBuilderWindow() {
 	const liquidity = menu.querySelector('.fb-liquidity-group');
 	const market = section('Market comparison');
 	market.innerHTML = `
+		<div class="fb-rule"><label class="fb-rule-toggle"><input type="checkbox" id="fb-hide-one-way-enabled" aria-describedby="fb-hide-one-way-help"> Hide over-only rows</label></div>
+		<p id="fb-hide-one-way-help" class="fb-stat-hint">Keep rows with an under price at any book, even if other books only offer the over.</p>
 		<div class="fb-rule"><label class="fb-rule-toggle"><input type="checkbox" id="fb-market-disagreements-enabled" aria-describedby="fb-market-disagreements-help fb-market-disagreements-status"> Show extreme market disagreements</label></div>
 		<p id="fb-market-disagreements-help" class="fb-stat-hint">Hidden by default: a devig price implies over 3&times; the median probability and at least 15 percentage points more, compared with 3+ other sportsbooks. Exchanges are excluded from the consensus.</p>
 		<p id="fb-market-disagreements-status" class="fb-stat-hint" role="status"></p>`;
@@ -7590,6 +7598,7 @@ function applyFilterBuilderToDOM(config) {
 
 function passesFilterBuilder(row, options = {}) {
 	const c = FB_CONFIG;
+	if (c.hideOneWay?.enabled && !hasUnderMarketQuote(row)) return false;
 	for (const [type, field, defaultMin] of [['teamTotal', 'teamTotal', teamTotalDefaultMin()], ['ttoi', 'avgTOI', 20]]) {
 		if (!c[type]?.enabled) continue;
 		const min = numFrom(c[type].min) ?? defaultMin;

@@ -43,6 +43,28 @@ for(const prop of ['pts','reb','ast','3ptm']) test(`${prop} keeps exact over/und
   assert.equal(id.line,'2.5');assert.equal(id.player,'jayson tatum');assert.equal(id.selected,'under');
   assert.deepEqual(Array.from(id.labels),['Over 2.5','Under 2.5']);
 });
+
+test('double-double maps Yes/No to the binary half-point ladder for each exchange',async()=>{
+  for(const book of ['nv','kal','px']) {
+    const h=harness(),f=fixture('dd','0.500',true),id=h.depth.identity(f.row,f.payload);
+    // Metadata and snapshot keys use the canonical numeric line.
+    f.payload.propDepthAvailable[f.row.game].dd[f.row.player]['0.5']=f.payload.propDepthAvailable[f.row.game].dd[f.row.player]['0.500'];
+    f.result.line=f.result.entry.line='0.5';
+    assert.equal(id.line,'0.5');assert.equal(id.selected,'under');assert.equal(id.title,'Double-double');
+    assert.deepEqual(Array.from(id.labels),['Double-double','No double-double']);
+    assert.deepEqual(Array.from(id.outcomes),['Yes','No']);
+    assert.equal((await loaded(h,f,book)).available,true);
+    assert.equal(h.requests[0].url.searchParams.get('prop'),'dd');
+    assert.equal(h.requests[0].url.searchParams.get('line'),'0.5');
+    const take=h.depth.collect(f.row,f.payload,{book}),rest=h.depth.collect(f.row,f.payload,{book,mode:'resting'});
+    assert.deepEqual(Array.from(take.sides,side=>side.total),[40,70]);
+    assert.deepEqual(Array.from(rest.sides,side=>side.total),[30,60]);
+    assert.ok(h.depth.render(take).includes('No double-double'));
+    assert.ok(!h.depth.render(take).includes('Over 0.5'));
+    for(const handicap of [0,1,1.5,24.5])assert.equal(h.depth.identity({...f.row,handicap},f.payload),null);
+    assert.equal(h.depth.inspect({...f.row,prop:'pts'},f.payload,book).available,false);
+  }
+});
 test('refuses unsupported periods, blurred rows, bad dates, absent starts and kickoff',()=>{
   const h=harness(),f=fixture();
   for(const changes of [{prop:'pts+reb+ast'},{prop:'ml'},{player:''},{player:'../x'},{handicap:24},{blurred:true},{date:'2026-10-29'},{dt:'2026-10-27'},{handicap:''},{game:'wrong'},{sport:'soccer'}])

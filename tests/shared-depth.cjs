@@ -27,7 +27,7 @@ function harness() {
 function fixture(kind='nba', prop, under=false) {
   const main = kind === 'main';
   prop ||= main ? 'spread' : 'pts';
-  const handicap = prop === 'ml' ? .5 : prop.includes('total') ? 5.5 : main ? (under ? 1.5 : -1.5) : 24.5;
+  const handicap = ['ml','dd'].includes(prop) ? .5 : prop.includes('total') ? 5.5 : main ? (under ? 1.5 : -1.5) : 24.5;
   const line = String(prop === 'spread' && under ? -handicap : handicap);
   const row = {sport:main?'nhl':'nba',player:main?'':'jayson tatum',prop,game:main?'tor @ bos':'bos @ ny',
     team:main?(under?'bos':'tor'):'bos',opp:main?(under?'tor':'bos'):'ny',handicap,under,dt:'2026-10-28',
@@ -81,6 +81,23 @@ for(const prop of ['pts','reb','ast','3ptm'])test(`shared NBA ${prop} keeps exac
   const h=harness(),f=fixture('nba',prop);await loaded(h,f);
   for(const changes of [{player:'jaylen brown'},{prop:'ml'},{handicap:25.5},{game:'ny @ bos'},{blurred:true}])
     assert.equal(h.depth.inspect({...f.row,...changes},f.payload,{book:'nv'}).available,false);
+});
+
+test('shared double-double depth uses Yes/No labels and the exact NBA adapter',async()=>{
+  for(const book of ['nv','kal','px'])for(const under of [false,true]) {
+    const h=harness(),f=fixture('nba','dd',under),got=await loaded(h,f,book);
+    assert.equal(got.available,true);assert.equal(got.side,under?'under':'over');
+    assert.equal(h.requests[0].url.pathname,'/api/nba-prop-depth');
+    assert.equal(h.requests[0].url.searchParams.get('prop'),'dd');
+    assert.equal(h.requests[0].url.searchParams.get('line'),'0.5');
+    assert.deepEqual(Array.from(got.market.outcomes),['Yes','No']);
+    assert.deepEqual(Array.from(got.availableBooks,b=>b.orders[0].stake_usd),[40,70]);
+    const html=h.depth.renderResult(got),preview=h.depth.renderPreview(got,f.row);
+    for(const label of ['Double-double','No double-double']) {
+      assert.ok(html.includes(label));assert.ok(preview.includes(label));
+    }
+    assert.ok(!html.includes('Over 0.5'));assert.ok(!html.includes('Under 0.5'));
+  }
 });
 
 for(const prop of ['ml','total','away_total','home_total'])test(`shared main ${prop} uses correct labels and mapping`,async()=>{

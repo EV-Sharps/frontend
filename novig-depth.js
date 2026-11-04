@@ -40,7 +40,7 @@
   // All pages share the same preview, chart and maker/taker presentation here.
   function adapterFor(row) {
     if (['ml', 'spread', 'total', 'away_total', 'home_total'].includes(row?.prop)) return root.MainDepth;
-    if (['pts', 'reb', 'ast', '3ptm'].includes(row?.prop)) return root.NBAPropDepth;
+    if (['pts', 'reb', 'ast', '3ptm', 'dd'].includes(row?.prop)) return root.NBAPropDepth;
     return null;
   }
 
@@ -49,7 +49,7 @@
     if (!adapter) return scorerMarket(row);
     const identity = adapter.identity(row, payload, options);
     return identity ? {...identity, yes: identity.labels[0], no: identity.labels[1],
-      outcomes: identity.sides[0] === 'away' ? ['Away', 'Home'] : ['Over', 'Under']} : null;
+      outcomes: identity.outcomes || (identity.sides[0] === 'away' ? ['Away', 'Home'] : ['Over', 'Under'])} : null;
   }
 
   function numberFraction(value) {
@@ -79,7 +79,8 @@
       reason: result.reason || (result.status === 'loading' ? `Loading ${provider.name} order book…` : `${provider.name} order book has not been loaded.`)};
     const now = options.now ?? Date.now(), updated = options.updated || payload.updated;
     // The adapters return canonical away/home or over/under order, independent of
-    // the clicked row. Map those to the two common chart slots, never to Yes/No.
+    // the clicked row. Map those to the two common chart slots; the market
+    // identity supplies the displayed Over/Under or Yes/No labels.
     const entry = {...result.entry, sides: result.entry.sides.map((item, index) => ({...item,
       side: index ? 'under' : 'over', orders: adapterOrders(item.orders)}))};
     const selected = entry.sides.find(item => item.side === side);

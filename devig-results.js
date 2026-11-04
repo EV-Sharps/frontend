@@ -372,6 +372,81 @@
     }
     return data;
   }
+  async function resolveReport(data, { expectedSport, fetchPart, signal } = {}) {
+    const checkAbort = () => {
+      if (signal?.aborted) {
+        const error = new Error('The results request was cancelled.');
+        error.name = 'AbortError';
+        throw error;
+      }
+    };
+    checkAbort();
+    if (data?.version !== 3) return validateReport(data, expectedSport);
+    const invalid = () => { throw new Error('The published report has invalid result parts. Please refresh after it is rebuilt.'); };
+    if (data.report_encoding !== 'chunked-indexed-v1' || !supportedSports.includes(data.sport)
+      || (expectedSport && data.sport !== expectedSport) || !data.report || data.report.version !== 1
+      || data.report.sport !== data.sport || !Array.isArray(data.parts) || typeof fetchPart !== 'function') invalid();
+    const shell = validateReport(data.report, data.sport);
+    const baseSource = shell.price_source || 'archive';
+    const shells = { [baseSource]: shell };
+    if (shell.opening_report !== undefined) shells.opening = shell.opening_report;
+    for (const source of Object.values(shells)) {
+      if (source.version !== 1 || source.cells.length || (source.best_cells || []).length) invalid();
+    }
+    // Object-key order is not part of the JSON metadata contract.
+    const stable = value => value && typeof value === 'object'
+      ? Array.isArray(value) ? value.map(stable)
+        : Object.fromEntries(Object.keys(value).sort().map(key => [key, stable(value[key])]))
+      : value;
+    const metadata = report => {
+      const { cells, best_cells, opening_report, ...rest } = report;
+      return JSON.stringify(stable(rest));
+    };
+    const expectedMetadata = Object.fromEntries(Object.entries(shells).map(([source, report]) => [source, metadata(report)]));
+    for (const part of data.parts) {
+      if (!part || !['archive', 'opening'].includes(part.source) || !shells[part.source]
+        || typeof part.digest !== 'string' || !/^[a-f0-9]{64}$/.test(part.digest)
+        || part.dataset !== `devig_results_${data.sport}_part_${part.digest}`
+        || !['cells', 'best_cells'].every(key => Number.isSafeInteger(part[key]) && part[key] >= 0)
+        || !Number.isSafeInteger(part.raw_bytes) || part.raw_bytes <= 0 || part.raw_bytes > 128 * 1024 * 1024
+        || !Number.isSafeInteger(part.gzip_bytes) || part.gzip_bytes <= 0 || part.gzip_bytes > 16 * 1024 * 1024
+        || (part.best_cells && shells[part.source].best_cells === undefined)) invalid();
+    }
+    const decoded = new Array(data.parts.length);
+    let cursor = 0, failed = false;
+    const worker = async () => {
+      while (!failed && cursor < data.parts.length) {
+        const index = cursor++, descriptor = data.parts[index];
+        try {
+          checkAbort();
+          const part = await fetchPart(descriptor);
+          checkAbort();
+          if (!part || part.version !== 2 || part.cell_encoding !== 'indexed-v1' || part.opening_report !== undefined) invalid();
+          const report = validateReport(part, data.sport);
+          if ((report.price_source || 'archive') !== descriptor.source
+            || metadata(report) !== expectedMetadata[descriptor.source]
+            || report.cells.length !== descriptor.cells || (report.best_cells || []).length !== descriptor.best_cells) invalid();
+          decoded[index] = report;
+        } catch (error) {
+          failed = true;
+          throw error;
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, data.parts.length) }, worker));
+    checkAbort();
+    const assembled = Object.fromEntries(Object.entries(shells).map(([source, report]) => [source, {
+      ...report, cells: [], ...(report.best_cells !== undefined ? { best_cells: [] } : {}),
+    }]));
+    // Requests finish independently, but sums and tie-breaks retain publication order.
+    for (let index = 0; index < decoded.length; index++) {
+      const destination = assembled[data.parts[index].source];
+      for (const row of decoded[index].cells) destination.cells.push(row);
+      for (const row of decoded[index].best_cells || []) destination.best_cells.push(row);
+    }
+    if (shell.opening_report !== undefined) assembled[baseSource].opening_report = assembled.opening;
+    return validateReport(assembled[baseSource], data.sport);
+  }
   function csvField(value) {
     let text = String(value ?? '');
     // Keep spreadsheet programs from executing arbitrary string dimensions.
@@ -394,7 +469,7 @@
     }
     return rows.map(row => row.map(csvField).join(',')).join('\r\n') + '\r\n';
   }
-  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, nflMarketLabel, nbaMarketLabel, normalizeReport, validateReport, exportCSV, supportsKelly, reportForSource };
+  const api = { aggregate, buildView, buildPerformers, shareBuckets, defaultStrategy, dateRange, availableDates, chartDates, easternDate, presetRange, sportFromSearch, configDescription, goalMarketLabel, nflMarketLabel, nbaMarketLabel, normalizeReport, validateReport, resolveReport, exportCSV, supportsKelly, reportForSource };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DevigResults = api;
   if (typeof document === 'undefined') return;
@@ -879,7 +954,7 @@
     const requestedSport = sport;
     controller = new AbortController();
     const activeController = controller;
-    const timeout = setTimeout(() => activeController.abort(), 20000);
+    const timeout = setTimeout(() => activeController.abort(), 120000);
     $('refresh').disabled = true;
     $('report-content').setAttribute('aria-busy', 'true');
     pending = (async () => {
@@ -889,12 +964,26 @@
         if ([401, 403].includes(response.status)) { deny(response.status); return; }
         if (response.status === 404 || response.status === 503) throw new Error(`No ${requestedSport.toUpperCase()} devig report has been published yet. Results appear after the archived report is built.`);
         if (!response.ok) throw new Error('Unable to load the published results. Please try again.');
-        const data = await response.json();
+        const data = await resolveReport(await response.json(), {
+          expectedSport: requestedSport, signal: activeController.signal,
+          fetchPart: async part => {
+            const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=${requestedSport}&part=${encodeURIComponent(part.dataset)}`, {
+              headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}, cache: 'no-store', signal: activeController.signal,
+            });
+            if (!response.ok) {
+              const error = new Error('Unable to load all published results. Please refresh to try again.');
+              error.status = response.status;
+              throw error;
+            }
+            return response.json();
+          },
+        });
         if (version !== authVersion) return;
         acceptReport(data);
         notice('request-status', '');
       } catch (error) {
         if (version !== authVersion) return;
+        if ([401, 403].includes(error.status)) { deny(error.status); return; }
         const message = error.name === 'AbortError' ? 'The request timed out. Please refresh to try again.' : error.message;
         notice('request-status', report ? `Showing the previously loaded report. ${message}` : message);
         if (!report) $('generated').textContent = 'Report unavailable';

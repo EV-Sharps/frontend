@@ -4,8 +4,8 @@
   const AGE = 300000, BOOKS = ['nv', 'kal', 'px'];
   const NAMES = {nv: 'Novig', kal: 'Kalshi', px: 'ProphetX'};
   const SPORTS = ['nba'];
-  const PROPS = ['pts', 'reb', 'ast', '3ptm'];
-  const TITLES = {pts:'Points',reb:'Rebounds',ast:'Assists','3ptm':'Threes'};
+  const PROPS = ['pts', 'reb', 'ast', '3ptm', 'dd'];
+  const TITLES = {pts:'Points',reb:'Rebounds',ast:'Assists','3ptm':'Threes',dd:'Double-double'};
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
   const number = value => (typeof value === 'number' || typeof value === 'string') && /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(String(value).trim()) && Number.isFinite(Number(value)) ? Number(value) : null;
   const timestamp = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/i.test(value) ? Date.parse(value) : NaN;
@@ -30,13 +30,14 @@
     const player = row.player;
     if (typeof player !== 'string' || player.length > 100 || !/^[a-z][a-z .'-]*[a-z]$/.test(player)) return null;
     const value = number(row.handicap);
-    if (value === null || value <= 0 || value >= 200 || value % 1 !== .5) return null;
+    if (value === null || value <= 0 || value >= 200 || value % 1 !== .5 || (row.prop === 'dd' && value !== .5)) return null;
     const line = lineKey(value);
     const start = payload.times?.[row.game], starts = timestamp(start), now = options.now ?? Date.now();
     if (!Number.isFinite(starts) || starts <= now) return null;
     if ((row.dt && row.dt !== easternDate(starts)) || (row.date && row.date !== easternDate(starts))) return null;
-    const sides = ['over', 'under'], labels = [`Over ${line}`, `Under ${line}`];
-    return {sport, game:row.game, player, prop:row.prop, line, start, starts, sides, labels, title:TITLES[row.prop],
+    const sides = ['over', 'under'], labels = row.prop === 'dd' ? ['Double-double', 'No double-double'] : [`Over ${line}`, `Under ${line}`];
+    const outcomes = row.prop === 'dd' ? ['Yes', 'No'] : ['Over', 'Under'];
+    return {sport, game:row.game, player, prop:row.prop, line, start, starts, sides, labels, outcomes, title:TITLES[row.prop],
       selected:row.under === true || row.under === 1 ? 'under' : 'over'};
   }
 

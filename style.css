@@ -3043,6 +3043,15 @@ nav {
 .player-lines-liquidity { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: #a5b9cc; font-size: 10px; font-weight: 400; }
 .player-lines-price.is-best > span { color: #5ee6a0; font-weight: 700; }
 .player-lines-empty { padding: 12px 22px 28px; color: #a5b9cc; font-size: 13px; }
+#player-lines-dialog tr[data-comparison-line] { cursor: pointer; }
+#player-lines-dialog tr[data-comparison-line]:hover > *,
+#player-lines-dialog tr[data-comparison-line]:focus-visible > * { background: #25445d; }
+#player-lines-dialog tr[data-comparison-line]:focus-visible { outline: 2px solid #9bd0ff; outline-offset: -2px; }
+.player-lines-navigation-status { margin: 0; padding: 8px 12px; color: #ffd695; font-size: 12px; }
+#table .tabulator-row.player-line-target { outline: 2px solid #9bd0ff; outline-offset: -2px; }
+#player-line-reveal-notice { box-sizing: border-box; display: flex; flex: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding: 8px 12px; background: #1a3249; color: #e1f1ff; font-size: 12px; }
+#player-line-reveal-notice button { border: 1px solid #80bde9; border-radius: 4px; background: #132537; color: #e1f1ff; padding: 6px 10px; font: inherit; cursor: pointer; }
+#player-line-reveal-notice button:focus-visible { outline: 2px solid #9bd0ff; outline-offset: 2px; }
 @media (max-width: 600px) {
 	#player-lines-dialog { border-radius: 7px; }
 	#player-lines-dialog .player-lines-close { width: 36px; height: 36px; }

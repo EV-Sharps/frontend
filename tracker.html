@@ -234,6 +234,15 @@
 		margin-top: 0.3rem;
 	}
 	#mobile-table-toggle { display: none; }
+	.tracker-trending-play {
+		display: inline-flex; align-items: baseline; gap: 6px;
+		background: var(--bg-secondary, #1e2130); border: 1px solid var(--border, #374151);
+		border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap;
+		font: inherit; color: inherit;
+	}
+	.tracker-trending-market { color: var(--accent, #77c3ff); font-size: 0.92em; }
+	.tracker-trending-count { color: var(--text-muted, #6b7280); }
+	.tracker-trending-play:focus-visible { outline: 2px solid var(--accent, #77c3ff); outline-offset: 2px; }
 	@media (max-width: 768px) {
 		#tracker-search-wrap {
 			overflow: auto;
@@ -734,39 +743,91 @@
 		window.addEventListener("pagehide", () => { trackerPageShown = false; pauseTrackerRefresh(); });
 		window.addEventListener("pageshow", () => { trackerPageShown = true; resumeTrackerRefresh(); });
 
-		async function fetchPopularWatchlist({ signal, current = trackerIsVisible } = {}) {
+		async function fetchPopularPlays(kind, { signal, current = trackerIsVisible } = {}) {
 			if (!current()) return;
 			const today = new Date().toISOString().slice(0, 10);
-			let request = SB.rpc('popular_watchlist', { lim: 15, dt: today });
-			if (signal && typeof request.abortSignal === "function") request = request.abortSignal(signal);
-			const { data, error } = await request;
+			const watchlist = kind === 'watchlist';
+			const request = name => {
+				let query = SB.rpc(name, { lim: 15, dt: today });
+				if (signal && typeof query.abortSignal === 'function') query = query.abortSignal(signal);
+				return query;
+			};
+			let { data, error } = await request(watchlist ? 'popular_watchlist_plays' : 'popular_bet_plays');
+			// Older deployments can continue showing their player-only rankings until the SQL is applied.
+			if (current() && ['PGRST202', '42883'].includes(error?.code)) {
+				({ data, error } = await request(watchlist ? 'popular_watchlist' : 'popular_bets'));
+			}
 			if (!current() || error) return;
-			const list = document.getElementById("popular-watchlist-list");
+			const list = document.getElementById(watchlist ? 'popular-watchlist-list' : 'popular-bets-list');
 			if (!list) return;
-			list.innerHTML = (data || []).map(({ player, count }) => {
-				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
-				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users watching" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
-			}).join("");
+			const fragment = document.createDocumentFragment();
+			for (const entry of Array.isArray(data) ? data : []) {
+				const play = trendingPlay(entry);
+				if (!play.player) continue;
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'tracker-trending-play';
+				const name = document.createElement('span');
+				name.textContent = title(play.player);
+				button.appendChild(name);
+				const label = trendingMarketLabel(play);
+				if (label) {
+					const market = document.createElement('span');
+					market.className = 'tracker-trending-market';
+					market.textContent = label;
+					button.appendChild(market);
+				}
+				const count = document.createElement('span');
+				count.className = 'tracker-trending-count';
+				count.textContent = Number.isFinite(Number(entry.count)) ? String(Number(entry.count)) : '';
+				button.appendChild(count);
+				button.title = `${name.textContent}${label ? ` - ${label}` : ''}${play.game ? ` - ${play.game.toUpperCase()}` : ''}: ${count.textContent} users ${watchlist ? 'watching' : 'tracking'}`;
+				button.addEventListener('click', () => popularBetClick(play));
+				fragment.appendChild(button);
+			}
+			list.replaceChildren(fragment);
 		}
 
-		async function fetchPopularBets({ signal, current = trackerIsVisible } = {}) {
-			if (!current()) return;
-			const today = new Date().toISOString().slice(0, 10);
-			let request = SB.rpc('popular_bets', { lim: 15, dt: today });
-			if (signal && typeof request.abortSignal === "function") request = request.abortSignal(signal);
-			const { data, error } = await request;
-			if (!current() || error) return;
-			const list = document.getElementById("popular-bets-list");
-			if (!list) return;
-			list.innerHTML = (data || []).map(({ player, count }) => {
-				const label = player.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
-				return `<span style="background:var(--bg-secondary,#1e2130);border:1px solid var(--border,#374151);border-radius:4px;padding:1px 7px;cursor:pointer;white-space:nowrap;" title="${count} users tracking" onclick="popularBetClick('${player}')">${label} <span style="color:var(--text-muted,#6b7280)">${count}</span></span>`;
-			}).join("");
+		function fetchPopularWatchlist(options) { return fetchPopularPlays('watchlist', options); }
+		function fetchPopularBets(options) { return fetchPopularPlays('bets', options); }
+
+		function trendingPlay(entry) {
+			const quote = entry.quote && typeof entry.quote === 'object' ? entry.quote : entry;
+			return {
+				player: String(entry.player || '').toLowerCase().trim(),
+				sport: watchlistSport(entry.sport), page: entry.page || '',
+				prop: entry.prop ? String(entry.prop).toLowerCase().trim() : entry.page ? watchlistProp(entry) : '',
+				handicap: watchlistQuoteNumber(quote.handicap),
+				under: typeof quote.under === 'boolean' ? quote.under : null,
+				game: quote.game || entry.game || ''
+			};
 		}
 
-		function popularBetClick(player) {
-			const row = ALL_ROWS.find(r => (r.player || "").toLowerCase().trim() === player);
-			if (row) openAddBet(row);
+		function trendingMarketLabel(play) {
+			if (!play.prop && play.handicap == null) return '';
+			const prop = play.prop ? convertProp(play.prop) : 'Prop unavailable';
+			if (/(?:^|_)ml$/.test(play.prop)) return prop;
+			if (play.handicap == null) return `${prop} (line unavailable)`;
+			const prefix = /(?:^|_)spread$/.test(play.prop) ? (play.handicap > 0 ? '+' : '')
+				: play.under == null ? '' : play.under ? 'u' : 'o';
+			return `${prefix}${play.handicap} ${prop}`;
+		}
+
+		function popularBetClick(entry) {
+			const play = trendingPlay(typeof entry === 'string' ? { player: entry } : entry);
+			if (!play.prop || play.handicap == null || play.under == null || !play.sport) {
+				// A player-only legacy ranking must not choose an arbitrary prop or alternate line.
+				const search = document.getElementById('tracker-search');
+				search.value = play.player;
+				search.focus();
+				search.dispatchEvent(new Event('input', { bubbles: true }));
+				return;
+			}
+			const matches = ALL_ROWS.filter(row => !row.blurred && _normPlayer(row.player) === play.player
+				&& watchlistSport(row.sport || 'mlb') === play.sport && String(row.prop || '').toLowerCase() === play.prop
+				&& trackerQuoteMatches(play, row));
+			const row = matches.find(row => (row.watchlistPage || row.page) === play.page) || matches[0];
+			openAddBet(row || { ...play, watchlistPage: play.page || play.sport, bookOdds: {} });
 		}
 
 		function refreshTable() {

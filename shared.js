@@ -3129,6 +3129,75 @@ function playerLinesName(data, label) {
 	return `<button type="button" class="player-lines-trigger" aria-haspopup="dialog" title="Compare all lines and prices">${PlayerLines.escape(label)}</button>`;
 }
 
+let playerLineReveal = null;
+
+function restorePlayerLineTable(render = true) {
+	const saved = playerLineReveal;
+	if (!saved) return;
+	playerLineReveal = null;
+	document.getElementById('player-line-reveal-notice')?.remove();
+	if (typeof TABLE === 'undefined' || saved.table !== TABLE) return;
+	TABLE.clearFilter(true);
+	TABLE.setFilter(saved.filters);
+	saved.headers.forEach(filter => TABLE.setHeaderFilterValue(filter.field, filter.value));
+	if (render) {
+		if (typeof changeFilter === 'function') return changeFilter();
+		return TABLE.replaceData(saved.data);
+	}
+}
+
+async function revealPlayerLine(selected, line, side = null, options = {}) {
+	if (typeof TABLE === 'undefined' || !TABLE || typeof PlayerLines === 'undefined') {
+		throw new Error('The main table is not available on this page.');
+	}
+	const source = typeof RES !== 'undefined' && Array.isArray(RES?.data) ? RES.data : TABLE.getData();
+	const target = PlayerLines.findRow(selected, source, line, side, options);
+	if (!target) throw new Error('This line or side has comparison prices only, or is no longer available in the table.');
+	await restorePlayerLineTable();
+	if (CURRENT_VIEW === 'mobile' && typeof changeView === 'function') await changeView('table');
+	const findComponent = range => {
+		const rows = TABLE.getRows(range);
+		const data = PlayerLines.findRow(selected, rows.map(row => row.getData()), line, !!target.under, options);
+		return rows.find(row => row.getData() === data);
+	};
+	let row = findComponent('active');
+	if (!row) {
+		playerLineReveal = { table: TABLE, data: TABLE.getData(), filters: TABLE.getFilters(), headers: TABLE.getHeaderFilters() };
+		TABLE.clearFilter(true);
+		await TABLE.setData([target]);
+		row = findComponent('active');
+		const notice = document.createElement('div');
+		notice.id = 'player-line-reveal-notice';
+		notice.setAttribute('role', 'status');
+		const message = document.createElement('span');
+		message.textContent = 'Showing a line outside your current filters.';
+		const back = document.createElement('button');
+		back.type = 'button';
+		back.textContent = 'Back to filtered results';
+		back.onclick = () => restorePlayerLineTable();
+		notice.append(message, back);
+		TABLE.element.before(notice);
+	}
+	if (!row) throw new Error('This line is no longer available in the table.');
+	const groups = [];
+	for (let group = row.getGroup?.(); group; group = group.getParentGroup?.()) groups.unshift(group);
+	groups.forEach(group => group.show());
+	if (TABLE.options.pagination) await row.pageTo();
+	options.beforeReveal?.();
+	document.getElementById('card-modal-overlay')?.classList.remove('open');
+	document.querySelectorAll('dialog.player-history-dialog[open]').forEach(dialog => dialog.close());
+	// Let dialog close handlers finish restoring focus before focusing the destination.
+	await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+	await TABLE.scrollToRow(row, 'center', false);
+	const element = row.getElement();
+	document.querySelectorAll('.player-line-target').forEach(previous => previous.classList.remove('player-line-target'));
+	element.classList.add('player-line-target');
+	element.setAttribute('tabindex', '-1');
+	element.focus({ preventScroll: true });
+	clearTimeout(element.playerLineHighlightTimer);
+	element.playerLineHighlightTimer = setTimeout(() => element.classList.remove('player-line-target'), 4500);
+}
+
 function openPlayerLines(data) {
 	if (typeof PlayerLines === "undefined" || !PlayerLines.canOpen(PAGE, data)) return;
 	if (PAGE === 'main' || (PAGE === 'ncaab' && !data.player)) {

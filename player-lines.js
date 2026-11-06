@@ -71,6 +71,16 @@
 		return [...props];
 	}
 
+	// Resolve only real feed rows; quote-only comparison rows cannot supply EV/logs.
+	function findRow(selected, rows, line, side = null, options = {}) {
+		if (!selected || selected.blurred || line == null || String(line).trim() === '' || !Number.isFinite(Number(line))) return null;
+		const matches = rows.filter(row => row && !row.blurred && row.prop !== 'separator'
+			&& row.prop === selected.prop && sameSelection(selected, row, options)
+			&& comparisonLine(row, options) === Number(line));
+		const under = side == null ? !!selected.under : side === true || side === 1 || side === '1';
+		return matches.find(row => !!row.under === under) || (side == null ? matches[0] : null) || null;
+	}
+
 	function collect(selected, rows, options = {}) {
 		const byLine = new Map();
 		const availableBooks = new Set();
@@ -126,26 +136,26 @@
 		const lineLabel = line => moneyline ? "ML" : spread
 			? `${labels[0]} ${signedLine(line)} / ${labels[1]} ${signedLine(-line)}` : String(line);
 		const lineHtml = line => spread ? [line, -line].map((value, side) =>
-			`<span class="player-lines-price" title="${escape(labels[side])} ${signedLine(value)}">${signedLine(value)}</span>`).join("") : escape(lineLabel(line));
+			`<span class="player-lines-price" data-line-side="${side}" title="${escape(labels[side])} ${signedLine(value)}">${signedLine(value)}</span>`).join("") : escape(lineLabel(line));
 		const priceHtml = (entry, book, side) => {
 			const price = entry.prices.get(book)?.[side] ?? null;
-			if (price === null) return '<span class="player-lines-price is-missing" aria-hidden="true"></span>';
+			if (price === null) return `<span class="player-lines-price is-missing" data-line-side="${side}" aria-hidden="true"></span>`;
 			const display = escape(options.formatOdds(price > 0 ? `+${price}` : String(price)));
 			const best = payout(price) === entry.best[side];
 			const amount = entry.liquidity.get(book)?.[side] ?? null;
 			const liquidity = amount === null ? '' : `<small class="player-lines-liquidity" title="${escape(labels[side])} liquidity: $${amount.toLocaleString('en-US')}">($${amount.toLocaleString('en-US')})</small>`;
-			return `<span class="player-lines-price${best ? " is-best" : ""}"><span title="${escape(labels[side])}${best ? ' · Highest listed price' : ''}">${display}</span>${liquidity}</span>`;
+			return `<span class="player-lines-price${best ? " is-best" : ""}" data-line-side="${side}"><span title="${escape(labels[side])}${best ? ' · Highest listed price' : ''}">${display}</span>${liquidity}</span>`;
 		};
 		const selectedLine = line => line === comparisonLine(selected, options);
 		const columnWidth = book => predictionBooks.has(book) ? 104 : 64;
 		const tableWidth = 44 + books.reduce((width, book) => width + columnWidth(book), 0);
 		const legend = spread || moneyline ? `${escape(labels[0])} above / ${escape(labels[1])} below.` : "Over above / under below.";
-		const table = lines.length && books.length ? `<p id="player-lines-legend" class="player-lines-legend">${legend} Green = highest price. ($) = liquidity.</p><div class="player-lines-scroll" tabindex="0" role="region" aria-label="Prices by sportsbook and line">
+		const table = lines.length && books.length ? `<p id="player-lines-legend" class="player-lines-legend">${legend} Green = highest price. ($) = liquidity. Click a line to find it in the table; click a price to choose its side.</p><div class="player-lines-scroll" tabindex="0" role="region" aria-label="Prices by sportsbook and line">
 			<table style="width:${tableWidth}px" aria-label="Line comparison" aria-describedby="player-lines-legend">
 			<colgroup><col style="width:44px">${books.map(book => `<col style="width:${columnWidth(book)}px">`).join("")}</colgroup>
 			<thead><tr><th scope="col">Line</th>${books.map(book => `<th scope="col"><span class="player-lines-book" title="${escape(book.toUpperCase())}">${bookOrder.includes(book) ? `<img src="logos/${book}.png" alt="" width="14" height="14">` : ""}${escape(book.toUpperCase())}</span></th>`).join("")}</tr></thead>
-			<tbody>${lines.map(entry => `<tr${selectedLine(entry.line) ? ' class="is-selected"' : ""}><th scope="row"${selectedLine(entry.line) ? ' aria-label="Selected line ' + escape(lineLabel(entry.line)) + '"' : ""}>${lineHtml(entry.line)}</th>${books.map(book => `<td>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : `<p class="player-lines-empty">No prices are available for this ${game ? "game and market" : "player and prop"}.</p>`;
-		return { html: table, width: Math.max(520, tableWidth + 2), count: books.length ? lines.length : 0 };
+			<tbody>${lines.map(entry => `<tr data-comparison-line="${entry.line}" tabindex="0" aria-label="Find ${escape(lineLabel(entry.line))} in the table"${selectedLine(entry.line) ? ' class="is-selected"' : ""}><th scope="row"${selectedLine(entry.line) ? ' aria-label="Selected line ' + escape(lineLabel(entry.line)) + '"' : ""}>${lineHtml(entry.line)}</th>${books.map(book => `<td>${priceHtml(entry, book, 0)}${priceHtml(entry, book, 1)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : `<p class="player-lines-empty">No prices are available for this ${game ? "game and market" : "player and prop"}.</p>`;
+		return { html: table, width: tableWidth, count: books.length ? lines.length : 0 };
 	}
 
 	const depthScripts = new Map();
@@ -247,12 +257,43 @@
 		const select = dialog.querySelector('#player-lines-prop');
 		select.value = selected.prop;
 		let view = !game && ['movement', 'depth'].includes(options.initialView) ? options.initialView : 'lines';
+		let navigating = false;
 		const renderProp = () => {
 			destroyDepth();
 			const current = { ...selected, prop: select.value, handicap: select.value === selected.prop ? selected.handicap : null };
 			const table = comparisonTable(current, rows, options);
 			const linesHost = dialog.querySelector('.player-lines-lines'), depthHost = dialog.querySelector('.player-lines-depth');
 			linesHost.innerHTML = table.html;
+			const navigationStatus = root.document.createElement('p');
+			navigationStatus.id = 'player-lines-navigation-status';
+			navigationStatus.className = 'player-lines-navigation-status';
+			navigationStatus.setAttribute('role', 'status');
+			navigationStatus.hidden = true;
+			linesHost.prepend(navigationStatus);
+			const navigate = async (event, row) => {
+				if (navigating || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+				const reveal = options.onSelectLine || root.revealPlayerLine;
+				if (typeof reveal !== 'function') return;
+				event.preventDefault();
+				event.stopPropagation();
+				navigating = true;
+				const side = event.type === 'click' ? event.target.closest('[data-line-side]')?.dataset.lineSide ?? null : null;
+				try {
+					await reveal(current, Number(row.dataset.comparisonLine), side, {
+						...options, beforeReveal: () => dialog.close()
+					});
+				} catch (error) {
+					navigationStatus.textContent = error.message || 'Could not find this line in the table. Try again.';
+					navigationStatus.hidden = false;
+					if (!dialog.open) dialog.showModal();
+				} finally { navigating = false; }
+			};
+			linesHost.querySelectorAll('[data-comparison-line]').forEach(row => {
+				row.onclick = event => navigate(event, row);
+				row.onkeydown = event => {
+					if (event.key === 'Enter' || event.key === ' ') navigate(event, row);
+				};
+			});
 			linesHost.hidden = view !== 'lines';
 			depthHost.hidden = view !== 'depth';
 			const movementHost = dialog.querySelector('.player-lines-movement');
@@ -262,7 +303,7 @@
 				button.tabIndex = button.dataset.linesView === view ? 0 : -1;
 			});
 			dialog.querySelector('#player-lines-count').textContent = `${table.count} line${table.count === 1 ? '' : 's'}`;
-			dialog.style.setProperty('--player-lines-width', `${view !== 'lines' ? 960 : table.width}px`);
+			dialog.style.setProperty('--player-lines-width', view !== 'lines' ? '960px' : `max(520px, calc(${table.width}px * var(--profile-table-zoom, 1) + 2px))`);
 			if (view === 'depth') activeDepth = mountDepth(depthHost, current, { ...options, rows });
 			if (view === 'movement') activeMovement = mountMovement(movementHost, current);
 		};
@@ -283,7 +324,7 @@
 		if (!dialog.open) dialog.showModal();
 	}
 
-	const api = { canOpen, collect, availableProps, open, mountDepth, mountMovement, escape, mainMarketLabel };
+	const api = { canOpen, collect, availableProps, findRow, open, mountDepth, mountMovement, escape, mainMarketLabel };
 	root.PlayerLines = api;
 	if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis === "undefined" ? this : globalThis);

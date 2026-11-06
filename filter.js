@@ -1685,6 +1685,7 @@ function reorderOddsColumns(book, devig) {
 let lastRenderedBookDevig;
 
 function changeFilter(render = true) {
+	if (typeof restorePlayerLineTable === 'function') restorePlayerLineTable(false);
 	let renderComplete;
 	let [w,l,profit,kellyProfit] = [0,0,0,0];
 	let devigBook = DEVIG;

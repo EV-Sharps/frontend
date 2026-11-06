@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { collect, canOpen, availableProps } = require('./player-lines.js');
+const { collect, canOpen, availableProps, findRow } = require('./player-lines.js');
 
 const selected = { player: 'test player', prop: 'rec_yds', game: 'bal @ kc', gameId: 'game-1', date: '2026-09-21', sport: 'nfl', handicap: 49.5 };
 const row = changes => ({ ...selected, bookOdds: { fd: '-110/-110' }, ...changes });
@@ -114,6 +114,35 @@ test('supported prop pages expose player price comparisons while locked rows rem
 	for (const page of ['dingers', 'tds', 'atgs', 'main']) assert.equal(canOpen(page, selected), false);
 	assert.equal(canOpen('nfl', { ...selected, blurred: true }), false);
 	assert.equal(canOpen('nfl', { ...selected, player: '' }), false);
+});
+
+test('navigation resolves equivalent lines and the requested side without mutating data', () => {
+	const over = row({ handicap: '49.50', under: false });
+	const under = row({ handicap: 49.5, under: true });
+	const rows = [over, under], before = JSON.stringify(rows);
+	assert.equal(findRow(selected, rows, 49.5), over);
+	assert.equal(findRow({ ...selected, under: true }, rows, '49.500'), under);
+	assert.equal(findRow(selected, rows, 49.5, '1'), under);
+	assert.equal(findRow(selected, [under], 49.5, '0'), null);
+	assert.equal(findRow(selected, [under], 49.5), under);
+	assert.equal(JSON.stringify(rows), before);
+});
+
+test('navigation excludes other games, props, players, dates, sports and locked rows', () => {
+	const unrelated = [{ player: 'other' }, { prop: 'rush_yds' }, { game: 'bal @ pit' },
+		{ gameId: 'game-2' }, { date: '2026-09-22' }, { sport: 'nhl' }, { blurred: true }];
+	assert.equal(findRow(selected, unrelated.map(changes => row(changes)), 49.5), null);
+	assert.equal(findRow({ ...selected, blurred: true }, [row({})], 49.5), null);
+	for (const line of [null, '', 'bad', Infinity]) assert.equal(findRow(selected, [row({})], line), null);
+});
+
+test('main spread navigation maps the displayed away handicap to the home row', () => {
+	const away = { player: '', prop: 'spread', game: 'ny @ bos', date: '2026-11-04', handicap: -3.5, under: false };
+	const home = { ...away, handicap: '3.50', under: true };
+	const options = { mode: 'game' };
+	assert.equal(findRow(away, [away, home], -3.5, 1, options), home);
+	assert.equal(findRow(home, [away, home], -3.5, null, options), home);
+	assert.equal(findRow(away, [away, home], 3.5, 1, options), null);
 });
 
 console.log(`${checks} player line comparison checks passed.`);

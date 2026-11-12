@@ -6,7 +6,7 @@
   <title>Line movement | +EV Sharps</title>
   <meta name="description" content="Browse recent sportsbook price moves, compare captured prices and explore each play's fair probability history.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="movement.css?v=20261030-compact-movers">
+  <link rel="stylesheet" href="movement.css?v=20261112-games">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="movement-page">
@@ -36,6 +36,7 @@
       <section class="panel filters" aria-label="Filter the slate">
         <label>Sport<select id="sport-select"><option value="mlb">MLB</option><option value="nfl">NFL</option><option value="nhl">NHL</option><option value="nba">NBA</option><option value="ncaaf">College football</option><option value="ncaab">College basketball</option><option value="wnba">WNBA</option><option value="soccer">Soccer</option><option value="preseason">NFL preseason</option><option value="baseball_ncaa">College baseball</option><option value="cup">World Cup</option><option value="ufc">UFC</option></select></label>
         <label class="search-label">Player or team<input id="player-search" type="search" autocomplete="off" placeholder="Search the slate"></label>
+        <div class="game-field" id="game-dd"><label for="game-dd-button">Game</label><button id="game-dd-button" type="button" aria-expanded="false" aria-controls="game-options">All Games</button><div class="chkdd-menu" id="game-options" hidden><div class="chkdd-actions"><button type="button" data-games="all">All</button><button type="button" data-games="today">Today</button><button type="button" data-games="none">None</button></div><div id="game-choices"></div></div></div>
         <div id="advanced-filters" class="advanced-filters">
         <div class="prop-field"><span id="prop-label">Props</span><details id="prop-picker"><summary id="prop-summary" aria-labelledby="prop-label prop-summary">All props</summary><div class="prop-menu"><button id="all-props" type="button">All props</button><div id="prop-options"></div></div></details></div>
         <label>Side<select id="side-select"><option value="0">First side · Over / Yes</option><option value="1">Second side · Under / No</option><option value="2">Third side · three-way only</option></select></label>
@@ -109,6 +110,6 @@
   </dialog>
   <script src="plotly-3.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261030-compact-movers"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261112-games"></script>
 </body>
 </html>

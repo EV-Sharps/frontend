@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Topps Cards EV</title>
+  <link rel="stylesheet" href="pokemon.css?v=card-rates-1"><link rel="stylesheet" href="cards.css?v=1">
+</head>
+<body>
+<header><strong>Topps Cards EV</strong><span id="account-status">Sign in to save your models and favorites</span><a id="account-link" href="profile">Sign in</a></header>
+<main>
+  <p id="error" class="error" role="alert" hidden></p>
+  <div class="toolbar">
+    <label>Sport <select id="sport"><option value="">All sports</option></select></label>
+    <input id="search" type="search" placeholder="Find a set, year, or format" aria-label="Find a set, year, or format">
+    <label>View <select id="view"><option value="catalog">Set catalog</option><option value="models">My models</option></select></label>
+    <label>Values <select id="unit"><option value="pack">Per pack</option><option value="box">Per box</option></select></label>
+    <label>Sort <select id="sort"><option value="year">Newest</option><option value="gross_ev">EV</option><option value="return_percent">Return %</option><option value="net_profit">Net</option><option value="roi">ROI</option><option value="name">Name</option></select></label>
+    <span id="count" role="status">Loading…</span><button id="refresh" type="button">Refresh</button>
+  </div>
+  <p id="source-status" class="notice" role="status">Loading the Topps sports catalog…</p>
+  <div class="tablewrap board-scroll"><table class="cards-board"><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+  <section id="editor" class="editor" hidden aria-labelledby="editor-title"></section>
+  <p class="help source-links">Catalog and available prices: <a href="https://cardpricer.co/docs/api" target="_blank" rel="noreferrer">CardPricer</a> · Official <a href="https://www.topps.com/pages/checklists" target="_blank" rel="noreferrer">Topps checklists</a> / <a href="https://www.topps.com/pages/odds" target="_blank" rel="noreferrer">pack odds</a>. Raw card values only. Models assume equal frequency within each pool; format-specific bonuses need their own pools.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared.js"></script><script src="auth.js"></script><script src="cards.js?v=1"></script>
+</body>
+</html>

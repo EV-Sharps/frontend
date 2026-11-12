@@ -42,6 +42,9 @@
     return { color: colors[index % colors.length], dash: ['solid', 'dash', 'dot'][Math.floor(index / colors.length) % 3] };
   }
   const selectedProps = new Set((url.searchParams.get('props') || '').split(',').filter(Boolean));
+  const gameKey = game => String(game || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  let selectedGames = url.searchParams.has('games') ? new Set(url.searchParams.get('games').split(',').map(gameKey).filter(Boolean)) : null;
+  const gameTimes = new Map();
   const windows = ['1h', '3h', '6h', '12h', 'today'];
   let movementWindow = windows.includes(url.searchParams.get('window')) ? url.searchParams.get('window') : '6h';
   const windowName = () => movementWindow === 'today' ? 'Today' : `Last ${parseInt(movementWindow, 10)} ${movementWindow === '1h' ? 'hour' : 'hours'}`;
@@ -108,6 +111,8 @@
   function moveClass(row) { const value = usableMove(row); return finite(value) && Number(value) > 0 ? 'shortening' : finite(value) && Number(value) < 0 ? 'drifting' : 'unchanged'; }
   function syncURL() {
     const next = new URL(window.location.href);
+    if (selectedGames === null) next.searchParams.delete('games');
+    else next.searchParams.set('games', [...selectedGames].join(','));
     const values = { sport: SPORT, query: $('player-search').value.trim(), props: [...selectedProps].join(','), side: $('side-select').value, reference: $('reference-select').value, direction: $('direction-select').value, window: movementWindow };
     for (const [key, value] of Object.entries(values)) {
       if (value && !(key === 'side' && value === '0') && !['consensus', 'all'].includes(value)) next.searchParams.set(key, value);
@@ -119,6 +124,7 @@
     const query = new URLSearchParams({ sport: SPORT, side: $('side-select').value, reference: $('reference-select').value, window: movementWindow });
     if (id) query.set('id', id);
     else {
+      if (selectedGames !== null) query.set('games', [...selectedGames].join(','));
       query.set('query', $('player-search').value.trim());
       query.set('props', [...selectedProps].join(','));
       query.set('direction', $('direction-select').value);
@@ -160,6 +166,7 @@
     day = current;
     cancelRequests(); clearTimeout(debounceTimer);
     offset = 0; selectedId = '';
+    selectedGames = null; gameTimes.clear(); renderGames({games: []}); closeGames();
     $('reference-select').replaceChildren(new Option('Sportsbook consensus', 'consensus'));
     syncURL();
     clearRows('A new day has begun. Waiting for today’s first captures.');
@@ -182,6 +189,7 @@
   }
   function access(status) {
     cancelRequests(); clearRows(); clearChart(); selectedId = '';
+    closeGames(); gameTimes.clear(); $('game-choices').replaceChildren();
     $('movement-content').hidden = true;
     $('access-panel').hidden = false;
     $('access-message').textContent = status === 403 ? 'Your current plan does not include line movement. Upgrade to Sharp to explore today’s price history.' : 'Sign in to explore today’s price history.';
@@ -198,6 +206,7 @@
     } finally { clearTimeout(timer); }
   }
   function renderOptions(data) {
+    renderGames(data);
     const props = [...new Set([...(data.props || []), ...selectedProps])].sort((a, b) => propName(a).localeCompare(propName(b)));
     $('prop-options').innerHTML = props.map(prop => `<label><input type="checkbox" value="${esc(prop)}"${selectedProps.has(prop) ? ' checked' : ''}>${esc(propName(prop))}</label>`).join('') || '<p class="muted">Props appear with the first capture.</p>';
     $('prop-summary').textContent = selectedProps.size ? [...selectedProps].map(propName).join(', ') : 'All props';
@@ -205,6 +214,52 @@
     const books = [...new Set([...(Array.isArray(data.books) ? data.books : Object.keys(data.books || {})), ...(reference !== 'consensus' ? [reference] : [])])];
     $('reference-select').replaceChildren(new Option('Sportsbook consensus', 'consensus'), ...books.map(book => new Option(bookName(book), book)));
     $('reference-select').value = reference;
+  }
+  function gamesLabel(full = false) {
+    if (selectedGames === null) return 'All Games';
+    if (!selectedGames.size) return 'No Games';
+    return full || selectedGames.size === 1 ? [...selectedGames].map(game => game.toUpperCase()).join(', ') : `${selectedGames.size} Games`;
+  }
+  function closeGames() {
+    $('game-options').hidden = true;
+    $('game-dd-button').setAttribute('aria-expanded', 'false');
+  }
+  function positionGames() {
+    const menu = $('game-options');
+    if (menu.hidden) return;
+    const anchor = $('game-dd-button').getBoundingClientRect();
+    const viewport = window.visualViewport, left = viewport?.offsetLeft || 0, top = viewport?.offsetTop || 0;
+    const width = viewport?.width || innerWidth, height = viewport?.height || innerHeight;
+    menu.style.width = `${Math.min(360, width - 16)}px`;
+    menu.style.right = 'auto';
+    const below = top + height - anchor.bottom - 14, above = anchor.top - top - 14;
+    const opensAbove = below < 180 && above > below;
+    menu.style.maxHeight = `${Math.max(60, Math.min(400, opensAbove ? above : below))}px`;
+    menu.style.left = `${getDropdownLeft(anchor.left, menu.getBoundingClientRect().width, left, width)}px`;
+    menu.style.top = `${Math.max(top + 8, Math.min(opensAbove ? anchor.top - menu.getBoundingClientRect().height - 6 : anchor.bottom + 6, top + height - menu.getBoundingClientRect().height - 8))}px`;
+  }
+  function renderGames(data) {
+    // New API metadata covers the full window, before filters and pagination.
+    if (Array.isArray(data.games)) {
+      gameTimes.clear();
+      for (const game of data.games) gameTimes.set(gameKey(game), data.times?.[game] || null);
+    } else for (const row of data.rows || []) gameTimes.set(gameKey(row.game), row.start || null);
+    const games = [...new Set([...gameTimes.keys(), ...(selectedGames || [])])].filter(Boolean).sort((a,b) =>
+      (Date.parse(gameTimes.get(a)) || Infinity) - (Date.parse(gameTimes.get(b)) || Infinity) || a.localeCompare(b));
+    const focus = $('game-choices').contains(document.activeElement) ? document.activeElement.value : null;
+    const scroll = $('game-options').scrollTop;
+    let lastDate = '';
+    $('game-choices').innerHTML = games.map(game => {
+      const start = gameTimes.get(game), hasTime = start && Number.isFinite(Date.parse(start));
+      const label = hasTime ? new Date(start).toLocaleDateString('en-US', {timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'}) : 'Start time TBD';
+      const heading = label === lastDate ? '' : `<div class="chkdd-date-sep">${esc(label)}</div>`; lastDate = label;
+      const teams = game.split(/\s*@\s*|\s+vs\.?\s+/i), logoSport = ({ncaaf:'ncaab',baseball_ncaa:'ncaab',preseason:'nfl'})[SPORT] || SPORT;
+      const matchup = teams.length === 2 ? teams.map((team,index) => `${index?`<span class="game-option-versus">${game.includes('@')?'@':'vs'}</span>`:''}<span class="game-option-team"><img class="game-option-logo" src="logos/${encodeURIComponent(logoSport)}/${encodeURIComponent(team.trim().replace(/-gm2\b/g,''))}.png" alt="" width="18" height="18"><span class="game-option-name">${esc(team.trim().replace(/-gm2\b/g,'').toUpperCase())}</span></span>`).join('') : esc(game.toUpperCase());
+      return `${heading}<label class="game-option"><input type="checkbox" value="${esc(game)}"${selectedGames === null || selectedGames.has(game)?' checked':''}><span class="game-option-content"><span class="game-option-matchup" title="${esc(game.toUpperCase())}">${matchup}</span><span class="game-option-meta"><span>${hasTime?time(start)+' ET':'Time TBD'}</span>${/-gm2\b/.test(game)?'<span class="game-option-badge">Game 2</span>':''}</span></span></label>`;
+    }).join('') || '<p class="muted">Games appear with the first capture.</p>';
+    $('game-dd-button').textContent = gamesLabel();
+    if (focus !== null) [...$('game-choices').querySelectorAll('input')].find(input => input.value === focus)?.focus({preventScroll:true});
+    $('game-options').scrollTop = scroll; positionGames();
   }
   function renderWindow(data = catalog) {
     document.querySelectorAll('[data-window]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.window === movementWindow)));
@@ -252,7 +307,7 @@
     const captureDay = new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
     const bounds = catalog.window_start && catalog.window_end ? ` · ${time(catalog.window_start)}–${time(catalog.window_end)} ET` : '';
     $('slate-snapshot-context').textContent = `${SPORT.toUpperCase()} · ${captureDay} · ${windowName()}${bounds} · ${referenceName()}`;
-    const description = [selectedProps.size ? [...selectedProps].map(propName).join(', ') : 'All props', $('side-select').selectedOptions[0]?.textContent, $('direction-select').selectedOptions[0]?.textContent];
+    const description = [gamesLabel(true), selectedProps.size ? [...selectedProps].map(propName).join(', ') : 'All props', $('side-select').selectedOptions[0]?.textContent, $('direction-select').selectedOptions[0]?.textContent];
     const search = $('player-search').value.trim();
     if (search) description.push(`Search: ${search}`);
     $('slate-snapshot-filter-context').textContent = description.filter(Boolean).join(' · ');
@@ -285,8 +340,8 @@
     $('catalog-wrap').scrollTop = scrollTop;
     if (focused) [...$('catalog-rows').children].find(card => card.dataset.id === focused)?.focus({preventScroll: true});
     $('catalog-wrap').hidden = rows.length === 0;
-    const filtered = $('player-search').value.trim() || selectedProps.size || $('direction-select').value !== 'all' || $('side-select').value !== '0';
-    notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another player, prop or side.' : movementWindow === 'today' ? 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.' : 'No recorded selections in this window. Try a wider window or Today.');
+    const filtered = $('player-search').value.trim() || selectedProps.size || selectedGames !== null || $('direction-select').value !== 'all' || $('side-select').value !== '0';
+    notice('empty-slate', rows.length ? '' : filtered ? 'No captured selections match these filters. Try another game, player, prop or side.' : movementWindow === 'today' ? 'No pre-game prices captured today yet. History begins with the first scheduled capture; it is not backfilled.' : 'No recorded selections in this window. Try a wider window or Today.');
     $('catalog-count').textContent = `${Number(catalog.total) || 0} selections`;
     $('pagination').hidden = !(catalog.total > limit || offset > 0);
     $('previous-page').disabled = offset === 0;
@@ -565,12 +620,33 @@
   $('slate-snapshot-rows').addEventListener('error', event => { if (event.target.matches('img')) event.target.hidden = true; }, true);
   $('sport-select').addEventListener('change', () => {
     SPORT = $('sport-select').value; selectedId = ''; selectedProps.clear();
+    selectedGames = null; gameTimes.clear(); closeGames();
     $('side-select').value = '0'; $('reference-select').value = 'consensus';
-    renderOptions({ props: [], books: [] });
+    renderOptions({ props: [], books: [], games: [] });
     document.title = `${SPORT.toUpperCase()} line movement | +EV Sharps`;
     filterChanged();
   });
   $('player-search').addEventListener('input', () => filterChanged(250));
+  $('game-dd-button').addEventListener('click', () => {
+    if (!$('game-options').hidden) { closeGames(); return; }
+    $('game-options').hidden = false; $('game-dd-button').setAttribute('aria-expanded','true'); positionGames();
+  });
+  $('game-choices').addEventListener('change', event => {
+    if (!event.target.matches('input[type=checkbox]')) return;
+    selectedGames = new Set([...$('game-choices').querySelectorAll('input:checked')].map(input => input.value));
+    $('game-dd-button').textContent = gamesLabel(); filterChanged();
+  });
+  $('game-options').addEventListener('click', event => {
+    const action = event.target.closest('[data-games]')?.dataset.games;
+    if (!action) return;
+    selectedGames = action === 'all' ? null : new Set(action === 'today' ? [...gameTimes].filter(([,start]) => start && Number.isFinite(Date.parse(start)) && dayOf(start) === dayOf()).map(([game]) => game) : []);
+    renderGames({}); filterChanged();
+  });
+  $('game-options').addEventListener('error', event => { if (event.target.matches('img')) event.target.remove(); }, true);
+  document.addEventListener('click', event => { if (!$('game-dd').contains(event.target)) closeGames(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('game-options').hidden) { event.preventDefault(); closeGames(); $('game-dd-button').focus(); } });
+  window.addEventListener('resize', positionGames);
+  window.addEventListener('scroll', event => { if (!event.target?.closest?.('#game-options')) positionGames(); }, true);
   $('toggle-filters').addEventListener('click', () => {
     const expanded = $('toggle-filters').getAttribute('aria-expanded') !== 'true';
     $('toggle-filters').setAttribute('aria-expanded', String(expanded));
@@ -640,6 +716,7 @@
     const token = session?.access_token || '';
     if (ready && token === ACCESS_TOKEN) return;
     cancelRequests(); ACCESS_TOKEN = token; ready = true; selectedId = '';
+    closeGames(); gameTimes.clear(); $('game-choices').replaceChildren();
     clearRows(); clearChart(); $('movement-content').hidden = true;
     $('account-link').textContent = token ? 'My account' : 'Sign in';
     await refresh();

@@ -6,10 +6,10 @@
   <title>Pokémon EV</title><link rel="stylesheet" href="pokemon.css?v=card-rates-1">
 </head>
 <body>
-<header><strong>Pokémon EV</strong><span class="local">Private</span><a id="account-link" href="profile">Sign in</a></header>
+<header><strong>Pokémon EV</strong><span class="local">Sign in to save your favorites and settings</span><a id="account-link" href="profile">Sign in</a></header>
 <main>
   <p id="request-error" class="error" role="alert" hidden></p>
-  <section id="access-panel"><p id="access-message">Checking access…</p><a id="access-login" href="profile">Sign in</a></section>
+  <section id="access-panel"><p id="access-message">Loading workbook…</p><button id="retry-load" type="button">Retry</button></section>
   <div id="workbook" hidden>
     <div class="toolbar">
       <input id="filter-sets" type="search" placeholder="Filter sets" aria-label="Filter tracked sets">
@@ -23,12 +23,12 @@
     </div>
     <section class="board" aria-label="Set comparison">
       <div class="tablewrap board-scroll"><table class="rankings"><thead><tr><th>#</th><th>Set</th><th>Cards</th><th>Favorites</th><th title="Four rarest pools; + more opens all rates. % avg is average pulls per 100 packs.">Rates / pack</th><th>Pack $</th><th title="Regular retail ETBs only; excludes Pokemon Center, exclusive and premium editions.">ETB $</th><th>Bundle $</th><th title="Cost per pack for the selected product">$/pack</th><th title="Expected sale proceeds after configured fees and costs, divided by purchase price. 100% is break-even.">Return %</th><th id="breakeven-heading" title="Purchase price that gives zero expected net profit after configured selling fees and costs; pack contents only.">Break-even / pack</th><th title="Purchase cost minus expected sale proceeds per pack. Lower is better; negative means expected profit.">Loss / pack</th><th id="ev-heading" title="Expected resale value of cards meeting the sale cutoff, before selling fees and costs.">EV / pack</th><th id="net-heading">Net / pack</th><th>ROI</th><th>Status</th><th></th></tr></thead><tbody id="rankings"></tbody></table></div>
-      <details class="add-details"><summary>Add set</summary><form id="add-set" class="addset"><input id="set-search" type="search" placeholder="Filter catalog" aria-label="Filter set catalog"><select id="catalog" aria-label="Set to track"></select><button type="submit">Add</button></form></details>
+      <details class="add-details" hidden><summary>Add set</summary><form id="add-set" class="addset"><input id="set-search" type="search" placeholder="Filter catalog" aria-label="Filter set catalog"><select id="catalog" aria-label="Set to track"></select><button type="submit">Add</button></form></details>
     </section>
     <section id="editor" class="editor" hidden aria-labelledby="editor-title"></section>
   </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="shared.js"></script><script src="auth.js"></script><script src="pokemon.js?v=card-rates-1"></script>
+<script src="shared.js"></script><script src="auth.js"></script><script src="pokemon.js?v=profile-access-1"></script>
 </body>
 </html>

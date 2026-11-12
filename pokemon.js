@@ -33,7 +33,7 @@ let state, selected = null, dataset = null, draft = null, dirty = false, polling
 const productSelections=new Map();
 function error(message = "") { $("#request-error").textContent = message; $("#request-error").hidden = !message; }
 let sessionToken='', sessionUser='', authVersion=0, draftRevision='', allowed=false;
-let localOwner=false;
+let localOwner=false, canEdit=false;
 const controllers=new Set();
 function clearPrivate() {
   productSelections.clear();
@@ -44,7 +44,7 @@ function clearPrivate() {
   cardPopupVersion++; $("#top-cards-dialog")?.remove();
 }
 async function request(path,body) {
-  if(!sessionToken && !localOwner)throw new Error('Sign in to view your workbook.');
+  if(body!==undefined && !canEdit)throw new Error('Sign in to save your favorites and settings.');
   const version=authVersion, controller=new AbortController(); controllers.add(controller);
   const timer=setTimeout(()=>controller.abort(),25000);
   try {
@@ -57,8 +57,8 @@ async function request(path,body) {
     if(!response.ok) {
       const data=await response.json().catch(()=>({}));
       if(version!==authVersion)throw new DOMException('Session changed','AbortError');
-      if([401,403].includes(response.status)){localOwner=false;clearPrivate();$("#access-message").textContent=data.error || 'Access denied.';}
-      throw new Error(data.error || 'Unable to load your private workbook.');
+      if([401,403].includes(response.status)){canEdit=false;localOwner=false;clearPrivate();$("#access-message").textContent=data.error || 'Please sign in again, or retry to browse.';}
+      throw new Error(data.error || 'Unable to load the workbook.');
     }
     const data=path.startsWith('/api/export/')?await response.blob():await response.json();
     if(version!==authVersion)throw new DOMException('Session changed','AbortError');
@@ -70,6 +70,7 @@ const api=request;
 let cardPopupVersion=0, cardPopupView='table', favoriteQueue=Promise.resolve();
 try {const view=localStorage.getItem('pokemon.cardView');if(['table','small','medium','large'].includes(view))cardPopupView=view;}catch{}
 function favoriteButton(card, disabled=false) {
+  if(!canEdit)return `<span title="Sign in to save favorites" aria-label="${card.is_chase?'Favorite':'Not a favorite'}">${card.is_chase?'★':'☆'}</span>`;
   const label=`${card.is_chase?'Remove':'Add'} ${card.name} ${card.number || ''} ${card.is_chase?'from':'to'} favorites`;
   return `<button type="button" class="favorite-toggle" data-favorite="${card.product_id}" aria-pressed="${!!card.is_chase}" aria-label="${esc(label)}" title="${esc(label)}" ${disabled?'disabled':''}><span aria-hidden="true">${card.is_chase?'★':'☆'}</span></button>`;
 }
@@ -287,7 +288,7 @@ function renderBoard() {
     const detail=esc(metrics.issues.join(' '));
     const packTitle=item.pack_cost_source==='market'?`TCGplayer market: ${item.market_pack.name}; ${date(item.market_pack.source_updated_at)}. Excludes tax/shipping.`:item.pack_cost_source==='manual'?'Your pack price override':'No standard booster price; enter a pack cost in Edit.';
     const value=(v,roi=false)=>v==null?'—':`${metrics.eligible?'':'~'}${roi?v.toFixed(1)+'%':money(v)}`;
-    return `<tr data-set="${item.group_id}"><td class="rank">${metrics.eligible?++rank:'—'}</td><td class="setname"><button type="button" class="set-open" data-view="${item.group_id}" aria-label="View cards in ${esc(item.name)}" aria-haspopup="dialog" title="${$('#chase-sets-only').checked?'Your favorites by market price':'Top 5 by market price'}"><span class="card-fan" aria-hidden="true">${featured.map(c=>`<span class="main-card-preview" title="${esc(c.name)} / ${esc(c.variant)} / ${money(c.market)}" data-market="${c.market}">${cardArt(c,'mini-card')}<span class="preview-price">${money(c.market)}</span></span>`).join('')}</span><span class="set-title">${esc(item.name)}</span></button></td><td class="number" title="${esc(date(item.source_updated_at))}">${item.card_count}</td><td class="number chase-count">${item.chase_count?`<button type="button" class="chases-open" data-chases="${item.group_id}" title="View your favorite cards">★ ${item.chase_count}</button>`:"—"}</td><td class="rate-values">${rates || '—'}</td><td class="number pack-cost" data-source="${item.pack_cost_source || ''}" title="${esc(packTitle)}">${money(item.pack_cost)}</td>${productCell(item,'etb')}${productCell(item,'bundle')}<td class="number unit-cost">${money(metrics.pack_cost)}</td><td class="number return-value" title="${detail}">${value(metrics.return_percent,true)}</td><td class="number break-even" title="${detail}">${value(metrics.break_even_buy)}</td><td class="number expected-loss" title="${detail}">${value(metrics.expected_loss_per_pack)}</td><td class="number ${metrics.eligible?'':'provisional'}" title="${detail}">${value(metrics.gross_ev)}</td><td class="number ${metrics.eligible?(metrics.net_profit>=0?'positive':'negative'):'provisional'}" title="${detail}">${value(metrics.net_profit)}</td><td class="number" title="${detail}">${value(metrics.roi,true)}</td><td class="status-cell" title="${detail}">${esc(compactStatus(metrics,config))}</td><td><button data-edit="${item.group_id}" type="button">Edit</button></td></tr>`;
+    return `<tr data-set="${item.group_id}"><td class="rank">${metrics.eligible?++rank:'—'}</td><td class="setname"><button type="button" class="set-open" data-view="${item.group_id}" aria-label="View cards in ${esc(item.name)}" aria-haspopup="dialog" title="${$('#chase-sets-only').checked?'Your favorites by market price':'Top 5 by market price'}"><span class="card-fan" aria-hidden="true">${featured.map(c=>`<span class="main-card-preview" title="${esc(c.name)} / ${esc(c.variant)} / ${money(c.market)}" data-market="${c.market}">${cardArt(c,'mini-card')}<span class="preview-price">${money(c.market)}</span></span>`).join('')}</span><span class="set-title">${esc(item.name)}</span></button></td><td class="number" title="${esc(date(item.source_updated_at))}">${item.card_count}</td><td class="number chase-count">${item.chase_count?`<button type="button" class="chases-open" data-chases="${item.group_id}" title="View your favorite cards">★ ${item.chase_count}</button>`:"—"}</td><td class="rate-values">${rates || '—'}</td><td class="number pack-cost" data-source="${item.pack_cost_source || ''}" title="${esc(packTitle)}">${money(item.pack_cost)}</td>${productCell(item,'etb')}${productCell(item,'bundle')}<td class="number unit-cost">${money(metrics.pack_cost)}</td><td class="number return-value" title="${detail}">${value(metrics.return_percent,true)}</td><td class="number break-even" title="${detail}">${value(metrics.break_even_buy)}</td><td class="number expected-loss" title="${detail}">${value(metrics.expected_loss_per_pack)}</td><td class="number ${metrics.eligible?'':'provisional'}" title="${detail}">${value(metrics.gross_ev)}</td><td class="number ${metrics.eligible?(metrics.net_profit>=0?'positive':'negative'):'provisional'}" title="${detail}">${value(metrics.net_profit)}</td><td class="number" title="${detail}">${value(metrics.roi,true)}</td><td class="status-cell" title="${detail}">${esc(compactStatus(metrics,config))}</td><td><button data-edit="${item.group_id}" type="button">${canEdit?"Edit":"Details"}</button></td></tr>`;
   }).join('') || '<tr><td colspan="17" class="empty">No sets</td></tr>';
   const cutoffs=[...new Set(state.settings.sets.map(c=>c.min_sale_price ?? 0))];
   $('#sale-cutoff').textContent=cutoffs.length===1?(cutoffs[0]>0?`Sell ≥ ${money(cutoffs[0])}`:'All card prices'):'Sale cutoffs vary';
@@ -301,6 +302,7 @@ function renderBoard() {
 async function reload() {
   state = await api("/api/state");
   allowed=true; $("#workbook").hidden=false; $("#access-panel").hidden=true;
+  $('.add-details').hidden=!canEdit;
   renderBoard();
 }
 function options(values, chosen) {
@@ -344,7 +346,7 @@ function openPool(index) {
     event.preventDefault();
     if (!selectedIds.size) {$("#pool-error").hidden=false;$("#pool-error").textContent="Select at least one card.";return;}
     rate.product_ids=[...selectedIds].sort((a,b)=>a-b);rate.mapping_status="mapped";rate.rarity="";
-    if(!(rate.mapping_note || "").includes("Pool edited in private workbook."))rate.mapping_note=(rate.mapping_note || "")+" Pool edited in private workbook.";
+    if(!(rate.mapping_note || "").includes("Pool edited in workbook."))rate.mapping_note=(rate.mapping_note || "")+" Pool edited in workbook.";
     draft.reviewed=false;$("[name=reviewed]").checked=false;
     renderRates();markDirty();dialog.close();
   };
@@ -484,6 +486,10 @@ async function openEditor(id, scroll = true) {
     finally {saveButton.disabled = false;}
   };
   if (scroll) $("#editor").scrollIntoView({behavior:"smooth",block:"start"});
+  if(!canEdit) {
+    $('#config-form').querySelectorAll('input,select,textarea,button').forEach(control=>{if(control.id!=='card-search')control.disabled=true;});
+    $('#save-status').textContent='Sign in to save your own settings.';
+  }
 }
 function markDirty(){dirty=true; if ($("#save-status")) $("#save-status").textContent="Unsaved changes";}
 $("#rankings").addEventListener("click", event => {
@@ -518,42 +524,41 @@ function setSession(session) {
   if(token===sessionToken)return;
   const changedUser=user!==sessionUser;
   sessionToken=token;sessionUser=user;authVersion++;
+  canEdit=!!token || localOwner;
   controllers.forEach(c=>c.abort());controllers.clear();
   if(changedUser || !token)clearPrivate();
   $("#account-link").textContent=token?'My account':'Sign in';
-  $("#access-message").textContent=token?'Checking workbook access…':'Sign in with the owner account to open this workbook.';
+  $(".local").textContent=token?'Your workbook':'Sign in to save your favorites and settings';
+  $("#access-message").textContent='Loading workbook…';
   error();
-  if(token)reload().catch(e=>{if(e.name!=='AbortError')error(e.message);});
+  reload().catch(e=>{if(e.name!=='AbortError')error(e.message);});
 }
 async function boot() {
-  ['account-link','access-login'].forEach(id=>{$('#'+id).href=`profile${HTML}`;});
+  $('#account-link').href=`profile${HTML}`;
+  // Public browsing starts immediately, even if the sign-in service is unavailable.
+  const initialLoad=reload().catch(e=>{if(e.name!=='AbortError')error(e.message);});
   if(IS_LOCALHOST) {
     try {
       const response=await fetch(`${API_BASE}/api/pokemon/access`,{cache:'no-store',signal:AbortSignal.timeout(10000)});
       if(response.ok && (await response.json()).mode==='local-owner') {
-        localOwner=true;
+        localOwner=true;canEdit=true;
         $(".local").textContent='Local';
         $("#account-link").textContent='My account';
-        await reload();
+        await initialLoad;await reload();
         return;
       }
-    }catch(e){
-      clearPrivate();
-      $("#access-message").textContent='The local workbook could not load.';
-      error(`Check that the API is running at ${API_BASE}, then reload this page. ${e.message}`);
-      return;
-    }
+    }catch{}
   }
   try {
-    if(!SB)throw new Error('Sign-in service unavailable. Reload the page to try again.');
+    if(typeof SB==='undefined' || !SB)return;
     SB.auth.onAuthStateChange((_event,session)=>queueMicrotask(()=>setSession(session)));
     const {data,error:authError}=await SB.auth.getSession();if(authError)throw authError;
-    if(!data.session)$("#access-message").textContent='Sign in with the owner account to open this workbook.';
     setSession(data.session);
-  }catch(e){clearPrivate();error('Sign-in service unavailable. Reload the page to try again.');}
+  }catch{}
 }
+$('#retry-load').onclick=()=>{error();if(sessionToken)setSession(null);else reload().catch(e=>error(e.message));};
 setInterval(async()=>{
-  if(!allowed || (!sessionToken && !localOwner) || polling || document.hidden)return;
+  if(!allowed || polling || document.hidden)return;
   polling=true;
   try {await reload();}catch(e){if(e.name!=='AbortError')error(e.message);}finally{polling=false;}
 },60000);

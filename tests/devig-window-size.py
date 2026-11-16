@@ -59,7 +59,7 @@ def main():
             helper.setup_profile(page)
             page.evaluate("applyDevigWindowSize(); cacheProfile(CURR_USER)")
             original = page.evaluate("structuredClone(CURR_USER.metadata)")
-            large = bounds(page)
+            large = choose(page, "large")
             medium = choose(page, "medium")
             small = choose(page, "small")
             assert large["width"] > medium["width"] > small["width"]
@@ -67,7 +67,7 @@ def main():
             metadata = page.evaluate("CURR_USER.metadata")
             assert metadata == {**original, "devig_window_size": "small"}
             assert page.evaluate("JSON.parse(localStorage.getItem('cached_profile')).metadata.devig_window_size") == "small"
-            assert len(page.evaluate("devigWrites")) == 2
+            assert len(page.evaluate("devigWrites")) == 3
             assert "across all sports" in page.locator("#devig-window-size-status").inner_text()
             page.screenshot(path=str(Path(tempfile.gettempdir()) / "devig-size-small.png"))
             # Search and chosen category survive resizing, and the footer stays pinned.
@@ -94,11 +94,11 @@ def main():
             fresh = browser.new_page(viewport={"width": 1280, "height": 900})
             helper.mock_page(fresh)
             open_window(fresh, origin)
-            assert fresh.locator("#devig-window-size").input_value() == "large"
+            assert fresh.locator("#devig-window-size").input_value() == "medium"
             fresh.evaluate("metadata => { CURR_USER = {id:'fresh', metadata}; hydrateAfterProfileLoad(); }", metadata)
             assert fresh.locator("#devig-window-size").input_value() == "small"
             fresh.evaluate("CURR_USER = {id:'other',metadata:{}}; hydrateAfterProfileLoad()")
-            assert fresh.locator("#devig-window-size").input_value() == "large"
+            assert fresh.locator("#devig-window-size").input_value() == "medium"
             fresh.close()
             # A failed account save returns to the prior size and never caches the failed value.
             page.evaluate("""() => {

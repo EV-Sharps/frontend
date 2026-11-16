@@ -6,7 +6,7 @@
   <title>Line movement | +EV Sharps</title>
   <meta name="description" content="Browse recent sportsbook price moves, compare captured prices and explore each play's fair probability history.">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="movement.css?v=20261112-games">
+  <link rel="stylesheet" href="movement.css?v=20261112-chart-labels">
   <link rel="icon" href="logos/icon2.png">
 </head>
 <body class="movement-page">
@@ -59,6 +59,8 @@
         <div id="selection-metrics" class="selection-metrics" hidden></div>
         <div class="chart-toolbar"><div><strong>Price movement</strong><small id="chart-window-label">Last 6 hours · captured prices</small></div><div class="window-chips window-chips-small" role="group" aria-label="Chart movement window"><button type="button" data-window="1h" aria-pressed="false">1H</button><button type="button" data-window="3h" aria-pressed="false">3H</button><button type="button" data-window="6h" aria-pressed="true">6H</button><button type="button" data-window="12h" aria-pressed="false">12H</button><button type="button" data-window="today" aria-pressed="false">Today</button></div></div>
         <p id="chart-status" class="muted" role="status">Loading today's selections...</p>
+        <div id="chart-moves" hidden aria-label="Largest sportsbook price drops"></div>
+        <p id="chart-guide" hidden><span>↓ Shorter odds</span><span>↑ Longer odds</span><span>Click a line or its label to highlight it.</span><button id="clear-book-focus" type="button" hidden>Show all equally</button></p>
         <div id="movement-chart" aria-label="Price history chart" hidden></div>
         <fieldset id="book-picker" hidden>
           <legend>Sportsbook prices</legend>
@@ -110,6 +112,6 @@
   </dialog>
   <script src="plotly-3.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261112-games"></script>
+  <script src="shared.js"></script><script src="auth.js"></script><script src="movement.js?v=20261112-chart-labels"></script>
 </body>
 </html>

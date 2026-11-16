@@ -120,6 +120,9 @@ try:
                         if state["even"]:
                             prices = {book: [110, 100, -105, -110][index] for book in keys}
                             fair = [105, 100, -103, -107][index]
+                        if state.get('drops'):
+                            prices.update(fd=[110, 100, -105, -180][index], pn=[110, 100, None, -120][index],
+                                          px=[110, -200, -250, None][index], br=[None, None, None, -180][index])
                         probability = 100 / (fair + 100) if fair > 0 else -fair / (100 - fair)
                         data["points"].append(dict(ts=timestamp, prices=prices, fair=fair, probability=probability))
                 route.fulfill(json=window_metadata(data, query))
@@ -143,6 +146,17 @@ try:
         assert initial["range"][0] > initial["range"][1], "American odds keep the probability axis reversed"
         assert abs(initial["data"][0]["y"][0] - 10000 / 550) < .000001
         assert_ticks(page)
+        page.wait_for_function("document.getElementById('movement-chart').layout.annotations?.length === 16")
+        annotations = page.evaluate("document.getElementById('movement-chart').layout.annotations")
+        assert len({item['name'] for item in annotations}) == 16
+        assert all(item['name'] != 'px' for item in annotations), 'Withdrawn quotes must not get latest-price labels'
+        assert 'No price drops' in page.locator('#chart-moves').inner_text()
+        assert initial['data'][0]['marker']['symbol'] == ['circle', 'triangle-up', 'triangle-down', 'triangle-up']
+        # Endpoint labels are clickable, including when their prices overlap.
+        page.locator('#movement-chart .annotation').filter(has_text='FanDuel').click()
+        expect(page.locator('#clear-book-focus')).to_contain_text('FanDuel highlighted')
+        page.wait_for_function("document.getElementById('movement-chart').layout.annotations.find(a=>a.name==='pn').opacity < 1")
+        page.locator('#clear-book-focus').click()
         px = page.locator('.movement-book[data-book="px"] .book-price')
         assert px.inner_text() in ["-", "-", "N/A", "No quote"], px.inner_text()
         fd_price = page.locator('.movement-book[data-book="fd"] .book-price')
@@ -241,8 +255,58 @@ try:
             implied = 10000 / (price + 100) if price > 0 else -price * 100 / (100 - price)
             assert abs(value - implied) < .000001, (value, label)
         assert crossed['range'][0] > crossed['range'][1]
+
+        # Rank real shortening across even money, not the signed American-odds difference.
+        state['drops'] = True
+        page.locator('#refresh').click()
+        expect(page.locator('#chart-moves button').first).to_contain_text('FanDuel')
+        expect(page.locator('#chart-moves button').first).to_contain_text('+110 → -180')
+        assert page.locator('#chart-moves [data-focus-book="px"]').count() == 0
+        assert page.locator('#chart-moves [data-focus-book="br"]').count() == 0
+        expect(page.locator('.movement-book[data-book="br"] .book-change')).to_have_text('No comparison')
+        expect(page.locator('.movement-book[data-book="px"] .book-change')).to_have_text('No comparison')
+        dropped = chart(page)['data']
+        assert next(trace for trace in dropped if trace['meta'].get('book') == 'fd')['marker']['symbol'] == ['circle', 'triangle-down', 'triangle-down', 'triangle-down']
+        assert next(trace for trace in dropped if trace['meta'].get('book') == 'pn')['marker']['symbol'][-1] == 'circle', 'A missing quote cannot establish a step change'
+        page.locator('#chart-moves [data-focus-book="fd"]').click()
+        expect(page.locator('#clear-book-focus')).to_contain_text('FanDuel highlighted')
+        page.wait_for_function("document.getElementById('movement-chart').layout.annotations?.length === 1")
+        assert page.evaluate("document.getElementById('movement-chart').layout.annotations[0].name") == 'fd'
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.select_option('#chart-scale', 'probability')
+        page.wait_for_function("document.getElementById('movement-chart').layout.yaxis.ticksuffix === '%'")
+        assert next(trace for trace in chart(page)['data'] if trace['meta'].get('book') == 'fd')['marker']['symbol'][-1] == 'triangle-down'
+        page.select_option('#chart-scale', 'american')
+        page.set_viewport_size({'width': 320, 'height': 844})
+        page.clock.run_for(200)
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.wait_for_function("document.getElementById('movement-chart').layout.xaxis.tickvals.length <= 2")
+        page.set_viewport_size({'width': 390, 'height': 844})
+        page.clock.run_for(200)
+        page.locator('#movement-chart').scroll_into_view_if_needed()
+        page.screenshot(path=str(Path(gettempdir()) / 'movement-drop-mobile.png'), full_page=True)
+        page.locator('#clear-book-focus').click()
+        page.set_viewport_size({'width': 1440, 'height': 1050})
+        page.clock.run_for(400)
+        page.wait_for_function("document.getElementById('movement-chart').layout.annotations?.length === 16")
+        # Even coincident endpoints have vertically separated labels.
+        page.locator('#movement-chart').screenshot(path=str(Path(gettempdir()) / 'movement-drop-chart.png'))
+        assert page.locator('#movement-chart .annotation').evaluate_all('''nodes => {
+            const boxes = nodes.map(n=>n.querySelector('.annotation-text-g').getBoundingClientRect()).sort((a,b)=>a.top-b.top);
+            return boxes.every((box,i)=>!i || box.top >= boxes[i-1].bottom - 1);
+        }'''), page.locator('#movement-chart .annotation').evaluate_all('nodes => nodes.map(n=>({text:n.textContent,top:n.getBoundingClientRect().top,bottom:n.getBoundingClientRect().bottom}))')
+        page.locator('#movement-chart').screenshot(path=str(Path(gettempdir()) / 'movement-drop-chart.png'))
+        page.locator('#play-detail').screenshot(path=str(Path(gettempdir()) / 'movement-drop-desktop.png'))
+        page.evaluate("""() => {
+            const c=document.getElementById('movement-chart');
+            c.emit('plotly_click', {points:[{data:c.data.find(t=>t.meta.book==='fd')}]});
+        }""")
+        expect(page.locator('#clear-book-focus')).to_contain_text('FanDuel highlighted')
+        page.locator('#book-options input[value="fd"]').uncheck()
+        expect(page.locator('#clear-book-focus')).to_be_hidden()
+        assert page.locator('#chart-moves [data-focus-book="fd"]').count() == 0
         assert not errors, errors
-        print('Dense movement checks passed: adaptive ticks/zoom, 16 stable styles, hover/latest prices, focus/all/none and mobile fit.')
+        print('Dense movement checks passed: endpoint labels/collision spacing, drop ranking/arrows/gaps, adaptive ticks/zoom, 16 stable styles, hover/latest prices, click focus/all/none, probability scale and mobile fit.')
         print(f'Screenshots: {Path(gettempdir()) / "movement-dense-desktop.png"}, {Path(gettempdir()) / "movement-dense-mobile.png"}')
         browser.close()
 finally:

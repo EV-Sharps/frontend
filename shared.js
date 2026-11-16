@@ -1034,7 +1034,7 @@ function getDevigWindowSize() {
 		saved = guestDevigWindowSize;
 		if (!saved) try { saved = localStorage.getItem('devig-window-size'); } catch (e) {}
 	}
-	return DEVIG_WINDOW_SIZES.includes(saved) ? saved : 'large';
+	return DEVIG_WINDOW_SIZES.includes(saved) ? saved : 'medium';
 }
 
 function applyDevigWindowSize() {

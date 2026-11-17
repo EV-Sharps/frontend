@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Pokémon EV</title><link rel="stylesheet" href="pokemon.css?v=card-rates-1">
+  <title>Pokémon EV</title><link rel="stylesheet" href="pokemon.css?v=ebay-prices-1">
 </head>
 <body>
 <header><strong>Pokémon EV</strong><span class="local">Sign in to save your favorites and settings</span><a id="account-link" href="profile">Sign in</a></header>
@@ -14,10 +14,11 @@
     <div class="toolbar">
       <input id="filter-sets" type="search" placeholder="Filter sets" aria-label="Filter tracked sets">
       <label><input id="chase-sets-only" type="checkbox">Favorite sets</label><label>Product <select id="product-basis"><option value="pack">Pack</option><option value="etb">Regular ETB</option><option value="bundle">Booster bundle</option></select></label>
+      <label title="Card previews and browsing only; pack EV uses raw prices">Card prices <select id="card-price-basis"><option value="raw">Raw</option><option value="psa_10">PSA 10</option><option value="psa_9">PSA 9</option><option value="psa_8">PSA 8</option></select></label>
       <label>Values <select id="value-unit"><option value="product">Whole product</option><option value="pack">Per pack</option></select></label>
       <label>Sort <select id="sort"><option value="return_percent">Return %</option><option value="expected_loss_per_pack">Loss / pack (lowest)</option><option value="break_even_buy">Break-even buy $</option><option value="chase_count">Favorites</option><option value="gross_ev">EV</option><option value="net_profit">Net</option><option value="roi">ROI</option></select></label>
       <span class="muted" title="EV counts booster pulls only. Promos and accessories are excluded. Market prices exclude tax/shipping.">Packs only</span>
-      <span id="sale-cutoff" class="muted" title="Minimum card market price included in EV. Lower-priced cards contribute $0; their odds stay unchanged. Edit a set to change its cutoff."></span><span id="set-count"></span><span id="sync-status" role="status"></span>
+      <span id="card-price-note" class="muted" hidden></span><span id="sale-cutoff" class="muted" title="Minimum card market price included in EV. Lower-priced cards contribute $0; their odds stay unchanged. Edit a set to change its cutoff."></span><span id="set-count"></span><span id="sync-status" role="status"></span>
       <span class="muted" title="Provisional values: missing inputs, unreviewed pools, stale prices, or other issues shown in Status.">~ provisional</span>
       <button id="refresh" type="button">Refresh</button>
     </div>
@@ -29,6 +30,6 @@
   </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="shared.js"></script><script src="auth.js"></script><script src="pokemon.js?v=profile-access-1"></script>
+<script src="shared.js"></script><script src="auth.js"></script><script src="pokemon.js?v=ebay-prices-1"></script>
 </body>
 </html>

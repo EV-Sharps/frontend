@@ -5,6 +5,133 @@ const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = value => value == null ? "—" : new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
 const date = value => value ? new Date(value).toLocaleString('en-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}) : "No prices yet";
+const cardPriceLabels={raw:'Raw (TCGplayer)',psa_10:'PSA 10',psa_9:'PSA 9',psa_8:'PSA 8',ebay_sold:'eBay sold',ebay_buy_now:'eBay buy now + shipping'};
+const isPsaBasis=basis=>basis.startsWith('psa_');
+const isEbayBasis=basis=>basis==='ebay_sold' || basis==='ebay_buy_now';
+function ebayQuote(card,basis) {return card.ebay_prices?.[basis==='ebay_sold'?'sold':'buy_now'];}
+function ebayQuoteCurrent(quote) {
+  const checked=Date.parse(quote?.checked_at),now=Date.now();
+  return Number.isFinite(checked) && checked<=now+300000 && now-checked<=48*60*60*1000;
+}
+const ebayDate=value=>Number.isFinite(Date.parse(value))?new Date(value).toLocaleString('en-US',{dateStyle:'short',timeStyle:'short'}):'date unavailable';
+function ebaySaleDate(value) {
+  if(typeof value==='string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year,month,day]=value.split('-').map(Number);
+    return new Date(year,month-1,day).toLocaleDateString('en-US');
+  }
+  return ebayDate(value);
+}
+function ebayPriceHtml(card,basis) {
+  const quote=ebayQuote(card,basis);
+  if(!quote || quote.currency!=='USD' || !Number.isFinite(quote.price) || quote.price<0) {
+    const status=card.ebay_prices?.status;
+    return `<span>—</span><small class="ebay-price-meta">No matching daily quote${status?' · '+esc(status.replaceAll('_',' ')):''}</small>`;
+  }
+  const current=ebayQuoteCurrent(quote),buyNow=basis==='ebay_buy_now';
+  const knownShipping=Number.isFinite(quote.shipping) && quote.shipping>=0 && Number.isFinite(quote.total_price) && quote.total_price>=0;
+  const value=buyNow && knownShipping?quote.total_price:quote.price;
+  const description=buyNow?(knownShipping?'Shipping included; tax excluded':'+ shipping unknown; tax excluded'):'Median item price; shipping/tax and undisclosed accepted offers excluded';
+  const details=[description,`Checked ${ebayDate(quote.checked_at)}`,
+    quote.sample_count!=null?`${quote.sample_count} matched ${buyNow?'listings':'sales'}`:null,
+    !buyNow && quote.last_sale_at?`Last sold ${ebaySaleDate(quote.last_sale_at)}`:null,
+    !buyNow && quote.window_days?`${quote.window_days}-day sample`:null].filter(Boolean).join(' · ');
+  let source='';
+  try {const url=new URL(quote.source_url);if(url.protocol==='https:' && !url.username && !url.password && (url.hostname==='ebay.com' || url.hostname.endsWith('.ebay.com')))source=url.href;}catch{}
+  const label=`${current?'':'Last seen '}${money(value)}`;
+  const price=source?`<a href="${esc(source)}" target="_blank" rel="noreferrer" title="${esc(details)}">${label}</a>`:`<span title="${esc(details)}">${label}</span>`;
+  return `${price}<small class="ebay-price-meta">${current?'':'Stale / unverified · '}${esc(details)}</small>`;
+}
+function ebayCoverage(cards,basis) {
+  const quotes=cards.map(card=>ebayQuote(card,basis)).filter(quote=>quote?.currency==='USD' && Number.isFinite(quote.price) && quote.price>=0);
+  const stale=quotes.filter(quote=>!ebayQuoteCurrent(quote)).length;
+  const unknown=basis==='ebay_buy_now'?quotes.filter(quote=>quote.shipping==null || quote.total_price==null).length:0;
+  return `Daily eBay snapshot; checks within 48 hours only.${basis==='ebay_buy_now'?' Known shipping included; tax excluded.':' Median item prices; shipping/tax excluded.'}${stale?` ${stale} stale/unverified quotes excluded.`:''}${unknown?` ${unknown} quotes with unknown shipping excluded.`:''}${!quotes.length?' No eBay quotes collected for these cards yet.':''}`;
+}
+
+let cardPriceBasis='raw', cardMinimum='', liveGradeCache=new Map(), ebayOpenCards=[], ebayFreshnessTimer;
+try {
+  const basis=localStorage.getItem('pokemon.cardPriceBasis');
+  if(Object.hasOwn(cardPriceLabels,basis))cardPriceBasis=basis;
+  const minimum=localStorage.getItem('pokemon.cardMinimum');
+  if(minimum!==null && minimum!=='' && Number.isFinite(Number(minimum)) && Number(minimum)>=0)cardMinimum=minimum;
+}catch{}
+function cardPrice(card,basis=cardPriceBasis) {
+  if(isEbayBasis(basis)) {
+    const quote=ebayQuote(card,basis);
+    if(quote?.currency!=='USD' || !ebayQuoteCurrent(quote))return null;
+    const value=basis==='ebay_sold'?quote.price:quote.shipping==null?null:quote.total_price;
+    return typeof value==='number' && Number.isFinite(value) && value>=0?value:null;
+  }
+  const quote=card.graded_prices?.[basis];
+  const value=basis==='raw'?card.market:quote?.currency==='USD'?quote.price:null;
+  return typeof value==='number' && Number.isFinite(value) && value>=0?value:null;
+}
+function scheduleEbayExpiry() {
+  clearTimeout(ebayFreshnessTimer);
+  const cards=[...ebayOpenCards,...(state?.sets || []).flatMap(item=>
+    ['ebay_buy_now','ebay_sold'].flatMap(basis=>[...(item.featured_cards_by_basis?.[basis] || []),...(item.chase_cards_by_basis?.[basis] || [])]))];
+  const expires=cards.flatMap(card=>['ebay_buy_now','ebay_sold'].map(basis=>ebayQuote(card,basis)))
+    .filter(quote=>ebayQuoteCurrent(quote)).map(quote=>Date.parse(quote.checked_at)+48*60*60*1000+1);
+  if(!expires.length)return;
+  ebayFreshnessTimer=setTimeout(()=>{
+    renderBoard();
+    $('#top-cards-dialog')?.dispatchEvent(new Event('ebaypricesexpired'));
+    scheduleEbayExpiry();
+  },Math.max(1,Math.min(...expires)-Date.now()));
+}
+function priceOrder(a,b,basis=cardPriceBasis) {
+  return (cardPrice(b,basis) ?? -1)-(cardPrice(a,basis) ?? -1) || a.product_id-b.product_id;
+}
+function gradedPriceHtml(card,basis) {
+  const value=cardPrice(card,basis);
+  if(value===null)return '<span title="No matching PSA sale price available">—</span>';
+  const quote=card.graded_prices[basis];
+  const details=[cardPriceLabels[basis],quote.source,quote.sales!=null?`${quote.sales} sales`:null,
+    quote.last_sale_at?`Last sale ${date(quote.last_sale_at)}`:null,quote.updated_at?`Checked ${date(quote.updated_at)}`:null].filter(Boolean).join(' · ');
+  let source='';
+  try {const url=new URL(quote.source_url);if(url.protocol==='https:' && !url.username && !url.password)source=url.href;}catch{}
+  return source?`<a href="${esc(source)}" target="_blank" rel="noreferrer" title="${esc(details)}">${money(value)}</a>`:`<span title="${esc(details)}">${money(value)}</span>`;
+}
+function priceBasisOptions() {
+  return Object.entries(cardPriceLabels).map(([value,label])=>`<option value="${value}" ${value===cardPriceBasis?'selected':''}>${label}</option>`).join('');
+}
+function setCardPriceBasis(basis) {
+  if(!Object.hasOwn(cardPriceLabels,basis))return;
+  cardPriceBasis=basis;
+  try {localStorage.setItem('pokemon.cardPriceBasis',basis);}catch{}
+  for(const selector of ['#card-price-basis','#top-cards-price-basis'])if($(selector))$(selector).value=basis;
+  renderBoard();
+}
+function cacheGrades(id,cached) {
+  clearTimeout(liveGradeCache.get(id)?.timer);
+  liveGradeCache.set(id,cached);
+  cached.timer=setTimeout(()=>{
+    if(liveGradeCache.get(id)!==cached)return;
+    liveGradeCache.delete(id);renderBoard();
+    $('#top-cards-dialog')?.dispatchEvent(new CustomEvent('gradesexpired',{detail:id}));
+  },Math.max(0,cached.expires-Date.now()));
+}
+function cachedGrades(id) {
+  const cached=liveGradeCache.get(id);
+  if(cached && cached.expires> Date.now())return cached;
+  clearTimeout(cached?.timer);liveGradeCache.delete(id);
+  if(cached)$('#top-cards-dialog')?.dispatchEvent(new CustomEvent('gradesexpired',{detail:id}));
+  return null;
+}
+function previewCards(item,favoritesOnly=false) {
+  if(cardPriceBasis==='raw')return (favoritesOnly?item.chase_cards:item.featured_cards) || [];
+  if(isEbayBasis(cardPriceBasis))return ((favoritesOnly?item.chase_cards_by_basis:item.featured_cards_by_basis)?.[cardPriceBasis] || []).filter(card=>cardPrice(card)!==null);
+  const cached=cachedGrades(item.group_id);
+  if(cached) {
+    const ids=new Set(state.settings.sets.find(c=>c.group_id===item.group_id)?.chase_ids || []);
+    const excluded=new Set(state.settings.sets.find(c=>c.group_id===item.group_id)?.excluded_ids || []);
+    return cached.cards.map(c=>({...c,is_chase:ids.has(c.product_id)}))
+      .filter(c=>!excluded.has(c.product_id) && (!favoritesOnly || c.is_chase) && cardPrice(c)!==null).sort(priceOrder).slice(0,5);
+  }
+  return (favoritesOnly?item.chase_cards_by_basis:item.featured_cards_by_basis)?.[cardPriceBasis] ||
+    (cardPriceBasis==='raw'?(favoritesOnly?item.chase_cards:item.featured_cards):[]) || [];
+}
+
 const rateNumber = value => Number(value.toFixed(8));
 const countRate = rate => Object.hasOwn(rate, 'expected_per_pack');
 const percentText = value => `${Number(value>0 && value<.01?value.toPrecision(2):value.toFixed(2))}%`;
@@ -36,7 +163,8 @@ let sessionToken='', sessionUser='', authVersion=0, draftRevision='', allowed=fa
 let localOwner=false, canEdit=false;
 const controllers=new Set();
 function clearPrivate() {
-  productSelections.clear();
+  ebayOpenCards=[];clearTimeout(ebayFreshnessTimer);
+  productSelections.clear();for(const cached of liveGradeCache.values())clearTimeout(cached.timer);liveGradeCache.clear();
   state=null; selected=null; dataset=null; draft=null; dirty=false; allowed=false;
   $("#workbook").hidden=true; $("#access-panel").hidden=false;
   $("#rankings").replaceChildren(); $("#editor").replaceChildren(); $("#editor").hidden=true;
@@ -92,6 +220,9 @@ function saveFavorite(groupId, productId, favorite, cards) {
     item.chase_count=favorites.length;
     item.chase_cards=favorites.sort((a,b)=>(b.market ?? -1)-(a.market ?? -1) || a.product_id-b.product_id).slice(0,5);
     item.featured_cards=item.featured_cards.map(c=>({...c,is_chase:ids.has(c.product_id)}));
+    item.chase_cards_by_basis=Object.fromEntries(Object.keys(cardPriceLabels).map(basis=>[basis,
+      favorites.filter(c=>cardPrice(c,basis)!==null).sort((a,b)=>priceOrder(a,b,basis)).slice(0,5)]));
+    for(const previews of Object.values(item.featured_cards_by_basis || {}))previews.forEach(c=>{c.is_chase=ids.has(c.product_id);});
     if(draft && draftRevision===latest.revision) {
       if(draft.group_id===groupId)draft.chase_ids=[...config.chase_ids];
       draftRevision=saved.revision;
@@ -130,11 +261,11 @@ function estimatedOddsTitle(card) {
 async function openTopCards(id, onlyChases=false) {
   const item=state?.sets.find(s=>s.group_id===id);
   if(!item)return;
-  $('#top-cards-dialog')?.remove();
+  $('#top-cards-dialog')?.remove();ebayOpenCards=[];scheduleEbayExpiry();
   const version=++cardPopupVersion, sessionVersion=authVersion;
   const dialog=document.createElement('dialog');dialog.id='top-cards-dialog';dialog.className='top-cards-dialog';
   dialog.setAttribute('aria-labelledby','top-cards-title');
-  dialog.innerHTML=`<div class="top-cards-head"><div><h2 id="top-cards-title">${esc(item.name)}</h2><p id="top-cards-meta" class="help">Loading…</p></div><button type="button" class="modal-close" aria-label="Close cards" autofocus>×</button></div><div class="top-cards-toolbar"><div class="card-view-toggle" role="group" aria-label="Card view"><button type="button" data-card-view="table" aria-pressed="true">Table</button><button type="button" data-card-view="small" aria-pressed="false">Small</button><button type="button" data-card-view="medium" aria-pressed="false">Medium</button><button type="button" data-card-view="large" aria-pressed="false">Large</button></div><input id="top-cards-search" type="search" placeholder="Filter cards" aria-label="Filter cards"><label>Sort <select id="top-cards-sort"><option value="value">Price</option><option value="rarity">Rarity</option><option value="number">No.</option><option value="chase">Favorites first</option></select></label><label class="check"><input id="top-cards-chases" type="checkbox" ${onlyChases?"checked":""}><span id="top-favorites-label">Favorites only (${item.chase_count || 0})</span></label><span id="top-cards-status" role="status">Loading…</span><span id="favorite-save-status" role="status"></span><button id="top-cards-configure" type="button">Edit set</button></div><p id="favorite-error" class="error" role="alert" hidden></p><div id="top-cards-grid" class="top-cards-grid" aria-busy="true"><table id="top-cards-table"><thead><tr><th>#</th><th title="Favorite">★</th><th></th><th>Card</th><th>No.</th><th>Rarity</th><th>Print</th><th>Market $</th><th title="Hit odds or average cards per pack; equal frequency within each pool">Est. hit / pack</th><th title="% avg means average pulls per 100 packs, not the chance of at least one when multiple pulls can occur">Pool / pack</th></tr></thead><tbody id="top-cards-rows"></tbody></table><div id="top-cards-gallery" class="large-card-grid" hidden></div></div>`;
+  dialog.innerHTML=`<div class="top-cards-head"><div><h2 id="top-cards-title">${esc(item.name)}</h2><p id="top-cards-meta" class="help">Loading…</p></div><button type="button" class="modal-close" aria-label="Close cards" autofocus>×</button></div><div class="top-cards-toolbar"><div class="card-view-toggle" role="group" aria-label="Card view"><button type="button" data-card-view="table" aria-pressed="true">Table</button><button type="button" data-card-view="small" aria-pressed="false">Small</button><button type="button" data-card-view="medium" aria-pressed="false">Medium</button><button type="button" data-card-view="large" aria-pressed="false">Large</button></div><input id="top-cards-search" type="search" placeholder="Filter cards" aria-label="Filter cards"><label>Card prices <select id="top-cards-price-basis">${priceBasisOptions()}</select></label><label>Min $ <input id="top-cards-minimum" type="number" min="0" step="0.01" placeholder="Any" value="${esc(cardMinimum)}" aria-label="Minimum card value"></label><label>Sort <select id="top-cards-sort"><option value="value">Price</option><option value="rarity">Rarity</option><option value="number">No.</option><option value="chase">Favorites first</option></select></label><label class="check"><input id="top-cards-chases" type="checkbox" ${onlyChases?"checked":""}><span id="top-favorites-label">Favorites only (${item.chase_count || 0})</span></label><span id="top-cards-status" role="status">Loading…</span><span id="favorite-save-status" role="status"></span><button id="top-cards-refresh-prices" type="button" hidden title="Refresh available PSA auction prices; source request limits apply">Refresh PSA</button><button id="top-cards-configure" type="button">Edit set</button></div><p id="top-cards-price-status" class="help" role="status"></p><p class="help">PSA values are recent completed-auction sample medians when available. eBay prices use daily raw-card matches, with quote dates and shipping shown below. Pack EV and the Sell ≥ cutoff use TCGplayer raw prices.</p><p id="favorite-error" class="error" role="alert" hidden></p><div id="top-cards-grid" class="top-cards-grid" aria-busy="true"><table id="top-cards-table"><thead><tr><th>#</th><th title="Favorite">★</th><th></th><th>Card</th><th>No.</th><th>Rarity</th><th>Print</th><th>Raw TCGplayer $</th><th>eBay buy now $</th><th>eBay sold $</th><th>PSA 10 $</th><th>PSA 9 $</th><th>PSA 8 $</th><th title="Hit odds or average cards per pack; equal frequency within each pool">Est. hit / pack</th><th title="% avg means average pulls per 100 packs, not the chance of at least one when multiple pulls can occur">Pool / pack</th></tr></thead><tbody id="top-cards-rows"></tbody></table><div id="top-cards-gallery" class="large-card-grid" hidden></div></div>`;
   document.body.append(dialog);
   let redraw, savingFavorite=false;
   function setView(view) {
@@ -152,30 +283,77 @@ async function openTopCards(id, onlyChases=false) {
   setView(cardPopupView);
   dialog.querySelector('.modal-close').onclick=()=>dialog.close();
   dialog.addEventListener('click',event=>{const r=dialog.getBoundingClientRect();if(event.target===dialog && (event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom))dialog.close();});
-  dialog.addEventListener('close',()=>{cardPopupVersion++;dialog.remove();document.querySelector(`#rankings [data-view="${id}"]`)?.focus({preventScroll:true});});
+  dialog.addEventListener('close',()=>{if($('#top-cards-dialog')===dialog)ebayOpenCards=[];scheduleEbayExpiry();cardPopupVersion++;dialog.remove();document.querySelector(`#rankings [data-view="${id}"]`)?.focus({preventScroll:true});});
   $('#top-cards-configure').onclick=()=>{dialog.close();openEditor(id).catch(e=>error(e.message));};
   dialog.showModal();
   try {
     const data=await api(`/api/set/${id}`);
     if(version!==cardPopupVersion || sessionVersion!==authVersion || !dialog.open)return;
-    const cards=data.highlights || [];
+    setCardPriceBasis($('#top-cards-price-basis').value);
+    const cards=data.highlights || [];ebayOpenCards=cards;scheduleEbayExpiry();
+    let gradeRequest=null, gradeMessage='';
+    function applyGrades(cached) {
+      const lookup=new Map(cached.cards.map(c=>[`${c.product_id}|${c.variant}`,c.graded_prices]));
+      cards.forEach(c=>{c.graded_prices=lookup.get(`${c.product_id}|${c.variant}`) || {};});
+      gradeMessage=cached.message;
+    }
+    const cached=cachedGrades(id);
+    if(cached)applyGrades(cached);
+    dialog.addEventListener('gradesexpired',event=>{
+      if(event.detail!==id)return;
+      cards.forEach(c=>{c.graded_prices={};});
+      gradeMessage='PSA quotes expired. Use Refresh PSA to check again.';
+      draw();
+    });
+    async function loadGrades(force=false) {
+      if(!isPsaBasis(cardPriceBasis) || gradeRequest)return;
+      const cached=cachedGrades(id);
+      if(cached && !force){applyGrades(cached);draw();return;}
+      $('#top-cards-refresh-prices').disabled=true;
+      $('#top-cards-price-status').textContent='Checking available PSA prices…';
+      gradeRequest=api(`/api/set/${id}/graded`);
+      try {
+        const result=await gradeRequest;
+        if(version!==cardPopupVersion || sessionVersion!==authVersion || !dialog.open)return;
+        const expiry=Date.parse(result.expires_at);
+        const cache={cards:result.highlights || [],expires:Number.isFinite(expiry)?Math.min(expiry,Date.now()+3600000):Date.now()+60000,
+          message:result.reason || 'PSA prices checked.'};
+        cacheGrades(id,cache);applyGrades(cache);renderBoard();
+      }catch(error) {
+        if(version!==cardPopupVersion || sessionVersion!==authVersion || !dialog.open)return;
+        gradeMessage=`PSA prices unavailable: ${error.message}`;
+      }finally {
+        gradeRequest=null;
+        if(version===cardPopupVersion && sessionVersion===authVersion && dialog.open)draw();
+      }
+    }
     const names=new Map(state.catalog.map(s=>[s.group_id,s.name]));
     $('#top-cards-meta').textContent=`${cards.length} cards · ${date(data.source_updated_at)}`;
     function draw() {
       const sort=$('#top-cards-sort').value, query=$('#top-cards-search').value.trim().toLowerCase();
-      const sorted=cards.filter(c=>!$('#top-cards-chases').checked || c.is_chase).filter(c=>`${c.name} ${c.number} ${c.rarity} ${c.pool_label}`.toLowerCase().includes(query)).sort((a,b)=>(sort==='number'?compareCardNumbers(a,b):sort==='rarity'?cardFrequency(a)-cardFrequency(b):sort==='chase'?Number(b.is_chase)-Number(a.is_chase):0) || (b.market ?? -1)-(a.market ?? -1) || a.product_id-b.product_id);
+      $('#top-cards-refresh-prices').hidden=!isPsaBasis(cardPriceBasis);
+      $('#top-cards-refresh-prices').disabled=!!gradeRequest;
+      const minimum=$('#top-cards-minimum').value, cutoff=minimum!=='' && Number.isFinite(Number(minimum))?Math.max(0,Number(minimum)):null;
+      const sorted=cards.filter(c=>!$('#top-cards-chases').checked || c.is_chase)
+        .filter(c=>cutoff===null || (cardPrice(c)!==null && cardPrice(c)>=cutoff))
+        .filter(c=>`${c.name} ${c.number} ${c.rarity} ${c.pool_label}`.toLowerCase().includes(query))
+        .sort((a,b)=>(sort==='number'?compareCardNumbers(a,b):sort==='rarity'?cardFrequency(a)-cardFrequency(b):sort==='chase'?Number(b.is_chase)-Number(a.is_chase):0) || priceOrder(a,b));
+      const priced=cards.filter(c=>cardPrice(c)!==null).length;
+      $('#top-cards-price-status').textContent=gradeRequest && isPsaBasis(cardPriceBasis)?'Checking available PSA prices…':
+        `${cardPriceLabels[cardPriceBasis]}: ${priced}/${cards.length} cards priced.${isEbayBasis(cardPriceBasis)?' '+ebayCoverage(cards,cardPriceBasis):isPsaBasis(cardPriceBasis)?` ${gradeMessage || 'Open a PSA price basis to check available quotes.'}`:''}`;
       $('#top-cards-status').textContent=`${sorted.length}/${cards.length}`;
       $('#top-favorites-label').textContent=`Favorites only (${cards.filter(c=>c.is_chase).length})`;
       if(cardPopupView!=='table') {
         $('#top-cards-rows').replaceChildren();
-        $('#top-cards-gallery').innerHTML=sorted.map(card=>`<article class="large-card">${cardArt(card,'',cardPopupView!=='small',true,savingFavorite)}<div class="large-card-meta"><span class="large-card-number">No. ${esc(card.number || '—')}</span><strong class="large-card-market" title="Market price">${money(card.market)}</strong><h3>${esc(card.name)}</h3><span class="large-card-odds" title="${esc(estimatedOddsTitle(card))}">${esc(estimatedOdds(card))}</span></div></article>`).join('') || '<p class="empty">No cards</p>';
+        $('#top-cards-gallery').innerHTML=sorted.map(card=>`<article class="large-card">${cardArt(card,'',cardPopupView!=='small',true,savingFavorite)}<div class="large-card-meta"><span class="large-card-number">No. ${esc(card.number || '—')}</span><strong class="large-card-market" title="${esc(cardPriceLabels[cardPriceBasis])} price">${cardPriceBasis==='raw'?money(cardPrice(card)):isEbayBasis(cardPriceBasis)?ebayPriceHtml(card,cardPriceBasis):gradedPriceHtml(card,cardPriceBasis)}</strong><h3>${esc(card.name)}</h3><span class="large-card-odds" title="${esc(estimatedOddsTitle(card))}">${esc(estimatedOdds(card))}</span></div></article>`).join('') || '<p class="empty">No cards</p>';
         $('#top-cards-grid').setAttribute('aria-busy','false');
         return;
       }
       $('#top-cards-gallery').replaceChildren();
-      $('#top-cards-rows').innerHTML=sorted.map((card,index)=>`<tr class="chase-card"><td class="chase-rank">${index+1}</td><td class="favorite-cell">${favoriteButton(card,savingFavorite)}</td><td class="chase-art">${cardArt({...card,is_chase:false})}</td><td><h3>${esc(card.name)}${card.presale?'<span class="presale-badge">Presale</span>':''}</h3>${card.group_id!==id?`<div class="chase-source">${esc(names.get(card.group_id) || 'Gallery')}</div>`:''}</td><td class="chase-number">${esc(card.number || '—')}</td><td class="chase-rarity">${esc(card.pool_label || card.rarity || '—')}</td><td>${esc(card.variant)}</td><td class="chase-price number">${money(card.market)}</td><td class="chase-odds number" title="${esc(estimatedOddsTitle(card))}">${esc(estimatedOdds(card))}</td><td class="pool-rate number" title="% avg means average pulls per 100 packs">${card.pool_expected_per_pack!=null?countText(card.pool_expected_per_pack):card.pool_one_in?percentText(100/card.pool_one_in):'—'}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">No cards</td></tr>';
+      $('#top-cards-rows').innerHTML=sorted.map((card,index)=>`<tr class="chase-card"><td class="chase-rank">${index+1}</td><td class="favorite-cell">${favoriteButton(card,savingFavorite)}</td><td class="chase-art">${cardArt({...card,is_chase:false})}</td><td><h3>${esc(card.name)}${card.presale?'<span class="presale-badge">Presale</span>':''}</h3>${card.group_id!==id?`<div class="chase-source">${esc(names.get(card.group_id) || 'Gallery')}</div>`:''}</td><td class="chase-number">${esc(card.number || '—')}</td><td class="chase-rarity">${esc(card.pool_label || card.rarity || '—')}</td><td>${esc(card.variant)}</td><td class="chase-price number" data-price-basis="raw">${money(cardPrice(card,'raw'))}</td>${['ebay_buy_now','ebay_sold'].map(basis=>`<td class="chase-price number" data-price-basis="${basis}">${ebayPriceHtml(card,basis)}</td>`).join('')}${['psa_10','psa_9','psa_8'].map(basis=>`<td class="chase-price number" data-price-basis="${basis}">${gradedPriceHtml(card,basis)}</td>`).join('')}<td class="chase-odds number" title="${esc(estimatedOddsTitle(card))}">${esc(estimatedOdds(card))}</td><td class="pool-rate number" title="% avg means average pulls per 100 packs">${card.pool_expected_per_pack!=null?countText(card.pool_expected_per_pack):card.pool_one_in?percentText(100/card.pool_one_in):'—'}</td></tr>`).join('') || '<tr><td colspan="15" class="empty">No cards</td></tr>';
       $('#top-cards-grid').setAttribute('aria-busy','false');
     }
+    dialog.addEventListener('ebaypricesexpired',draw);
     dialog.addEventListener('favoritesupdated',()=>{
       const ids=new Set(state?.settings.sets.find(c=>c.group_id===id)?.chase_ids || []);
       cards.forEach(c=>{c.is_chase=ids.has(c.product_id);});
@@ -208,11 +386,19 @@ async function openTopCards(id, onlyChases=false) {
         }
       }
     });
+    $('#top-cards-refresh-prices').onclick=()=>loadGrades(true);
+    $('#top-cards-price-basis').onchange=()=>{setCardPriceBasis($('#top-cards-price-basis').value);draw();loadGrades();};
+    $('#top-cards-minimum').oninput=()=>{
+      cardMinimum=$('#top-cards-minimum').value;
+      try {localStorage.setItem('pokemon.cardMinimum',cardMinimum);}catch{}
+      draw();
+    };
     $('#top-cards-sort').onchange=draw;
     $('#top-cards-search').oninput=draw;
     $('#top-cards-chases').onchange=draw;
     redraw=draw;
     draw();
+    loadGrades();
   }catch(e){
     if(version!==cardPopupVersion || sessionVersion!==authVersion || !dialog.open)return;
     $('#top-cards-status').textContent=e.message;
@@ -269,6 +455,9 @@ function compactStatus(item,config) {
 function renderBoard() {
   if(!state)return;
   const key=$('#sort').value, query=$('#filter-sets').value.trim().toLowerCase();
+  $('#card-price-note').hidden=cardPriceBasis==='raw';
+  $('#card-price-note').textContent=isEbayBasis(cardPriceBasis)?'eBay previews use daily checks within 48 hours; buy-now prices require known shipping. Pack EV uses TCGplayer raw prices.':`${cardPriceLabels[cardPriceBasis]} previews load when you open a set. Pack EV uses raw prices.`;
+
   const basis=$('#product-basis').value, unit=$('#value-unit').value;
   const unitLabel=unit==='pack' || basis==='pack'?'pack':basis==='etb'?'ETB':'bundle';
   $('#ev-heading').textContent=`EV / ${unitLabel}`;
@@ -283,12 +472,12 @@ function renderBoard() {
   let rank=0;
   const visible=sorted.filter(({item})=>item.name.toLowerCase().includes(query) && (!$('#chase-sets-only').checked || item.chase_count>0));
   $('#rankings').innerHTML=visible.map(({item,metrics})=>{
-    const config=state.settings.sets.find(x=>x.group_id===item.group_id), featured=($('#chase-sets-only').checked?item.chase_cards:item.featured_cards) || [];
+    const config=state.settings.sets.find(x=>x.group_id===item.group_id), featured=previewCards(item,$('#chase-sets-only').checked);
     const rates=compactRates(config);
     const detail=esc(metrics.issues.join(' '));
     const packTitle=item.pack_cost_source==='market'?`TCGplayer market: ${item.market_pack.name}; ${date(item.market_pack.source_updated_at)}. Excludes tax/shipping.`:item.pack_cost_source==='manual'?'Your pack price override':'No standard booster price; enter a pack cost in Edit.';
     const value=(v,roi=false)=>v==null?'—':`${metrics.eligible?'':'~'}${roi?v.toFixed(1)+'%':money(v)}`;
-    return `<tr data-set="${item.group_id}"><td class="rank">${metrics.eligible?++rank:'—'}</td><td class="setname"><button type="button" class="set-open" data-view="${item.group_id}" aria-label="View cards in ${esc(item.name)}" aria-haspopup="dialog" title="${$('#chase-sets-only').checked?'Your favorites by market price':'Top 5 by market price'}"><span class="card-fan" aria-hidden="true">${featured.map(c=>`<span class="main-card-preview" title="${esc(c.name)} / ${esc(c.variant)} / ${money(c.market)}" data-market="${c.market}">${cardArt(c,'mini-card')}<span class="preview-price">${money(c.market)}</span></span>`).join('')}</span><span class="set-title">${esc(item.name)}</span></button></td><td class="number" title="${esc(date(item.source_updated_at))}">${item.card_count}</td><td class="number chase-count">${item.chase_count?`<button type="button" class="chases-open" data-chases="${item.group_id}" title="View your favorite cards">★ ${item.chase_count}</button>`:"—"}</td><td class="rate-values">${rates || '—'}</td><td class="number pack-cost" data-source="${item.pack_cost_source || ''}" title="${esc(packTitle)}">${money(item.pack_cost)}</td>${productCell(item,'etb')}${productCell(item,'bundle')}<td class="number unit-cost">${money(metrics.pack_cost)}</td><td class="number return-value" title="${detail}">${value(metrics.return_percent,true)}</td><td class="number break-even" title="${detail}">${value(metrics.break_even_buy)}</td><td class="number expected-loss" title="${detail}">${value(metrics.expected_loss_per_pack)}</td><td class="number ${metrics.eligible?'':'provisional'}" title="${detail}">${value(metrics.gross_ev)}</td><td class="number ${metrics.eligible?(metrics.net_profit>=0?'positive':'negative'):'provisional'}" title="${detail}">${value(metrics.net_profit)}</td><td class="number" title="${detail}">${value(metrics.roi,true)}</td><td class="status-cell" title="${detail}">${esc(compactStatus(metrics,config))}</td><td><button data-edit="${item.group_id}" type="button">${canEdit?"Edit":"Details"}</button></td></tr>`;
+    return `<tr data-set="${item.group_id}"><td class="rank">${metrics.eligible?++rank:'—'}</td><td class="setname"><button type="button" class="set-open" data-view="${item.group_id}" aria-label="View cards in ${esc(item.name)}" aria-haspopup="dialog" title="${$('#chase-sets-only').checked?'Your favorites':'Top 5'} by ${cardPriceLabels[cardPriceBasis]} price"><span class="card-fan" aria-hidden="true">${featured.map(c=>`<span class="main-card-preview" title="${esc(c.name)} / ${esc(c.variant)} / ${cardPriceLabels[cardPriceBasis]} ${money(cardPrice(c))}" data-market="${cardPrice(c)}">${cardArt(c,'mini-card')}<span class="preview-price">${money(cardPrice(c))}</span></span>`).join('')}</span>${cardPriceBasis!=='raw' && !featured.length?`<small class="help">${isEbayBasis(cardPriceBasis)?'No current eBay quotes':cachedGrades(item.group_id)?'No '+cardPriceLabels[cardPriceBasis]+' quotes':'Open for PSA prices'}</small>`:''}<span class="set-title">${esc(item.name)}</span></button></td><td class="number" title="${esc(date(item.source_updated_at))}">${item.card_count}</td><td class="number chase-count">${item.chase_count?`<button type="button" class="chases-open" data-chases="${item.group_id}" title="View your favorite cards">★ ${item.chase_count}</button>`:"—"}</td><td class="rate-values">${rates || '—'}</td><td class="number pack-cost" data-source="${item.pack_cost_source || ''}" title="${esc(packTitle)}">${money(item.pack_cost)}</td>${productCell(item,'etb')}${productCell(item,'bundle')}<td class="number unit-cost">${money(metrics.pack_cost)}</td><td class="number return-value" title="${detail}">${value(metrics.return_percent,true)}</td><td class="number break-even" title="${detail}">${value(metrics.break_even_buy)}</td><td class="number expected-loss" title="${detail}">${value(metrics.expected_loss_per_pack)}</td><td class="number ${metrics.eligible?'':'provisional'}" title="${detail}">${value(metrics.gross_ev)}</td><td class="number ${metrics.eligible?(metrics.net_profit>=0?'positive':'negative'):'provisional'}" title="${detail}">${value(metrics.net_profit)}</td><td class="number" title="${detail}">${value(metrics.roi,true)}</td><td class="status-cell" title="${detail}">${esc(compactStatus(metrics,config))}</td><td><button data-edit="${item.group_id}" type="button">${canEdit?"Edit":"Details"}</button></td></tr>`;
   }).join('') || '<tr><td colspan="17" class="empty">No sets</td></tr>';
   const cutoffs=[...new Set(state.settings.sets.map(c=>c.min_sale_price ?? 0))];
   $('#sale-cutoff').textContent=cutoffs.length===1?(cutoffs[0]>0?`Sell ≥ ${money(cutoffs[0])}`:'All card prices'):'Sale cutoffs vary';
@@ -296,6 +485,7 @@ function renderBoard() {
   $('#sync-status').textContent=`Saved ${date(state.published_at)}`;
   $('#refresh').disabled=state.status.running;
   if(state.status.errors.length)error(state.status.errors.join('\n'));
+  scheduleEbayExpiry();
   catalog();
 }
 
@@ -500,6 +690,8 @@ $("#rankings").addEventListener("click", event => {
   const row=event.target.closest('tr[data-set]');
   if(row && !event.target.closest('a,input,select'))openTopCards(Number(row.dataset.set));
 });
+$('#card-price-basis').innerHTML=priceBasisOptions();
+$('#card-price-basis').onchange=()=>setCardPriceBasis($('#card-price-basis').value);
 $("#sort").onchange = renderBoard;
 $("#product-basis").onchange = renderBoard;
 $("#value-unit").onchange = renderBoard;

@@ -165,7 +165,7 @@ test('Python encoder fixture round-trips with exact views and share matrix', () 
   assert.equal(input.reports.length, 2, 'Exercise the Python encoder for both supported sports.');
   for (const { legacy: v1, compact: v2 } of input.reports) {
     assert.ok(v1 && v2, 'Expected original and compact reports in the cross-language fixture.');
-    assert.deepEqual(validateReport(v2, v1.sport), v1);
+    assert.deepEqual(validateReport(v2, v1.sport), normalizeReport(v1));
     const filters = { start: v1.window.start, end: v1.window.end, book: '', prop: '',
       reference: v1.references[0]?.id, method: v1.methods[0]?.id, minimum: 1, profitableOnly: false };
     assert.deepEqual(buildView(v2, filters), buildView(v1, filters));

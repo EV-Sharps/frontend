@@ -9,9 +9,79 @@
   const compactFields = [...compactDimensions, ...metrics, ...compactHits];
   const kellyCompactFields = [...compactDimensions, ...metrics, ...kellyMetrics, ...compactHits];
   const normalizedReports = new WeakMap();
-  function normalizeReport(data) {
+  const decodedReports = new WeakMap();
+  function referenceKey(id) {
+    if (typeof id !== 'string') return null;
+    const parts = id.trim().split(';');
+    if (parts.length > 2) return null;
+    const books = parts[0].split('+').map(book => book.trim().toLowerCase());
+    if (books.some(book => !/^[a-z][a-z0-9_]*$/.test(book)) || new Set(books).size !== books.length) return null;
+    const tokens = parts.length === 2 ? parts[1].split('+') : books.map(() => '1');
+    if (tokens.length !== books.length) return null;
+    // Exact decimal ratios avoid merging genuinely different weights because
+    // of a floating-point rounding tolerance. Display names are not identity.
+    const values = [];
+    for (const raw of tokens) {
+      const token = raw.trim(), match = /^(\d+(?:\.\d*)?|\.\d+)(?:e(-?\d+))?$/i.exec(token);
+      if (!match || token.length > 100 || !Number.isFinite(Number(token)) || Number(token) <= 0) return null;
+      const exponent = Number(match[2] || 0);
+      if (Math.abs(exponent) > 400) return null;
+      const decimals = (match[1].split('.')[1] || '').length;
+      values.push({ amount: BigInt(match[1].replace('.', '')), scale: decimals - exponent });
+    }
+    const scale = Math.max(...values.map(value => value.scale));
+    const weights = values.map(value => value.amount * 10n ** BigInt(scale - value.scale));
+    const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+    const divisor = weights.reduce(gcd);
+    return books.map((book, index) => [book, String(weights[index] / divisor)])
+      .sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)
+      .map(([book, weight]) => `${book}:${weight}`).join('|');
+  }
+  function uniqueReferences(data) {
+    if (!Array.isArray(data?.references) || !Array.isArray(data.cells)
+      || (data.best_cells !== undefined && !Array.isArray(data.best_cells))
+      || data.references.some(reference => !reference || typeof reference !== 'object')) return data;
+    const references = [], keys = new Map(), aliases = new Map(), priority = new Map();
+    for (const reference of data.references) {
+      const key = referenceKey(reference.id);
+      if (key !== null && keys.has(key)) {
+        aliases.set(reference.id, keys.get(key).id);
+        if (!priority.has(reference.id)) priority.set(reference.id, priority.size);
+      } else {
+        references.push(reference);
+        if (key !== null) keys.set(key, reference);
+        priority.set(reference.id, 0);
+      }
+    }
+    if (references.length === data.references.length) return data;
+    const affected = new Set([...aliases.keys(), ...aliases.values()]);
+    const deduplicate = rows => {
+      const selected = new Map(), result = [];
+      for (const cell of rows) {
+        if (!affected.has(cell.reference)) { result.push(cell); continue; }
+        const reference = aliases.get(cell.reference) || cell.reference;
+        const key = JSON.stringify(compactDimensions.map(field => field === 'reference' ? reference : cell[field]));
+        const rank = priority.get(cell.reference) || 0, previous = selected.get(key);
+        if (!previous || rank < previous.rank) {
+          const index = previous ? previous.index : result.length;
+          result[index] = reference === cell.reference ? cell : { ...cell, reference };
+          selected.set(key, { rank, index });
+        }
+      }
+      return result;
+    };
+    const result = { ...data, references, cells: deduplicate(data.cells || []) };
+    if (data.best_cells !== undefined) result.best_cells = deduplicate(data.best_cells);
+    return result;
+  }
+  function selectedReference(report, id) {
+    if (report.references?.some(reference => reference.id === id)) return id;
+    const key = referenceKey(id);
+    return key === null ? id : report.references?.find(reference => referenceKey(reference.id) === key)?.id || id;
+  }
+  function decodeReport(data) {
     if (data?.version !== 2) return data;
-    if (normalizedReports.has(data)) return normalizedReports.get(data);
+    if (decodedReports.has(data)) return decodedReports.get(data);
     const invalid = () => { throw new Error('The published report contains invalid result rows. Please refresh after it is rebuilt.'); };
     const fields = data.kelly_version === 1 ? kellyCompactFields : compactFields;
     const numericFields = data.kelly_version === 1 ? [...metrics, ...kellyMetrics] : metrics;
@@ -54,7 +124,17 @@
     const { cell_encoding, cell_fields, cell_dictionaries, hit_table, ...metadata } = data;
     const result = { ...metadata, version: 1, cells: decode(data.cells) };
     if (data.best_cells !== undefined) result.best_cells = decode(data.best_cells);
-    normalizedReports.set(data, result);
+    decodedReports.set(data, result);
+    return result;
+  }
+  function normalizeReport(data) {
+    if (!data || typeof data !== 'object') return data;
+    if (normalizedReports.has(data)) return normalizedReports.get(data);
+    const result = uniqueReferences(decodeReport(data));
+    if (result !== data) {
+      normalizedReports.set(data, result);
+      normalizedReports.set(result, result);
+    }
     return result;
   }
   const reportCells = report => {
@@ -189,7 +269,8 @@
     const staking = filters.staking || 'flat';
     if (staking === 'quarter-kelly' && !supportsKelly(report)) throw new Error('¼ Kelly staking data is unavailable. Refresh after the report is rebuilt.');
     const scope = reportCells(report).filter(cell => matches(cell, filters));
-    const chosen = scope.filter(cell => cell.reference === filters.reference && cell.method === filters.method);
+    const reference = selectedReference(report, filters.reference);
+    const chosen = scope.filter(cell => cell.reference === reference && cell.method === filters.method);
     const rank = rows => ranked(rows, filters.minimum ?? 10, filters.profitableOnly);
     const byProp = [...new Set(scope.map(cell => cell.prop))].sort((a, b) => compareProps(a, b, report.sport)).map(prop => {
       const rows = chosen.filter(cell => cell.prop === prop);
@@ -348,8 +429,8 @@
       + `One-sided reference prices: ${oneSided}. `
       + `Fees: ${typeof c.fee_policy === 'string' ? c.fee_policy : 'exchange fee estimates are included where supported; see the report notes below'}.`;
   }
-  function validateReport(data, expectedSport, nested = false) {
-    data = normalizeReport(data);
+  function validateReport(data, expectedSport, nested = false, deduplicate = true) {
+    data = deduplicate ? normalizeReport(data) : decodeReport(data);
     if (data?.version !== 1 || !supportedSports.includes(data.sport)
       || (data.price_source !== undefined && !['archive', 'opening'].includes(data.price_source))
       || !validDate(data.window?.start) || !validDate(data.window?.end)
@@ -358,7 +439,7 @@
       || !Array.isArray(data.references) || !Array.isArray(data.methods)) throw new Error('The published report format is not supported. Refresh after the next report is published.');
     if (expectedSport && data.sport !== expectedSport) throw new Error(`The server returned a different sport. Refresh to load the ${expectedSport.toUpperCase()} report.`);
     if ((data.best_cells || []).some(cell => cell?.book !== 'best')) throw new Error('The published report contains invalid best-available result rows. Please refresh after it is rebuilt.');
-    for (const cell of reportCells(data)) {
+    for (const cell of deduplicate ? reportCells(data) : [...data.cells, ...(data.best_cells || [])]) {
       if (!validDate(cell.date) || cell.date < data.window.start || cell.date > data.window.end
         || ['book', 'prop', 'reference', 'method', 'odds_band'].some(key => typeof cell[key] !== 'string')
         || metrics.some(key => typeof cell[key] !== 'number' || !Number.isFinite(cell[key]))
@@ -367,7 +448,7 @@
     }
     if (data.opening_report !== undefined) {
       if (nested || data.price_source === 'opening' || !data.opening_report || typeof data.opening_report !== 'object') throw new Error('The published opening report is invalid. Please refresh after it is rebuilt.');
-      const opening = validateReport(data.opening_report, data.sport, true);
+      const opening = validateReport(data.opening_report, data.sport, true, deduplicate);
       if (opening.price_source !== 'opening' || opening.window.start !== data.window.start || opening.window.end !== data.window.end) throw new Error('The published opening report has a different source or date window. Please refresh after it is rebuilt.');
     }
     return data;
@@ -386,7 +467,9 @@
     if (data.report_encoding !== 'chunked-indexed-v1' || !supportedSports.includes(data.sport)
       || (expectedSport && data.sport !== expectedSport) || !data.report || data.report.version !== 1
       || data.report.sport !== data.sport || !Array.isArray(data.parts) || typeof fetchPart !== 'function') invalid();
-    const shell = validateReport(data.report, data.sport);
+    // Validate publication counts/metadata before normalizing references; aliases
+    // can be split across parts and must collapse only after assembly.
+    const shell = validateReport(data.report, data.sport, false, false);
     const baseSource = shell.price_source || 'archive';
     const shells = { [baseSource]: shell };
     if (shell.opening_report !== undefined) shells.opening = shell.opening_report;
@@ -422,7 +505,7 @@
           const part = await fetchPart(descriptor);
           checkAbort();
           if (!part || part.version !== 2 || part.cell_encoding !== 'indexed-v1' || part.opening_report !== undefined) invalid();
-          const report = validateReport(part, data.sport);
+          const report = validateReport(part, data.sport, false, false);
           if ((report.price_source || 'archive') !== descriptor.source
             || metadata(report) !== expectedMetadata[descriptor.source]
             || report.cells.length !== descriptor.cells || (report.best_cells || []).length !== descriptor.best_cells) invalid();
@@ -888,7 +971,8 @@
     options('book-filter', books.map(book => [book, bookName(book)]), 'All books · separate offers', previous?.book, previous?.book ? bookName(previous.book) : null);
     const props = [...new Set([...(sport === 'nfl' ? ['attd'] : []), ...cells.map(cell => cell.prop)])].sort((a, b) => compareProps(a, b, sport));
     options('market-filter', props.map(prop => [prop, propName(prop)]), 'All markets', previous?.prop, previous?.prop ? propName(previous.prop) : null);
-    options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]), null, previous?.reference, previous?.reference ? referenceName(previous.reference) : null);
+    const previousReference = selectedReference(report, previous?.reference);
+    options('reference-filter', report.references.map(item => [item.id, referenceName(item.id)]), null, previousReference, previousReference ? referenceName(previousReference) : null);
     options('method-filter', report.methods.map(item => [item.id, item.name]), null, previous?.method, previous?.method ? methodName(previous.method) : null);
     options('strategy-method-filter', report.methods.map(item => [item.id, item.name]), 'All methods', previous?.strategyMethod || '', previous?.strategyMethod ? methodName(previous.strategyMethod) : null);
     const shareMethod = previous ? $('performers-method').value || 'probit' : 'probit';

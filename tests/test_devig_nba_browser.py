@@ -132,7 +132,7 @@ try:
         expect(page.locator('#nba-markets-note')).to_be_visible()
         expect(page.locator('#nfl-markets-note')).to_be_hidden()
         expect(page.locator('#goal-lines-note')).to_be_hidden()
-        assert state['requests'][-1] == dict(sport='nba', auth='Bearer fixture-token')
+        assert state['requests'][-1] == dict(sport='nba', auth=None)
         assert page.title() == 'NBA devig results | +EV Sharps'
         expected = {'pts': 'Points', 'reb': 'Rebounds', '3ptm': 'Made threes', 'dd': 'Double-double',
                     'pts+reb+ast': 'Points + rebounds + assists', 'spread': 'Point spread',

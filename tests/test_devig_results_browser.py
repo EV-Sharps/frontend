@@ -201,7 +201,7 @@ try:
         assert page.locator('#daily-chart .is-missing').count() == 5
         assert page.locator('#report-notes img').count() == 0
         assert 'missing or unverified stat: 5' in page.locator('#coverage-reasons').text_content()
-        assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
+        assert state['requests'][-1]['auth'] is None
         config = page.locator('#config-note').text_content()
         assert 'EV ≥ 0%; no upper limit' in config
         assert '7% assumed vig' in config
@@ -300,30 +300,28 @@ try:
         for status in (401, 403):
             state.update(status=status)
             page.locator('#refresh').click()
-            expect(page.locator('#access-panel')).to_be_visible()
-            expect(page.locator('#report-content')).to_be_hidden()
-            assert page.locator('#strategy-rows tr').count() == 0
-            assert page.locator('#coverage-files tr').count() == 0
-            assert page.locator('.dv-prop-group').count() == 0
-            expect(page.locator('#summary-roi')).to_have_text('-')
+            expect(page.locator('#request-status')).to_contain_text('Showing the previously loaded report')
+            expect(page.locator('#report-content')).to_be_visible()
+            assert page.locator('#access-panel').count() == 0
             state.update(status=200, payload=fixture())
             page.locator('#refresh').click()
             expect(page.locator('#summary-profit')).to_have_text('+9.00u')
 
+        before = len(state['requests'])
         page.evaluate("window.authChanged('SIGNED_OUT', null)")
-        expect(page.locator('#access-panel')).to_be_visible()
-        expect(page.locator('#report-content')).to_be_hidden()
-        assert page.locator('#coverage-files tr').count() == 0
-        assert page.locator('.dv-prop-group').count() == 0
+        expect(page.locator('#report-content')).to_be_visible()
+        expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+        expect(page.locator('#account-link')).to_have_text('Sign in')
+        assert len(state['requests']) == before, 'Auth changes must not reload public reports'
 
         state['signed_in'] = False
-        before = len(state['requests'])
-        page.goto('http://public-preview.test/devig-results.html?preview=1')
-        expect(page.locator('#access-panel')).to_be_visible()
-        assert len(state['requests']) == before, 'A public host must not bypass auth via preview=1'
-        page.goto(url)
-        expect(page.locator('#access-panel')).to_be_visible()
-        assert len(state['requests']) == before, 'A public host must still require a session'
+        for public_url in ('http://public-preview.test/devig-results.html?preview=1', url):
+            before = len(state['requests'])
+            page.goto(public_url)
+            expect(page.locator('#summary-profit')).to_have_text('+9.00u')
+            assert len(state['requests']) == before + 1
+            assert state['requests'][-1]['auth'] is None
+            assert page.locator('#access-panel').count() == 0
 
         # Ordinary local development does not need a session, an auth SDK, or a preview flag.
         state['supabase_available'] = False
@@ -365,12 +363,13 @@ try:
         packaged.route('**/*', intercept)
         before = len(state['requests'])
         packaged.goto(local_url + '?preview=1')
-        expect(packaged.locator('#access-panel')).to_be_visible()
-        assert len(state['requests']) == before, 'Packaged loopback pages must still require a session'
+        expect(packaged.locator('#summary-profit')).to_have_text('+9.00u')
+        assert len(state['requests']) == before + 1
+        assert state['requests'][-1] == dict(url='https://packaged-api.test/api/devig-results?sport=nhl', auth=None)
         state['signed_in'] = True
         packaged.reload()
         expect(packaged.locator('#summary-profit')).to_have_text('+9.00u')
-        assert state['requests'][-1] == dict(url='https://packaged-api.test/api/devig-results?sport=nhl', auth='Bearer fixture-token')
+        assert state['requests'][-1] == dict(url='https://packaged-api.test/api/devig-results?sport=nhl', auth=None)
         packaged.close()
 
         # NFL defaults to all markets; ATTD remains available as an explicit filter.
@@ -393,7 +392,7 @@ try:
         expect(page.locator('#daily-chart .dv-day').nth(1)).to_contain_text('No settled offers')
         expect(page.locator('#daily-caption')).to_contain_text('including dates with no qualifying offers')
         assert 'sport=nfl' in state['requests'][-1]['url']
-        assert state['requests'][-1]['auth'] == 'Bearer fixture-token'
+        assert state['requests'][-1]['auth'] is None
         assert 'Archived NFL offers' in page.locator('#config-note').text_content()
         assert page.locator('#book-rows [data-prop="rush_yds"]').count() > 0
         page.select_option('#market-filter', 'attd')
@@ -481,9 +480,9 @@ try:
         for status in (401, 403):
             state['status'] = status
             page.locator('#refresh').click()
-            expect(page.locator('#access-panel')).to_be_visible()
-            expect(page.locator('#report-content')).to_be_hidden()
-            assert page.locator('#book-rows tr').count() == 0
+            expect(page.locator('#request-status')).to_contain_text('Showing the previously loaded report')
+            expect(page.locator('#report-content')).to_be_visible()
+            expect(page.locator('#summary-profit')).to_have_text('+106.00u')
             state['status'] = 200
             page.locator('#refresh').click()
             expect(page.locator('#summary-profit')).to_have_text('+106.00u')
@@ -544,7 +543,7 @@ try:
             print('Actual report:', page.locator('#summary-roi').inner_text(), page.locator('#summary-profit').inner_text(), page.locator('#summary-settled').inner_text())
         assert not errors, errors
         browser.close()
-        print('PASS: Dense summaries and table columns; independent reference-method filtering, row selection, refresh persistence and reset; NHL regressions; NFL all-market defaults, explicit ATTD/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, 401/403/signout clearing, 320/390/1440px layouts; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged auth; no page errors.')
+        print('PASS: Dense summaries and table columns; independent reference-method filtering, row selection, refresh persistence and reset; NHL regressions; NFL all-market defaults, explicit ATTD/best views, ET presets, full-season and custom-window validation, CSV, sport switches/mismatches/stale requests, public fetch-error retention and signout continuity, 320/390/1440px layouts; unauthenticated localhost/IPv4/IPv6 development, local API refresh/sports, same-origin preview, public and packaged anonymous access; no page errors.')
         print('Screenshots:', OUTPUT)
 finally:
     server.shutdown()

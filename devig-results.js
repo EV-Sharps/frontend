@@ -601,7 +601,7 @@
   };
   const dayLabel = day => new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   const timestamp = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET' : 'Time unavailable';
-  let report = null, view = null, authVersion = 0, controller = null, pending = null;
+  let report = null, view = null, requestVersion = 0, controller = null, pending = null;
   let publishedReport = null, priceSource = 'archive', priceSourcePreference = 'archive';
   try { if (localStorage.getItem('devig_results_price_source') === 'opening') priceSourcePreference = 'opening'; } catch (_) {}
   let staking = 'flat', stakingPreference = 'flat';
@@ -962,7 +962,6 @@
         : 'Archived odds · Latest saved daily prices for each selection. Select Opening odds to replay the captured opening prices.';
     $('report-content').hidden = false;
     $('report-content').setAttribute('aria-busy', 'false');
-    $('access-panel').hidden = true;
     $('report-window').textContent = `${dayLabel(report.window.start)}–${dayLabel(report.window.end)} · ${report.window.days || dateRange(report.window.start, report.window.end).length} days · ET`;
     $('generated').textContent = `Published ${timestamp(report.generated_at)}`;
     for (const id of ['date-start', 'date-end']) { $(id).min = report.window.start; $(id).max = report.window.end; }
@@ -1024,17 +1023,9 @@
     $('date-preset').value = 'published';
     notice('filter-status', '');
   }
-  function deny(status) {
-    clearReport();
-    $('access-panel').hidden = false;
-    $('access-message').textContent = status === 403 ? 'Your account needs Sharp access to explore archived results.' : 'Sign in with your Sharp account to explore archived results.';
-    $('generated').textContent = 'Sharp membership';
-    notice('request-status', '');
-  }
   function refresh() {
     if (pending) return pending;
-    if (!ACCESS_TOKEN && !IS_LOCALHOST) { deny(401); return Promise.resolve(); }
-    const version = authVersion;
+    const version = requestVersion;
     const requestedSport = sport;
     controller = new AbortController();
     const activeController = controller;
@@ -1043,16 +1034,15 @@
     $('report-content').setAttribute('aria-busy', 'true');
     pending = (async () => {
       try {
-        const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=${requestedSport}`, { headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}, cache: 'no-store', signal: activeController.signal });
-        if (version !== authVersion) return;
-        if ([401, 403].includes(response.status)) { deny(response.status); return; }
+        const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=${requestedSport}`, { cache: 'no-store', signal: activeController.signal });
+        if (version !== requestVersion) return;
         if (response.status === 404 || response.status === 503) throw new Error(`No ${requestedSport.toUpperCase()} devig report has been published yet. Results appear after the archived report is built.`);
         if (!response.ok) throw new Error('Unable to load the published results. Please try again.');
         const data = await resolveReport(await response.json(), {
           expectedSport: requestedSport, signal: activeController.signal,
           fetchPart: async part => {
             const response = await fetch(`${localPreview ? '' : API_BASE}/api/devig-results?sport=${requestedSport}&part=${encodeURIComponent(part.dataset)}`, {
-              headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}, cache: 'no-store', signal: activeController.signal,
+              cache: 'no-store', signal: activeController.signal,
             });
             if (!response.ok) {
               const error = new Error('Unable to load all published results. Please refresh to try again.');
@@ -1062,34 +1052,25 @@
             return response.json();
           },
         });
-        if (version !== authVersion) return;
+        if (version !== requestVersion) return;
         acceptReport(data);
         notice('request-status', '');
       } catch (error) {
-        if (version !== authVersion) return;
-        if ([401, 403].includes(error.status)) { deny(error.status); return; }
+        if (version !== requestVersion) return;
         const message = error.name === 'AbortError' ? 'The request timed out. Please refresh to try again.' : error.message;
         notice('request-status', report ? `Showing the previously loaded report. ${message}` : message);
         if (!report) $('generated').textContent = 'Report unavailable';
       } finally {
         clearTimeout(timeout);
-        if (version === authVersion) { pending = null; controller = null; $('refresh').disabled = false; $('report-content').setAttribute('aria-busy', 'false'); }
+        if (version === requestVersion) { pending = null; controller = null; $('refresh').disabled = false; $('report-content').setAttribute('aria-busy', 'false'); }
       }
     })();
     return pending;
   }
   function setSession(session) {
-    const token = session?.access_token || '';
-    if (token === ACCESS_TOKEN) return;
-    authVersion++;
-    controller?.abort();
-    controller = null;
-    pending = null;
-    ACCESS_TOKEN = token;
-    clearReport();
-    $('account-link').textContent = token ? 'My account' : 'Sign in';
-    $('refresh').disabled = false;
-    refresh();
+    // Public reports and in-progress exports are independent of account state.
+    ACCESS_TOKEN = session?.access_token || '';
+    $('account-link').textContent = ACCESS_TOKEN ? 'My account' : 'Sign in';
   }
   function sportHeading() {
     SPORT = sport;
@@ -1107,13 +1088,12 @@
   }
   function setSport(next) {
     if (!supportedSports.includes(next) || next === sport) return;
-    authVersion++;
+    requestVersion++;
     controller?.abort();
     controller = null;
     pending = null;
     sport = next;
     clearReport();
-    $('access-panel').hidden = true;
     notice('request-status', '');
     $('generated').textContent = 'Loading published results…';
     $('refresh').disabled = false;
@@ -1190,22 +1170,27 @@
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${sport}-devig-results-${f.start}-${f.end}${f.priceSource === 'opening' ? '-opening' : ''}${f.staking === 'quarter-kelly' ? '-quarter-kelly' : ''}.csv`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  for (const id of ['account-link', 'access-login']) $(id).href = `profile${HTML}`;
-  $('access-pricing').href = `pricing${HTML}`;
-  async function boot() {
-    if (IS_LOCALHOST) { $('account-link').textContent = localPreview ? 'Local preview' : 'Local development'; await refresh(); return; }
+  $('account-link').href = `profile${HTML}`;
+  function boot() {
+    // Start public data immediately, even if the optional auth service is down
+    // or its session lookup never resolves.
+    refresh();
+    if (IS_LOCALHOST) {
+      $('account-link').textContent = localPreview ? 'Local preview' : 'Local development';
+      return;
+    }
     try {
-      if (typeof SB === 'undefined' || !SB) throw new Error('Sign-in unavailable');
-      const { data, error } = await SB.auth.getSession();
-      if (error) throw error;
-      ACCESS_TOKEN = data.session?.access_token || '';
-      $('account-link').textContent = ACCESS_TOKEN ? 'My account' : 'Sign in';
-      SB.auth.onAuthStateChange((_event, session) => queueMicrotask(() => setSession(session)));
-      await refresh();
+      if (typeof SB === 'undefined' || !SB?.auth) return;
+      let sessionChanged = false;
+      SB.auth.onAuthStateChange((_event, session) => {
+        sessionChanged = true;
+        queueMicrotask(() => setSession(session));
+      });
+      Promise.resolve(SB.auth.getSession()).then(({ data, error }) => {
+        if (!error && !sessionChanged) setSession(data?.session);
+      }).catch(() => {});
     } catch (_) {
-      clearReport();
-      notice('request-status', 'Sign-in service unavailable. Reload the page to try again.');
-      $('generated').textContent = 'Unable to connect';
+      // The account link can remain signed out; public results still load.
     }
   }
   boot();

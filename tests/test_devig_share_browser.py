@@ -516,7 +516,7 @@ try:
             page.screenshot(path=str(OUTPUT / f'fixture-performers-mobile-{width}.png'))
         page.set_viewport_size(dict(width=1440, height=1100))
 
-        # Any auth or sport invalidation clears the protected card and closes its native dialog.
+        # Account changes preserve public cards/exports; sport changes still clear them.
         before = len(downloads)
         page.evaluate('''() => { window.originalToBlob = HTMLCanvasElement.prototype.toBlob;
           HTMLCanvasElement.prototype.toBlob = function(callback, ...args) {
@@ -525,15 +525,15 @@ try:
         page.locator('#performers-download').click()
         page.wait_for_function('typeof window.releasePendingImage === "function"')
         page.evaluate("window.authChanged('SIGNED_OUT', null)")
-        expect(dialog).to_be_hidden()
-        expect(page.locator('#best-performers')).to_be_disabled()
-        expect(page.locator('#performers-rows tr')).to_have_count(0)
-        page.evaluate('() => {window.releasePendingImage(); HTMLCanvasElement.prototype.toBlob = window.originalToBlob;}')
-        expect(page.locator('#performers-status')).to_be_empty()
-        assert len(downloads) == before, 'An image preparing before signout must not download afterward'
-        page.evaluate("window.authChanged('SIGNED_IN', {access_token:'new-token'})")
+        expect(dialog).to_be_visible()
         expect(page.locator('#best-performers')).to_be_enabled()
-        open_card()
+        assert page.locator('#performers-rows tr').count() > 0
+        with page.expect_download():
+            page.evaluate('() => {window.releasePendingImage(); HTMLCanvasElement.prototype.toBlob = window.originalToBlob;}')
+        assert len(downloads) == before + 1, 'Public image exports remain available after signout'
+        page.evaluate("window.authChanged('SIGNED_IN', {access_token:'new-token'})")
+        expect(dialog).to_be_visible()
+        expect(page.locator('#best-performers')).to_be_enabled()
         nhl = fixture()
         nhl['sport'] = 'nhl'
         for row in nhl['cells'] + nhl['best_cells']:
@@ -557,9 +557,10 @@ try:
         assert 'ATGS' in page.locator('#performers-subtitle').inner_text()
         state['status'] = 403
         page.evaluate("document.querySelector('#refresh').click()")
-        expect(dialog).to_be_hidden()
-        expect(page.locator('#performers-rows tr')).to_have_count(0)
-        expect(page.locator('#access-panel')).to_be_visible()
+        expect(dialog).to_be_visible()
+        assert page.locator('#performers-rows tr').count() > 0
+        expect(page.locator('#request-status')).to_contain_text('Showing the previously loaded report')
+        assert page.locator('#access-panel').count() == 0
 
         # Legacy reports explicitly request a rebuild rather than inventing winning players.
         state.update(status=200, payload=fixture())
@@ -709,7 +710,7 @@ try:
         assert '+1.5' in hit_texts['pn+circa;1+1'] and 'o1.5' not in hit_texts['pn+circa;1+1']
         assert not errors, errors
         browser.close()
-        print('PASS: All books/8 devigs by default; independent two-axis pagination and 4/8/12 column counts; one-settlement visibility regardless of main minimum; compact empty cells; Probit method, records, hits and exact odds scopes; guarded backdrop dismissal, focus/Escape; safe text; real default/12-column PNGs; mocked clipboard fallback; auth/export clearing; legacy metadata; 320/390px layouts.')
+        print('PASS: All books/8 devigs by default; independent two-axis pagination and 4/8/12 column counts; one-settlement visibility regardless of main minimum; compact empty cells; Probit method, records, hits and exact odds scopes; guarded backdrop dismissal, focus/Escape; safe text; real default/12-column PNGs; mocked clipboard fallback; public account/export continuity; legacy metadata; 320/390px layouts.')
 finally:
     server.shutdown()
     if ARTIFACTS is not None:
